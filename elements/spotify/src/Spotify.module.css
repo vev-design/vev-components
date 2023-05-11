@@ -1,0 +1,14 @@
+.wrapper {
+    height: 100%;
+    background-color: #1DB954;
+    background-image: url('https://storage.googleapis.com/vev-prod.appspot.com/original/ayifeo8Hb.png');
+    background-size: 150px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    color: white;
+    border-radius: 9px;
+}
+
+.iframe {
+    border: 0;
+}
