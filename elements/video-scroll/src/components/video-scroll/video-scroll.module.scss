@@ -1,0 +1,16 @@
+.wrapper,
+.imageHolder {
+  width: 100%;
+  height: 100%;
+}
+
+.imageHolder {
+  position: absolute;
+  max-height: 100vh;
+  canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+}
