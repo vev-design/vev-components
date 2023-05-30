@@ -1,0 +1,40 @@
+.label {
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  border-radius: 16px;
+  border: 1px dashed var(--color-neutral-high-soft);
+  color: white;
+  gap: 8px;
+
+  &:focus-within {
+    border-color: white;
+    color: white;
+  }
+
+  &.dragOver {
+    border-color: var(--color-brand-primary-soft);
+    color: var(--color-brand-primary-soft);
+  }
+  img {
+    width: 200px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  h5 {
+    margin: 0;
+  }
+
+  small {
+    color: var(--color-neutral-high-soft);
+  }
+
+  .error {
+    color: var(--color-feedback-warning-spark);
+  }
+}
