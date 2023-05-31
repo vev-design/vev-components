@@ -14,7 +14,10 @@ type Props = {
   loop: boolean;
   controls: boolean;
   speed: number;
+  scrollOffsetStart: number;
+  scrollOffsetStop: number;
   animationTrigger: 'visible' | 'hover' | 'click' | 'scroll';
+  mode: 'normal' | 'bounce';
 };
 
 const defaultAnimation =
@@ -25,39 +28,47 @@ const DotLottie = ({
   loop = true,
   controls = false,
   animationTrigger = 'visible',
-  speed = 100,
+  speed = 1000,
+  scrollOffsetStart = 0,
+  scrollOffsetStop = 0,
+  mode,
 }: Props) => {
   const animation = useRef<DotLottiePlayer | null>(null);
-  const visible = useVisible(animation);
+  const isVisible = useVisible(animation);
   const scrollTop = useScrollTop(true);
   const actualUrl = (file && file.url) || defaultAnimation;
 
   useEffect(() => {
     if (animation.current) {
-      animation.current.controls = controls;
-      animation.current.loop = loop;
-      animation.current.setSpeed(speed / 1000);
-      animation.current.mode = PlayMode.Normal;
+      // Hack to make the DotLottiePlayer respect the values set, even if it is seems to be available :(
+      setTimeout(() => {
+        animation.current.controls = controls;
+        animation.current.loop = loop;
+        animation.current.setSpeed(speed / 1000);
+        animation.current.mode = mode === 'normal' ? PlayMode.Normal : PlayMode.Bounce;
 
-      switch (animationTrigger) {
-        case 'hover':
-          animation.current.hover = true;
-          break;
-        case 'click':
-          animation.current.addEventListener('click', () => {
-            animation.current.play();
-          });
-          break;
-        case 'scroll':
-          break;
-      }
+        switch (animationTrigger) {
+          case 'hover':
+            animation.current.stop();
+            animation.current.hover = true;
+            break;
+          case 'click':
+            animation.current.stop();
+            animation.current.addEventListener('click', () => {
+              animation.current.play();
+            });
+            break;
+          case 'scroll':
+            break;
+        }
+      }, 100);
     }
-  }, [animation, speed, loop, controls, animationTrigger]);
+  }, [animation, speed, loop, controls, animationTrigger, mode]);
 
   // OnClick trigger
   useEffect(() => {
     if (animation && animationTrigger === 'visible') {
-      if (visible) {
+      if (isVisible) {
         setTimeout(() => {
           animation.current.play();
         }, 50);
@@ -67,38 +78,33 @@ const DotLottie = ({
         }
       }
     }
-  }, [visible, animation, loop, animationTrigger]);
+  }, [isVisible, animation, loop, animationTrigger]);
 
-  useEffect(() => {
-    if (animation && animationTrigger === 'scroll') {
-      const seek = `${scrollTop * 100}%`;
-      console.log('seek', seek);
-      animation.current.seek(seek);
-    }
-  }, [animationTrigger, scrollTop]);
-
+  // Scroll trigger
   useEffect(() => {
     const lottie = animation && animation.current && animation.current.getLottie();
     if (lottie) {
       if (animationTrigger === 'scroll' && lottie.totalFrames) {
-        let percent;
-        if (visible) {
+        let percent: number;
+        if (isVisible) {
           const rect = animation.current.getBoundingClientRect();
-          percent = (rect.top + rect.height) / (View.height + rect.height);
+          percent =
+            (rect.top + scrollOffsetStart + rect.height) /
+            (View.height + rect.height + scrollOffsetStop);
         } else percent = 1 - scrollTop;
         lottie.goToAndStop((lottie.totalFrames / lottie.frameRate) * 1000 * (1 - percent));
       }
     }
-  }, [scrollTop]);
+  }, [animationTrigger, isVisible, scrollOffsetStart, scrollOffsetStop, scrollTop]);
 
   // Hack to make this annoying web component thing reload its props when it should
   const comp = useMemo(() => {
     return (
-      <div>
+      <div key={Date.now()}>
         <dotlottie-player ref={animation} loop={loop} src={actualUrl} />
       </div>
     );
-  }, [loop, actualUrl, animationTrigger]);
+  }, [loop, actualUrl, animationTrigger, mode]);
 
   return <div className={styles.wrapper}>{comp}</div>;
 };
@@ -136,6 +142,22 @@ registerVevComponent(DotLottie, {
       },
     },
     {
+      title: 'Loop behavior',
+      name: 'mode',
+      type: 'select',
+      initialValue: 'normal',
+      options: {
+        display: 'dropdown',
+        items: [
+          { label: 'Normal', value: 'normal' },
+          { label: 'Bounce', value: 'bounce' },
+        ],
+      },
+      hidden: (context) => {
+        return context.value.animationTrigger === 'scroll';
+      },
+    },
+    {
       title: 'Show controls',
       name: 'controls',
       type: 'boolean',
@@ -145,10 +167,29 @@ registerVevComponent(DotLottie, {
       title: 'Speed',
       name: 'speed',
       type: 'number',
-      display: 'slider',
-      initialValue: 100,
+      initialValue: 1000,
       hidden: (context) => {
         return context.value.animationTrigger === 'scroll';
+      },
+    },
+    {
+      title: 'Scroll offset start',
+      name: 'scrollOffsetStart',
+      description: 'Start animation x pixels later',
+      type: 'number',
+      initialValue: 0,
+      hidden: (context) => {
+        return context.value.animationTrigger !== 'scroll';
+      },
+    },
+    {
+      title: 'Scroll offset stop',
+      name: 'scrollOffsetStop',
+      description: 'Stop animation x pixels later',
+      type: 'number',
+      initialValue: 0,
+      hidden: (context) => {
+        return context.value.animationTrigger !== 'scroll';
       },
     },
   ],
