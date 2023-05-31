@@ -132,7 +132,7 @@ registerVevComponent(DotLottie, {
       type: 'boolean',
       initialValue: true,
       hidden: (context) => {
-        return context.value.animationTrigger !== 'scroll';
+        return context.value.animationTrigger === 'scroll';
       },
     },
     {
@@ -148,7 +148,7 @@ registerVevComponent(DotLottie, {
       display: 'slider',
       initialValue: 100,
       hidden: (context) => {
-        return context.value.animationTrigger !== 'scroll';
+        return context.value.animationTrigger === 'scroll';
       },
     },
   ],
