@@ -95,7 +95,7 @@ const DotLottie = ({
   const comp = useMemo(() => {
     return (
       <div>
-        <dotlottie-player key={Date.now()} ref={animation} loop={loop} src={actualUrl} />
+        <dotlottie-player ref={animation} loop={loop} src={actualUrl} />
       </div>
     );
   }, [loop, actualUrl, animationTrigger]);
@@ -131,6 +131,9 @@ registerVevComponent(DotLottie, {
       name: 'loop',
       type: 'boolean',
       initialValue: true,
+      hidden: (context) => {
+        return context.value.animationTrigger !== 'scroll';
+      },
     },
     {
       title: 'Show controls',
@@ -144,6 +147,9 @@ registerVevComponent(DotLottie, {
       type: 'number',
       display: 'slider',
       initialValue: 100,
+      hidden: (context) => {
+        return context.value.animationTrigger !== 'scroll';
+      },
     },
   ],
   editableCSS: [
