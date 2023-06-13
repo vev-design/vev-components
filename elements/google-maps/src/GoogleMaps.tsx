@@ -26,7 +26,7 @@ function getUrl(address, zoom, type: string) {
   return baseUrl + 'place' + '?' + params.join('&');
 }
 
-const GoogleMaps = ({ address = '', zoom = 15, type = 'roadmap' }: Props) => {
+const GoogleMaps = ({ address = '', zoom = 16, type = 'roadmap' }: Props) => {
   return (
     <iframe
       className={styles.wrapper}
@@ -106,7 +106,7 @@ registerVevComponent(GoogleMaps, {
       title: 'Initial Zoom',
       name: 'zoom',
       type: 'number',
-      initialValue: 15,
+      initialValue: 16,
       options: {
         display: 'slider',
         min: 0,
