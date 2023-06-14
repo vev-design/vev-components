@@ -1,0 +1,24 @@
+{
+  "name": "Vimeo",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "login": "vev login",
+    "init": "vev init",
+    "start": "vev start"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "latest",
+    "prettier": "2.7.0",
+    "typescript-plugin-css-modules": "^3.4.0"
+  },
+  "dependencies": {
+    "@vev/cli": "^0.0.1-beta.21",
+    "@vev/react": "latest",
+    "@vev/silke": "^1.0.11",
+    "@vimeo/player": "^2.20.1",
+    "global": "^4.4.0",
+    "react": "^18.2.0"
+  }
+}
