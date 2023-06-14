@@ -5,7 +5,8 @@
   "scripts": {
     "login": "vev login",
     "init": "vev init",
-    "start": "vev start"
+    "start": "vev start",
+    "deploy": "vev deploy"
   },
   "license": "MIT",
   "devDependencies": {
