@@ -1,0 +1,24 @@
+{
+  "name": "lottie",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "login": "vev login",
+    "init": "vev init",
+    "start": "vev start"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "latest",
+    "prettier": "2.7.0",
+    "typescript-plugin-css-modules": "^3.4.0"
+  },
+  "dependencies": {
+    "@vev/react": "latest",
+    "@vev/silke": "^1.0.11",
+    "lottie-colorify": "^0.8.0",
+    "lottie-react": "^2.4.0",
+    "lottie-web": "^5.12.2",
+    "react": "^18.2.0"
+  }
+}
