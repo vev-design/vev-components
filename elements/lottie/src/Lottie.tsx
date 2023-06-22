@@ -43,18 +43,12 @@ const Lottie = ({
   const path = (file && file.url) || defaultAnimation;
   const autoplay = trigger === 'visible' && isVisible;
 
-  console.log('🐷 LOTTIECOLORS:');
-  console.table(lottieColors);
-
-  console.log('🐷 colors:');
-  console.table(colors);
-
   const colorOverrides = useMemo(() => {
     return lottieColors.map((lc) => {
       const match = colors?.find((c) => String(c.oldColor) === String(lc));
       return match ? match.newColor : lc;
     });
-  }, [JSON.stringify(colors)]);
+  }, [lottieColors, colors]);
 
   // Fetch json data when file url changes
   useEffect(() => {
