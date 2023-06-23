@@ -225,7 +225,8 @@ registerVevComponent(Lottie, {
   editableCSS: [
     {
       selector: styles.wrapper,
-      properties: ['background'],
+      title: 'Container',
+      properties: ['background', 'border', 'border-radius', 'opacity', 'filter'],
     },
   ],
   type: 'both',
