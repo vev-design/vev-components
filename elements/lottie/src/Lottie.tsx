@@ -226,7 +226,7 @@ registerVevComponent(Lottie, {
     {
       selector: styles.wrapper,
       title: 'Container',
-      properties: ['background', 'border', 'border-radius', 'opacity', 'filter'],
+      properties: ['background', 'border', 'border-radius', 'padding', 'opacity', 'filter'],
     },
   ],
   type: 'both',
