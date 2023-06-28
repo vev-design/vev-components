@@ -1,22 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { getColors } from "lottie-colorify";
-import { SchemaFieldProps, SchemaFieldTypes } from "@vev/react";
-import { LottieColor, LottieColorReplacement } from "../types";
-import defaultAnimation from "../constants/defaultAnimation";
-import sortLottieColors from "../utils/sortLottieColors";
+import React, { useEffect, useState } from 'react';
+import { getColors } from 'lottie-colorify';
+import { SchemaFieldProps, SchemaFieldTypes } from '@vev/react';
+import { LottieColor, LottieColorReplacement } from '../types';
+import defaultAnimation from '../constants/defaultAnimation';
+import sortLottieColors from '../utils/sortLottieColors';
 import {
   SilkeBox,
   SilkeColorPickerButton,
   SilkeOverflowMenu,
   SilkeText,
   SilkeTextField,
-} from "@vev/silke";
+} from '@vev/silke';
 
 const ColorPicker = ({
   context,
   value = [],
   onChange,
-}: SchemaFieldProps<SchemaFieldTypes["array"]>) => {
+}: SchemaFieldProps<SchemaFieldTypes['array']>) => {
   const [json, setJson] = useState();
   const [lottieColors, setLottieColors] = useState<LottieColor[]>([]);
   const filePath = context.value?.file?.url || defaultAnimation;
@@ -44,9 +44,7 @@ const ColorPicker = ({
       try {
         const result = getColors(json) as LottieColor[];
 
-        const uniqueResult = Array.from(
-          new Map(result.map((c) => [`${c.join()}`, c])).values()
-        );
+        const uniqueResult = Array.from(new Map(result.map((c) => [`${c.join()}`, c])).values());
         const sortedResult = sortLottieColors(uniqueResult);
 
         setLottieColors(sortedResult);
@@ -91,7 +89,7 @@ const ColorPicker = ({
           items={[
             {
               label: `Reset colors`,
-              value: "reset",
+              value: 'reset',
               onClick: () => onReset(),
             },
           ]}
@@ -100,7 +98,7 @@ const ColorPicker = ({
       <SilkeBox column flex gap="m">
         {lottieColors?.map((color, index) => {
           const replacement = value.find(
-            (v) => String(v.oldColor) === String(color)
+            (v) => String(v.oldColor) === String(color),
           ) as LottieColorReplacement;
 
           const rgb = replacement
@@ -114,6 +112,7 @@ const ColorPicker = ({
                 kind="ghost"
                 size="s"
                 noVariables
+                noTransparency
                 onChange={(newColor) => onChangeColor(color, newColor)}
               />
               <SilkeTextField
