@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getColors } from 'lottie-colorify';
 import { SchemaFieldProps, SchemaFieldTypes } from '@vev/react';
-import { LottieColor, LottieColorReplacement } from '../types';
-import defaultAnimation from '../constants/defaultAnimation';
-import sortLottieColors from '../utils/sortLottieColors';
+import { LottieColor, LottieColorReplacement } from '../../types';
+import defaultAnimation from '../../constants/defaultAnimation';
+import sortLottieColors from '../../utils/sortLottieColors';
 import {
   SilkeBox,
   SilkeColorPickerButton,

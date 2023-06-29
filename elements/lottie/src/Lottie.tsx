@@ -8,6 +8,7 @@ import defaultAnimation from './constants/defaultAnimation';
 import ColorPicker from './components/ColorPicker';
 
 import styles from './Lottie.module.css';
+import SpeedSlider from './components/SpeedSlider';
 
 type Props = {
   file: File;
@@ -207,11 +208,12 @@ registerVevComponent(Lottie, {
       title: 'Speed',
       type: 'number',
       initialValue: 1,
-      options: {
-        display: 'slider',
-        min: -2,
-        max: 2,
-      },
+      // options: {
+      //   display: 'slider',
+      //   min: -2,
+      //   max: 2,
+      // },
+      component: SpeedSlider,
       hidden: (context) => context?.value?.trigger === 'scroll',
     },
     {
