@@ -154,6 +154,9 @@ const Lottie = ({
 
 registerVevComponent(Lottie, {
   name: 'Lottie Animation',
+  description:
+    'Lottie is a JSON-based animation file format that enables designers to ship animations on any platform as easily as shipping static assets. Make your own Lottie animations in Adobe After Effects, or more easily, find animations on [lottiefiles.com](https://lottiefiles.com/featured) \n\nUse this element to upload and display your JSON file containing the Lottie animation.',
+  icon: 'https://cdn.vev.design/private/pK53XiUzGnRFw1uPeFta7gdedx22/5Vtsm6QxVv_lottieFiles.png.png',
   events: [],
   props: [
     {
@@ -161,7 +164,7 @@ registerVevComponent(Lottie, {
       title: 'Lottie file',
       type: 'upload',
       accept: 'application/json',
-      description: 'JSON file exported from After Effects with Bodymovin',
+      description: 'JSON file exported from After Effects or downloaded from lottiefiles.com',
     },
     {
       name: 'trigger',
