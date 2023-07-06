@@ -1,0 +1,33 @@
+.wrapper {
+  height: 100%;
+  background-color: none;
+}
+
+.empty {
+  background-color: #eee;
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #909090;
+  font-size: 14px;
+}
+
+.dots {
+  color: #ccc;
+  font-size: 30px;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.dots span {
+  transform: translateY(-5%);
+  cursor: pointer;
+}
+
+.selected {
+  color: blue;
+}
