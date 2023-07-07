@@ -226,7 +226,7 @@ registerVevComponent(Slideshow, {
       hidden: (context) => context.value?.animation !== '3d',
     },
   ],
-  events: [
+  interactions: [
     {
       name: Events.NEXT,
       description: 'Go to next slide',
