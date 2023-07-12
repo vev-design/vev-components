@@ -51,8 +51,6 @@ const Youtube = ({
   /** Need to enable js api */
   src += '&enablejsapi=1';
 
-  console.log('src', src);
-
   return (
     <iframe
       className={styles.frame}
