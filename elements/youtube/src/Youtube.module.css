@@ -1,5 +1,4 @@
-.wrapper {
-  height: 100%;
-  background: pink;
-  padding: 2rem;
+.frame {
+    height: 100%;
+    width: 100%;
 }
