@@ -1,0 +1,9 @@
+.info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 2rem;
+    background: #333333;
+    color: white;;
+}
