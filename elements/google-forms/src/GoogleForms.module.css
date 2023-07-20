@@ -1,0 +1,15 @@
+.wrapper {
+    height: 100%;
+    width: 100%;
+}
+
+.instructions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #333333;
+    color: white;
+    height: 100%;
+    width: 100%;
+    padding: 2rem;
+}
