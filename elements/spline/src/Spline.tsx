@@ -36,6 +36,8 @@ const Spline = ({
 
 registerVevComponent(Spline, {
   name: 'Spline',
+  description:
+    'Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.',
   props: [{ name: 'formUrl', title: 'Spline URL', type: 'string', initialValue: '' }],
   type: 'both',
 });
