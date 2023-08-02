@@ -6,6 +6,9 @@
 **/dist/
 **/build/
 
+# Vev CLI folder
+**/.vev
+
 # logs
 npm-debug.log*
 yarn-debug.log*
