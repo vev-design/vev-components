@@ -8,11 +8,18 @@ type Props = {
   numberOfSlides: number;
   distance: number;
   type: 'bottom' | 'distance' | 'element';
+  widgetKey: string;
+  widgetDistance: number;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
 const DEFAULT_SCROLLYTELLING_URL = 'https://flo.uri.sh/story/468238/embed';
 const DEFAULT_URL = 'https://flo.uri.sh/story/1767962/embed';
+
+function getElementPosition(widgetKey: string, widgetDistance: number, scrollTop: number) {
+  const el = document.getElementById(widgetKey);
+  return el ? el.getBoundingClientRect().top - (widgetDistance || 0) + scrollTop : undefined;
+}
 
 const Flourish = ({
   formUrl = DEFAULT_URL,
@@ -20,20 +27,33 @@ const Flourish = ({
   numberOfSlides,
   distance,
   type,
+  widgetKey,
+  widgetDistance,
   hostRef,
 }: Props) => {
-  const [top, setTop] = useState<number>(0);
+  const [_, setTop] = useState<number>(0);
   const [url, setUrl] = useState<string>(formUrl);
-  const scrollTop = useScrollTop();
-  const { scrollHeight, height } = useViewport();
+  const [offset, setOffset] = useState<number>(0);
   const { height: hostHeight } = useSize(hostRef);
+  const scrollTop = useScrollTop();
+  const { scrollHeight, height: viewportHeight } = useViewport();
   const [slideChangeDistance, setSlideChangeDistance] = useState<number>(0);
   const [slide, setSlide] = useState<number>(0);
+
+  useEffect(() => {
+    let parent = hostRef.current as HTMLElement;
+    let top = 0;
+    while (parent) {
+      top += parent.offsetTop;
+      parent = parent.parentElement;
+    }
+    setOffset(top);
+  }, [hostRef]);
 
   // Strip hash if scrollytelling
   useEffect(() => {
     if (scrollytelling) {
-      let newUrl;
+      let newUrl: string;
       if (scrollytelling && formUrl === DEFAULT_URL) {
         newUrl = DEFAULT_SCROLLYTELLING_URL;
       }
@@ -53,22 +73,35 @@ const Flourish = ({
   // Set slide change distance
   useEffect(() => {
     if (type === 'bottom') {
-      setSlideChangeDistance((scrollHeight - height) / numberOfSlides);
+      setSlideChangeDistance((scrollHeight - viewportHeight - offset) / numberOfSlides);
     } else if (type === 'distance') {
       setSlideChangeDistance(distance);
     } else if (type === 'element') {
-      // Will add when CLI has widget select
+      const distanceFromWidget = widgetDistance + hostHeight;
+      const elementPosition = getElementPosition(widgetKey, distanceFromWidget, scrollTop);
+      setSlideChangeDistance((elementPosition - offset) / numberOfSlides);
     }
-  }, [scrollHeight, numberOfSlides, height, type, distance]);
+  }, [
+    scrollHeight,
+    numberOfSlides,
+    viewportHeight,
+    type,
+    distance,
+    widgetKey,
+    widgetDistance,
+    scrollTop,
+    offset,
+    hostHeight,
+  ]);
 
   // Set slide
   useEffect(() => {
     if (scrollTop === 0) {
       setSlide(0);
     } else {
-      setSlide(Math.round(scrollTop / slideChangeDistance));
+      setSlide(Math.floor(Math.max(scrollTop - offset, 0) / slideChangeDistance) - 1);
     }
-  }, [scrollTop, slideChangeDistance]);
+  }, [offset, scrollTop, slideChangeDistance]);
 
   // Update url with slide
   useEffect(() => {
@@ -129,11 +162,27 @@ registerVevComponent(Flourish, {
       },
     },
     {
+      title: 'Element',
+      name: 'widgetKey',
+      type: 'widgetSelect',
+      hidden: (context) => {
+        return context.value.type !== 'element' || context.value.scrollytelling !== true;
+      },
+    },
+    {
+      title: 'Distance from widget',
+      name: 'widgetDistance',
+      type: 'number',
+      hidden: (context) => {
+        return context.value.type !== 'element' || context.value.scrollytelling !== true;
+      },
+    },
+    {
       title: 'Distance in px',
       name: 'distance',
       type: 'number',
       hidden: (context) => {
-        return context.value.type !== 'distance';
+        return context.value.type !== 'distance' || context.value.scrollytelling !== true;
       },
     },
   ],
