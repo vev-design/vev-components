@@ -12,5 +12,5 @@ yarn-debug.log*
 yarn-error.log*
 **/*-debug.log
 
-# WebStorm project settings
+# Intellij project settings
 /.idea/
