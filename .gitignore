@@ -1,0 +1,16 @@
+**/node_modules/**
+
+**/yarn.lock
+**/package-lock.json
+
+**/dist/
+**/build/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/*-debug.log
+
+# WebStorm project settings
+/.idea/
