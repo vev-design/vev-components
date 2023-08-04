@@ -228,15 +228,15 @@ registerVevComponent(Slideshow, {
   ],
   interactions: [
     {
-      name: Events.NEXT,
+      type: Events.NEXT,
       description: 'Go to next slide',
     },
     {
-      name: Events.PREV,
+      type: Events.PREV,
       description: 'Go to previous slide',
     },
     {
-      name: Events.SET,
+      type: Events.SET,
       description: 'Go to specific slide',
       args: [
         {
