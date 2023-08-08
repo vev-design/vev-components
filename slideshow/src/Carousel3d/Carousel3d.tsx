@@ -10,7 +10,8 @@ export const Carousel3d = ({
   children,
   hostRef,
   gap = 30,
-}: Props & { index: number }) => {
+  onNextSlide,
+}: Props & { index: number; onNextSlide: () => void }) => {
   const [rounds, setRounds] = useState(1);
   const [radius, setRadius] = useState(0);
   const size = useSize(hostRef);
@@ -44,6 +45,11 @@ export const Carousel3d = ({
         style={{
           transform: `rotateY(-${percentage * (index + rounds * children.length)}deg) `,
           transition: `transform ${speed || 200}ms`,
+        }}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === 'transform') {
+            onNextSlide();
+          }
         }}
       >
         {children?.map((child: string, i: number) => {

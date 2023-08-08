@@ -31,10 +31,14 @@ enum Events {
   SET = 'SET',
 }
 
+const randomSupported = (animation: string) => animation !== 'slide';
+
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
-  const { autoplay, autoplayInterval = 5000, animation, selectedIndex } = props;
+  const { autoplay, autoplayInterval = 5000, animation, selectedIndex, random } = props;
+
+  console.log('index', state.index);
 
   useTouch(props.hostRef, {
     onNext: () => {
@@ -51,31 +55,59 @@ export const Slideshow = (props: Props) => {
 
   const NEXT_SLIDE = useMemo(
     () => ({
-      index: props.random
-        ? randomize(numberOfSlides, index)
-        : numberOfSlides === index + 1
-        ? 0
-        : index + 1,
+      index:
+        random && randomSupported(animation)
+          ? randomize(numberOfSlides, index)
+          : numberOfSlides === index + 1
+          ? 0
+          : index + 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, props.random, props.infinite],
+    [numberOfSlides, index, random],
   );
 
   const PREV_SLIDE = useMemo(
     () => ({
-      index: props.random
+      index: random
         ? randomize(numberOfSlides, index)
         : index === 0
         ? numberOfSlides - 1
         : index - 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, props.random],
+    [numberOfSlides, index, random],
   );
+
+  const SET_SLIDE = (index: number) =>
+    useMemo(
+      () => ({
+        index,
+        length: numberOfSlides || 0,
+      }),
+      [index],
+    );
 
   useEffect(() => {
     setState({ ...state, length: numberOfSlides || 0 });
-  }, [numberOfSlides, setState]);
+  }, [numberOfSlides]);
+
+  /*   useEffect(() => {
+    if (infinite) {
+      console.log(' ifinite @@', numberOfSlides);
+      if (state?.index === numberOfSlides - 2) {
+        console.log('adding slides');
+        slides.push(...slides);
+      }
+    }
+  }, [infinite, state?.index]); */
+
+  useEffect(() => {
+    if (autoplay && !editor.disabled) {
+      setTimeout(() => {
+        setState(NEXT_SLIDE);
+      }, autoplayInterval);
+    }
+  }, [autoplay, editor.disabled, autoplayInterval]);
 
   useVevEvent(Events.NEXT, () => {
     setState(NEXT_SLIDE);
@@ -86,20 +118,9 @@ export const Slideshow = (props: Props) => {
   });
 
   useVevEvent(Events.SET, (args: { index: number }) => {
-    setState({
-      index: args.index,
-      length: numberOfSlides || 0,
-    });
+    setState(SET_SLIDE(args.index));
   });
 
-  /*   useEffect(() => {
-    if (animation === '3d') return;
-
-    if (index === numberOfSlides - 1) {
-      props.children = props.children.push(props.children[0]);
-    }
-  }, [numberOfSlides, index]);
- */
   if (!props?.children?.length) {
     return <div className={styles.empty}>No slides</div>;
   }
@@ -116,18 +137,23 @@ export const Slideshow = (props: Props) => {
   return (
     <div
       className={styles.wrapper}
-      onTransitionEnd={() => {
-        if (autoplay && !editor.disabled) {
-          setTimeout(() => {
-            setState(NEXT_SLIDE);
-          }, autoplayInterval);
+      style={
+        {
+          // overflow: animation !== '3d' ? 'hidden' : 'visible',
         }
-      }}
-      style={{
-        overflow: props.clipContent ? 'hidden' : 'visible',
-      }}
+      }
     >
-      <Comp {...props} index={editor.disabled ? selectedIndex || 0 : index} />
+      <Comp
+        {...props}
+        index={editor.disabled ? selectedIndex || 0 : index}
+        onNextSlide={(e) => {
+          if (autoplay && !editor.disabled) {
+            setTimeout(() => {
+              setState(NEXT_SLIDE);
+            }, autoplayInterval);
+          }
+        }}
+      />
     </div>
   );
 };
@@ -202,15 +228,10 @@ registerVevComponent(Slideshow, {
       hidden: (context) => context.value?.animation !== 'slide',
     },
     {
-      name: 'clipContent',
-      title: 'Clip content',
-      type: 'boolean',
-      initialValue: true,
-    },
-    {
       name: 'random',
       title: 'Randomize',
       type: 'boolean',
+      // hidden: (context) => ['3d'].includes(context.value?.animation),
     },
     {
       name: 'infinite',

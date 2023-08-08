@@ -4,7 +4,12 @@ import { Props } from '../Slideshow';
 
 import styles from './Zoom.module.css';
 
-export const Zoom = ({ index, speed, children }: Props & { index: number }) => {
+export const Zoom = ({
+  index,
+  speed,
+  children,
+  onNextSlide,
+}: Props & { index: number; onNextSlide: () => void }) => {
   const nextSlide = children?.length === index + 1 ? 0 : index + 1;
 
   return (
@@ -14,8 +19,13 @@ export const Zoom = ({ index, speed, children }: Props & { index: number }) => {
           <div
             className={styles.slide}
             key={child}
+            onTransitionEnd={(e) => {
+              if (e.propertyName === 'transform') {
+                onNextSlide();
+              }
+            }}
             style={{
-              transition: `all ${speed || 200}ms`,
+              transition: `transform ${speed || 200}ms, opacity ${speed || 200}ms`,
               opacity: i === index ? 1 : 0,
               transform: (i === index || i === nextSlide) && 'none',
             }}

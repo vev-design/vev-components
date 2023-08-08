@@ -4,7 +4,13 @@ import { Props } from '../Slideshow';
 
 import styles from './Slide.module.css';
 
-export const Slide = ({ vertical, index, speed, children }: Props & { index: number }) => {
+export const Slide = ({
+  vertical,
+  index,
+  speed,
+  children,
+  onNextSlide,
+}: Props & { index: number; onNextSlide: () => void }) => {
   const direction = vertical ? 'Y' : 'X';
 
   return (
@@ -13,6 +19,11 @@ export const Slide = ({ vertical, index, speed, children }: Props & { index: num
       style={{
         transform: `translate${direction}(${-100 * index}%)`,
         transition: `transform ${speed || 200}ms linear`,
+      }}
+      onTransitionEnd={(e) => {
+        if (e.propertyName === 'transform') {
+          onNextSlide();
+        }
       }}
     >
       {children?.map((child: string, i: number) => {
