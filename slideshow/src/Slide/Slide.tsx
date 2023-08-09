@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { WidgetNode } from '@vev/react';
 import { Props } from '../Slideshow';
 
@@ -11,22 +11,48 @@ export const Slide = ({
   children,
   onNextSlide,
 }: Props & { index: number; onNextSlide: () => void }) => {
+  const prevIndex = useRef(0);
+  const [move, setMove] = useState(-100);
+  const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
   const direction = vertical ? 'Y' : 'X';
+
+  const NEXT = useMemo(() => (index + 1 === children.length ? 0 : index + 1), [index, children]);
+  const PREV = useMemo(() => (index === 0 ? children.length - 1 : index - 1), [index, children]);
+  const [slides, setSlides] = useState([children[PREV], children[index], children[NEXT]]);
+
+  console.log(index, slides);
+
+  useEffect(() => {
+    if (index > prevIndex.current) {
+      prevIndex.current = index;
+      setTransitionSpeed(speed || 200);
+      setMove(-200);
+    }
+
+    if (index < prevIndex.current) {
+      prevIndex.current = index;
+      setTransitionSpeed(speed || 200);
+      setMove(0);
+    }
+  }, [index, prevIndex, speed]);
 
   return (
     <div
       className={styles.wrapper + ' __sc __c'}
       style={{
-        transform: `translate${direction}(${-100 * index}%)`,
-        transition: `transform ${speed || 200}ms linear`,
+        transform: `translate${direction}(${move}%)`,
+        transition: `transform ${transitionSpeed}ms linear`,
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === 'transform') {
           onNextSlide();
+          setTransitionSpeed(0);
+          setMove(-100);
+          setSlides([children[PREV], children[index], children[NEXT]]);
         }
       }}
     >
-      {children?.map((child: string, i: number) => {
+      {slides?.map((child: string, i: number) => {
         return (
           <div
             className={styles.slide}

@@ -38,7 +38,7 @@ export const Slideshow = (props: Props) => {
   const [state, setState] = useGlobalState();
   const { autoplay, autoplayInterval = 5000, animation, selectedIndex, random } = props;
 
-  console.log('index', state.index);
+  console.log('index', state?.index);
 
   useTouch(props.hostRef, {
     onNext: () => {
@@ -91,16 +91,6 @@ export const Slideshow = (props: Props) => {
     setState({ ...state, length: numberOfSlides || 0 });
   }, [numberOfSlides]);
 
-  /*   useEffect(() => {
-    if (infinite) {
-      console.log(' ifinite @@', numberOfSlides);
-      if (state?.index === numberOfSlides - 2) {
-        console.log('adding slides');
-        slides.push(...slides);
-      }
-    }
-  }, [infinite, state?.index]); */
-
   useEffect(() => {
     if (autoplay && !editor.disabled) {
       setTimeout(() => {
@@ -137,16 +127,14 @@ export const Slideshow = (props: Props) => {
   return (
     <div
       className={styles.wrapper}
-      style={
-        {
-          // overflow: animation !== '3d' ? 'hidden' : 'visible',
-        }
-      }
+      style={{
+        overflow: animation !== '3d' ? 'hidden' : 'visible',
+      }}
     >
       <Comp
         {...props}
         index={editor.disabled ? selectedIndex || 0 : index}
-        onNextSlide={(e) => {
+        onNextSlide={() => {
           if (autoplay && !editor.disabled) {
             setTimeout(() => {
               setState(NEXT_SLIDE);
