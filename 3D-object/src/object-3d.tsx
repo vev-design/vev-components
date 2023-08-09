@@ -1,24 +1,16 @@
 import React from 'react';
-import styles from './Object3D.module.css';
+import styles from './object-3d.module.css';
 import { registerVevComponent, useSize } from '@vev/react';
-import { Object3DContextProvider } from './context/Object3DContext';
-import { Object3DViewer } from './components/Object3DViewer';
+import { Object3DContextProvider } from './context/object-3d-context';
+import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
+import { HotSpotFormButton } from './components/hot-spot-form';
 
-type Props = {
-  hostRef: React.RefObject<HTMLDivElement>;
-  modelUrl: { url: string };
-  lighting: 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
-  rotate: boolean;
-  controls: boolean;
-  animation?: string;
-};
-
-const defaultModel = {
+export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
 };
 
-const LIGHTING = {
+export const LIGHTING = {
   hdri1:
     'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/c_W6ves3U_abandoned_factory_canteen_01_1k.hdr.hdr',
   hdri2:
@@ -31,18 +23,29 @@ const LIGHTING = {
 
 export const NO_ANIMATION = 'No animation';
 
-const FOV = 45;
-const ASPECT = 2; // the canvas default
-const NEAR = 0.1;
-const FAR = 100;
+export const FOV = 45;
+export const ASPECT = 2; // the canvas default
+export const NEAR = 0.1;
+export const FAR = 100;
 
-const Object3D = ({
+type Props = {
+  hostRef: React.RefObject<HTMLDivElement>;
+  modelUrl: { url: string };
+  lighting: 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
+  rotate: boolean;
+  controls: boolean;
+  animation?: string;
+  zoom: boolean;
+};
+
+const Object3d = ({
   hostRef,
   modelUrl = defaultModel,
   lighting = 'hdri1',
   rotate = true,
   controls = false,
   animation,
+  zoom,
 }: Props) => {
   const { width, height } = useSize(hostRef);
   return (
@@ -58,26 +61,18 @@ const Object3D = ({
           near: NEAR,
           hdri: LIGHTING[lighting],
           rotate,
+          zoom,
           controls,
           animation,
         }}
       >
-        <Object3DViewer />
+        <Object3dViewer />
       </Object3DContextProvider>
     </div>
   );
 };
 
-const TestComp = (props) => {
-  console.log('props', props);
-  return (
-    <div>
-      <p>ASD</p>
-    </div>
-  );
-};
-
-registerVevComponent(Object3D, {
+registerVevComponent(Object3d, {
   name: 'Object3D',
   props: [
     {
@@ -134,12 +129,19 @@ registerVevComponent(Object3D, {
       initialValue: false,
     },
     {
+      name: 'zoom',
+      title: 'Enable zoom',
+      description: 'Allow user to zoom model',
+      type: 'boolean',
+      initialValue: false,
+    },
+    {
       name: 'title',
       type: 'string',
-      component: TestComp,
+      component: HotSpotFormButton,
     },
   ],
   type: 'both',
 });
 
-export default Object3D;
+export default Object3d;

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Vector3 } from 'three';
 
 export interface Object3DContextProps {
   modelUrl: string;
@@ -12,9 +13,12 @@ export interface Object3DContextProps {
   rotate: boolean;
   controls: boolean;
   animation?: string;
+  zoom: boolean;
+  hotspots: Vector3[];
+  addHotSpot?: (spot: Vector3) => void;
 }
 
-export const Object3DContext = React.createContext<Object3DContextProps>({
+export const Object3dContext = React.createContext<Object3DContextProps>({
   modelUrl: '',
   aspect: 0,
   far: 0,
@@ -26,6 +30,8 @@ export const Object3DContext = React.createContext<Object3DContextProps>({
   rotate: true,
   controls: false,
   animation: '',
+  zoom: false,
+  hotspots: [],
 });
 
 interface Object3DContextProviderProps {
@@ -34,5 +40,5 @@ interface Object3DContextProviderProps {
 }
 
 export function Object3DContextProvider({ children, values }: Object3DContextProviderProps) {
-  return <Object3DContext.Provider value={values}>{children}</Object3DContext.Provider>;
+  return <Object3dContext.Provider value={values}>{children}</Object3dContext.Provider>;
 }

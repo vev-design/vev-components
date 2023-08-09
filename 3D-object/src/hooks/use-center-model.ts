@@ -1,7 +1,7 @@
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Box3, MathUtils, Mesh, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import React, { useContext, useEffect } from 'react';
-import { Object3DContext } from '../context/Object3DContext';
+import { Object3dContext } from '../context/object-3d-context';
 import * as THREE from 'three';
 import { useInterval } from '@vev/react';
 
@@ -14,7 +14,7 @@ export function useCenterModel(
   controls: React.MutableRefObject<any | undefined>,
   scene: React.MutableRefObject<Scene | undefined>,
 ) {
-  const { fov } = useContext(Object3DContext);
+  const { fov } = useContext(Object3dContext);
 
   useEffect(() => {
     const camera = cameraCurr.current;
