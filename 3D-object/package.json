@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@vev/react": "latest",
+    "@vev/silke": "latest",
     "@types/three": "^0.155.0",
     "react": "^18.2.0",
     "three": "^0.155.0"

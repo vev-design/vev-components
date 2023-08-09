@@ -6,8 +6,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 import React, { useContext, useEffect, useRef } from 'react';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Object3DContext } from '../context/Object3DContext';
-import { LoopPingPong, LoopRepeat } from 'three/src/constants';
+import { Object3dContext } from '../context/object-3d-context';
 
 const FOV = 45;
 const ASPECT = 2; // the canvas default
@@ -26,7 +25,9 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
     height,
     width,
     animation,
-  } = useContext(Object3DContext);
+    zoom,
+  } = useContext(Object3dContext);
+
   const scene = useRef<THREE.Scene>(null);
   const camera = useRef<THREE.PerspectiveCamera>(null);
   const renderer = useRef<THREE.WebGLRenderer>(null);
@@ -34,6 +35,7 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
   const mixer = useRef<THREE.AnimationMixer>(null);
   const clock = useRef<THREE.Clock>(null);
   const currentClip = useRef<THREE.AnimationClip>(null);
+  const rootMesh = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
     if (height && width && canvasRef && !scene.current) {
@@ -54,9 +56,6 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
       // Scene
       scene.current = new THREE.Scene();
 
-      const light = new THREE.AmbientLight(0x404040); // soft white light
-      scene.current.add(light);
-
       // Camera
       camera.current = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
       scene.current.add(camera.current);
@@ -66,11 +65,11 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
       controls.current.autoRotate = rotate;
       controls.current.enableZoom = true;
       controls.current.enableDamping = true;
-      controls.current.enableZoom = false;
+      controls.current.enableZoom = zoom;
       controls.current.dampingFactor = 0.1;
       controls.current.update();
     }
-  }, [canvasRef, height, rotate, width]);
+  }, [canvasRef, height, rotate, width, zoom]);
 
   // Set lightning
   useEffect(() => {

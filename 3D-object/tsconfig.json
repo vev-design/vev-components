@@ -1,7 +1,6 @@
 {
   "include": ["src/**/*"],
   "exclude": ["node_modules", ".vev"],
-  "files": ["./.vev/secret-declarations.d.ts"],
   "compilerOptions": {
     "target": "es2020",
     "lib": ["dom", "es2020"],
