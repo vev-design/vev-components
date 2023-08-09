@@ -36,9 +36,8 @@ const randomSupported = (animation: string) => animation !== 'slide';
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
-  const { autoplay, autoplayInterval = 5000, animation, selectedIndex, random } = props;
-
-  console.log('index', state?.index);
+  const { autoplay, autoplayInterval = 5000, animation, selectedIndex, random, infinite } = props;
+  console.log('@@@@infinite', infinite);
 
   useTouch(props.hostRef, {
     onNext: () => {
@@ -59,11 +58,13 @@ export const Slideshow = (props: Props) => {
         random && randomSupported(animation)
           ? randomize(numberOfSlides, index)
           : numberOfSlides === index + 1
-          ? 0
+          ? infinite
+            ? 0
+            : numberOfSlides - 1
           : index + 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, random],
+    [numberOfSlides, index, random, infinite],
   );
 
   const PREV_SLIDE = useMemo(
@@ -71,11 +72,13 @@ export const Slideshow = (props: Props) => {
       index: random
         ? randomize(numberOfSlides, index)
         : index === 0
-        ? numberOfSlides - 1
+        ? infinite
+          ? numberOfSlides - 1
+          : 0
         : index - 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, random],
+    [numberOfSlides, index, random, infinite],
   );
 
   const SET_SLIDE = (index: number) =>

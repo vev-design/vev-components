@@ -29,7 +29,7 @@ export const Zoom = ({
             style={{
               transition: `transform ${speed || 200}ms, opacity ${speed || 200}ms`,
               opacity: i === 1 ? 1 : 0,
-              transform: i === 2 ? 'scale(400%)' : 'none',
+              transform: i === 0 ? 'scale(400%)' : 'none',
             }}
           >
             <WidgetNode id={child} />

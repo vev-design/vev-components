@@ -20,8 +20,6 @@ export const Slide = ({
   const PREV = useMemo(() => (index === 0 ? children.length - 1 : index - 1), [index, children]);
   const [slides, setSlides] = useState([children[PREV], children[index], children[NEXT]]);
 
-  console.log(index, slides);
-
   useEffect(() => {
     if (index > prevIndex.current) {
       prevIndex.current = index;
