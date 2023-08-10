@@ -37,7 +37,6 @@ export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
   const { autoplay, autoplayInterval = 5000, animation, selectedIndex, random, infinite } = props;
-  console.log('@@@@infinite', infinite);
 
   useTouch(props.hostRef, {
     onNext: () => {
@@ -228,7 +227,6 @@ registerVevComponent(Slideshow, {
       name: 'infinite',
       title: 'Infinite',
       type: 'boolean',
-      hidden: (context) => ['3d'].includes(context.value?.animation),
     },
     {
       name: 'gap',

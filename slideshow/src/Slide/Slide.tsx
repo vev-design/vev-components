@@ -21,13 +21,19 @@ export const Slide = ({
   const [slides, setSlides] = useState([children[PREV], children[index], children[NEXT]]);
 
   useEffect(() => {
-    if (index > prevIndex.current) {
+    if (
+      index === prevIndex.current + 1 ||
+      (prevIndex.current === children.length - 1 && index === 0)
+    ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
       setMove(-200);
     }
 
-    if (index < prevIndex.current) {
+    if (
+      index === prevIndex.current - 1 ||
+      (prevIndex.current === 0 && index === children.length - 1)
+    ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
       setMove(0);
