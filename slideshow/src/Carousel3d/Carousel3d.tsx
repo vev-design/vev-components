@@ -7,29 +7,29 @@ import styles from './Carousel3d.module.css';
 export const Carousel3d = ({
   index,
   speed,
-  children,
+  slides,
   hostRef,
   gap = 30,
   onNextSlide,
-}: Props & { index: number; onNextSlide: () => void }) => {
+}: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
   const [rounds, setRounds] = useState(1);
   const [radius, setRadius] = useState(0);
   const size = useSize(hostRef);
   const prevIndex = useRef(0);
 
   useEffect(() => {
-    if (index < prevIndex.current && prevIndex.current === children?.length - 1) {
+    if (index < prevIndex.current && prevIndex.current === slides?.length - 1) {
       setRounds(rounds + 1);
     }
     prevIndex.current = index;
-  }, [children, index, rounds]);
+  }, [slides, index, rounds]);
 
   useEffect(() => {
-    const val = Math.round(size.width / 2 / Math.tan(Math.PI / children.length));
+    const val = Math.round(size.width / 2 / Math.tan(Math.PI / slides.length));
     setRadius(val);
-  }, [size.width, children.length]);
+  }, [size.width, slides.length]);
 
-  const percentage = 360 / children.length;
+  const percentage = 360 / slides.length;
   const perspective = `${radius * 2 + gap * 2}px`;
 
   return (
@@ -43,7 +43,7 @@ export const Carousel3d = ({
       <div
         className={styles.carousel}
         style={{
-          transform: `rotateY(-${percentage * (index + rounds * children.length)}deg) `,
+          transform: `rotateY(-${percentage * (index + rounds * slides.length)}deg) `,
           transition: `transform ${speed || 200}ms`,
         }}
         onTransitionEnd={(e) => {
@@ -52,7 +52,7 @@ export const Carousel3d = ({
           }
         }}
       >
-        {children?.map((child: string, i: number) => {
+        {slides?.map((child: string, i: number) => {
           return (
             <div
               className={styles.slide}

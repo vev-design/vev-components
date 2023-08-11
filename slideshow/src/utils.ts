@@ -1,5 +1,8 @@
-export const randomize = (max: number, current: number) => {
-  let number = Math.floor(Math.random() * max);
-  if (number === current) number = randomize(max, current);
-  return number;
+export const shuffleArray = (array: any[]) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[randomIndex]] = [newArray[randomIndex], newArray[i]];
+  }
+  return newArray;
 };

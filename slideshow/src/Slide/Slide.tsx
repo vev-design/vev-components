@@ -8,22 +8,22 @@ export const Slide = ({
   vertical,
   index,
   speed,
-  children,
+  slides,
   onNextSlide,
-}: Props & { index: number; onNextSlide: () => void }) => {
+}: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
   const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
   const direction = vertical ? 'Y' : 'X';
 
-  const NEXT = useMemo(() => (index + 1 === children.length ? 0 : index + 1), [index, children]);
-  const PREV = useMemo(() => (index === 0 ? children.length - 1 : index - 1), [index, children]);
-  const [slides, setSlides] = useState([children[PREV], children[index], children[NEXT]]);
+  const NEXT = useMemo(() => (index + 1 === slides.length ? 0 : index + 1), [index, slides]);
+  const PREV = useMemo(() => (index === 0 ? slides.length - 1 : index - 1), [index, slides]);
+  const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
 
   useEffect(() => {
     if (
       index === prevIndex.current + 1 ||
-      (prevIndex.current === children.length - 1 && index === 0)
+      (prevIndex.current === slides.length - 1 && index === 0)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
@@ -32,7 +32,7 @@ export const Slide = ({
 
     if (
       index === prevIndex.current - 1 ||
-      (prevIndex.current === 0 && index === children.length - 1)
+      (prevIndex.current === 0 && index === slides.length - 1)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
@@ -52,11 +52,11 @@ export const Slide = ({
           onNextSlide();
           setTransitionSpeed(0);
           setMove(-100);
-          setSlides([children[PREV], children[index], children[NEXT]]);
+          setArray([slides[PREV], slides[index], slides[NEXT]]);
         }
       }}
     >
-      {slides?.map((child: string, i: number) => {
+      {array?.map((child: string, i: number) => {
         return (
           <div
             className={styles.slide}

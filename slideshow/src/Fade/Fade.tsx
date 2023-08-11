@@ -7,16 +7,16 @@ import styles from './Fade.module.css';
 export const Fade = ({
   index,
   speed,
-  children,
+  slides,
   onNextSlide,
-}: Props & { index: number; onNextSlide: () => void }) => {
-  const NEXT = useMemo(() => (index + 1 === children.length ? 0 : index + 1), [index, children]);
-  const PREV = useMemo(() => (index === 0 ? children.length - 1 : index - 1), [index, children]);
-  const slides = [children[PREV], children[index], children[NEXT]];
+}: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
+  const NEXT = useMemo(() => (index + 1 === slides.length ? 0 : index + 1), [index, slides]);
+  const PREV = useMemo(() => (index === 0 ? slides.length - 1 : index - 1), [index, slides]);
+  const array = [slides[PREV], slides[index], slides[NEXT]];
 
   return (
     <div className={styles.wrapper + ' __sc __c'}>
-      {slides?.map((child: string, i: number) => {
+      {array?.map((child: string, i: number) => {
         return (
           <div
             className={styles.slide}

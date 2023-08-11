@@ -1,6 +1,6 @@
-import React, { useEffect, RefObject, useMemo } from 'react';
+import React, { useEffect, RefObject, useMemo, useRef } from 'react';
 import { registerVevComponent, useVevEvent, useEditorState, useGlobalState } from '@vev/react';
-import { randomize } from './utils';
+import { shuffleArray } from './utils';
 
 import Slide from './Slide';
 import Fade from './Fade';
@@ -13,6 +13,7 @@ import styles from './Slideshow.module.css';
 export type Props = {
   hostRef: RefObject<any>;
   children: string[];
+  slides: string[];
   animation: 'slide' | 'zoom' | 'fade' | '3d';
   speed?: number;
   vertical?: boolean;
@@ -31,53 +32,44 @@ enum Events {
   SET = 'SET',
 }
 
-const randomSupported = (animation: string) => animation !== 'slide';
-
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
-  const { autoplay, autoplayInterval = 5000, animation, selectedIndex, random, infinite } = props;
+  const {
+    children,
+    autoplay,
+    autoplayInterval = 5000,
+    animation,
+    selectedIndex,
+    random,
+    infinite,
+    hostRef,
+  } = props;
 
-  useTouch(props.hostRef, {
-    onNext: () => {
-      setState(NEXT_SLIDE);
-    },
-    onPrev: () => {
-      setState(PREV_SLIDE);
-    },
+  const slides = useRef(random ? shuffleArray(children) : children);
+
+  useTouch(hostRef, {
+    onNext: () => setState(NEXT_SLIDE),
+    onPrev: () => setState(PREV_SLIDE),
   });
 
   const index = state?.index || 0;
-  const slides = props?.children || [];
-  const numberOfSlides = slides?.length || 0;
+  const numberOfSlides = props?.children?.length || 0;
 
   const NEXT_SLIDE = useMemo(
     () => ({
-      index:
-        random && randomSupported(animation)
-          ? randomize(numberOfSlides, index)
-          : numberOfSlides === index + 1
-          ? infinite
-            ? 0
-            : numberOfSlides - 1
-          : index + 1,
+      index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, random, infinite],
+    [numberOfSlides, index, infinite],
   );
 
   const PREV_SLIDE = useMemo(
     () => ({
-      index: random
-        ? randomize(numberOfSlides, index)
-        : index === 0
-        ? infinite
-          ? numberOfSlides - 1
-          : 0
-        : index - 1,
+      index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, random, infinite],
+    [numberOfSlides, index, infinite],
   );
 
   const SET_SLIDE = (index: number) =>
@@ -136,6 +128,7 @@ export const Slideshow = (props: Props) => {
       <Comp
         {...props}
         index={editor.disabled ? selectedIndex || 0 : index}
+        slides={slides.current}
         onNextSlide={() => {
           if (autoplay && !editor.disabled) {
             setTimeout(() => {
