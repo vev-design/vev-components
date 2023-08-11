@@ -46,7 +46,13 @@ export const Slideshow = (props: Props) => {
     hostRef,
   } = props;
 
-  const slides = useRef(random ? shuffleArray(children) : children);
+  const slides = useRef(random && !editor.disabled ? shuffleArray(children) : children);
+
+  useEffect(() => {
+    if (random && editor.disabled) {
+      slides.current = shuffleArray(children);
+    }
+  }, [editor.disabled, children, random]);
 
   useTouch(hostRef, {
     onNext: () => setState(NEXT_SLIDE),
