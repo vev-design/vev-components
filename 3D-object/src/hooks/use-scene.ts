@@ -2,6 +2,8 @@ import * as THREE from 'three';
 // @ts-expect-error - no types
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // @ts-expect-error - no types
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+// @ts-expect-error - no types
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 import React, { useContext, useEffect, useRef } from 'react';
@@ -17,7 +19,11 @@ const FAR = 100;
  * Sets up the scene with camera and controls.
  * Also adds the model when it's loaded
  */
-export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, model: GLTF) {
+export function useScene(
+  canvasRef: React.MutableRefObject<HTMLCanvasElement>,
+  labelRef: React.MutableRefObject<HTMLDivElement>,
+  model: GLTF,
+) {
   const {
     hdri,
     rotate,
@@ -35,7 +41,8 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
   const mixer = useRef<THREE.AnimationMixer>(null);
   const clock = useRef<THREE.Clock>(null);
   const currentClip = useRef<THREE.AnimationClip>(null);
-  const rootMesh = useRef<THREE.Mesh>(null);
+  const rootMesh = useRef<THREE.Mesh>(new THREE.Mesh());
+  const labelRenderer = useRef<CSS2DRenderer>(null);
 
   useEffect(() => {
     if (height && width && canvasRef && !scene.current) {
@@ -58,10 +65,21 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
 
       // Camera
       camera.current = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
+      camera.current.layers.enableAll();
       scene.current.add(camera.current);
 
+      // Root mesh
+      scene.current.add(rootMesh.current);
+
+      // Label renderer
+      labelRenderer.current = new CSS2DRenderer({ element: labelRef.current });
+      labelRenderer.current.setSize(width, height);
+      labelRenderer.current.domElement.style.position = 'absolute';
+      canvasRef.current.parentNode.prepend(labelRenderer.current.domElement);
+      scene.current.add(labelRenderer.current);
+
       // Controls
-      controls.current = new OrbitControls(camera.current, renderer.current.domElement);
+      controls.current = new OrbitControls(camera.current, labelRenderer.current.domElement);
       controls.current.autoRotate = rotate;
       controls.current.enableZoom = true;
       controls.current.enableDamping = true;
@@ -69,7 +87,7 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
       controls.current.dampingFactor = 0.1;
       controls.current.update();
     }
-  }, [canvasRef, height, rotate, width, zoom]);
+  }, [canvasRef, height, labelRef, rotate, width, zoom]);
 
   // Set lightning
   useEffect(() => {
@@ -100,6 +118,7 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
       camera.current.aspect = width / height;
       camera.current.updateProjectionMatrix();
       renderer.current.setSize(width, height);
+      labelRenderer.current.setSize(width, height);
     }
   }, [height, width]);
 
@@ -145,5 +164,7 @@ export function useScene(canvasRef: React.MutableRefObject<HTMLCanvasElement>, m
     controls,
     mixer,
     clock,
+    labelRenderer,
+    rootMesh,
   };
 }

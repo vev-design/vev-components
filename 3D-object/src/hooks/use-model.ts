@@ -17,7 +17,7 @@ export function useModel(url: string) {
           setGltf(gltf);
         },
         (xhr) => {
-          console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+          // console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
         },
         (error) => {
           console.log('An error occurred: ', error);
