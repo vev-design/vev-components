@@ -36,3 +36,31 @@
     height: 40px;
     border: rgba(195, 195, 195, 0) solid 5px;
 }
+
+.editorViewer {
+    background: antiquewhite;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.hotspotEditor {
+    display: flex;
+}
+
+.hotspotList {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 200px;
+    margin-left: 2rem;
+    max-height: 50%;
+    overflow-y: auto;
+    height: 640px;
+}
+
+.hotspotListItem {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}

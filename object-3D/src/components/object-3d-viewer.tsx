@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useModel } from '../hooks/use-model';
 import { useSceneSetup } from '../hooks/use-scene-setup';
 import { useCenterModel } from '../hooks/use-center-model';
@@ -8,7 +8,7 @@ import { isHotspotVisible } from '../util/is-hotspot-visible';
 import { useHotspotListener } from '../hooks/use-hotspot-listener';
 import { useAnimationFrame } from '../hooks/use-animation-frame';
 
-export const Object3dViewer = () => {
+export const Object3dViewer = ({ className }: { className?: string }) => {
   const { modelUrl } = useContext(Object3dContext);
 
   const [canvasRef, setCanvasRef] = useState<HTMLCanvasElement | null>(null);
@@ -44,7 +44,7 @@ export const Object3dViewer = () => {
   });
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className={className} style={{ position: 'relative' }}>
       <div ref={setLabelRef} />
       <canvas ref={setCanvasRef} />
     </div>

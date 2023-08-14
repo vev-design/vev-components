@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
 import {
@@ -14,6 +14,9 @@ import {
 } from '../object-3d';
 import { Vector3 } from 'three';
 import { Object3dViewer } from './object-3d-viewer';
+import { HotspotList } from './hotspot-list';
+import styles from '../object-3d.module.css';
+import { sortBy } from 'lodash';
 
 export interface Context {
   value: StorageHotspot[];
@@ -27,7 +30,7 @@ export interface Context {
   onChange: (hotspots: StorageHotspot[]) => void;
 }
 
-const EDITOR_WIDTH = 800;
+const EDITOR_WIDTH = 640;
 const EDITOR_HEIGHT = 640;
 
 export function HotSpotFormButton(context) {
@@ -36,7 +39,6 @@ export function HotSpotFormButton(context) {
   return (
     <>
       <SilkeModal
-        style={{ width: EDITOR_WIDTH, minHeight: EDITOR_HEIGHT }}
         hide={!modalOpen}
         title="Edit hotspots"
         onClose={() => {
@@ -57,26 +59,40 @@ export function HotSpotFormButton(context) {
 }
 
 export function HotSpotModal({ context }: { context: Context }) {
-  const hotspots = useRef<InternalHotspot[]>([]);
+  const [hotspots, setHotspots] = useState<InternalHotspot[]>([]);
   const modelUrl = context.context.value?.modelUrl?.url;
 
   // Convert positions from storage from x,y,z to Vector3
   useEffect(() => {
     if (context.value) {
-      hotspots.current = context.value.map((storageHotspot) => {
-        return {
-          index: storageHotspot.index,
-          position: new Vector3(
-            storageHotspot.position.x,
-            storageHotspot.position.y,
-            storageHotspot.position.z,
-          ),
-        };
-      });
-    } else {
-      hotspots.current = [];
+      setHotspots(
+        context.value.map((storageHotspot) => {
+          return {
+            index: storageHotspot.index,
+            position: new Vector3(
+              storageHotspot.position.x,
+              storageHotspot.position.y,
+              storageHotspot.position.z,
+            ),
+          };
+        }),
+      );
     }
   }, [context.value]);
+
+  const deleteHotspot = useCallback(
+    (index: number) => {
+      const newHotspots = hotspots.filter((hotspot) => hotspot.index !== index);
+      const sortedHotspots = sortBy(newHotspots, 'index');
+      sortedHotspots.forEach((hotspot, index) => {
+        hotspot.index = index + 1;
+      });
+      console.log('sortedHotspots', sortedHotspots);
+      context.onChange(sortedHotspots);
+      setHotspots(sortedHotspots);
+    },
+    [context, hotspots],
+  );
 
   return (
     <SilkeModalContent>
@@ -95,15 +111,20 @@ export function HotSpotModal({ context }: { context: Context }) {
           controls: true,
           animation: NO_ANIMATION,
           zoom: true,
-          hotspots: hotspots.current,
+          hotspots,
           addHotSpot: (spot) => {
-            const newHotspot = { index: hotspots.current.length + 1, position: spot };
-            context.onChange([newHotspot, ...hotspots.current]);
-            hotspots.current = [newHotspot, ...hotspots.current];
+            const newHotspot = { index: hotspots.length + 1, position: spot };
+            context.onChange([newHotspot, ...hotspots]);
+            setHotspots([newHotspot, ...hotspots]);
           },
         }}
       >
-        <Object3dViewer />
+        <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
+          <div className={styles.hotspotEditor}>
+            <Object3dViewer className={styles.editorViewer} />
+            <HotspotList hotspots={hotspots} deleteHotspot={deleteHotspot} />
+          </div>
+        </div>
       </Object3DContextProvider>
     </SilkeModalContent>
   );

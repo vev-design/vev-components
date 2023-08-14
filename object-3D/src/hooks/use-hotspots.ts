@@ -18,35 +18,33 @@ export function useHotspots(scene: Scene | undefined) {
 
   useEffect(() => {
     if (scene) {
+      hotspotMap.current.forEach((hotspot) => {
+        scene.remove(hotspot.sceneObject);
+        hotspot.element.parentElement.remove();
+      });
+      hotspotMap.current = [];
+
       hotspots.forEach((storageHotspot) => {
-        const canvasHotspot = hotspotMap.current.find((spot) => {
-          return spot.hotspot.index === storageHotspot.index;
+        const outer = document.createElement('div');
+        const innerElem = document.createElement('div');
+
+        outer.appendChild(innerElem);
+        innerElem.innerText = `${storageHotspot.index}`;
+        innerElem.className = `${styles.hotspot} vev-object-3d-hotspot`;
+        const sceneObject = new CSS2DObject(outer);
+        sceneObject.position.set(
+          storageHotspot.position.x,
+          storageHotspot.position.y,
+          storageHotspot.position.z,
+        );
+        scene.add(sceneObject);
+        sceneObject.layers.set(1);
+
+        innerElem.addEventListener('pointerdown', () => {
+          console.log('Clicked!');
         });
-        if (!canvasHotspot) {
-          const outer = document.createElement('div');
-          const innerElem = document.createElement('div');
 
-          // Hack to make stylesheets work in form
-          outer.className = 'trQ35DZLjAWC0nWJxVvB_Object3d';
-
-          outer.appendChild(innerElem);
-          innerElem.innerText = `${storageHotspot.index}`;
-          innerElem.className = `${styles.hotspot} vev-object-3d-hotspot`;
-          const sceneObject = new CSS2DObject(outer);
-          sceneObject.position.set(
-            storageHotspot.position.x,
-            storageHotspot.position.y,
-            storageHotspot.position.z,
-          );
-          scene.add(sceneObject);
-          sceneObject.layers.set(1);
-
-          innerElem.addEventListener('pointerdown', () => {
-            console.log('Clicked!');
-          });
-
-          hotspotMap.current.push({ element: innerElem, sceneObject, hotspot: storageHotspot });
-        }
+        hotspotMap.current.push({ element: innerElem, sceneObject, hotspot: storageHotspot });
       });
     }
   }, [hotspots, scene]);

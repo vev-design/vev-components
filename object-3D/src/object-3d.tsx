@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './object-3d.module.css';
 import { registerVevComponent, useSize } from '@vev/react';
 import { Object3DContextProvider } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
-import { HotSpotFormButton } from './components/hot-spot-form';
+import { HotSpotFormButton } from './components/hotspot-editor-form';
 import { Vector3 } from 'three';
 
 export const defaultModel = {
@@ -61,25 +61,25 @@ const Object3d = ({
   hotspots,
 }: Props) => {
   const { width, height } = useSize(hostRef);
-  const internalHotspots = useRef<InternalHotspot[]>([]);
+  const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
 
   // Convert positions from storage from x,y,z to Vector3
   useEffect(() => {
     if (hotspots) {
-      internalHotspots.current = hotspots.map((storageHotspot) => {
-        return {
-          index: storageHotspot.index,
-          position: new Vector3(
-            storageHotspot.position.x,
-            storageHotspot.position.y,
-            storageHotspot.position.z,
-          ),
-        };
-      });
-    } else {
-      internalHotspots.current = [];
+      setInternalHotspots(
+        hotspots.map((storageHotspot) => {
+          return {
+            index: storageHotspot.index,
+            position: new Vector3(
+              storageHotspot.position.x,
+              storageHotspot.position.y,
+              storageHotspot.position.z,
+            ),
+          };
+        }),
+      );
     }
-  }, [hotspots]);
+  }, [hotspots, internalHotspots]);
 
   return (
     <div className={styles.wrapper}>
@@ -98,7 +98,7 @@ const Object3d = ({
           zoom,
           controls,
           animation,
-          hotspots: internalHotspots.current,
+          hotspots: internalHotspots,
         }}
       >
         <Object3dViewer />
