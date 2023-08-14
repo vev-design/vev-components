@@ -1,4 +1,4 @@
-import React, { useEffect, RefObject, useMemo, useRef } from 'react';
+import React, { useEffect, RefObject, useMemo, useRef, useState } from 'react';
 import { registerVevComponent, useVevEvent, useEditorState, useGlobalState } from '@vev/react';
 import { shuffleArray } from './utils';
 
@@ -46,13 +46,16 @@ export const Slideshow = (props: Props) => {
     hostRef,
   } = props;
 
-  const slides = useRef(random && !editor.disabled ? shuffleArray(children) : children);
+  const [slides, setSlides] = useState([]);
+  console.log('children', children, slides);
 
   useEffect(() => {
-    if (random && editor.disabled) {
-      slides.current = shuffleArray(children);
+    if (random && !editor.disabled) {
+      setSlides(shuffleArray(children));
+    } else {
+      setSlides(children);
     }
-  }, [editor.disabled, children, random]);
+  }, [random, slides?.length]);
 
   useTouch(hostRef, {
     onNext: () => setState(NEXT_SLIDE),
@@ -134,7 +137,7 @@ export const Slideshow = (props: Props) => {
       <Comp
         {...props}
         index={editor.disabled ? selectedIndex || 0 : index}
-        slides={slides.current}
+        slides={random ? slides : children}
         onNextSlide={() => {
           if (autoplay && !editor.disabled) {
             setTimeout(() => {

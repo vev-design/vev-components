@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WidgetNode } from '@vev/react';
 import { Props } from '../Slideshow';
+import { useNext, usePrev } from '../hooks';
 
 import styles from './Slide.module.css';
 
@@ -16,9 +17,11 @@ export const Slide = ({
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
   const direction = vertical ? 'Y' : 'X';
 
-  const NEXT = useMemo(() => (index + 1 === slides.length ? 0 : index + 1), [index, slides]);
-  const PREV = useMemo(() => (index === 0 ? slides.length - 1 : index - 1), [index, slides]);
+  const NEXT = useNext(index, slides);
+  const PREV = usePrev(index, slides);
   const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
+
+  console.log('array', array, slides, index);
 
   useEffect(() => {
     if (
@@ -65,7 +68,7 @@ export const Slide = ({
               transform: `translate${direction}(${100 * i}%)`,
             }}
           >
-            <WidgetNode id={child} />
+            {child && <WidgetNode id={child} />}
           </div>
         );
       })}

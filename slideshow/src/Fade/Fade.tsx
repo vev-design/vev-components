@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { WidgetNode } from '@vev/react';
 import { Props } from '../Slideshow';
+import { useNext, usePrev } from '../hooks';
 
 import styles from './Fade.module.css';
 
@@ -10,9 +11,11 @@ export const Fade = ({
   slides,
   onNextSlide,
 }: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
-  const NEXT = useMemo(() => (index + 1 === slides.length ? 0 : index + 1), [index, slides]);
-  const PREV = useMemo(() => (index === 0 ? slides.length - 1 : index - 1), [index, slides]);
+  const NEXT = useNext(index, slides);
+  const PREV = usePrev(index, slides);
   const array = [slides[PREV], slides[index], slides[NEXT]];
+
+  console.log('array', array, slides, index);
 
   return (
     <div className={styles.wrapper + ' __sc __c'}>
@@ -31,7 +34,7 @@ export const Fade = ({
               }
             }}
           >
-            <WidgetNode id={child} section />
+            {child && <WidgetNode id={child} section />}
           </div>
         );
       })}

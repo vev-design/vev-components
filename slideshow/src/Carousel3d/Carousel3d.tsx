@@ -25,7 +25,7 @@ export const Carousel3d = ({
   }, [slides, index, rounds]);
 
   useEffect(() => {
-    const val = Math.round(size.width / 2 / Math.tan(Math.PI / slides.length));
+    const val = Math.round(size.width / 2 / Math.tan(Math.PI / slides?.length));
     setRadius(val);
   }, [size.width, slides.length]);
 
@@ -43,7 +43,7 @@ export const Carousel3d = ({
       <div
         className={styles.carousel}
         style={{
-          transform: `rotateY(-${percentage * (index + rounds * slides.length)}deg) `,
+          transform: `rotateY(-${percentage * (index + rounds * slides?.length)}deg) `,
           transition: `transform ${speed || 200}ms`,
         }}
         onTransitionEnd={(e) => {
