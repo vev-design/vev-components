@@ -1,9 +1,7 @@
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Box3, MathUtils, Mesh, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
-import React, { useContext, useEffect } from 'react';
+import { Box3, MathUtils, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { useContext, useEffect } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
-import * as THREE from 'three';
-import { useInterval } from '@vev/react';
 
 /**
  * Centers the model in the scene and sets an appropriate position and distance for the camera
@@ -17,9 +15,7 @@ export function useCenterModel(
   const { fov } = useContext(Object3dContext);
 
   useEffect(() => {
-    console.log('useCenterModel 1');
     if (gltf && camera) {
-      console.log('useCenterModel 2');
       const model = gltf.scene;
       model.updateMatrixWorld();
       const box = new Box3().setFromObject(model);

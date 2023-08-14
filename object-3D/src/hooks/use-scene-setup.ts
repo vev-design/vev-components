@@ -11,10 +11,7 @@ import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Object3dContext } from '../context/object-3d-context';
 import { NO_ANIMATION } from '../object-3d';
 
-const FOV = 45;
-const ASPECT = 2; // the canvas default
-const NEAR = 0.1;
-const FAR = 100;
+const MAIN_MODEL_NAME = 'main-model';
 
 /**
  * Sets up the scene with camera and controls.
@@ -33,6 +30,10 @@ export function useSceneSetup(
     width,
     animation,
     zoom,
+    fov,
+    aspect,
+    near,
+    far,
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
@@ -40,11 +41,11 @@ export function useSceneSetup(
   const [renderer, setRenderer] = useState<THREE.WebGLRenderer>(null);
   const [controls, setControls] = useState<any>(null);
   const [mixer, setMixer] = useState<THREE.AnimationMixer>(null);
-  const [clock, setClock] = useState<THREE.Clock>(new THREE.Clock());
   const [labelRenderer, setLabelRenderer] = useState<CSS2DRenderer>(null);
   const [currentClip, setCurrentClip] = useState<THREE.AnimationClip>(
     new THREE.AnimationClip(NO_ANIMATION, 0, []),
   );
+  const [currentModel, setCurrentModel] = useState<THREE.Group | null>(null);
 
   useEffect(() => {
     if (canvasRef && labelRef && !scene) {
@@ -66,7 +67,7 @@ export function useSceneSetup(
       const scene = new THREE.Scene();
 
       // Camera
-      const camera = new THREE.PerspectiveCamera(FOV, ASPECT, NEAR, FAR);
+      const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
       camera.layers.enableAll();
       scene.add(camera);
 
@@ -128,13 +129,20 @@ export function useSceneSetup(
 
   // Load the model
   useEffect(() => {
+    if (model && model.scene === currentModel) {
+      return;
+    }
+
     if (scene && model && model.scene) {
+      if (currentModel) {
+        scene.remove(currentModel);
+      }
       model.scene.castShadow = true;
       model.scene.receiveShadow = true;
-      model.userData.name = 'main-model';
       scene.add(model.scene);
+      setCurrentModel(model.scene);
     }
-  }, [model, scene]);
+  }, [currentModel, model, scene]);
 
   // Set up animations
   useEffect(() => {
@@ -171,7 +179,6 @@ export function useSceneSetup(
     renderer,
     controls,
     mixer,
-    clock,
     labelRenderer,
   };
 }

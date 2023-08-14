@@ -16,7 +16,7 @@ export const Object3dViewer = () => {
 
   const model = useModel(modelUrl);
 
-  const { scene, camera, renderer, labelRenderer, controls, mixer, clock } = useSceneSetup(
+  const { scene, camera, renderer, labelRenderer, controls, mixer } = useSceneSetup(
     canvasRef,
     labelRef,
     model,
@@ -28,7 +28,7 @@ export const Object3dViewer = () => {
   const hotspotsRef = useHotspots(scene);
 
   useAnimationFrame(({ time, delta }) => {
-    if (controls && renderer && labelRenderer && hotspotsRef.current && clock && mixer) {
+    if (controls && renderer && labelRenderer && hotspotsRef.current && mixer) {
       controls.update();
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
@@ -37,9 +37,8 @@ export const Object3dViewer = () => {
         isHotspotVisible(hotspot, camera);
       });
 
-      const delta2 = clock.getDelta();
       if (mixer) {
-        mixer.update(delta2);
+        mixer.update(delta);
       }
     }
   });

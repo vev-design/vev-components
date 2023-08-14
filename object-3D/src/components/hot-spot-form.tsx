@@ -17,6 +17,13 @@ import { Object3dViewer } from './object-3d-viewer';
 
 export interface Context {
   value: StorageHotspot[];
+  context: {
+    value?: {
+      modelUrl?: {
+        url?: string;
+      };
+    };
+  };
   onChange: (hotspots: StorageHotspot[]) => void;
 }
 
@@ -51,6 +58,7 @@ export function HotSpotFormButton(context) {
 
 export function HotSpotModal({ context }: { context: Context }) {
   const hotspots = useRef<InternalHotspot[]>([]);
+  const modelUrl = context.context.value?.modelUrl?.url;
 
   // Convert positions from storage from x,y,z to Vector3
   useEffect(() => {
@@ -77,7 +85,7 @@ export function HotSpotModal({ context }: { context: Context }) {
           editMode: true,
           height: EDITOR_HEIGHT,
           width: EDITOR_WIDTH,
-          modelUrl: defaultModel.url,
+          modelUrl: modelUrl || defaultModel.url,
           far: FAR,
           fov: FOV,
           aspect: ASPECT,
