@@ -1,0 +1,38 @@
+.hotspot {
+    width: 30px;
+    height: 30px;
+    background: rgb(0 0 0 / 50%);
+    border-radius: 50%;
+    border: #c3c3c3 solid 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Open Sans, sans-serif;
+    transition: all 0.5s ease;
+    opacity: 1;
+    color: white;
+}
+
+.hotspot:hover {
+    opacity: 1;
+    background: rgb(0 0 0 / 80%);
+}
+
+.hotspot::after {
+    position: absolute;
+    content: '';
+    width: 30px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0);
+    border-radius: 50%;
+    border: #c3c3c3 solid 2px;
+}
+
+.hotspot:hover::after {
+    transition: all 0.5s ease;
+    position: absolute;
+    content: '';
+    width: 40px;
+    height: 40px;
+    border: rgba(195, 195, 195, 0) solid 5px;
+}

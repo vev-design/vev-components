@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import styles from './object-3d.module.css';
 import { registerVevComponent, useSize } from '@vev/react';
 import { Object3DContextProvider } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
 import { HotSpotFormButton } from './components/hot-spot-form';
+import { Vector3 } from 'three';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -28,6 +29,16 @@ export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
 export const FAR = 100;
 
+export interface StorageHotspot {
+  position: { x: number; y: number; z: number };
+  index: number;
+}
+
+export interface InternalHotspot {
+  position: Vector3;
+  index: number;
+}
+
 type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
@@ -36,6 +47,7 @@ type Props = {
   controls: boolean;
   animation?: string;
   zoom: boolean;
+  hotspots: StorageHotspot[];
 };
 
 const Object3d = ({
@@ -46,12 +58,34 @@ const Object3d = ({
   controls = false,
   animation,
   zoom,
+  hotspots,
 }: Props) => {
   const { width, height } = useSize(hostRef);
+  const internalHotspots = useRef<InternalHotspot[]>([]);
+
+  // Convert positions from storage from x,y,z to Vector3
+  useEffect(() => {
+    if (hotspots) {
+      internalHotspots.current = hotspots.map((storageHotspot) => {
+        return {
+          index: storageHotspot.index,
+          position: new Vector3(
+            storageHotspot.position.x,
+            storageHotspot.position.y,
+            storageHotspot.position.z,
+          ),
+        };
+      });
+    } else {
+      internalHotspots.current = [];
+    }
+  }, [hotspots]);
+
   return (
     <div className={styles.wrapper}>
       <Object3DContextProvider
         values={{
+          editMode: false,
           height,
           width,
           modelUrl: (modelUrl && modelUrl.url) || defaultModel.url,
@@ -64,6 +98,7 @@ const Object3d = ({
           zoom,
           controls,
           animation,
+          hotspots: internalHotspots.current,
         }}
       >
         <Object3dViewer />
@@ -136,9 +171,16 @@ registerVevComponent(Object3d, {
       initialValue: false,
     },
     {
-      name: 'title',
+      name: 'hotspots',
       type: 'string',
       component: HotSpotFormButton,
+    },
+  ],
+  editableCSS: [
+    {
+      selector: styles.hotspot,
+      properties: ['background', 'color'],
+      title: 'Hotspot',
     },
   ],
   type: 'both',

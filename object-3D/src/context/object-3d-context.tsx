@@ -1,5 +1,6 @@
 import React from 'react';
 import { Vector3 } from 'three';
+import { InternalHotspot } from '../object-3d';
 
 export interface Object3DContextProps {
   modelUrl: string;
@@ -14,8 +15,9 @@ export interface Object3DContextProps {
   controls: boolean;
   animation?: string;
   zoom: boolean;
-  hotspots: Vector3[];
+  hotspots: InternalHotspot[];
   addHotSpot?: (spot: Vector3) => void;
+  editMode: boolean;
 }
 
 export const Object3dContext = React.createContext<Object3DContextProps>({
@@ -32,6 +34,7 @@ export const Object3dContext = React.createContext<Object3DContextProps>({
   animation: '',
   zoom: false,
   hotspots: [],
+  editMode: false,
 });
 
 interface Object3DContextProviderProps {
