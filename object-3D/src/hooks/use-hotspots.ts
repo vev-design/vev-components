@@ -4,7 +4,7 @@ import { Scene } from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
-import { InternalHotspot } from '../object-3d';
+import { InternalHotspot } from '../types';
 
 export interface CanvasHotspot {
   element: HTMLDivElement;
@@ -14,6 +14,7 @@ export interface CanvasHotspot {
 
 export function useHotspots(scene: Scene | undefined) {
   const { hotspots } = useContext(Object3dContext);
+  const context = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
 
   useEffect(() => {

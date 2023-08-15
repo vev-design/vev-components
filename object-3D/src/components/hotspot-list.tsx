@@ -1,8 +1,8 @@
-import { InternalHotspot } from '../object-3d';
 import React, { useEffect, useState } from 'react';
 import { sortBy } from 'lodash';
 import { SilkeButton } from '@vev/silke';
 import styles from '../object-3d.module.css';
+import { InternalHotspot } from '../types';
 
 interface Props {
   hotspots: InternalHotspot[];
@@ -11,7 +11,7 @@ interface Props {
 
 export function HotspotList({ hotspots, deleteHotspot }: Props) {
   const [sortedHotspots, setSortedHotspots] = useState(hotspots);
-
+  console.log('hotspots', hotspots);
   useEffect(() => {
     setSortedHotspots(sortBy(hotspots, 'index'));
   }, [hotspots]);

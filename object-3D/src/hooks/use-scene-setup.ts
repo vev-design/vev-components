@@ -10,8 +10,7 @@ import { useContext, useEffect, useState } from 'react';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Object3dContext } from '../context/object-3d-context';
 import { NO_ANIMATION } from '../object-3d';
-
-const MAIN_MODEL_NAME = 'main-model';
+import { setCameraPosition } from '../util/set-camera-position';
 
 /**
  * Sets up the scene with camera and controls.
@@ -34,6 +33,9 @@ export function useSceneSetup(
     aspect,
     near,
     far,
+    savedCameraPosition,
+    setContextCamera,
+    setContextControls,
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
@@ -55,7 +57,6 @@ export function useSceneSetup(
         alpha: true,
         antialias: true,
       });
-
       renderer.setSize(width, height);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1;
@@ -70,6 +71,9 @@ export function useSceneSetup(
       const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
       camera.layers.enableAll();
       scene.add(camera);
+      if (setContextCamera) {
+        setContextCamera(camera);
+      }
 
       // Label renderer
       const labelRenderer = new CSS2DRenderer({ element: labelRef });
@@ -80,11 +84,14 @@ export function useSceneSetup(
       // Controls
       const controls = new OrbitControls(camera, labelRenderer.domElement);
       controls.autoRotate = rotate;
-      controls.enableZoom = true;
       controls.enableDamping = true;
       controls.enableZoom = zoom;
       controls.dampingFactor = 0.1;
       controls.update();
+
+      if (setContextControls) {
+        setContextControls(controls);
+      }
 
       setRenderer(renderer);
       setScene(scene);

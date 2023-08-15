@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useLayoutEffect, useState } from 'react';
 import { useModel } from '../hooks/use-model';
 import { useSceneSetup } from '../hooks/use-scene-setup';
 import { useCenterModel } from '../hooks/use-center-model';
@@ -9,8 +9,7 @@ import { useHotspotListener } from '../hooks/use-hotspot-listener';
 import { useAnimationFrame } from '../hooks/use-animation-frame';
 
 export const Object3dViewer = ({ className }: { className?: string }) => {
-  const { modelUrl } = useContext(Object3dContext);
-
+  const { modelUrl, disabled } = useContext(Object3dContext);
   const [canvasRef, setCanvasRef] = useState<HTMLCanvasElement | null>(null);
   const [labelRef, setLabelRef] = useState<HTMLDivElement | null>(null);
 
@@ -42,6 +41,18 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
       }
     }
   });
+
+  useLayoutEffect(() => {
+    if (controls && renderer && labelRenderer) {
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+
+      hotspotsRef.current.forEach((hotspot) => {
+        isHotspotVisible(hotspot, camera);
+      });
+    }
+  }, [camera, controls, hotspotsRef, labelRenderer, renderer, scene]);
 
   return (
     <div className={className} style={{ position: 'relative' }}>
