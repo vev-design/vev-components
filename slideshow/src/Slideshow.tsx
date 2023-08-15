@@ -1,4 +1,4 @@
-import React, { useEffect, RefObject, useMemo, useRef, useState } from 'react';
+import React, { useEffect, RefObject, useMemo, useState } from 'react';
 import { registerVevComponent, useVevEvent, useEditorState, useGlobalState } from '@vev/react';
 import { shuffleArray } from './utils';
 
@@ -47,7 +47,8 @@ export const Slideshow = (props: Props) => {
   } = props;
 
   const [slides, setSlides] = useState([]);
-  console.log('children', children, slides);
+  const index = state?.index || 0;
+  const numberOfSlides = props?.children?.length || 0;
 
   useEffect(() => {
     if (random && !editor.disabled) {
@@ -57,13 +58,22 @@ export const Slideshow = (props: Props) => {
     }
   }, [random, slides?.length]);
 
+  useEffect(() => {
+    setState({ ...state, length: numberOfSlides || 0 });
+  }, [numberOfSlides]);
+
+  useEffect(() => {
+    if (autoplay && !editor.disabled) {
+      setTimeout(() => {
+        setState(NEXT_SLIDE);
+      }, autoplayInterval);
+    }
+  }, [autoplay, editor.disabled, autoplayInterval]);
+
   useTouch(hostRef, {
     onNext: () => setState(NEXT_SLIDE),
     onPrev: () => setState(PREV_SLIDE),
   });
-
-  const index = state?.index || 0;
-  const numberOfSlides = props?.children?.length || 0;
 
   const NEXT_SLIDE = useMemo(
     () => ({
@@ -89,18 +99,6 @@ export const Slideshow = (props: Props) => {
       }),
       [index],
     );
-
-  useEffect(() => {
-    setState({ ...state, length: numberOfSlides || 0 });
-  }, [numberOfSlides]);
-
-  useEffect(() => {
-    if (autoplay && !editor.disabled) {
-      setTimeout(() => {
-        setState(NEXT_SLIDE);
-      }, autoplayInterval);
-    }
-  }, [autoplay, editor.disabled, autoplayInterval]);
 
   useVevEvent(Events.NEXT, () => {
     setState(NEXT_SLIDE);
