@@ -1,23 +1,20 @@
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Box3, MathUtils, Mesh, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
-import React, { useContext, useEffect } from 'react';
+import { Box3, MathUtils, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { useContext, useEffect } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
-import * as THREE from 'three';
-import { useInterval } from '@vev/react';
 
 /**
  * Centers the model in the scene and sets an appropriate position and distance for the camera
  */
 export function useCenterModel(
   gltf: GLTF,
-  cameraCurr: React.MutableRefObject<PerspectiveCamera | undefined>,
-  controls: React.MutableRefObject<any | undefined>,
-  scene: React.MutableRefObject<Scene | undefined>,
+  camera: PerspectiveCamera | undefined,
+  controls: any | undefined,
+  scene: Scene | undefined,
 ) {
   const { fov } = useContext(Object3dContext);
 
   useEffect(() => {
-    const camera = cameraCurr.current;
     if (gltf && camera) {
       const model = gltf.scene;
       model.updateMatrixWorld();
@@ -25,7 +22,7 @@ export function useCenterModel(
       const boxSize = box.getSize(new Vector3());
       const boxCenter = box.getCenter(new Vector3());
 
-      controls.current.reset();
+      controls.reset();
 
       model.position.x += model.position.x - boxCenter.x;
       model.position.y += model.position.y - boxCenter.y;
@@ -59,8 +56,8 @@ export function useCenterModel(
       // point the camera to look at the center of the box
       camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
 
-      controls.current.maxDistance = boxSize.length() * 5;
-      controls.current.update();
+      controls.maxDistance = boxSize.length() * 5;
+      controls.update();
     }
-  }, [cameraCurr, controls, fov, gltf, scene]);
+  }, [camera, controls, fov, gltf, scene]);
 }
