@@ -200,15 +200,16 @@ registerVevComponent(Slideshow, {
     },
     {
       name: 'autoplayInterval',
-      title: 'Pause (ms)',
+      title: 'Delay',
+      description: 'Specify how long to wait until the animation starts',
       type: 'number',
       hidden: (context) => !context.value?.autoplay,
     },
     {
       name: 'speed',
       type: 'number',
-      description: 'Milliseconds',
-      title: 'Speed (ms)',
+      description: 'Specify how long the animation should last',
+      title: 'Duration',
       initialValue: 200,
     },
     {

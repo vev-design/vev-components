@@ -21,10 +21,12 @@ export const Slide = ({
   const PREV = usePrev(index, slides);
   const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
 
+  console.log('array', array, index);
+
   useEffect(() => {
     if (
       index === prevIndex.current + 1 ||
-      (prevIndex.current === slides.length - 1 && index === 0)
+      (prevIndex.current === slides.length - 1 && index === 0 && slides.length !== 1)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
@@ -33,13 +35,15 @@ export const Slide = ({
 
     if (
       index === prevIndex.current - 1 ||
-      (prevIndex.current === 0 && index === slides.length - 1)
+      (prevIndex.current === 0 && index === slides.length - 1 && slides.length !== 1)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
       setMove(0);
     }
   }, [index, prevIndex, speed]);
+
+  console.log('move', move);
 
   return (
     <div
@@ -64,6 +68,7 @@ export const Slide = ({
             key={child}
             style={{
               transform: `translate${direction}(${100 * i}%)`,
+              width: '100%',
             }}
           >
             {child && <WidgetNode id={child} />}
