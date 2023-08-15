@@ -21,8 +21,6 @@ export const Slide = ({
   const PREV = usePrev(index, slides);
   const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
 
-  console.log('array', array, slides, index);
-
   useEffect(() => {
     if (
       index === prevIndex.current + 1 ||

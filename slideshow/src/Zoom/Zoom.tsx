@@ -33,7 +33,7 @@ export const Zoom = ({
               transform: i === 0 ? 'scale(400%)' : 'none',
             }}
           >
-            <WidgetNode id={child} />
+            {child && <WidgetNode id={child} />}
           </div>
         );
       })}

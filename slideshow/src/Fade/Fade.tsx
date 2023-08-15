@@ -15,8 +15,6 @@ export const Fade = ({
   const PREV = usePrev(index, slides);
   const array = [slides[PREV], slides[index], slides[NEXT]];
 
-  console.log('array', array, slides, index);
-
   return (
     <div className={styles.wrapper + ' __sc __c'}>
       {array?.map((child: string, i: number) => {
