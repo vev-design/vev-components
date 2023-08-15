@@ -1,6 +1,6 @@
 import React from 'react';
-import { Vector3 } from 'three';
-import { InternalHotspot } from '../object-3d';
+import { Camera, Vector3 } from 'three';
+import { InternalHotspot, SavedCameraPosition } from '../types';
 
 export interface Object3DContextProps {
   modelUrl: string;
@@ -18,6 +18,12 @@ export interface Object3DContextProps {
   hotspots: InternalHotspot[];
   addHotSpot?: (spot: Vector3) => void;
   editMode: boolean;
+  disabled?: boolean;
+  camera?: Camera;
+  control?: any;
+  setContextCamera?: (camera: Camera) => void;
+  setContextControls?: (camera: any) => void;
+  savedCameraPosition?: SavedCameraPosition;
 }
 
 export const Object3dContext = React.createContext<Object3DContextProps>({
@@ -35,6 +41,7 @@ export const Object3dContext = React.createContext<Object3DContextProps>({
   zoom: false,
   hotspots: [],
   editMode: false,
+  disabled: true,
 });
 
 interface Object3DContextProviderProps {

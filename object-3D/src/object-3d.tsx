@@ -1,11 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './object-3d.module.css';
-import { registerVevComponent, useSize } from '@vev/react';
+import { registerVevComponent, useEditorState, useSize } from '@vev/react';
 import { Object3DContextProvider } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
-import { HotSpotFormButton } from './components/hotspot-editor-form';
+import { HotspotEditorForm } from './components/hotspot-editor-form';
 import { Vector3 } from 'three';
+import { CameraEditor } from './components/camera-editor';
+import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -29,16 +31,6 @@ export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
 export const FAR = 100;
 
-export interface StorageHotspot {
-  position: { x: number; y: number; z: number };
-  index: number;
-}
-
-export interface InternalHotspot {
-  position: Vector3;
-  index: number;
-}
-
 type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
@@ -48,6 +40,7 @@ type Props = {
   animation?: string;
   zoom: boolean;
   hotspots: StorageHotspot[];
+  initialCamera: SavedCameraPosition;
 };
 
 const Object3d = ({
@@ -57,11 +50,19 @@ const Object3d = ({
   rotate = true,
   controls = false,
   animation,
-  zoom,
+  zoom = false,
   hotspots,
+  initialCamera,
 }: Props) => {
   const { width, height } = useSize(hostRef);
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
+  const [initialCameraPosition, setInitialCameraPosition] =
+    useState<SavedCameraPosition>(initialCamera);
+  const { disabled } = useEditorState();
+
+  useEffect(() => {
+    setInitialCameraPosition(initialCamera);
+  }, [initialCamera]);
 
   // Convert positions from storage from x,y,z to Vector3
   useEffect(() => {
@@ -79,7 +80,7 @@ const Object3d = ({
         }),
       );
     }
-  }, [hotspots, internalHotspots]);
+  }, [hotspots]);
 
   return (
     <div className={styles.wrapper}>
@@ -99,6 +100,8 @@ const Object3d = ({
           controls,
           animation,
           hotspots: internalHotspots,
+          disabled,
+          savedCameraPosition: initialCameraPosition,
         }}
       >
         <Object3dViewer />
@@ -173,7 +176,12 @@ registerVevComponent(Object3d, {
     {
       name: 'hotspots',
       type: 'string',
-      component: HotSpotFormButton,
+      component: HotspotEditorForm,
+    },
+    {
+      name: 'initialCamera',
+      type: 'string',
+      component: CameraEditor,
     },
   ],
   editableCSS: [
