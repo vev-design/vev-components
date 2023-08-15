@@ -34,7 +34,7 @@ export const Carousel3d = ({
 
   return (
     <div
-      className={styles.wrapper + ' __sc __c'}
+      className={styles.wrapper}
       style={{
         perspective,
         transform: 'scale(0.5)',

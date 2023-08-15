@@ -21,8 +21,6 @@ export const Slide = ({
   const PREV = usePrev(index, slides);
   const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
 
-  console.log('array', array, index);
-
   useEffect(() => {
     if (
       index === prevIndex.current + 1 ||
@@ -47,7 +45,7 @@ export const Slide = ({
 
   return (
     <div
-      className={styles.wrapper + ' __sc __c'}
+      className={styles.wrapper}
       style={{
         transform: `translate${direction}(${move}%)`,
         transition: `transform ${transitionSpeed}ms linear`,

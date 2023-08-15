@@ -16,7 +16,7 @@ export const Zoom = ({
   const array = [slides[PREV], slides[index], slides[NEXT]];
 
   return (
-    <div className={styles.wrapper + ' __sc __c'}>
+    <div className={styles.wrapper}>
       {array?.map((child: string, i: number) => {
         return (
           <div
