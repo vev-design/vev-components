@@ -17,7 +17,6 @@ export type Props = {
   slides: string[];
   animation: 'slide' | 'zoom' | 'fade' | '3d';
   speed?: number;
-  vertical?: boolean;
   autoplay: boolean;
   autoplayInterval: number;
   selectedIndex?: number;
@@ -25,6 +24,7 @@ export type Props = {
   gap?: number;
   random?: boolean;
   infinite?: boolean;
+  direction: 'HORIZONTAL' | 'HORIZONTAL_REVERSE' | 'VERTICAL' | 'VERTICAL_REVERSE';
 };
 
 enum Events {
@@ -46,6 +46,8 @@ export const Slideshow = (props: Props) => {
     infinite,
     hostRef,
   } = props;
+
+  const reverse = ['HORIZONTAL_REVERSE', 'VERTICAL_REVERSE'].includes(props.direction);
 
   const [slides, setSlides] = useState([]);
   const index = state?.index || 0;
@@ -77,19 +79,31 @@ export const Slideshow = (props: Props) => {
   });
 
   const NEXT_SLIDE = useMemo(
-    () => ({
-      index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
-      length: numberOfSlides || 0,
-    }),
-    [numberOfSlides, index, infinite],
+    () =>
+      reverse
+        ? {
+            index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
+            length: numberOfSlides || 0,
+          }
+        : {
+            index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
+            length: numberOfSlides || 0,
+          },
+    [numberOfSlides, index, infinite, reverse],
   );
 
   const PREV_SLIDE = useMemo(
-    () => ({
-      index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
-      length: numberOfSlides || 0,
-    }),
-    [numberOfSlides, index, infinite],
+    () =>
+      reverse
+        ? {
+            index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
+            length: numberOfSlides || 0,
+          }
+        : {
+            index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
+            length: numberOfSlides || 0,
+          },
+    [numberOfSlides, index, infinite, reverse],
   );
 
   const SET_SLIDE = (index: number) =>
@@ -237,18 +251,13 @@ registerVevComponent(Slideshow, {
       name: 'direction',
       type: 'string',
       component: DirectionField,
+      hidden: (context) => context.value?.animation !== 'slide',
     },
     {
       name: 'autoplay',
       title: 'Autoplay',
       type: 'boolean',
     },
-    /*     {
-      name: 'vertical',
-      title: 'Vertical',
-      type: 'boolean',
-      hidden: (context) => context.value?.animation !== 'slide',
-    }, */
     {
       name: 'random',
       title: 'Randomize',
