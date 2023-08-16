@@ -1,6 +1,7 @@
 import React, { useEffect, RefObject, useMemo, useState } from 'react';
 import { registerVevComponent, useVevEvent, useEditorState, useGlobalState } from '@vev/react';
 import { shuffleArray } from './utils';
+import DirectionField from './DirectionField';
 
 import Slide from './Slide';
 import Fade from './Fade';
@@ -172,7 +173,7 @@ registerVevComponent(Slideshow, {
       type: 'select',
       initialValue: 'slide',
       options: {
-        display: 'radio',
+        display: 'dropdown',
         items: [
           {
             label: 'Slide',
@@ -194,9 +195,11 @@ registerVevComponent(Slideshow, {
       },
     },
     {
-      name: 'autoplay',
-      title: 'Autoplay',
-      type: 'boolean',
+      name: 'speed',
+      type: 'number',
+      description: 'Specify how long the animation should last',
+      title: 'Duration',
+      initialValue: 200,
     },
     {
       name: 'autoplayInterval',
@@ -206,18 +209,21 @@ registerVevComponent(Slideshow, {
       hidden: (context) => !context.value?.autoplay,
     },
     {
-      name: 'speed',
-      type: 'number',
-      description: 'Specify how long the animation should last',
-      title: 'Duration',
-      initialValue: 200,
+      name: 'direction',
+      type: 'string',
+      component: DirectionField,
     },
     {
+      name: 'autoplay',
+      title: 'Autoplay',
+      type: 'boolean',
+    },
+    /*     {
       name: 'vertical',
       title: 'Vertical',
       type: 'boolean',
       hidden: (context) => context.value?.animation !== 'slide',
-    },
+    }, */
     {
       name: 'random',
       title: 'Randomize',
