@@ -10,12 +10,16 @@ import { useAnimationFrame } from '../hooks/use-animation-frame';
 import TWEEN from '@tweenjs/tween.js';
 import styles from '../object-3d.module.css';
 
+const LOADING_BAR_WIDTH = 200;
+
 export const Object3dViewer = ({ className }: { className?: string }) => {
   const { modelUrl, disabled } = useContext(Object3dContext);
   const [canvasRef, setCanvasRef] = useState<HTMLCanvasElement | null>(null);
   const [labelRef, setLabelRef] = useState<HTMLDivElement | null>(null);
   const [lightLoadingPercentage, setLightLoadingPercentage] = useState<number>(0);
   const [modelLoadingPercentage, setModelLoadingPercentage] = useState<number>(0);
+
+  useEffect(() => {}, [lightLoadingPercentage, modelLoadingPercentage]);
 
   const model = useModel(modelUrl, setModelLoadingPercentage);
 
@@ -63,7 +67,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
 
   return (
     <div className={`${className} ${styles.viewer}`} style={{ position: 'relative' }}>
-      <div className={styles.loadingBar}>100</div>
+      <div className={styles.loadingBar} />
       <div ref={setLabelRef} />
       <canvas ref={setCanvasRef} />
     </div>
