@@ -120,6 +120,7 @@ registerVevComponent(Object3d, {
         'This element only supports uploading a .glb file with a maximum file size of 75MB.',
       type: 'upload',
       accept: '.glb,.gltf',
+      maxSize: 75000,
     },
     {
       name: 'lighting',

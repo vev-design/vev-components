@@ -64,3 +64,13 @@
     gap: 1rem;
     margin-bottom: 1rem;
 }
+
+.viewer {
+    position: relative;
+}
+
+.loadingBar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+}

@@ -1,10 +1,11 @@
 import { useContext, useEffect, useRef } from 'react';
-import { Scene } from 'three';
+import { Camera, Scene, Vector3 } from 'three';
 // @ts-expect-error - no types
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
 import { InternalHotspot } from '../types';
+import TWEEN from '@tweenjs/tween.js';
 
 export interface CanvasHotspot {
   element: HTMLDivElement;
@@ -12,9 +13,8 @@ export interface CanvasHotspot {
   hotspot: InternalHotspot;
 }
 
-export function useHotspots(scene: Scene | undefined) {
-  const { hotspots } = useContext(Object3dContext);
-  const context = useContext(Object3dContext);
+export function useHotspots(scene: Scene | undefined, camera: Camera | undefined, controls: any) {
+  const { hotspots, editMode } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
 
   useEffect(() => {
@@ -41,9 +41,27 @@ export function useHotspots(scene: Scene | undefined) {
         scene.add(sceneObject);
         sceneObject.layers.set(1);
 
-        innerElem.addEventListener('pointerdown', () => {
-          console.log('Clicked!');
-        });
+        if (!editMode) {
+          innerElem.addEventListener('pointerdown', () => {
+            const from = camera.position.clone();
+            const camDistance = camera.position.length();
+            const target = new Vector3(
+              storageHotspot.position.x,
+              storageHotspot.position.y,
+              storageHotspot.position.z,
+            )
+              .normalize()
+              .multiplyScalar(camDistance);
+
+            new TWEEN.Tween(from)
+              .to(target, 400)
+              .onUpdate((newPosition) => {
+                camera.position.copy(newPosition);
+                controls.update(); // update of controls is here now
+              })
+              .start();
+          });
+        }
 
         hotspotMap.current.push({ element: innerElem, sceneObject, hotspot: storageHotspot });
       });
