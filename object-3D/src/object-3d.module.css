@@ -70,7 +70,26 @@
 }
 
 .loadingBar {
+    transition: all 200ms;
+    content: '';
+    min-width: 204px;
+    min-height: 10px;
+    border-radius: 15px;
+    border: rgb(44, 44, 44) 1px solid;
     position: absolute;
-    left: 50%;
+    left: calc(50% - 100px);
+    top: 50%;
+}
+
+.loadingBar::after {
+    --bar-width: 0px;
+    transform: translateX(0px) translateY(-3px);
+    content: '';
+    min-width: var(--bar-width);
+    min-height: 6px;
+    background-color: rgb(80, 80, 80);
+    border-radius: 15px;
+    position: absolute;
+    left: calc(50% - 100px);
     top: 50%;
 }
