@@ -126,6 +126,31 @@ export const Slideshow = (props: Props) => {
 
   const Comp = render[animation] || Slide;
 
+  if (editor.disabled) {
+    return (
+      <div
+        className={styles.wrapper}
+        style={{
+          overflow: animation !== '3d' ? 'hidden' : 'visible',
+        }}
+      >
+        <Fade
+          {...props}
+          index={editor.disabled ? selectedIndex || 0 : index}
+          slides={random ? slides : children}
+          speed={1}
+          onNextSlide={() => {
+            if (autoplay && !editor.disabled) {
+              setTimeout(() => {
+                setState(NEXT_SLIDE);
+              }, autoplayInterval);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={styles.wrapper}
