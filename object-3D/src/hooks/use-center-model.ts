@@ -1,8 +1,10 @@
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Box3, MathUtils, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { Box3, MathUtils, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { useContext, useEffect } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
 import { setCameraPosition } from '../util/set-camera-position';
+// @ts-expect-error - no types
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 /**
  * Centers the model in the scene and sets an appropriate position and distance for the camera
@@ -10,8 +12,10 @@ import { setCameraPosition } from '../util/set-camera-position';
 export function useCenterModel(
   gltf: GLTF,
   camera: PerspectiveCamera | undefined,
-  controls: any | undefined,
+  controls: any,
   scene: Scene | undefined,
+  renderer: WebGLRenderer,
+  labelRenderer: CSS2DRenderer,
 ) {
   const { fov, savedCameraPosition } = useContext(Object3dContext);
 
@@ -63,6 +67,10 @@ export function useCenterModel(
       if (savedCameraPosition && camera && controls) {
         setCameraPosition(camera, savedCameraPosition, controls);
       }
+
+      controls && controls.update();
+      renderer && renderer.render(scene, camera);
+      labelRenderer && labelRenderer.render(scene, camera);
     }
   }, [camera, controls, fov, gltf, scene]);
 

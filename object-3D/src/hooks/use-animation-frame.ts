@@ -3,7 +3,7 @@ import { useCallback, useLayoutEffect, useRef } from 'react';
 type AnimationCallback = (args: { time: number; delta: number }) => void;
 
 // Cannot use the one provided by the viewer here as the 3D component is used both in the editor and the viewer
-export function useAnimationFrame(cb: AnimationCallback) {
+export function useAnimationFrame(cb: AnimationCallback, enabled = false) {
   const cbRef = useRef<AnimationCallback>();
   const frame = useRef<number>();
   const init = useRef(performance.now());
@@ -21,7 +21,9 @@ export function useAnimationFrame(cb: AnimationCallback) {
   }, []);
 
   useLayoutEffect(() => {
-    frame.current = requestAnimationFrame(animate);
-    return () => frame.current && cancelAnimationFrame(frame.current);
-  }, [animate]);
+    if (enabled) {
+      frame.current = requestAnimationFrame(animate);
+      return () => frame.current && cancelAnimationFrame(frame.current);
+    }
+  }, [animate, enabled]);
 }

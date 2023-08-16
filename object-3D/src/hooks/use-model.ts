@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /**
  * Loads the GLTF model
  */
-export function useModel(url: string) {
+export function useModel(url: string, setModelLoadingPercentage: (value: number) => void) {
   const loader = useRef(new GLTFLoader());
   const [gltf, setGltf] = useState<GLTF | undefined>();
   useEffect(() => {
@@ -17,7 +17,7 @@ export function useModel(url: string) {
           setGltf(gltf);
         },
         (xhr) => {
-          // console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+          setModelLoadingPercentage((xhr.loaded / xhr.total) * 100);
         },
         (error) => {
           console.log('An error occurred: ', error);

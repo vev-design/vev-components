@@ -10,7 +10,6 @@ import { useContext, useEffect, useState } from 'react';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Object3dContext } from '../context/object-3d-context';
 import { NO_ANIMATION } from '../object-3d';
-import { setCameraPosition } from '../util/set-camera-position';
 
 /**
  * Sets up the scene with camera and controls.
@@ -20,6 +19,7 @@ export function useSceneSetup(
   canvasRef: HTMLCanvasElement | null,
   labelRef: HTMLDivElement | null,
   model: GLTF,
+  setLightingLoadingPercentage: (value: number) => void,
 ) {
   const {
     hdri,
@@ -33,9 +33,10 @@ export function useSceneSetup(
     aspect,
     near,
     far,
-    savedCameraPosition,
     setContextCamera,
     setContextControls,
+    savedCameraPosition,
+    hotspots,
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
@@ -107,14 +108,20 @@ export function useSceneSetup(
       const pmremGenerator = new THREE.PMREMGenerator(renderer);
       pmremGenerator.compileEquirectangularShader();
 
-      new RGBELoader().load(hdri, (texture) => {
-        if (scene.environment) {
-          scene.environment.dispose();
-        }
-        scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
-        texture.dispose();
-        pmremGenerator.dispose();
-      });
+      new RGBELoader().load(
+        hdri,
+        (texture) => {
+          if (scene.environment) {
+            scene.environment.dispose();
+          }
+          scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
+          texture.dispose();
+          pmremGenerator.dispose();
+        },
+        (xhr) => {
+          setLightingLoadingPercentage((xhr.loaded / xhr.total) * 100);
+        },
+      );
     }
 
     return () => {
@@ -131,6 +138,9 @@ export function useSceneSetup(
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
       labelRenderer.setSize(width, height);
+      controls && controls.update();
+      renderer && renderer.render(scene, camera);
+      labelRenderer && labelRenderer.render(scene, camera);
     }
   }, [height, width, scene, camera, renderer, labelRenderer]);
 
@@ -179,6 +189,13 @@ export function useSceneSetup(
       controls.enabled = enableControls;
     }
   }, [rotate, enableControls, controls]);
+
+  // Rerender when initial camera position or hotspots change
+  useEffect(() => {
+    controls && controls.update();
+    renderer && renderer.render(scene, camera);
+    labelRenderer && labelRenderer.render(scene, camera);
+  }, [savedCameraPosition, hotspots]);
 
   return {
     scene,
