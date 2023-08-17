@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
 import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
@@ -68,6 +68,10 @@ export function HotSpotModal({ context }: { context: Context }) {
     },
     [context, hotspots, setHotspots],
   );
+
+  useEffect(() => {
+    context.onChange([]);
+  }, [modelUrl]);
 
   return (
     <SilkeModalContent>
