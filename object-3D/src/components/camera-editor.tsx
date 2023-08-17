@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
 import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
@@ -27,7 +27,7 @@ const EDITOR_HEIGHT = 640;
 
 export function CameraEditor(context) {
   const [modalOpen, setModalOpen] = useState(false);
-
+  useEffect(() => {}, [context.context.value.modelUrl]);
   return (
     <>
       <SilkeModal
@@ -72,6 +72,10 @@ export function CameraEditModal({ context }: { context: Context }) {
       target: controls.target,
     });
   }
+
+  useEffect(() => {
+    context.onChange(undefined);
+  }, [modelUrl]);
 
   return (
     <SilkeModalContent>
