@@ -21,7 +21,7 @@ export const Zoom = ({
         return (
           <div
             className={styles.slide}
-            key={child}
+            key={i + child}
             onTransitionEnd={(e) => {
               if (e.propertyName === 'transform') {
                 onNextSlide();

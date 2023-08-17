@@ -1,6 +1,6 @@
 .wrapper {
   height: 100%;
-  background-color: none; 
+  overflow: inherit;
 }
 
 .empty {

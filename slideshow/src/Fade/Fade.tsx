@@ -21,7 +21,7 @@ export const Fade = ({
         return (
           <div
             className={styles.slide}
-            key={child}
+            key={i + child}
             style={{
               transition: `opacity ${speed || 200}ms`,
               opacity: i === 1 ? 1 : 0,

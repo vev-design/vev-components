@@ -59,7 +59,7 @@ export const Slideshow = (props: Props) => {
     } else {
       setSlides(children);
     }
-  }, [random, slides?.length]);
+  }, [random, slides?.length, editor.disabled, children]);
 
   useEffect(() => {
     setState({ ...state, length: numberOfSlides || 0 });
@@ -78,33 +78,24 @@ export const Slideshow = (props: Props) => {
     onPrev: () => setState(PREV_SLIDE),
   });
 
-  const NEXT_SLIDE = useMemo(
-    () =>
-      reverse
-        ? {
-            index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
-            length: numberOfSlides || 0,
-          }
-        : {
-            index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
-            length: numberOfSlides || 0,
-          },
-    [numberOfSlides, index, infinite, reverse],
+  const NEXT = useMemo(
+    () => ({
+      index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
+      length: numberOfSlides || 0,
+    }),
+    [numberOfSlides, index, infinite],
   );
 
-  const PREV_SLIDE = useMemo(
-    () =>
-      reverse
-        ? {
-            index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
-            length: numberOfSlides || 0,
-          }
-        : {
-            index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
-            length: numberOfSlides || 0,
-          },
-    [numberOfSlides, index, infinite, reverse],
+  const PREV = useMemo(
+    () => ({
+      index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
+      length: numberOfSlides || 0,
+    }),
+    [numberOfSlides, index, infinite],
   );
+
+  const NEXT_SLIDE = reverse ? PREV : NEXT;
+  const PREV_SLIDE = reverse ? NEXT : PREV;
 
   const SET_SLIDE = (index: number) =>
     useMemo(
@@ -142,12 +133,7 @@ export const Slideshow = (props: Props) => {
 
   if (editor.disabled) {
     return (
-      <div
-        className={styles.wrapper}
-        style={{
-          overflow: animation !== '3d' ? 'hidden' : 'visible',
-        }}
-      >
+      <div className={styles.wrapper}>
         <Fade
           {...props}
           index={editor.disabled ? selectedIndex || 0 : index}
@@ -166,12 +152,7 @@ export const Slideshow = (props: Props) => {
   }
 
   return (
-    <div
-      className={styles.wrapper}
-      style={{
-        overflow: animation !== '3d' ? 'hidden' : 'visible',
-      }}
-    >
+    <div className={styles.wrapper}>
       <Comp
         {...props}
         index={editor.disabled ? selectedIndex || 0 : index}
@@ -198,12 +179,8 @@ registerVevComponent(Slideshow, {
   },
   editableCSS: [
     {
-      selector: styles.wrapper,
-      properties: ['border', 'border-radius', 'box-shadow'],
-    },
-    {
       selector: ':host',
-      properties: ['box-shadow', 'background'],
+      properties: ['box-shadow', 'background', 'border', 'border-radius'],
     },
   ],
   props: [
