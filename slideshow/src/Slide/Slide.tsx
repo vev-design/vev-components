@@ -6,16 +6,19 @@ import { useNext, usePrev } from '../hooks';
 import styles from './Slide.module.css';
 
 export const Slide = ({
-  vertical,
   index,
   speed,
   slides,
+  direction,
   onNextSlide,
-}: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
+}: Omit<Props, 'children'> & {
+  index: number;
+  onNextSlide: () => void;
+}) => {
   const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
-  const direction = vertical ? 'Y' : 'X';
+  const moveDirection = ['VERTICAL', 'VERTICAL_REVERSE'].includes(direction) ? 'Y' : 'X';
 
   const NEXT = useNext(index, slides);
   const PREV = usePrev(index, slides);
@@ -41,13 +44,11 @@ export const Slide = ({
     }
   }, [index, prevIndex, speed]);
 
-  console.log('move', move);
-
   return (
     <div
       className={styles.wrapper}
       style={{
-        transform: `translate${direction}(${move}%)`,
+        transform: `translate${moveDirection}(${move}%)`,
         transition: `transform ${transitionSpeed}ms linear`,
       }}
       onTransitionEnd={(e) => {
@@ -65,7 +66,7 @@ export const Slide = ({
             className={styles.slide}
             key={child}
             style={{
-              transform: `translate${direction}(${100 * i}%)`,
+              transform: `translate${moveDirection}(${100 * i}%)`,
               width: '100%',
             }}
           >
