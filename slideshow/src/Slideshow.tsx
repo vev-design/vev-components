@@ -47,7 +47,7 @@ export const Slideshow = (props: Props) => {
     hostRef,
   } = props;
 
-  const reverse = ['HORIZONTAL_REVERSE', 'VERTICAL_REVERSE'].includes(props.direction);
+  const reverse = props.direction?.includes('REVERSE');
 
   const [slides, setSlides] = useState([]);
   const index = state?.index || 0;
@@ -228,7 +228,8 @@ registerVevComponent(Slideshow, {
       name: 'direction',
       type: 'string',
       component: DirectionField,
-      hidden: (context) => context.value?.animation !== 'slide',
+      hidden: (context) => !['slide', '3d'].includes(context.value?.animation),
+      initialValue: 'HORIZONTAL',
     },
     {
       name: 'autoplay',
