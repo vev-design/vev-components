@@ -73,6 +73,12 @@ export const Slideshow = (props: Props) => {
     }
   }, [autoplay, editor.disabled, autoplayInterval]);
 
+  useEffect(() => {
+    if (!editor.disabled) {
+      setState({ index: 0, length: numberOfSlides || 0 });
+    }
+  }, [editor.disabled]);
+
   useTouch(hostRef, {
     onNext: () => setState(NEXT_SLIDE),
     onPrev: () => setState(PREV_SLIDE),
