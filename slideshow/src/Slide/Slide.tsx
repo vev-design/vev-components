@@ -10,10 +10,8 @@ export const Slide = ({
   speed,
   slides,
   direction,
-  onNextSlide,
 }: Omit<Props, 'children'> & {
   index: number;
-  onNextSlide: () => void;
 }) => {
   const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
@@ -53,7 +51,6 @@ export const Slide = ({
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === 'transform') {
-          onNextSlide();
           setTransitionSpeed(0);
           setMove(-100);
           setArray([slides[PREV], slides[index], slides[NEXT]]);

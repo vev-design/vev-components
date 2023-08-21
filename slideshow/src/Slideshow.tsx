@@ -17,10 +17,7 @@ export type Props = {
   slides: string[];
   animation: 'slide' | 'zoom' | 'fade' | '3d';
   speed?: number;
-  autoplay: boolean;
-  autoplayInterval: number;
   selectedIndex?: number;
-  clipContent?: boolean;
   gap?: number;
   random?: boolean;
   infinite?: boolean;
@@ -36,71 +33,54 @@ enum Events {
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
-  const {
-    children,
-    autoplay,
-    autoplayInterval = 5000,
-    animation,
-    selectedIndex,
-    random,
-    infinite,
-    hostRef,
-  } = props;
+  const { children, animation, selectedIndex, random, infinite, hostRef } = props;
 
   const reverse = props.direction?.includes('REVERSE');
 
-  const [slides, setSlides] = useState([]);
-  const index = state?.index || 0;
+  const [randomSlides, setRandomSlides] = useState([]);
+  console.log('state', state);
   const numberOfSlides = props?.children?.length || 0;
 
   useEffect(() => {
     if (random && !editor.disabled) {
-      setSlides(shuffleArray(children));
-    } else {
-      setSlides(children);
+      // Set random
+      setRandomSlides(shuffleArray(children));
     }
-  }, [random, slides?.length, editor.disabled, children]);
+  }, [random, editor.disabled, children]);
 
   useEffect(() => {
-    setState({ ...state, length: numberOfSlides || 0 });
-  }, [numberOfSlides]);
-
-  useEffect(() => {
-    if (autoplay && !editor.disabled) {
-      setTimeout(() => {
-        setState(NEXT_SLIDE);
-      }, autoplayInterval);
-    }
-  }, [autoplay, editor.disabled, autoplayInterval]);
-
-  useEffect(() => {
-    if (!editor.disabled) {
-      setState({ index: 0, length: numberOfSlides || 0 });
-    }
-  }, [editor.disabled]);
+    // Set initial state
+    setState({ index: 0, length: numberOfSlides || 0 });
+  }, [numberOfSlides, editor.disabled]);
 
   useTouch(hostRef, {
+    // Enable touch
     onNext: () => setState(NEXT_SLIDE),
     onPrev: () => setState(PREV_SLIDE),
   });
 
   const NEXT = useMemo(
     () => ({
-      index: index === 0 ? (infinite ? numberOfSlides - 1 : 0) : index - 1,
+      index:
+        (state?.index || 0) === numberOfSlides - 1
+          ? infinite
+            ? 0
+            : numberOfSlides - 1
+          : state?.index + 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, infinite],
+    [numberOfSlides, state?.index, infinite],
   );
 
   const PREV = useMemo(
     () => ({
-      index: numberOfSlides === index + 1 ? (infinite ? 0 : numberOfSlides - 1) : index + 1,
+      index: state?.index === 0 ? (infinite ? numberOfSlides - 1 : 0) : state?.index - 1,
       length: numberOfSlides || 0,
     }),
-    [numberOfSlides, index, infinite],
+    [numberOfSlides, state?.index, infinite],
   );
 
-  const NEXT_SLIDE = reverse ? PREV : NEXT;
+  const NEXT_SLIDE = reverse && animation === 'slide' ? PREV : NEXT;
   const PREV_SLIDE = reverse ? NEXT : PREV;
 
   const SET_SLIDE = (index: number) =>
@@ -113,10 +93,12 @@ export const Slideshow = (props: Props) => {
     );
 
   useVevEvent(Events.NEXT, () => {
+    console.log('@@@@ NEXT', NEXT_SLIDE);
     setState(NEXT_SLIDE);
   });
 
   useVevEvent(Events.PREV, () => {
+    console.log('@@@@ PREV');
     setState(PREV_SLIDE);
   });
 
@@ -135,42 +117,19 @@ export const Slideshow = (props: Props) => {
     '3d': Carousel,
   };
 
-  const Comp = render[animation] || Slide;
-
   if (editor.disabled) {
     return (
       <div className={styles.wrapper}>
-        <Fade
-          {...props}
-          index={editor.disabled ? selectedIndex || 0 : index}
-          slides={random ? slides : children}
-          speed={1}
-          onNextSlide={() => {
-            if (autoplay && !editor.disabled) {
-              setTimeout(() => {
-                setState(NEXT_SLIDE);
-              }, autoplayInterval);
-            }
-          }}
-        />
+        <Fade {...props} index={selectedIndex || 0} slides={children} speed={1} />
       </div>
     );
   }
 
+  const Comp = render[animation] || Slide;
+
   return (
     <div className={styles.wrapper}>
-      <Comp
-        {...props}
-        index={editor.disabled ? selectedIndex || 0 : index}
-        slides={random ? slides : children}
-        onNextSlide={() => {
-          if (autoplay && !editor.disabled) {
-            setTimeout(() => {
-              setState(NEXT_SLIDE);
-            }, autoplayInterval);
-          }
-        }}
-      />
+      <Comp {...props} index={state?.index || 0} slides={random ? randomSlides : children} />
     </div>
   );
 };
@@ -224,23 +183,11 @@ registerVevComponent(Slideshow, {
       initialValue: 200,
     },
     {
-      name: 'autoplayInterval',
-      title: 'Delay',
-      description: 'Specify how long to wait until the animation starts',
-      type: 'number',
-      hidden: (context) => !context.value?.autoplay,
-    },
-    {
       name: 'direction',
       type: 'string',
       component: DirectionField,
-      hidden: (context) => !['slide', '3d'].includes(context.value?.animation),
+      // hidden: (context) => !['slide', '3d'].includes(context.value?.animation),
       initialValue: 'HORIZONTAL',
-    },
-    {
-      name: 'autoplay',
-      title: 'Autoplay',
-      type: 'boolean',
     },
     {
       name: 'random',

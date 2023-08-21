@@ -2,8 +2,7 @@ import { SilkeTextSmall, SilkeBox, SilkeIcon } from '@vev/silke';
 import React from 'react';
 
 function DirectionField(props) {
-  console.log('props', props);
-  const is3d = props.context?.value?.animation === '3d';
+  const isSlide = props.context?.value?.animation === 'slide';
 
   const directions = {
     HORIZONTAL: 'arrow.right',
@@ -19,7 +18,7 @@ function DirectionField(props) {
       </SilkeTextSmall>
       <SilkeBox>
         {Object.keys(directions)
-          .slice(0, is3d ? 2 : 4)
+          .slice(0, isSlide ? 4 : 2)
           .map((direction, i) => (
             <SilkeBox
               key={i}
