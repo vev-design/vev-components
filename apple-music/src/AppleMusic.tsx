@@ -41,7 +41,7 @@ registerVevComponent(AppleMusic, {
     'Embed an Apple music player directly to your canvas. \n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
   props: [
     {
-      title: 'Media link',
+      title: 'Apple Music link',
       name: 'link',
       type: 'string',
       initialValue: initialLink,
