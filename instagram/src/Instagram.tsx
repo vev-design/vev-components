@@ -44,7 +44,10 @@ type Props = {
   isCaptioned: boolean;
 };
 
-const Instagram = ({ url, isCaptioned = false }: Props) => {
+const Instagram = ({
+  url = 'https://www.instagram.com/p/CpAQZfDDseY',
+  isCaptioned = false,
+}: Props) => {
   if (url) {
     return (
       <iframe
@@ -57,16 +60,12 @@ const Instagram = ({ url, isCaptioned = false }: Props) => {
   }
 
   return (
-    <div className={styles.holder}>
-      <div className={styles.holdertop}>Missing URL to image</div>
-
-      <div className={styles.logoholder}>
-        <div className={styles.logo}>&nbsp;</div>
-      </div>
-
-      <div className={styles.holderbottom}>
-        Paste embed code or URL in properties to show your beautiful image here
-      </div>
+    <div className={styles.invalidUrl}>
+      <img
+        className={styles.logo}
+        src="https://cdn.vev.design/pkg/SIAdXLhqHdJDShjirotC/Instagram_Glyph_Black.png"
+      ></img>
+      <div>This URL doesn't seem correct</div>
     </div>
   );
 };
@@ -75,7 +74,12 @@ registerVevComponent(Instagram, {
   name: 'Instagram',
   description: 'Add your Instagram post on your canvas.',
   props: [
-    { title: 'Image URL', name: 'url', type: 'string' },
+    {
+      title: 'Instagram URL',
+      name: 'url',
+      type: 'string',
+      initialValue: 'https://www.instagram.com/p/CpAQZfDDseY',
+    },
     { title: 'Include captions', name: 'isCaptioned', type: 'boolean', initialValue: false },
   ],
   type: 'standard',
