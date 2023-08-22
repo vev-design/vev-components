@@ -4,16 +4,17 @@ import { registerVevComponent } from '@vev/react';
 
 type Props = {
   link: string;
+  theme: boolean;
 };
 
 const initialLink = 'https://open.spotify.com/track/4udM5F0AyU3OKKyZdlMt7P?si=f2972e9517804a14';
 
-const Spotify = ({ link = initialLink }: Props) => {
+const Spotify = ({ link = initialLink, theme = true }: Props) => {
   const url = link.replace('open.spotify.com/', 'open.spotify.com/embed/');
   const validUrl = url.indexOf('open.spotify.com/embed') !== -1;
   const spotifyEmbed = validUrl ? (
     <iframe
-      src={url}
+      src={theme ? url : url + '&theme=0'}
       className={styles.frameStyle}
       width="100%"
       height="100%"
@@ -41,6 +42,12 @@ registerVevComponent(Spotify, {
       name: 'link',
       type: 'string',
       initialValue: initialLink,
+    },
+    {
+      title: 'Theme',
+      name: 'theme',
+      type: 'boolean',
+      initialValue: true,
     },
   ],
 });

@@ -39,7 +39,7 @@ function LazyLoad({ hostRef, children }) {
 }
 
 const VimeoUrl = (props) => {
-  const { fullUrl } = props.value;
+  const { fullUrl } = Object.entries(props.value).length ? props.value : props.schema.initialValue;
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -122,7 +122,7 @@ registerVevComponent(Vimeo, {
   name: 'Vimeo',
   props: [
     {
-      title: 'Vimeo video URL',
+      title: 'Vimeo Link',
       name: 'videoInfo',
       type: 'object',
       fields: [

@@ -95,7 +95,7 @@ registerVevComponent(GoogleForms, {
   name: 'Google Forms',
   description:
     "Embed Google Forms into your Vev project by simply copying the form's URL and inserting it into the form element. [Read documentation](https://help.vev.design/en/articles/6288851-google-forms)",
-  props: [{ title: 'Form URL', name: 'formUrl', type: 'string' }],
+  props: [{ title: 'Google Forms URL', name: 'formUrl', type: 'string' }],
   type: 'both',
 });
 
