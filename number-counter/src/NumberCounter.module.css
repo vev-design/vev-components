@@ -1,6 +1,4 @@
 .counter {
-    width: 100%;
-    height: 100%;
     font-size: 42px;
     font-weight: bold;
     font-family: Lato, serif;
@@ -10,6 +8,9 @@
 }
 
 .wrapper {
-    padding: 0;
-    margin: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { registerVevComponent, useVisible } from '@vev/react';
 import styles from './NumberCounter.module.css';
-import { registerVevComponent } from '@vev/react';
 
 type Props = {
   start: number;
@@ -10,6 +10,8 @@ type Props = {
   stepSize: number;
   once: boolean;
   separator: string;
+  runWhenVisible: boolean;
+  hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
 const NumberCounter = ({
@@ -20,17 +22,21 @@ const NumberCounter = ({
   once = true,
   stepSize = 1,
   separator = ',',
+  runWhenVisible = false,
+  hostRef,
 }: Props) => {
   const actualStart = start || 0;
   const internalCount = useRef(actualStart);
   const [hasStarted, setHasStarted] = useState(false);
   const [count, setCount] = useState(actualStart);
+  const isVisible = useVisible(hostRef);
 
   useEffect(() => {
     internalCount.current = start;
   }, [start, stepSize, increment, delay]);
 
   useEffect(() => {
+    if (runWhenVisible && !isVisible) return () => {};
     const initialDelay = setTimeout(() => {
       setHasStarted(true);
     }, delay);
@@ -38,7 +44,7 @@ const NumberCounter = ({
     return () => {
       clearTimeout(initialDelay);
     };
-  }, [delay]);
+  }, [delay, isVisible, runWhenVisible]);
 
   useEffect(() => {
     const incInterval = setInterval(() => {
@@ -71,7 +77,7 @@ const NumberCounter = ({
 
   return (
     <div className={styles.wrapper}>
-      <p className={styles.counter}>{styleNumber(count, separator)}</p>
+      <div className={styles.counter}>{styleNumber(count, separator)}</div>
     </div>
   );
 };
@@ -100,12 +106,6 @@ registerVevComponent(NumberCounter, {
       initialValue: 800,
     },
     {
-      title: 'Run once',
-      name: 'once',
-      type: 'boolean',
-      initialValue: true,
-    },
-    {
       title: 'Step size',
       name: 'stepSize',
       type: 'number',
@@ -116,6 +116,18 @@ registerVevComponent(NumberCounter, {
       name: 'separator',
       type: 'string',
       initialValue: ',',
+    },
+    {
+      title: 'Run once',
+      name: 'once',
+      type: 'boolean',
+      initialValue: true,
+    },
+    {
+      title: 'Run when visible',
+      name: 'runWhenVisible',
+      type: 'boolean',
+      initialValue: false,
     },
   ],
   editableCSS: [
