@@ -3,10 +3,8 @@ import styles from './NumberCounter.module.css';
 import { registerVevComponent } from '@vev/react';
 
 type Props = {
-  range: {
-    start: number;
-    end: number;
-  };
+  start: number;
+  end: number;
   increment: number;
   delay: number;
   stepSize: number;
@@ -15,21 +13,22 @@ type Props = {
 };
 
 const NumberCounter = ({
-  range = { start: 0, end: 100 },
+  start = 1,
+  end = 100,
   increment = 2,
   delay = 800,
   once = true,
   stepSize = 1,
   separator = ',',
 }: Props) => {
-  const actualStart = range.start || 0;
-  const internalCount = useRef(range.start);
+  const actualStart = start || 0;
+  const internalCount = useRef(actualStart);
   const [hasStarted, setHasStarted] = useState(false);
-  const [count, setCount] = useState(range.start);
+  const [count, setCount] = useState(actualStart);
 
   useEffect(() => {
-    internalCount.current = range.start;
-  }, [range.start, stepSize, increment, delay]);
+    internalCount.current = start;
+  }, [start, stepSize, increment, delay]);
 
   useEffect(() => {
     const initialDelay = setTimeout(() => {
@@ -43,30 +42,32 @@ const NumberCounter = ({
 
   useEffect(() => {
     const incInterval = setInterval(() => {
-      if (range.end < range.start) {
-        if (internalCount.current - stepSize >= range.end && hasStarted) {
-          setCount((internalCount.current -= stepSize));
+      if (hasStarted) {
+        if (end < start) {
+          if (internalCount.current - stepSize >= end) {
+            setCount((internalCount.current -= stepSize));
+          } else {
+            setCount(end);
+          }
         } else {
-          setCount(range.end);
+          if (internalCount.current + stepSize <= end) {
+            setCount((internalCount.current += stepSize));
+          } else {
+            setCount(end);
+          }
         }
-      } else {
-        if (internalCount.current + stepSize <= range.end && hasStarted) {
-          setCount((internalCount.current += stepSize));
-        } else {
-          setCount(range.end);
-        }
-      }
 
-      if (internalCount.current === range.end && !once) {
-        internalCount.current = actualStart;
-        setCount(actualStart);
+        if (internalCount.current === end && !once) {
+          internalCount.current = actualStart;
+          setCount(actualStart);
+        }
       }
     }, increment);
 
     return () => {
       clearInterval(incInterval);
     };
-  }, [hasStarted, increment, range.end, once, range.start, actualStart, stepSize]);
+  }, [hasStarted, increment, end, once, start, actualStart, stepSize]);
 
   return (
     <div className={styles.wrapper}>
@@ -84,20 +85,13 @@ registerVevComponent(NumberCounter, {
   description:
     'Begins at the specified start number and counts by the specified step until the end number is reached. Increments up or down depending on start and end values provided.',
   props: [
-    {
-      name: 'range',
-      title: 'Range',
-      type: 'object',
-      fields: [
-        { title: 'Start', name: 'start', type: 'number', initialValue: 0 },
-        { title: 'End', name: 'end', type: 'number', initialValue: 100 },
-      ],
-    },
+    { title: 'Start', name: 'start', type: 'number', initialValue: 1 },
+    { title: 'End', name: 'end', type: 'number', initialValue: 100 },
     {
       title: 'Increment speed (milliseconds)',
       name: 'increment',
       type: 'number',
-      initialValue: 2,
+      initialValue: 300,
     },
     {
       title: 'Delay animation start (milliseconds)',

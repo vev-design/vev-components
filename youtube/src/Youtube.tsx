@@ -67,7 +67,7 @@ registerVevComponent(Youtube, {
   description:
     'Provide a Youtube URL (ex. https://www.youtube.com/watch?v=K_OiQguFo94&t=12s) to play a video inside a Youtube player.',
   props: [
-    { name: 'videoId', title: 'Video URL', type: 'string' },
+    { name: 'videoId', title: 'YouTube URL', type: 'string' },
     { name: 'autoplay', title: 'Autoplay', type: 'boolean', initialValue: false },
     { name: 'hideControls', title: 'Hide controls', type: 'boolean', initialValue: false },
     { name: 'hideFullScreen', title: 'Hide fullscreen', type: 'boolean', initialValue: false },
