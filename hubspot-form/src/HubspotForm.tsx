@@ -13,11 +13,8 @@ type Props = {
 function ConfigScreen() {
   return (
     <div className={styles.info}>
-      <h2>Missing settings.</h2>
-      <p>
-        You have some missing or incompatible settings in your element. Double-click to configure
-        it.
-      </p>
+      <h3>Hubspot</h3>
+      <p>Set Hubspot ID and form ID in the properties panel</p>
     </div>
   );
 }

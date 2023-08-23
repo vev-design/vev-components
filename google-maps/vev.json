@@ -1,5 +1,6 @@
 {
   "key": "UAZajTc6oWbgGppaaXfS",
   "devKey": "EGPo6OJsCio8JAiXPOje",
-  "shareWithAccount": true
+  "public": true,
+  "admin": true
 }

@@ -1,4 +1,5 @@
 {
   "key": "PDxblTfYwIwoOKnZJ2bk",
-  "shareWithAccount": true
+  "public": true,
+  "admin": true
 }
