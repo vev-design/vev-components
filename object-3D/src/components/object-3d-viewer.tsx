@@ -11,7 +11,7 @@ import TWEEN from '@tweenjs/tween.js';
 import styles from '../object-3d.module.css';
 
 export const Object3dViewer = ({ className }: { className?: string }) => {
-  const { modelUrl, disabled } = useContext(Object3dContext);
+  const { modelUrl, disabled, schemaOpen } = useContext(Object3dContext);
   const [canvasRef, setCanvasRef] = useState<HTMLCanvasElement | null>(null);
   const [labelRef, setLabelRef] = useState<HTMLDivElement | null>(null);
   const loadingBarRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +45,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
   useHotspotListener(labelRenderer, camera, scene);
   const hotspotsRef = useHotspots(scene, camera, controls);
 
-  useAnimationFrame(({ time, delta }) => {
+  useAnimationFrame(({ delta }) => {
     if (controls && renderer && labelRenderer && hotspotsRef.current && mixer) {
       controls.update();
       renderer.render(scene, camera);
@@ -61,7 +61,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
 
       TWEEN.update();
     }
-  }, true);
+  }, !disabled || schemaOpen);
 
   useLayoutEffect(() => {
     if (controls && renderer && labelRenderer) {

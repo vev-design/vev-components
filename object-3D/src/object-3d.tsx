@@ -58,7 +58,8 @@ const Object3d = ({
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
   const [initialCameraPosition, setInitialCameraPosition] =
     useState<SavedCameraPosition>(initialCamera);
-  const { disabled } = useEditorState();
+
+  const { disabled, schemaOpen } = useEditorState();
 
   useEffect(() => {
     setInitialCameraPosition(initialCamera);
@@ -101,6 +102,7 @@ const Object3d = ({
           animation,
           hotspots: internalHotspots,
           disabled,
+          schemaOpen,
           savedCameraPosition: initialCameraPosition,
         }}
       >

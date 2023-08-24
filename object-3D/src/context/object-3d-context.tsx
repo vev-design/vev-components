@@ -19,6 +19,7 @@ export interface Object3DContextProps {
   addHotSpot?: (spot: Vector3) => void;
   editMode: boolean;
   disabled?: boolean;
+  schemaOpen?: boolean;
   camera?: Camera;
   control?: any;
   setContextCamera?: (camera: Camera) => void;
