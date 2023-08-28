@@ -48,7 +48,6 @@ export const Slideshow = (props: Props) => {
   const reverse = props.direction?.includes("REVERSE");
 
   const [randomSlides, setRandomSlides] = useState([]);
-  console.log("state", state);
   const numberOfSlides = props?.children?.length || 0;
 
   useEffect(() => {
