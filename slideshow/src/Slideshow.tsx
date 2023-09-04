@@ -202,6 +202,7 @@ registerVevComponent(Slideshow, {
       name: "infinite",
       title: "Infinite",
       type: "boolean",
+      initialValue: true,
     },
     {
       name: "gap",
