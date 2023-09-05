@@ -1,10 +1,10 @@
-import { useContext, useEffect, useRef } from 'react';
-import { Camera, Scene, Vector3 } from 'three';
+import {useContext, useEffect, useRef} from 'react';
+import {Camera, Scene, Vector3} from 'three';
 // @ts-expect-error - no types
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { Object3dContext } from '../context/object-3d-context';
+import {CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
+import {Object3dContext} from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
-import { InternalHotspot } from '../types';
+import {InternalHotspot} from '../types';
 import TWEEN from '@tweenjs/tween.js';
 
 export interface CanvasHotspot {
@@ -14,7 +14,7 @@ export interface CanvasHotspot {
 }
 
 export function useHotspots(scene: Scene | undefined, camera: Camera | undefined, controls: any) {
-  const { hotspots, editMode } = useContext(Object3dContext);
+  const { hotspots, editMode, hotspotClicked } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
 
   useEffect(() => {
@@ -60,6 +60,8 @@ export function useHotspots(scene: Scene | undefined, camera: Camera | undefined
                 controls.update(); // update of controls is here now
               })
               .start();
+
+            if(hotspotClicked) hotspotClicked(storageHotspot.index);
           });
         }
 

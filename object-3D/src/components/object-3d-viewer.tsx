@@ -42,7 +42,10 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
 
   useCenterModel(model, camera, controls, scene, renderer, labelRenderer);
 
+  // Used for adding hotspots
   useHotspotListener(labelRenderer, camera, scene);
+
+  // Used for rendering hotspots
   const hotspotsRef = useHotspots(scene, camera, controls);
 
   useAnimationFrame(({ delta }) => {

@@ -25,6 +25,7 @@ export interface Object3DContextProps {
   setContextCamera?: (camera: Camera) => void;
   setContextControls?: (camera: any) => void;
   savedCameraPosition?: SavedCameraPosition;
+  hotspotClicked?: (index: number) => void;
 }
 
 export const Object3dContext = React.createContext<Object3DContextProps>({
