@@ -239,7 +239,16 @@ registerVevComponent(Youtube, {
       description: "Pause the video.",
     },
     {
-      type: "stop",
+      type: YoutubeInteraction.mute,
+      description: "Mute the video.",
+    },
+    {
+      type: YoutubeInteraction.unMute,
+      description: "Unmute the video.",
+    },
+    {
+      type: YoutubeInteraction.toggleSound,
+      description: "Toggle sound.",
     },
   ],
 });
