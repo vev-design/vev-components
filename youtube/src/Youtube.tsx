@@ -1,6 +1,12 @@
-import React from 'react';
-import styles from './Youtube.module.css';
-import { Icon, registerVevComponent, useEditorState } from '@vev/react';
+import React, { useEffect, useRef } from "react";
+import styles from "./Youtube.module.css";
+import {
+  Icon,
+  registerVevComponent,
+  useDispatchVevEvent,
+  useEditorState,
+  useVevEvent,
+} from "@vev/react";
 
 type Props = {
   videoId: string;
@@ -10,13 +16,33 @@ type Props = {
   loop: boolean;
 };
 
-function youTubeParseUrl(url = ''): string {
+declare global {
+  const YT: any;
+}
+
+function youTubeParseUrl(url = ""): string {
   const regexp =
     /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
   const matches = url.match(regexp);
 
   if (matches) return matches[1];
   return undefined;
+}
+
+enum YoutubeInteraction {
+  play = "play",
+  restart = "restart",
+  togglePlay = "togglePlay",
+  pause = "pause",
+  mute = "mute",
+  unMute = "unMute",
+  toggleSound = "toggleSound",
+}
+
+enum YoutubeEvent {
+  onPlay = "onPlay",
+  onPause = "onPause",
+  onEnd = "onEnd",
 }
 
 const Youtube = ({
@@ -27,6 +53,96 @@ const Youtube = ({
   loop = false,
 }: Props) => {
   const { disabled } = useEditorState();
+  const ref = useRef<HTMLIFrameElement>(null);
+  const playerRef = useRef<any>();
+
+  useVevEvent(YoutubeInteraction.play, () => playerRef.current?.playVideo());
+  useVevEvent(YoutubeInteraction.togglePlay, () => {
+    const player = playerRef.current;
+    if (player) {
+      switch (player.getPlayerState()) {
+        case YT.PlayerState.PLAYING:
+          player.pauseVideo();
+          break;
+        case YT.PlayerState.PAUSED:
+          player.playVideo();
+          break;
+        case YT.PlayerState.ENDED:
+          player.seekTo(0);
+          player.playVideo();
+          break;
+      }
+    }
+  });
+  useVevEvent(YoutubeInteraction.restart, () => playerRef.current?.seekTo());
+  useVevEvent(YoutubeInteraction.pause, () => playerRef.current?.pauseVideo());
+
+  useVevEvent(YoutubeInteraction.mute, () => playerRef.current?.mute());
+  useVevEvent(YoutubeInteraction.unMute, () => playerRef.current?.unMute());
+  useVevEvent(YoutubeInteraction.toggleSound, () =>
+    playerRef.current?.isMuted()
+      ? playerRef.current?.unMute()
+      : playerRef.current?.mute()
+  );
+
+  const dispatch = useDispatchVevEvent();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const iframe = ref.current;
+    if (!iframe) return;
+
+    if (typeof YT === "undefined") {
+      var tag = document.createElement("script");
+
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
+
+    const interval = setInterval(() => {
+      if (typeof YT !== "undefined" && mounted && YT.loaded) {
+        onYouTubeIframeAPIReady();
+        clearInterval(interval);
+      }
+    }, 100);
+
+    function onYouTubeIframeAPIReady() {
+      playerRef.current = new YT.Player(ref.current, {
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+        },
+      });
+    }
+    function onPlayerReady(event) {}
+
+    function onPlayerStateChange(event) {
+      switch (event.data) {
+        case YT.PlayerState.PLAYING:
+          dispatch(YoutubeEvent.onPlay);
+          break;
+        case YT.PlayerState.PAUSED:
+          dispatch(YoutubeEvent.onPause);
+          break;
+        case YT.PlayerState.ENDED:
+          dispatch(YoutubeEvent.onEnd);
+          break;
+      }
+    }
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    if (disabled) player.pauseVideo();
+    else if (autoplay) player.playVideo();
+  }, [disabled]);
 
   /** Video is not set. return */
   if (!videoId)
@@ -36,23 +152,24 @@ const Youtube = ({
       </div>
     );
 
-  let src = 'https://www.youtube.com/embed/';
+  let src = "https://www.youtube.com/embed/";
 
-  if (videoId) src += youTubeParseUrl(videoId) + '?';
+  if (videoId) src += youTubeParseUrl(videoId) + "?";
 
-  if (!disabled && autoplay) src += '&autoplay=1&mute=1';
+  if (!disabled && autoplay) src += "&autoplay=1&mute=1";
 
-  if (hideControls) src += '&controls=0';
+  if (hideControls) src += "&controls=0";
 
-  if (hideFullScreen) src += '&fs=0';
+  if (hideFullScreen) src += "&fs=0";
 
-  if (loop) src += '&loop=1&playlist=' + youTubeParseUrl(videoId);
+  if (loop) src += "&loop=1&playlist=" + youTubeParseUrl(videoId);
 
   /** Need to enable js api */
-  src += '&enablejsapi=1';
+  src += "&enablejsapi=1";
 
   return (
     <iframe
+      ref={ref}
       className={styles.frame}
       src={src}
       frameBorder="0"
@@ -63,17 +180,68 @@ const Youtube = ({
 };
 
 registerVevComponent(Youtube, {
-  name: 'Youtube',
+  name: "Youtube",
   description:
-    'Provide a Youtube URL (ex. https://www.youtube.com/watch?v=K_OiQguFo94&t=12s) to play a video inside a Youtube player.',
+    "Provide a Youtube URL (ex. https://www.youtube.com/watch?v=K_OiQguFo94&t=12s) to play a video inside a Youtube player.",
   props: [
-    { name: 'videoId', title: 'YouTube URL', type: 'string' },
-    { name: 'autoplay', title: 'Autoplay', type: 'boolean', initialValue: false },
-    { name: 'hideControls', title: 'Hide controls', type: 'boolean', initialValue: false },
-    { name: 'hideFullScreen', title: 'Hide fullscreen', type: 'boolean', initialValue: false },
-    { name: 'loop', title: 'Loop video', type: 'boolean', initialValue: false },
+    { name: "videoId", title: "YouTube URL", type: "string" },
+    {
+      name: "autoplay",
+      title: "Autoplay",
+      type: "boolean",
+      initialValue: false,
+    },
+    {
+      name: "hideControls",
+      title: "Hide controls",
+      type: "boolean",
+      initialValue: false,
+    },
+    {
+      name: "hideFullScreen",
+      title: "Hide fullscreen",
+      type: "boolean",
+      initialValue: false,
+    },
+    { name: "loop", title: "Loop video", type: "boolean", initialValue: false },
   ],
-  type: 'both',
+  type: "both",
+  events: [
+    {
+      type: YoutubeEvent.onPlay,
+      description: "On Play",
+    },
+    {
+      type: YoutubeEvent.onPause,
+      description: "On Pause.",
+    },
+    {
+      type: YoutubeEvent.onEnd,
+      description: "On End.",
+    },
+  ],
+
+  interactions: [
+    {
+      type: YoutubeInteraction.play,
+      description: "Play video.",
+    },
+    {
+      type: YoutubeInteraction.restart,
+      description: "Restart video.",
+    },
+    {
+      type: YoutubeInteraction.togglePlay,
+      description: "Toggle play video.",
+    },
+    {
+      type: YoutubeInteraction.pause,
+      description: "Pause the video.",
+    },
+    {
+      type: "stop",
+    },
+  ],
 });
 
 export default Youtube;
