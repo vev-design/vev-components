@@ -1,18 +1,27 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { registerVevComponent, useHover, useModel, useScrollTop, useVisible } from '@vev/react';
-import LottieWeb from 'lottie-web';
-import { colorify, getColors } from 'lottie-colorify';
-import { File, LottieColor, LottieColorReplacement } from './types';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useHover,
+  useModel,
+  useScrollTop,
+  useVevEvent,
+  useVisible
+} from '@vev/react';
+import LottieWeb, {AnimationConfigWithData, AnimationItem} from 'lottie-web';
+import {colorify, getColors} from 'lottie-colorify';
+import {File, LottieColor, LottieColorReplacement} from './types';
 import defaultSettings from './constants/defaultSettings';
 import defaultAnimation from './constants/defaultAnimation';
 import ColorPicker from './components/ColorPicker';
 
 import styles from './Lottie.module.css';
 import SpeedSlider from './components/SpeedSlider';
+import {Events, Interactions} from "./events";
 
 type Props = {
   file: File;
-  trigger: 'visible' | 'hover' | 'click' | 'scroll';
+  trigger: 'visible' | 'hover' | 'click' | 'scroll' | 'never';
   hostRef: React.RefObject<HTMLDivElement>;
   loop: boolean;
   speed: number;
@@ -32,10 +41,11 @@ const Lottie = ({
   offsetStop = 0,
 }: Props) => {
   const model = useModel();
-  const lottieRef = useRef<any>(null);
+  const lottieRef = useRef<AnimationItem | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const isVisible = useVisible(canvasRef);
   const scrollTop = useScrollTop(true);
+  const dispatchVevEvent = useDispatchVevEvent();
 
   const [json, setJson] = useState();
   const [lottieColors, setLottieColors] = useState<LottieColor[]>([]);
@@ -51,6 +61,34 @@ const Lottie = ({
       return match ? match.newColor : lc;
     });
   }, [colorsChanged]);
+
+  useVevEvent(Interactions.PLAY, () => {
+    if(lottieRef.current) {
+      lottieRef.current.play();
+    }
+  });
+
+  useVevEvent(Interactions.PAUSE, () => {
+    if(lottieRef.current) {
+      lottieRef.current.pause();
+    }
+  })
+
+  useVevEvent(Interactions.TOGGLE, () => {
+    if(lottieRef.current) {
+      if(lottieRef.current.isPaused) {
+        lottieRef.current?.play()
+      } else {
+        lottieRef.current?.pause()
+      }
+    }
+  })
+
+  useVevEvent(Interactions.RESET_ANIMATION, () => {
+    if(lottieRef.current) {
+      lottieRef.current?.goToAndPlay(0)
+    }
+  })
 
   // Fetch json data when file url changes
   useEffect(() => {
@@ -74,7 +112,7 @@ const Lottie = ({
 
   // Initial setup
   useEffect(() => {
-    const settings: any = {
+    const settings: AnimationConfigWithData = {
       ...defaultSettings,
       animationData: colorOverrides && json && colorify(colorOverrides, json),
       container: canvasRef.current,
@@ -84,6 +122,22 @@ const Lottie = ({
 
     lottieRef.current = LottieWeb.loadAnimation(settings);
     if (speed !== 1) lottieRef.current.setSpeed(speed);
+
+    // @ts-expect-error
+    lottieRef.current.addEventListener('_pause', () => {
+      dispatchVevEvent(Events.PAUSE);
+    });
+
+    lottieRef.current.addEventListener('loopComplete', () => {
+      dispatchVevEvent(Events.LOOP_COMPLETED);
+    });
+
+
+    lottieRef.current.addEventListener('complete', () => {
+      dispatchVevEvent(Events.COMPLETE);
+    });
+
+
 
     return () => {
       if (lottieRef.current) {
@@ -157,7 +211,41 @@ registerVevComponent(Lottie, {
   description:
     'Lottie is a JSON-based animation file format that enables designers to ship animations on any platform as easily as shipping static assets. Make your own Lottie animations in Adobe After Effects, or more easily, find animations on [lottiefiles.com](https://lottiefiles.com/featured) \n\nUse this element to upload and display your JSON file containing the Lottie animation.',
   icon: 'https://cdn.vev.design/private/pK53XiUzGnRFw1uPeFta7gdedx22/5Vtsm6QxVv_lottieFiles.png.png',
-  events: [],
+  events: [{
+    type: Events.PLAY,
+    description: 'Playing'
+    },
+    {
+      type: Events.PAUSE,
+      description: 'Paused'
+    },
+    {
+      type: Events.LOOP_COMPLETED,
+      description: 'Loop completed'
+    },
+    {
+      type: Events.COMPLETE,
+      description: 'Completed'
+    }
+  ],
+  interactions: [
+    {
+      type: Interactions.PLAY,
+      description: 'Play'
+    },
+    {
+      type: Interactions.PAUSE,
+      description: 'Pause'
+    },
+    {
+      type: Interactions.TOGGLE,
+      description: 'Toggle'
+    },
+    {
+      type: Interactions.RESET_ANIMATION,
+      description: 'Reset animation'
+    }
+  ],
   props: [
     {
       name: 'file',
@@ -178,6 +266,7 @@ registerVevComponent(Lottie, {
           { label: 'Play on hover', value: 'hover' },
           { label: 'Play on click', value: 'click' },
           { label: 'Play on scroll', value: 'scroll' },
+          { label: 'No trigger', value: 'never' },
         ],
       },
     },

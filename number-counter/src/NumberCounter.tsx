@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { registerVevComponent, useVisible } from '@vev/react';
+import {registerVevComponent, useDispatchVevEvent, useVevEvent, useVisible} from '@vev/react';
 import styles from './NumberCounter.module.css';
+import {Events, Interactions} from "./events";
 
 type Props = {
   start: number;
@@ -11,6 +12,7 @@ type Props = {
   once: boolean;
   separator: string;
   runWhenVisible: boolean;
+  disable: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
@@ -23,13 +25,15 @@ const NumberCounter = ({
   stepSize = 1,
   separator = ',',
   runWhenVisible = false,
-  hostRef,
+  hostRef, disable = false,
 }: Props) => {
   const actualStart = start || 0;
   const internalCount = useRef(actualStart);
   const [hasStarted, setHasStarted] = useState(false);
   const [count, setCount] = useState(actualStart);
   const isVisible = useVisible(hostRef);
+
+  const dispatchVevEvent = useDispatchVevEvent();
 
   useEffect(() => {
     internalCount.current = start;
@@ -38,13 +42,28 @@ const NumberCounter = ({
   useEffect(() => {
     if (runWhenVisible && !isVisible) return () => {};
     const initialDelay = setTimeout(() => {
-      setHasStarted(true);
+      if(!disable) {
+        setHasStarted(true);
+      }
     }, delay);
 
     return () => {
       clearTimeout(initialDelay);
     };
   }, [delay, isVisible, runWhenVisible]);
+
+  useVevEvent(Interactions.START, () => {
+    setHasStarted(true);
+  })
+
+  useVevEvent(Interactions.STOP, () => {
+    setHasStarted(false);
+  })
+
+  useVevEvent(Interactions.RESET, () => {
+    setCount(0);
+    internalCount.current = 0;
+  })
 
   useEffect(() => {
     const incInterval = setInterval(() => {
@@ -53,12 +72,14 @@ const NumberCounter = ({
           if (internalCount.current - stepSize >= end) {
             setCount((internalCount.current -= stepSize));
           } else {
+            dispatchVevEvent(Events.COMPLETE);
             setCount(end);
           }
         } else {
           if (internalCount.current + stepSize <= end) {
             setCount((internalCount.current += stepSize));
           } else {
+            dispatchVevEvent(Events.COMPLETE);
             setCount(end);
           }
         }
@@ -124,10 +145,36 @@ registerVevComponent(NumberCounter, {
       initialValue: true,
     },
     {
+      title: 'Disable',
+      name: 'disable',
+      type: 'boolean',
+      initialValue: false,
+    },
+    {
       title: 'Run when visible',
       name: 'runWhenVisible',
       type: 'boolean',
       initialValue: false,
+    },
+  ],
+  events: [
+    {
+      type: Events.COMPLETE,
+      description: 'Completed'
+    }
+  ],
+  interactions: [
+    {
+      type: Interactions.START,
+      description: 'Start',
+    },
+    {
+      type: Interactions.STOP,
+      description: 'Stop',
+    },
+    {
+      type: Interactions.RESET,
+      description: 'Stop',
     },
   ],
   editableCSS: [
