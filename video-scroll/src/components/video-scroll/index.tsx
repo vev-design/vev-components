@@ -44,4 +44,4 @@ registerVevComponent(VideoScroll, {
   ],
 });
 
-export { VideoScroll };
+export default VideoScroll;

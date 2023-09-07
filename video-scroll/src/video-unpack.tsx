@@ -38,7 +38,7 @@ type FileUpload = {
  */
 export const unpackFrames = async (
   file: File,
-  uploadFile: (file: string) => Promise<FileUpload>,
+  uploadFile: (file: string, filename: string) => Promise<FileUpload>,
   progressCb: (progress: number, frame: string) => void
 ): Promise<string[]> => {
   const videoElement = document.createElement("video");
@@ -100,7 +100,7 @@ export const unpackFrames = async (
         height
       );
       imageUploadPromises.push(
-        uploadFile(base64Snapshot).then((file) => {
+        uploadFile(base64Snapshot, `frame-${frameIndex}.jpg`).then((file) => {
           imageDoneCount++;
           progressCb(imageDoneCount / imageCount, base64Snapshot);
           return file;
