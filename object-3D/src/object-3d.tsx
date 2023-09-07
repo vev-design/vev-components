@@ -9,6 +9,7 @@ import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import {EventTypes, InteractionTypes} from "./event-types";
+import SpeedSlider from "./SpeedSlider";
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -37,6 +38,7 @@ type Props = {
   modelUrl: { url: string };
   lighting: 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
   rotate: boolean;
+  rotationSpeed: number;
   controls: boolean;
   animation?: string;
   zoom: boolean;
@@ -54,6 +56,7 @@ const Object3d = ({
   zoom = false,
   hotspots,
   initialCamera,
+  rotationSpeed = 2,
 }: Props) => {
   const { width, height } = useSize(hostRef);
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
@@ -104,6 +107,7 @@ const Object3d = ({
           near: NEAR,
           hdri: LIGHTING[lighting],
           rotate,
+          rotationSpeed,
           zoom,
           controls,
           animation,
@@ -173,6 +177,14 @@ registerVevComponent(Object3d, {
       title: 'Rotate',
       type: 'boolean',
       initialValue: true,
+    },
+    {
+      name: 'rotationSpeed',
+      title: 'Rotation speed',
+      type: 'number',
+      initialValue: 2,
+      component: SpeedSlider,
+      hidden: (context) => context?.value?.trigger === 'scroll',
     },
     {
       name: 'controls',

@@ -26,6 +26,7 @@ export interface Object3DContextProps {
   setContextControls?: (camera: any) => void;
   savedCameraPosition?: SavedCameraPosition;
   hotspotClicked?: (index: number) => void;
+  rotationSpeed: number;
 }
 
 export const Object3dContext = React.createContext<Object3DContextProps>({
@@ -44,6 +45,7 @@ export const Object3dContext = React.createContext<Object3DContextProps>({
   hotspots: [],
   editMode: false,
   disabled: true,
+  rotationSpeed: 1,
 });
 
 interface Object3DContextProviderProps {

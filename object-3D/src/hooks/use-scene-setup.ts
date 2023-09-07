@@ -37,6 +37,7 @@ export function useSceneSetup(
     setContextControls,
     savedCameraPosition,
     hotspots,
+    rotationSpeed
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
@@ -85,6 +86,7 @@ export function useSceneSetup(
       // Controls
       const controls = new OrbitControls(camera, labelRenderer.domElement);
       controls.autoRotate = rotate;
+      controls.autoRotateSpeed = rotationSpeed;
       controls.enableDamping = true;
       controls.enableZoom = zoom;
       controls.dampingFactor = 0.1;
@@ -101,6 +103,12 @@ export function useSceneSetup(
       setControls(controls);
     }
   }, [canvasRef, labelRef]);
+
+  useEffect(() => {
+    if(controls) {
+      controls.autoRotateSpeed = rotationSpeed;
+    }
+  }, [rotationSpeed]);
 
   // Set or update lightning
   useEffect(() => {

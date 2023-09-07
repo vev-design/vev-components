@@ -35,6 +35,14 @@ const NumberCounter = ({
 
   const dispatchVevEvent = useDispatchVevEvent();
 
+
+  useEffect(() => {
+    if(!isVisible) {
+      internalCount.current = start
+      setCount(start);
+    }
+  }, [isVisible]);
+
   useEffect(() => {
     internalCount.current = start;
   }, [start, stepSize, increment, delay]);
@@ -61,8 +69,8 @@ const NumberCounter = ({
   })
 
   useVevEvent(Interactions.RESET, () => {
-    setCount(0);
-    internalCount.current = 0;
+    setCount(start);
+    internalCount.current = start;
   })
 
   useEffect(() => {
