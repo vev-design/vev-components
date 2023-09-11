@@ -1,31 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { WidgetNode } from '@vev/react';
-import { Props } from '../Slideshow';
-import { useNext, usePrev } from '../hooks';
+import React, { useState, useEffect, useRef } from "react";
+import { WidgetNode } from "@vev/react";
+import { Props } from "../Slideshow";
+import { useNext, usePrev } from "../hooks";
 
-import styles from './Slide.module.css';
+import styles from "./Slide.module.css";
 
 export const Slide = ({
   index,
   speed,
   slides,
   direction,
-}: Omit<Props, 'children'> & {
+  preview,
+}: Omit<Props, "children"> & {
   index: number;
+  preview?: boolean;
 }) => {
   const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
-  const moveDirection = ['VERTICAL', 'VERTICAL_REVERSE'].includes(direction) ? 'Y' : 'X';
+  const moveDirection = ["VERTICAL", "VERTICAL_REVERSE"].includes(direction)
+    ? "Y"
+    : "X";
 
   const NEXT = useNext(index, slides);
   const PREV = usePrev(index, slides);
-  const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
+  const [array, setArray] = useState([
+    slides[PREV],
+    slides[index],
+    slides[NEXT],
+  ]);
 
   useEffect(() => {
+    if (preview) return setArray([slides[PREV], slides[index], slides[NEXT]]);
+
     if (
       index === prevIndex.current + 1 ||
-      (prevIndex.current === slides.length - 1 && index === 0 && slides.length !== 1)
+      (prevIndex.current === slides.length - 1 &&
+        index === 0 &&
+        slides.length !== 1)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
@@ -34,7 +46,9 @@ export const Slide = ({
 
     if (
       index === prevIndex.current - 1 ||
-      (prevIndex.current === 0 && index === slides.length - 1 && slides.length !== 1)
+      (prevIndex.current === 0 &&
+        index === slides.length - 1 &&
+        slides.length !== 1)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(speed || 200);
@@ -50,7 +64,7 @@ export const Slide = ({
         transition: `transform ${transitionSpeed}ms linear`,
       }}
       onTransitionEnd={(e) => {
-        if (e.propertyName === 'transform') {
+        if (e.propertyName === "transform") {
           setTransitionSpeed(0);
           setMove(-100);
           setArray([slides[PREV], slides[index], slides[NEXT]]);
@@ -64,7 +78,7 @@ export const Slide = ({
             key={i + child}
             style={{
               transform: `translate${moveDirection}(${100 * i}%)`,
-              width: '100%',
+              width: "100%",
             }}
           >
             {child && <WidgetNode id={child} />}

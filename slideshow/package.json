@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@vev/react": "^0.0.3",
+    "@vev/silke": "^1.0.15",
     "react": "^18.2.0"
   }
 }

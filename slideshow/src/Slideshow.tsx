@@ -106,6 +106,7 @@ export const Slideshow = (props: Props) => {
   });
 
   useVevEvent(Events.SET, (args: { index: number }) => {
+    console.log("set", args);
     setState({
       index: Number(args?.index),
       length: numberOfSlides || 0,
@@ -132,6 +133,7 @@ export const Slideshow = (props: Props) => {
         slides={editor.disabled ? children : random ? randomSlides : children}
         speed={editor?.disabled ? 1 : props.speed}
         index={editor?.disabled ? selectedIndex || 0 : state?.index || 0}
+        preview={editor?.disabled}
       />
     </div>
   );
