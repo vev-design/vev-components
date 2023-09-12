@@ -147,6 +147,10 @@ registerVevComponent(Slideshow, {
     name: "Slide",
     icon: "https://cdn.vev.design/visuals/slides.png",
   },
+  size: {
+    width: 510,
+    height: 340,
+  },
   editableCSS: [
     {
       selector: ":host",
