@@ -1,8 +1,9 @@
 **/node_modules/**
-**/.DS_Store
+/.changelog
 
 **/yarn.lock
 **/package-lock.json
+.npm/
 
 **/dist/
 **/build/
@@ -18,3 +19,11 @@ yarn-error.log*
 
 # Intellij project settings
 /.idea/
+
+# os
+.vscode/
+**/.DS_Store
+*.tgz
+
+## Vev
+.vev/
