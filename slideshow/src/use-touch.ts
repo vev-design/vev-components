@@ -1,4 +1,4 @@
-import { useEffect, RefObject, useState } from 'react';
+import { useEffect, RefObject, useState } from "react";
 
 const getX = (e) => e.touches[0].clientX;
 
@@ -33,15 +33,17 @@ export function useTouch(ref: RefObject<HTMLElement>, cb) {
       }
     };
 
-    ref.current.addEventListener('touchstart', handleTouchStart);
-    ref.current.addEventListener('touchend', handleTouchEnd);
-    ref.current.addEventListener('touchmove', handleTouch);
+    ref.current.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
+    ref.current.addEventListener("touchend", handleTouchEnd, { passive: true });
+    ref.current.addEventListener("touchmove", handleTouch, { passive: true });
 
     return () => {
       if (!ref.current) return;
-      ref.current.removeEventListener('touchstart', handleTouchStart);
-      ref.current.removeEventListener('touchend', handleTouchEnd);
-      ref.current.removeEventListener('touchmove', handleTouch);
+      ref.current.removeEventListener("touchstart", handleTouchStart);
+      ref.current.removeEventListener("touchend", handleTouchEnd);
+      ref.current.removeEventListener("touchmove", handleTouch);
     };
   }, [ref, dragging, cb, x]);
 }

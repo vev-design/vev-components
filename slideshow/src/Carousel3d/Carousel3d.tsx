@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { WidgetNode, useSize } from '@vev/react';
-import { Props } from '../Slideshow';
+import React, { useState, useEffect, useRef } from "react";
+import { WidgetNode, useSize } from "@vev/react";
+import { Props } from "../Slideshow";
 
-import styles from './Carousel3d.module.css';
+import styles from "./Carousel3d.module.css";
 
 export const Carousel3d = ({
   index,
@@ -10,8 +10,8 @@ export const Carousel3d = ({
   slides,
   hostRef,
   gap = 30,
-  onNextSlide,
-}: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
+  onUpdateCurrentSlides,
+}: Omit<Props, "children"> & { index: number }) => {
   const [rounds, setRounds] = useState(1);
   const [radius, setRadius] = useState(0);
   const size = useSize(hostRef);
@@ -37,18 +37,20 @@ export const Carousel3d = ({
       className={styles.wrapper}
       style={{
         perspective,
-        transform: 'scale(0.5)',
+        transform: "scale(0.5)",
       }}
     >
       <div
         className={styles.carousel}
         style={{
-          transform: `rotateY(-${percentage * (index + rounds * slides?.length)}deg) `,
+          transform: `rotateY(-${
+            percentage * (index + rounds * slides?.length)
+          }deg) `,
           transition: `transform ${speed || 200}ms`,
         }}
         onTransitionEnd={(e) => {
-          if (e.propertyName === 'transform') {
-            onNextSlide();
+          if (e.propertyName === "transform") {
+            onUpdateCurrentSlides();
           }
         }}
       >
@@ -58,7 +60,11 @@ export const Carousel3d = ({
               className={styles.slide}
               key={child}
               style={{
-                transform: `rotateY(${percentage * i}deg) translateZ(${radius + gap}px)`,
+                transform: `rotateY(${percentage * i}deg) translateZ(${
+                  radius + gap
+                }px)`,
+                zIndex: i === index ? "1" : "0",
+                pointerEvents: i === index ? "auto" : "none",
               }}
             >
               <WidgetNode id={child} />

@@ -10,7 +10,8 @@ export const Slide = ({
   speed,
   slides,
   direction,
-  preview,
+  currentSlides,
+  onUpdateCurrentSlides,
 }: Omit<Props, "children"> & {
   index: number;
   preview?: boolean;
@@ -22,17 +23,7 @@ export const Slide = ({
     ? "Y"
     : "X";
 
-  const NEXT = useNext(index, slides);
-  const PREV = usePrev(index, slides);
-  const [array, setArray] = useState([
-    slides[PREV],
-    slides[index],
-    slides[NEXT],
-  ]);
-
   useEffect(() => {
-    if (preview) return setArray([slides[PREV], slides[index], slides[NEXT]]);
-
     if (
       index === prevIndex.current + 1 ||
       (prevIndex.current === slides.length - 1 &&
@@ -67,11 +58,11 @@ export const Slide = ({
         if (e.propertyName === "transform") {
           setTransitionSpeed(0);
           setMove(-100);
-          setArray([slides[PREV], slides[index], slides[NEXT]]);
+          onUpdateCurrentSlides();
         }
       }}
     >
-      {array?.map((child: string, i: number) => {
+      {currentSlides?.map((child: string, i: number) => {
         return (
           <div
             className={styles.slide}
@@ -79,6 +70,8 @@ export const Slide = ({
             style={{
               transform: `translate${moveDirection}(${100 * i}%)`,
               width: "100%",
+              zIndex: i === index ? "1" : "0",
+              pointerEvents: i === index ? "auto" : "none",
             }}
           >
             {child && <WidgetNode id={child} />}

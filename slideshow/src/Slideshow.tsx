@@ -13,6 +13,7 @@ import Fade from "./Fade";
 import Zoom from "./Zoom";
 import Carousel from "./Carousel3d";
 import { useTouch } from "./use-touch";
+import { useNext, usePrev } from "./hooks";
 
 import styles from "./Slideshow.module.css";
 
@@ -20,6 +21,8 @@ export type Props = {
   hostRef: RefObject<any>;
   children: string[];
   slides: string[];
+  currentSlides: string[];
+  onUpdateCurrentSlides: () => void;
   animation: "slide" | "zoom" | "fade" | "3d";
   speed?: number;
   selectedIndex?: number;
@@ -42,18 +45,40 @@ enum Events {
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, selectedIndex, random, infinite, hostRef } =
     props;
-
   const reverse = props.direction?.includes("REVERSE");
 
-  const [randomSlides, setRandomSlides] = useState([]);
+  const [slides, setSlides] = useState(children || []);
   const numberOfSlides = props?.children?.length || 0;
+  const index = editor?.disabled ? selectedIndex || 0 : state?.index || 0;
+
+  const NEXT_SLIDE = useNext(index, slides);
+  const PREV_SLIDE = usePrev(index, slides);
+
+  const [currentSlides, setCurrentSlides] = useState([
+    slides[PREV_SLIDE],
+    slides[index],
+    slides[NEXT_SLIDE],
+  ]);
+
+  useEffect(() => {
+    if (editor?.disabled)
+      return setCurrentSlides([
+        slides[PREV_SLIDE],
+        slides[index],
+        slides[NEXT_SLIDE],
+      ]);
+  }, []);
 
   useEffect(() => {
     if (random && !editor.disabled) {
       // Set random
-      setRandomSlides(shuffleArray(children));
+      console.log("set random");
+      setSlides(shuffleArray(children));
+    } else {
+      setSlides(children);
     }
   }, [random, editor.disabled, children]);
 
@@ -64,12 +89,12 @@ export const Slideshow = (props: Props) => {
 
   useTouch(hostRef, {
     // Enable touch
-    onNext: () => setState(NEXT_SLIDE),
-    onPrev: () => setState(PREV_SLIDE),
+    onNext: () => setState(NEXT),
+    onPrev: () => setState(PREV),
   });
 
-  const NEXT = useMemo(
-    () => ({
+  const NEXT = useMemo(() => {
+    return {
       index:
         (state?.index || 0) === numberOfSlides - 1
           ? infinite
@@ -77,12 +102,11 @@ export const Slideshow = (props: Props) => {
             : numberOfSlides - 1
           : state?.index + 1,
       length: numberOfSlides || 0,
-    }),
-    [numberOfSlides, state?.index, infinite]
-  );
+    };
+  }, [numberOfSlides, state?.index, infinite]);
 
-  const PREV = useMemo(
-    () => ({
+  const PREV = useMemo(() => {
+    return {
       index:
         state?.index === 0
           ? infinite
@@ -90,23 +114,27 @@ export const Slideshow = (props: Props) => {
             : 0
           : state?.index - 1,
       length: numberOfSlides || 0,
-    }),
-    [numberOfSlides, state?.index, infinite]
-  );
-
-  const NEXT_SLIDE = reverse && animation === "slide" ? PREV : NEXT;
-  const PREV_SLIDE = reverse ? NEXT : PREV;
+    };
+  }, [numberOfSlides, state?.index, infinite]);
 
   useVevEvent(Events.NEXT, () => {
-    setState(NEXT_SLIDE);
+    console.log("@@@ next", isTransitioning);
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setState(NEXT);
   });
 
   useVevEvent(Events.PREV, () => {
-    setState(PREV_SLIDE);
+    console.log("@@@ prev", isTransitioning);
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    console.log("prev", PREV);
+    setState(PREV);
   });
 
   useVevEvent(Events.SET, (args: { index: number }) => {
-    console.log("set", args);
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     setState({
       index: Number(args?.index),
       length: numberOfSlides || 0,
@@ -130,10 +158,18 @@ export const Slideshow = (props: Props) => {
     <div className={styles.wrapper}>
       <Comp
         {...props}
-        slides={editor.disabled ? children : random ? randomSlides : children}
+        slides={slides}
+        currentSlides={currentSlides}
         speed={editor?.disabled ? 1 : props.speed}
-        index={editor?.disabled ? selectedIndex || 0 : state?.index || 0}
-        preview={editor?.disabled}
+        index={index}
+        onUpdateCurrentSlides={() => {
+          setIsTransitioning(false);
+          setCurrentSlides([
+            slides[PREV_SLIDE],
+            slides[index],
+            slides[NEXT_SLIDE],
+          ]);
+        }}
       />
     </div>
   );
@@ -195,14 +231,12 @@ registerVevComponent(Slideshow, {
       name: "direction",
       type: "string",
       component: DirectionField,
-      // hidden: (context) => !['slide', '3d'].includes(context.value?.animation),
       initialValue: "HORIZONTAL",
     },
     {
       name: "random",
       title: "Randomize",
       type: "boolean",
-      // hidden: (context) => ['3d'].includes(context.value?.animation),
     },
     {
       name: "infinite",
