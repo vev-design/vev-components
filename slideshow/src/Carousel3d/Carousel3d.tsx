@@ -9,11 +9,13 @@ const Slide3d = ({
   contentKey,
   angle,
   radius,
+  active,
 }: {
   contentKey: string;
   angle: number;
   radius: number;
   size: number;
+  active: boolean;
 }) => {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
@@ -23,7 +25,8 @@ const Slide3d = ({
       style={{
         rotate: `0 1 0 ${angle}rad`,
         translate: `${sin * radius}px 0 ${cos * radius - radius}px`,
-        transition: "all 500ms",
+        zIndex: active ? 1 : -1,
+        pointerEvents: active ? "all" : "none",
       }}
     >
       <WidgetNode id={contentKey} />
@@ -91,6 +94,7 @@ export const Carousel3d = ({
               angle={angle + angleStep * i}
               radius={circleRadius}
               size={width}
+              active={i === index}
             />
           );
         })}
