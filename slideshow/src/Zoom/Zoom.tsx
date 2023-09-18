@@ -64,8 +64,6 @@ export const Zoom = ({
     }
   }, [index, prevIndex, speed]);
 
-  console.log("transitionSpeed", transitionSpeed);
-
   return (
     <div
       className={styles.wrapper}
