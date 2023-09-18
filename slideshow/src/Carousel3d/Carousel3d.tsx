@@ -58,11 +58,9 @@ export const Carousel3d = ({
     const unit = 1 / slides.length;
 
     if (isGoingForward(index, prevIndex.current, slides.length)) {
-      console.log("forward");
       setPercentage((percentage) => percentage - unit);
     }
     if (isGoingBackward(index, prevIndex.current, slides.length)) {
-      console.log("backward");
       setPercentage((percentage) => percentage + unit);
     }
 
