@@ -10,7 +10,6 @@ export const Carousel3d = ({
   slides,
   hostRef,
   gap = 30,
-  onUpdateCurrentSlides,
 }: Omit<Props, "children"> & { index: number }) => {
   const [rounds, setRounds] = useState(1);
   const [radius, setRadius] = useState(0);
@@ -48,11 +47,11 @@ export const Carousel3d = ({
           }deg) `,
           transition: `transform ${speed || 200}ms`,
         }}
-        onTransitionEnd={(e) => {
+        /*      onTransitionEnd={(e) => {
           if (e.propertyName === "transform") {
             onUpdateCurrentSlides();
           }
-        }}
+        }} */
       >
         {slides?.map((child: string, i: number) => {
           return (

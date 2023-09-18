@@ -19,7 +19,7 @@ import Fade from "./Fade";
 import Zoom from "./Zoom";
 import Carousel from "./Carousel3d";
 import { useTouch } from "./use-touch";
-import { getNextSlide, getPrevSlide } from "./hooks";
+import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
 
 import styles from "./Slideshow.module.css";
 
@@ -89,7 +89,7 @@ export const Slideshow = (props: Props) => {
     console.log("@@@ next", isTransitioning);
     setIsTransitioning(true);
     setState({
-      index: getNextSlide(index, slides),
+      index: getNextSlideIndex(index, slides),
       length: numberOfSlides || 0,
     });
   }, [index, slides, numberOfSlides, isTransitioning]);
@@ -98,7 +98,7 @@ export const Slideshow = (props: Props) => {
     console.log("@@@ prev", isTransitioning);
     setIsTransitioning(true);
     setState({
-      index: getPrevSlide(index, slides),
+      index: getPrevSlideIndex(index, slides),
       length: numberOfSlides || 0,
     });
   }, [index, slides, numberOfSlides, isTransitioning]);
@@ -137,8 +137,8 @@ export const Slideshow = (props: Props) => {
         {...props}
         slides={slides}
         currentSlide={slides[index]}
-        nextSlide={slides[getNextSlide(index, slides)]}
-        prevSlide={slides[getPrevSlide(index, slides)]}
+        nextSlide={slides[getNextSlideIndex(index, slides)]}
+        prevSlide={slides[getPrevSlideIndex(index, slides)]}
         speed={editor?.disabled ? 1 : props.speed}
         index={index}
       />

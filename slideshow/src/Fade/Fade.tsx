@@ -8,7 +8,6 @@ export const Fade = ({
   index,
   speed,
   slides,
-  onUpdateCurrentSlides,
 }: Omit<Props, "children"> & { index: number }) => {
   console.log("yo");
   return (
@@ -16,9 +15,6 @@ export const Fade = ({
       {slides?.map((child: string, i: number) => {
         return (
           <div
-            onTransitionEnd={() => {
-              onUpdateCurrentSlides();
-            }}
             className={styles.slide}
             key={i + child}
             style={{
