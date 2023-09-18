@@ -33,6 +33,7 @@ export type Props = {
   random?: boolean;
   infinite?: boolean;
   perspective?: number;
+  scaleFactor?: number;
   direction:
     | "HORIZONTAL"
     | "HORIZONTAL_REVERSE"
@@ -44,6 +45,7 @@ export type Props = {
   nextSlide: string;
   prevSlide: string;
   editMode?: boolean;
+  index: number;
 };
 
 enum Events {
@@ -228,6 +230,13 @@ registerVevComponent(Slideshow, {
       title: "Perspective (px)",
       initialValue: 800,
       hidden: (context) => context.value?.animation !== "3d",
+    },
+    {
+      name: "scaleFactor",
+      type: "number",
+      title: "Scale (%)",
+      initialValue: 300,
+      hidden: (context) => context.value?.animation !== "zoom",
     },
   ],
   interactions: [
