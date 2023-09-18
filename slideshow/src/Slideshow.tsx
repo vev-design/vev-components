@@ -32,6 +32,7 @@ export type Props = {
   gap?: number;
   random?: boolean;
   infinite?: boolean;
+  perspective?: number;
   direction:
     | "HORIZONTAL"
     | "HORIZONTAL_REVERSE"
@@ -42,6 +43,7 @@ export type Props = {
   currentSlide: string;
   nextSlide: string;
   prevSlide: string;
+  editMode?: boolean;
 };
 
 enum Events {
@@ -73,7 +75,6 @@ export const Slideshow = (props: Props) => {
   useEffect(() => {
     if (random && !editor.disabled) {
       // Set random
-      console.log("set random");
       setSlides(shuffleArray(children));
     } else {
       setSlides(children);
@@ -86,7 +87,6 @@ export const Slideshow = (props: Props) => {
   }, [numberOfSlides, editor.disabled]);
 
   const handleNextSlide = useCallback(() => {
-    console.log("@@@ next", isTransitioning);
     setIsTransitioning(true);
     setState({
       index: getNextSlideIndex(index, slides),
@@ -95,7 +95,6 @@ export const Slideshow = (props: Props) => {
   }, [index, slides, numberOfSlides, isTransitioning]);
 
   const handlePrevSlide = useCallback(() => {
-    console.log("@@@ prev", isTransitioning);
     setIsTransitioning(true);
     setState({
       index: getPrevSlideIndex(index, slides),
@@ -141,6 +140,7 @@ export const Slideshow = (props: Props) => {
         prevSlide={slides[getPrevSlideIndex(index, slides)]}
         speed={editor?.disabled ? 1 : props.speed}
         index={index}
+        editMode={editor.disabled}
       />
     </div>
   );
@@ -220,6 +220,13 @@ registerVevComponent(Slideshow, {
       type: "number",
       title: "Gap (px)",
       initialValue: 50,
+      hidden: (context) => context.value?.animation !== "3d",
+    },
+    {
+      name: "perspective",
+      type: "number",
+      title: "Perspective (px)",
+      initialValue: 800,
       hidden: (context) => context.value?.animation !== "3d",
     },
   ],
