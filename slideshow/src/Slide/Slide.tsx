@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { WidgetNode } from "@vev/react";
 import { Props } from "../Slideshow";
-import { useNext, usePrev } from "../hooks";
 
 import styles from "./Slide.module.css";
 
@@ -10,12 +9,16 @@ export const Slide = ({
   speed,
   slides,
   direction,
-  currentSlides,
-  onUpdateCurrentSlides,
+  currentSlide,
+  nextSlide,
+  prevSlide,
 }: Omit<Props, "children"> & {
   index: number;
   preview?: boolean;
 }) => {
+  const reverse = direction?.includes("REVERSE");
+  const [currentSlides, setCurrentSlides] = useState<string[]>([]);
+
   const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
@@ -24,26 +27,58 @@ export const Slide = ({
     : "X";
 
   useEffect(() => {
-    if (
+    setCurrentSlides(
+      reverse
+        ? [nextSlide, currentSlide, prevSlide]
+        : [prevSlide, currentSlide, nextSlide]
+    );
+  }, [reverse]);
+
+  useEffect(() => {
+    const isForward =
       index === prevIndex.current + 1 ||
       (prevIndex.current === slides.length - 1 &&
         index === 0 &&
-        slides.length !== 1)
-    ) {
-      prevIndex.current = index;
-      setTransitionSpeed(speed || 200);
-      setMove(-200);
-    }
+        slides.length !== 1);
 
-    if (
+    const isBackward =
       index === prevIndex.current - 1 ||
       (prevIndex.current === 0 &&
         index === slides.length - 1 &&
-        slides.length !== 1)
-    ) {
+        slides.length !== 1);
+
+    const isJumping =
+      prevIndex.current - index > 1 || index - prevIndex.current > 1;
+
+    console.log(prevIndex.current, index, isJumping);
+
+    if (isJumping) {
       prevIndex.current = index;
+      setCurrentSlides(
+        reverse
+          ? [nextSlide, currentSlide, prevSlide]
+          : [prevSlide, currentSlide, nextSlide]
+      );
+    }
+
+    const moveLeft = () => {
+      setTransitionSpeed(speed || 200);
+      setMove(-200);
+    };
+
+    const moveRight = () => {
       setTransitionSpeed(speed || 200);
       setMove(0);
+    };
+
+    if (isForward) {
+      prevIndex.current = index;
+      reverse ? moveRight() : moveLeft();
+    }
+
+    if (isBackward) {
+      prevIndex.current = index;
+      reverse ? moveLeft() : moveRight();
     }
   }, [index, prevIndex, speed]);
 
@@ -58,7 +93,11 @@ export const Slide = ({
         if (e.propertyName === "transform") {
           setTransitionSpeed(0);
           setMove(-100);
-          onUpdateCurrentSlides();
+          setCurrentSlides(
+            reverse
+              ? [nextSlide, currentSlide, prevSlide]
+              : [prevSlide, currentSlide, nextSlide]
+          );
         }
       }}
     >
