@@ -1,0 +1,43 @@
+.container {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+.checkbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.field {
+  position: relative;
+  display: inline-block;
+  width: 41px;
+  height: 24px;
+  cursor: pointer;
+  background-color: #777;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.fieldActive {
+  background: rgb(92, 76, 230);
+}
+
+.switch {
+  position: absolute;
+  content: "";
+  top: 2px;
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 100%;
+  transition: 0.4s;
+}
+
+.switchActive {
+  transform: translateX(17px);
+}

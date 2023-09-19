@@ -1,44 +1,75 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { WidgetNode } from '@vev/react';
-import { Props } from '../Slideshow';
-import { useNext, usePrev } from '../hooks';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { WidgetNode } from "@vev/react";
+import { Props } from "../Slideshow";
+import { isGoingForward, isGoingBackward } from "../utils";
 
-import styles from './Slide.module.css';
+import styles from "./Slide.module.css";
 
 export const Slide = ({
   index,
   speed,
   slides,
   direction,
-}: Omit<Props, 'children'> & {
+  currentSlide,
+  nextSlide,
+  prevSlide,
+}: Omit<Props, "children"> & {
   index: number;
+  preview?: boolean;
 }) => {
+  const reverse = direction?.includes("REVERSE");
+  const [currentSlides, setCurrentSlides] = useState<string[]>([]);
+
   const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
-  const moveDirection = ['VERTICAL', 'VERTICAL_REVERSE'].includes(direction) ? 'Y' : 'X';
-
-  const NEXT = useNext(index, slides);
-  const PREV = usePrev(index, slides);
-  const [array, setArray] = useState([slides[PREV], slides[index], slides[NEXT]]);
+  const moveDirection = ["VERTICAL", "VERTICAL_REVERSE"].includes(direction)
+    ? "Y"
+    : "X";
 
   useEffect(() => {
-    if (
-      index === prevIndex.current + 1 ||
-      (prevIndex.current === slides.length - 1 && index === 0 && slides.length !== 1)
-    ) {
-      prevIndex.current = index;
-      setTransitionSpeed(speed || 200);
-      setMove(-200);
-    }
+    setSlides();
+  }, [reverse]);
+
+  const setSlides = useCallback(() => {
+    setCurrentSlides(
+      reverse
+        ? [nextSlide, currentSlide, prevSlide]
+        : [prevSlide, currentSlide, nextSlide]
+    );
+  }, [nextSlide, currentSlide, prevSlide]);
+
+  useEffect(() => {
+    const isJumping =
+      prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
     if (
-      index === prevIndex.current - 1 ||
-      (prevIndex.current === 0 && index === slides.length - 1 && slides.length !== 1)
+      isJumping &&
+      !isGoingForward(index, prevIndex.current, slides.length) &&
+      !isGoingForward(prevIndex.current, index, slides.length)
     ) {
       prevIndex.current = index;
+      setSlides();
+    }
+
+    const moveLeft = () => {
+      setTransitionSpeed(speed || 200);
+      setMove(-200);
+    };
+
+    const moveRight = () => {
       setTransitionSpeed(speed || 200);
       setMove(0);
+    };
+
+    if (isGoingForward(index, prevIndex.current, slides.length)) {
+      prevIndex.current = index;
+      reverse ? moveRight() : moveLeft();
+    }
+
+    if (isGoingBackward(index, prevIndex.current, slides.length)) {
+      prevIndex.current = index;
+      reverse ? moveLeft() : moveRight();
     }
   }, [index, prevIndex, speed]);
 
@@ -50,21 +81,23 @@ export const Slide = ({
         transition: `transform ${transitionSpeed}ms linear`,
       }}
       onTransitionEnd={(e) => {
-        if (e.propertyName === 'transform') {
+        if (e.propertyName === "transform") {
           setTransitionSpeed(0);
           setMove(-100);
-          setArray([slides[PREV], slides[index], slides[NEXT]]);
+          setSlides();
         }
       }}
     >
-      {array?.map((child: string, i: number) => {
+      {currentSlides?.map((child: string, i: number) => {
         return (
           <div
             className={styles.slide}
             key={i + child}
             style={{
               transform: `translate${moveDirection}(${100 * i}%)`,
-              width: '100%',
+              width: "100%",
+              zIndex: i === index ? "1" : "0",
+              pointerEvents: i === index ? "auto" : "none",
             }}
           >
             {child && <WidgetNode id={child} />}

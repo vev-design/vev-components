@@ -1,68 +1,101 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { WidgetNode, useSize } from '@vev/react';
-import { Props } from '../Slideshow';
+import React, { useState, useEffect, useRef } from "react";
+import { WidgetNode, useSize } from "@vev/react";
+import { Props } from "../Slideshow";
+import { isGoingForward, isGoingBackward } from "../utils";
 
-import styles from './Carousel3d.module.css';
+import styles from "./Carousel3d.module.css";
+
+const Slide3d = ({
+  contentKey,
+  angle,
+  radius,
+  active,
+}: {
+  contentKey: string;
+  angle: number;
+  radius: number;
+  size: number;
+  active: boolean;
+}) => {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return (
+    <div
+      className={styles.slide}
+      style={{
+        rotate: `0 1 0 ${angle}rad`,
+        translate: `${sin * radius}px 0 ${cos * radius - radius}px`,
+        zIndex: active ? 1 : -1,
+        pointerEvents: active ? "all" : "none",
+      }}
+    >
+      <WidgetNode id={contentKey} />
+    </div>
+  );
+};
 
 export const Carousel3d = ({
+  hostRef,
   index,
   speed,
   slides,
-  hostRef,
   gap = 30,
-  onNextSlide,
-}: Omit<Props, 'children'> & { index: number; onNextSlide: () => void }) => {
-  const [rounds, setRounds] = useState(1);
-  const [radius, setRadius] = useState(0);
-  const size = useSize(hostRef);
+  perspective = 800,
+  editMode,
+}: Omit<Props, "children"> & { index: number }) => {
+  const { width, height } = useSize(hostRef);
+  const [percentage, setPercentage] = useState(0);
+  const angle = Math.PI * 2;
   const prevIndex = useRef(0);
 
+  const selectSlide = 1 - index / slides.length;
+  const angleStep = (Math.PI * 2) / slides.length;
+  const circleRadius = Math.max(
+    0.4,
+    slides.length <= 2
+      ? gap
+      : (width / 2 + gap) / Math.tan(Math.PI / slides.length)
+  );
+
   useEffect(() => {
-    if (index < prevIndex.current && prevIndex.current === slides?.length - 1) {
-      setRounds(rounds + 1);
+    const unit = 1 / slides.length;
+
+    if (isGoingForward(index, prevIndex.current, slides.length)) {
+      setPercentage((percentage) => percentage - unit);
     }
+    if (isGoingBackward(index, prevIndex.current, slides.length)) {
+      setPercentage((percentage) => percentage + unit);
+    }
+
     prevIndex.current = index;
-  }, [slides, index, rounds]);
-
-  useEffect(() => {
-    const val = Math.round(size.width / 2 / Math.tan(Math.PI / slides?.length));
-    setRadius(val);
-  }, [size.width, slides.length]);
-
-  const percentage = 360 / slides.length;
-  const perspective = `${radius * 2 + gap * 2}px`;
+  }, [index, prevIndex.current, slides.length]);
 
   return (
     <div
       className={styles.wrapper}
       style={{
         perspective,
-        transform: 'scale(0.5)',
       }}
     >
       <div
-        className={styles.carousel}
         style={{
-          transform: `rotateY(-${percentage * (index + rounds * slides?.length)}deg) `,
-          transition: `transform ${speed || 200}ms`,
-        }}
-        onTransitionEnd={(e) => {
-          if (e.propertyName === 'transform') {
-            onNextSlide();
-          }
+          transition: `rotate ${speed}ms linear`,
+          rotate: `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
+          transformOrigin: `center center -${circleRadius}px`,
+          width,
+          height,
+          transformStyle: "preserve-3d",
         }}
       >
         {slides?.map((child: string, i: number) => {
           return (
-            <div
-              className={styles.slide}
-              key={child}
-              style={{
-                transform: `rotateY(${percentage * i}deg) translateZ(${radius + gap}px)`,
-              }}
-            >
-              <WidgetNode id={child} />
-            </div>
+            <Slide3d
+              contentKey={child}
+              angle={angle + angleStep * i}
+              radius={circleRadius}
+              size={width}
+              active={i === index}
+            />
           );
         })}
       </div>
