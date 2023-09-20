@@ -7,6 +7,7 @@ type Props = {
   autoplay: boolean;
   hideControls: boolean;
   hideFullScreen: boolean;
+  muted: boolean;
   loop: boolean;
 };
 
@@ -25,6 +26,7 @@ const Youtube = ({
   hideControls = false,
   hideFullScreen = false,
   loop = false,
+  muted = false,
 }: Props) => {
   const { disabled } = useEditorState();
 
@@ -40,7 +42,9 @@ const Youtube = ({
 
   if (videoId) src += youTubeParseUrl(videoId) + '?';
 
-  if (!disabled && autoplay) src += '&autoplay=1&mute=1';
+  if (!disabled && autoplay) src += '&autoplay=1';
+
+  if (muted) src += '&mute=1';
 
   if (hideControls) src += '&controls=0';
 
@@ -72,6 +76,7 @@ registerVevComponent(Youtube, {
     { name: 'hideControls', title: 'Hide controls', type: 'boolean', initialValue: false },
     { name: 'hideFullScreen', title: 'Hide fullscreen', type: 'boolean', initialValue: false },
     { name: 'loop', title: 'Loop video', type: 'boolean', initialValue: false },
+    { name: 'muted', title: 'Mute by default', type: 'boolean', initialValue: false },
   ],
   type: 'both',
 });
