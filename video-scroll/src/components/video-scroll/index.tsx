@@ -33,6 +33,19 @@ registerVevComponent(VideoScroll, {
         format: "%",
       },
     },
+    {
+      name: "loopCount",
+      type: "number",
+      title: "Loop count",
+      description: "Loop the video for a set number of times",
+      initialValue: 1,
+    },
+    {
+      name: "loopAlternate",
+      type: "boolean",
+      title: "Loop alternate direction",
+      initialValue: false,
+    },
   ],
 
   editableCSS: [
