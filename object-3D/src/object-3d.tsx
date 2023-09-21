@@ -117,7 +117,7 @@ const Object3d = ({
           savedCameraPosition: initialCameraPosition,
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
-              index,
+              [EventTypes.HOTSPOT_CLICKED]: index,
             });
           }
         }}
@@ -221,12 +221,12 @@ registerVevComponent(Object3d, {
   events: [{
     type: EventTypes.HOTSPOT_CLICKED,
     description: 'Hotspot clicked',
-    args: [{name: 'hotspot_index', title: 'Hotspot index', type: 'number'}],
+    args: [{name: EventTypes.HOTSPOT_CLICKED, title: 'Hotspot index', type: 'number'}],
   }],
   interactions: [{
     type:InteractionTypes.SELECT_HOTSPOT,
     description: 'Select hotspot',
-    args: [{name: 'hotspot_index', title: 'Hotspot number', type: 'number'}],
+    args: [{name: 'select_hotspot', title: 'Hotspot number', type: 'number'}],
   }],
   type: 'both',
 });

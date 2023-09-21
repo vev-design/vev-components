@@ -7,6 +7,8 @@ type VideoScrollProps = {
   images?: string[];
   offsetVideoStart?: number;
   offsetVideoEnd?: number;
+  loopCount?: number;
+  loopAlternate?: boolean;
 };
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -37,6 +39,8 @@ export function VideoScroll({
   images,
   offsetVideoStart = 0,
   offsetVideoEnd = 0,
+  loopCount,
+  loopAlternate,
 }: VideoScrollProps) {
   if (!images) images = DEFAULT_IMAGES;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -158,6 +162,22 @@ export function VideoScroll({
       const duration = images?.length || 0;
       const desiredProgress = desiredProgressRef.current;
       let desiredFrame = Math.round(desiredProgress * (duration - 1) || 0);
+
+      if (loopCount && loopCount > 1) {
+        desiredFrame *= loopCount;
+        if (loopAlternate) {
+          const loop = Math.floor(desiredFrame / duration);
+          if (loop % 2 === 1) {
+            desiredFrame = duration - (desiredFrame % duration) - 1;
+          } else {
+            desiredFrame = desiredFrame % duration;
+          }
+        } else {
+          desiredFrame = desiredFrame % duration;
+        }
+      }
+      if (loopAlternate && (loopCount || 1) > 1) {
+      }
       const currentFrame = currentFrameRef.current || 0;
       let image = preloadedImagesRef.current[desiredFrame];
 

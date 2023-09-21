@@ -1,8 +1,8 @@
 export enum EventTypes {
-  HOTSPOT_CLICKED = 'HOTSPOT_CLICKED'
+  HOTSPOT_CLICKED = 'hotspot_clicked'
 }
 
 export enum InteractionTypes {
-  SELECT_HOTSPOT = 'SELECT_HOTSPOT'
+  SELECT_HOTSPOT = 'select_hotspot'
 }
 
