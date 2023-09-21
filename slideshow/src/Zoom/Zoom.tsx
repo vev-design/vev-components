@@ -82,7 +82,7 @@ export const Zoom = ({
         return (
           <div
             className={styles.slide}
-            key={i + child}
+            key={child}
             style={{
               transition: `opacity ${transitionSpeed || 200}ms, transform ${
                 transitionSpeed || 200

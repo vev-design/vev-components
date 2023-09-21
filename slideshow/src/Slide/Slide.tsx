@@ -92,7 +92,7 @@ export const Slide = ({
         return (
           <div
             className={styles.slide}
-            key={i + child}
+            key={child}
             style={{
               transform: `translate${moveDirection}(${100 * i}%)`,
               width: "100%",

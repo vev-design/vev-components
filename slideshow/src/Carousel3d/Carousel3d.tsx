@@ -90,6 +90,7 @@ export const Carousel3d = ({
         {slides?.map((child: string, i: number) => {
           return (
             <Slide3d
+              key={child}
               contentKey={child}
               angle={angle + angleStep * i}
               radius={circleRadius}
