@@ -37,7 +37,7 @@ export const Slide = ({
         ? [nextSlide, currentSlide, prevSlide]
         : [prevSlide, currentSlide, nextSlide]
     );
-  }, [nextSlide, currentSlide, prevSlide]);
+  }, [nextSlide, currentSlide, prevSlide, direction]);
 
   useEffect(() => {
     const isJumping =

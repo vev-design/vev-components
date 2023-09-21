@@ -7,8 +7,8 @@ function DirectionField(props) {
   const directions = {
     HORIZONTAL: "arrow.right",
     HORIZONTAL_REVERSE: "arrow.left",
-    VERTICAL: "arrow.down",
-    VERTICAL_REVERSE: "arrow.up",
+    VERTICAL: "arrow.up",
+    VERTICAL_REVERSE: "arrow.down",
   };
 
   return (
