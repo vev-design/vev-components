@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useId } from "react";
 import { WidgetNode } from "@vev/react";
 import { Props } from "../Slideshow";
 import { isGoingForward, isGoingBackward } from "../utils";
@@ -21,7 +21,7 @@ export const Zoom = ({
   const reverse = !direction?.includes("REVERSE");
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(1);
-  const prevIndex = useRef(0);
+  const prevIndex = useRef(index);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export const Zoom = ({
       !isGoingForward(prevIndex.current, index, slides.length)
     ) {
       prevIndex.current = index;
-      setTransitionSpeed(0);
+      setTransitionSpeed(1);
       setMove(1);
       setSlides();
     }
@@ -72,17 +72,19 @@ export const Zoom = ({
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === "opacity") {
-          setTransitionSpeed(0);
+          setTransitionSpeed(1);
           setSlides();
           setMove(1);
         }
       }}
     >
       {currentSlides?.map((child: string, i: number) => {
+        // If only two slides, and index to prevent duplicate keys
+        const key = slides.length <= 2 ? child + i : child;
         return (
           <div
             className={styles.slide}
-            key={child}
+            key={key}
             style={{
               transition: `opacity ${transitionSpeed || 200}ms, transform ${
                 transitionSpeed || 200

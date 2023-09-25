@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import {
   registerVevComponent,
@@ -58,12 +59,14 @@ export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { children, animation, selectedIndex, random, infinite, hostRef } =
-    props;
+  const { children, animation, random, hostRef } = props;
 
   const [slides, setSlides] = useState(children || []);
   const numberOfSlides = props?.children?.length || 0;
-  const index = editor?.disabled ? selectedIndex || 0 : state?.index || 0;
+  const index =
+    editor?.disabled && editor?.activeContentChild
+      ? children?.indexOf(editor?.activeContentChild) || 0
+      : state?.index || 0;
 
   useEffect(() => {
     if (editor?.disabled) {
