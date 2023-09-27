@@ -60,16 +60,14 @@ const Object3d = ({
 }: Props) => {
   const { width, height } = useSize(hostRef);
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
+  const [clickHotspot, setClickHotspot] = useState<(index: number) => void | null>();
+
   const [initialCameraPosition, setInitialCameraPosition] =
     useState<SavedCameraPosition>(initialCamera);
 
   const { disabled, schemaOpen } = useEditorState();
 
   const dispatchVevEvent = useDispatchVevEvent();
-
-  useVevEvent(InteractionTypes.SELECT_HOTSPOT, (args) => {
-    console.log('args', args);
-  });
 
   useEffect(() => {
     setInitialCameraPosition(initialCamera);
@@ -93,6 +91,11 @@ const Object3d = ({
     }
   }, [hotspots]);
 
+  useVevEvent(InteractionTypes.SELECT_HOTSPOT, (args: any) => {
+    console.log('internal', clickHotspot);
+    clickHotspot(args.select_hotspot)
+  })
+
   return (
     <div className={styles.wrapper}>
       <Object3DContextProvider
@@ -115,6 +118,10 @@ const Object3d = ({
           disabled,
           schemaOpen,
           savedCameraPosition: initialCameraPosition,
+          setClickHotspotCallback: (cb) => {
+            console.log('cb', cb);
+            setClickHotspot(cb);
+          },
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
               [EventTypes.HOTSPOT_CLICKED]: index,
@@ -221,7 +228,7 @@ registerVevComponent(Object3d, {
   events: [{
     type: EventTypes.HOTSPOT_CLICKED,
     description: 'Hotspot clicked',
-    args: [{name: EventTypes.HOTSPOT_CLICKED, title: 'Hotspot index', type: 'number'}],
+    args: [{name: EventTypes.HOTSPOT_CLICKED, description: 'Hotspot number clicked', type: 'number'}],
   }],
   interactions: [{
     type:InteractionTypes.SELECT_HOTSPOT,
