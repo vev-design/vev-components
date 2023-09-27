@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
   useEditorState,
   useVevEvent,
   useVisible,
-} from "@vev/react";
-import styles from "./NumberCounter.module.css";
-import { Events, Interactions } from "./events";
+} from '@vev/react';
+import styles from './NumberCounter.module.css';
+import { Events, Interactions } from './events';
 
 type Props = {
   settings: {
@@ -41,23 +41,17 @@ const NumberCounter = ({
   duration = { animationLength: 5, delay: 800 },
   format = {
     localeFormat: false,
-    separator: ",",
+    separator: ',',
     precision: 0,
-    prefix: "",
-    postfix: "",
+    prefix: '',
+    postfix: '',
   },
   hostRef,
   disable = false,
 }: Props) => {
   const { runWhenVisible, end: initEnd, once, start: initStart } = settings;
   const { animationLength, delay } = duration;
-  const {
-    localeFormat,
-    separator,
-    precision: initPrecision,
-    prefix = "",
-    postfix = "",
-  } = format;
+  const { localeFormat, separator, precision: initPrecision, prefix = '', postfix = '' } = format;
 
   const start = initStart || 0;
   const end = initEnd || 0;
@@ -173,20 +167,13 @@ const NumberCounter = ({
   return (
     <div className={styles.wrapper}>
       <div className={styles.counter}>
-        {prefix +
-          styleNumber(count, separator, precision, localeFormat) +
-          postfix}
+        {prefix + styleNumber(count, separator, precision, localeFormat) + postfix}
       </div>
     </div>
   );
 };
 
-function styleNumber(
-  x: number,
-  separator: string,
-  precision: number,
-  localeFormat: boolean
-) {
+function styleNumber(x: number, separator: string, precision: number, localeFormat: boolean) {
   if (localeFormat) {
     return new Intl.NumberFormat(navigator.language, {
       maximumFractionDigits: precision,
@@ -196,20 +183,19 @@ function styleNumber(
 
   if (x > 1000) {
     return x.toFixed(precision).replace(/\B(?=(\d{3})+(?!\d))/g, separator);
-  } else {
-    return x.toFixed(precision);
   }
+  return x.toFixed(precision);
 }
 
 registerVevComponent(NumberCounter, {
-  name: "Number Counter",
+  name: 'Number Counter',
   description:
-    "Begins at the specified start number and counts by the specified step until the end number is reached. Increments up or down depending on start and end values provided.",
+    'Begins at the specified start number and counts by the specified step until the end number is reached. Increments up or down depending on start and end values provided.',
   props: [
     {
-      name: "settings",
-      title: "Settings",
-      type: "object",
+      name: 'settings',
+      title: 'Settings',
+      type: 'object',
       initialValue: {
         start: 1,
         end: 100,
@@ -217,82 +203,82 @@ registerVevComponent(NumberCounter, {
         runWhenVisible: false,
       },
       fields: [
-        { title: "Start", name: "start", type: "number", initialValue: 1 },
-        { title: "End", name: "end", type: "number", initialValue: 100 },
+        { title: 'Start', name: 'start', type: 'number', initialValue: 1 },
+        { title: 'End', name: 'end', type: 'number', initialValue: 100 },
         {
-          title: "Run once",
-          name: "once",
-          type: "boolean",
+          title: 'Run once',
+          name: 'once',
+          type: 'boolean',
           initialValue: true,
         },
         {
-          title: "Run when visible",
-          name: "runWhenVisible",
-          type: "boolean",
+          title: 'Run when visible',
+          name: 'runWhenVisible',
+          type: 'boolean',
           initialValue: false,
         },
       ],
     },
     {
-      title: "Duration",
-      name: "duration",
-      type: "object",
+      title: 'Duration',
+      name: 'duration',
+      type: 'object',
       initialValue: { increment: 2, delay: 800, stepSize: 1 },
       fields: [
         {
-          title: "Duration (s)",
-          name: "animationLength",
-          type: "number",
+          title: 'Duration (s)',
+          name: 'animationLength',
+          type: 'number',
           initialValue: 5,
         },
         {
-          title: "Delay animation start (ms)",
-          name: "delay",
-          type: "number",
+          title: 'Delay animation start (ms)',
+          name: 'delay',
+          type: 'number',
           initialValue: 800,
         },
       ],
     },
     {
-      name: "format",
-      title: "Formatting",
-      type: "object",
-      initialValue: { localeFormat: false, separator: "," },
+      name: 'format',
+      title: 'Formatting',
+      type: 'object',
+      initialValue: { localeFormat: false, separator: ',' },
       fields: [
         {
-          title: "Locale formatting",
-          description: "Use users locale to determine number formatting",
-          name: "localeFormat",
-          type: "boolean",
+          title: 'Locale formatting',
+          description: 'Use users locale to determine number formatting',
+          name: 'localeFormat',
+          type: 'boolean',
           initialValue: false,
         },
         {
-          title: "Decimal precision",
-          name: "precision",
-          type: "number",
+          title: 'Decimal precision',
+          name: 'precision',
+          type: 'number',
           initialValue: 0,
         },
         {
-          title: "Digit separator",
-          name: "separator",
-          type: "string",
-          initialValue: ",",
+          title: 'Digit separator',
+          name: 'separator',
+          type: 'string',
+          initialValue: ',',
           hidden: (context) => {
-            console.log("context", context);
+            console.log('context', context);
             return context.value.format.localeFormat === true;
           },
         },
         {
-          title: "Prefix",
-          name: "prefix",
-          type: "string",
-          initialValue: "",
+          title: 'Prefix',
+          name: 'prefix',
+          type: 'string',
+          initialValue: '',
         },
         {
-          title: "Postfix",
-          name: "postfix",
-          type: "string",
-          initialValue: "",
+          title: 'Postfix',
+          name: 'postfix',
+          type: 'string',
+          initialValue: '',
         },
       ],
     },
@@ -300,46 +286,46 @@ registerVevComponent(NumberCounter, {
   events: [
     {
       type: Events.COMPLETE,
-      description: "Completed",
+      description: 'Completed',
     },
   ],
   interactions: [
     {
       type: Interactions.START,
-      description: "Start",
+      description: 'Start',
     },
     {
       type: Interactions.STOP,
-      description: "Stop",
+      description: 'Stop',
     },
     {
       type: Interactions.RESET,
-      description: "Stop",
+      description: 'Stop',
     },
   ],
   editableCSS: [
     {
-      title: "Number",
+      title: 'Number',
       selector: styles.counter,
       properties: [
-        "font-family",
-        "font-size",
-        "letter-spacing",
-        "word-spacing",
-        "font-weight",
-        "color",
-        "font-style",
-        "text-align",
-        "text-decoration",
+        'font-family',
+        'font-size',
+        'letter-spacing',
+        'word-spacing',
+        'font-weight',
+        'color',
+        'font-style',
+        'text-align',
+        'text-decoration',
       ],
     },
     {
-      title: "Number",
+      title: 'Number',
       selector: styles.wrapper,
-      properties: ["margin", "padding"],
+      properties: ['margin', 'padding'],
     },
   ],
-  type: "standard",
+  type: 'standard',
 });
 
 export default NumberCounter;

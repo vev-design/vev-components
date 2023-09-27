@@ -5,5 +5,5 @@ export enum Events {
 export enum Interactions {
   START = 'START',
   STOP = 'STOP',
-  RESET = 'RESET'
+  RESET = 'RESET',
 }
