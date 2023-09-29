@@ -29,7 +29,7 @@ export const Slide = ({
 
   useEffect(() => {
     setSlides();
-  }, [reverse]);
+  }, [reverse, currentSlide]);
 
   const setSlides = useCallback(() => {
     setCurrentSlides(
@@ -89,18 +89,21 @@ export const Slide = ({
       }}
     >
       {currentSlides?.map((child: string, i: number) => {
+        const key = slides.length <= 2 ? `${child}-${i}` : child;
+
         return (
           <div
             className={styles.slide}
-            key={child}
+            key={key}
             style={{
               transform: `translate${moveDirection}(${100 * i}%)`,
               width: "100%",
               zIndex: i === index ? "1" : "0",
               pointerEvents: i === index ? "auto" : "none",
+             // border: '20px solid red',
             }}
           >
-            {child && <WidgetNode id={child} />}
+            {child ? <WidgetNode id={child} /> : <div style={{ width: '100%', height: '100%', border: '10x solid red'}} />}
           </div>
         );
       })}
