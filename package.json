@@ -4,5 +4,17 @@
   "private": true,
   "scripts": {
     "start": "vev start --all"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.28.0",
+    "@typescript-eslint/parser": "^5.28.0",
+    "eslint": "^8.17.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-mdx": "^1.17.0",
+    "eslint-plugin-mdx": "^1.17.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.30.0",
+    "eslint-plugin-react-hooks": "^4.6.0"
   }
 }

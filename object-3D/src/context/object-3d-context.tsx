@@ -26,6 +26,7 @@ export interface Object3DContextProps {
   setContextControls?: (camera: any) => void;
   savedCameraPosition?: SavedCameraPosition;
   hotspotClicked?: (index: number) => void;
+  setClickHotspotCallback?: (cb: (index: number) => void) => void;
   rotationSpeed: number;
 }
 
