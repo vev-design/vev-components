@@ -70,13 +70,17 @@ export const Slideshow = (props: Props) => {
       : state?.index || 0
   );
 
+  console.log("index", index, slides);
+
   useEffect(() => {
     // Set initial state
     if (editor.disabled) {
       setState({ index: 0, length: numberOfSlides || 0 });
     } else {
       setState({
-        index: children?.indexOf(editor?.activeContentChild) || 0,
+        index: editor?.activeContentChild
+          ? children?.indexOf(editor?.activeContentChild) || 0
+          : 0,
         length: numberOfSlides || 0,
       });
     }
@@ -116,8 +120,9 @@ export const Slideshow = (props: Props) => {
   useVevEvent(Events.PREV, handlePrevSlide);
 
   useVevEvent(Events.SET, (args: { index: number }) => {
+    console.log("@@set", args, Math.max(0, Number(args?.index) - 1));
     setState({
-      index: Number(args?.index),
+      index: Math.max(0, Number(args?.index) - 1),
       length: numberOfSlides || 0,
     });
   });

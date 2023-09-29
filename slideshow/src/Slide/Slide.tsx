@@ -106,8 +106,8 @@ export const Slide = ({
             style={{
               transform: `translate${moveDirection}(${100 * i}%)`,
               width: "100%",
-              zIndex: i === index ? "1" : "0",
-              pointerEvents: i === index ? "auto" : "none",
+              zIndex: i === 1 ? "1" : "0",
+              pointerEvents: i === 1 ? "auto" : "none",
             }}
           >
             {child && <WidgetNode id={child} />}
