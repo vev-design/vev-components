@@ -15,7 +15,6 @@ export const Slide = ({
   prevSlide,
 }: Omit<Props, "children"> & {
   index: number;
-  preview?: boolean;
 }) => {
   const reverse = direction?.includes("REVERSE");
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
@@ -29,7 +28,7 @@ export const Slide = ({
 
   useEffect(() => {
     setSlides();
-  }, [reverse, currentSlide]);
+  }, [reverse]);
 
   const setSlides = useCallback(() => {
     setCurrentSlides(
@@ -73,6 +72,14 @@ export const Slide = ({
     }
   }, [index, prevIndex, speed]);
 
+  if (slides.length === 1) {
+    return (
+      <div className={styles.slide}>
+        <WidgetNode id={currentSlide} />
+      </div>
+    );
+  }
+
   return (
     <div
       className={styles.wrapper}
@@ -82,6 +89,7 @@ export const Slide = ({
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === "transform") {
+          console.log("done");
           setTransitionSpeed(0);
           setMove(-100);
           setSlides();
@@ -100,10 +108,9 @@ export const Slide = ({
               width: "100%",
               zIndex: i === index ? "1" : "0",
               pointerEvents: i === index ? "auto" : "none",
-             // border: '20px solid red',
             }}
           >
-            {child ? <WidgetNode id={child} /> : <div style={{ width: '100%', height: '100%', border: '10x solid red'}} />}
+            {child && <WidgetNode id={child} />}
           </div>
         );
       })}
