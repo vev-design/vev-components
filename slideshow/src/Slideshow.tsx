@@ -65,12 +65,10 @@ export const Slideshow = (props: Props) => {
   const numberOfSlides = props?.children?.length || 0;
   const index = Math.max(
     0,
-    editor?.disabled && editor?.activeContentChild
+    editor?.disabled
       ? children?.indexOf(editor?.activeContentChild) || 0
       : state?.index || 0
   );
-
-  console.log("index", index, slides);
 
   useEffect(() => {
     // Set initial state
@@ -119,10 +117,9 @@ export const Slideshow = (props: Props) => {
   useVevEvent(Events.NEXT, handleNextSlide);
   useVevEvent(Events.PREV, handlePrevSlide);
 
-  useVevEvent(Events.SET, (args: { index: number }) => {
-    console.log("@@set", args, Math.max(0, Number(args?.index) - 1));
+  useVevEvent(Events.SET, (args: { slide: number }) => {
     setState({
-      index: Math.max(0, Number(args?.index) - 1),
+      index: Math.max(0, Number(args?.slide) - 1),
       length: numberOfSlides || 0,
     });
   });
@@ -261,7 +258,8 @@ registerVevComponent(Slideshow, {
       description: "Go to specific slide",
       args: [
         {
-          name: "index",
+          name: "slide",
+          description: "Set slide number",
           type: "number",
         },
       ],
