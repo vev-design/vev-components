@@ -66,7 +66,7 @@ export const Slideshow = (props: Props) => {
 
   useEffect(() => {
     setState({
-      index: children.indexOf(editor.activeContentChild) || 0,
+      index: Math.max(0, children.indexOf(editor.activeContentChild) || 0),
       length: numberOfSlides || 0,
     });
   }, [editor.activeContentChild, editor.disabled]);
@@ -83,18 +83,18 @@ export const Slideshow = (props: Props) => {
   const handleNextSlide = useCallback(() => {
     setIsTransitioning(true);
     setState({
-      index: getNextSlideIndex(state.index, slides),
+      index: getNextSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
     });
-  }, [state.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
   const handlePrevSlide = useCallback(() => {
     setIsTransitioning(true);
     setState({
-      index: getPrevSlideIndex(state.index, slides),
+      index: getPrevSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
     });
-  }, [state.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
   useTouch(hostRef, {
     onNext: handleNextSlide,
@@ -129,11 +129,11 @@ export const Slideshow = (props: Props) => {
       <Comp
         {...props}
         slides={slides}
-        currentSlide={slides[state.index]}
-        nextSlide={slides[getNextSlideIndex(state.index, slides)]}
-        prevSlide={slides[getPrevSlideIndex(state.index, slides)]}
+        currentSlide={slides[state?.index]}
+        nextSlide={slides[getNextSlideIndex(state?.index, slides)]}
+        prevSlide={slides[getPrevSlideIndex(state?.index, slides)]}
         speed={editor?.disabled ? 1 : props.speed}
-        index={state.index}
+        index={state?.index}
         editMode={editor.disabled}
       />
     </div>
