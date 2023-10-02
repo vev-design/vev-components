@@ -60,22 +60,29 @@ export const Slideshow = (props: Props) => {
   const [state, setState] = useGlobalState();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, random, hostRef } = props;
-
   const [slides, setSlides] = useState(children || []);
+
   const numberOfSlides = props?.children?.length || 0;
-  const index =
-    editor?.disabled && editor?.activeContentChild
+  const index = Math.max(
+    0,
+    editor?.disabled
       ? children?.indexOf(editor?.activeContentChild) || 0
-      : state?.index || 0;
+      : state?.index || 0
+  );
 
   useEffect(() => {
-    if (editor?.disabled) {
+    // Set initial state
+    if (editor.disabled) {
+      setState({ index: 0, length: numberOfSlides || 0 });
+    } else {
       setState({
-        index: 0,
+        index: editor?.activeContentChild
+          ? children?.indexOf(editor?.activeContentChild) || 0
+          : 0,
         length: numberOfSlides || 0,
       });
     }
-  }, [editor?.disabled]);
+  }, [numberOfSlides, editor.disabled]);
 
   useEffect(() => {
     if (random && !editor.disabled) {
@@ -85,11 +92,6 @@ export const Slideshow = (props: Props) => {
       setSlides(children);
     }
   }, [random, editor.disabled, children]);
-
-  useEffect(() => {
-    // Set initial state
-    setState({ index: 0, length: numberOfSlides || 0 });
-  }, [numberOfSlides, editor.disabled]);
 
   const handleNextSlide = useCallback(() => {
     setIsTransitioning(true);
@@ -115,9 +117,9 @@ export const Slideshow = (props: Props) => {
   useVevEvent(Events.NEXT, handleNextSlide);
   useVevEvent(Events.PREV, handlePrevSlide);
 
-  useVevEvent(Events.SET, (args: { index: number }) => {
+  useVevEvent(Events.SET, (args: { slide: number }) => {
     setState({
-      index: Number(args?.index),
+      index: Math.max(0, Number(args?.slide) - 1),
       length: numberOfSlides || 0,
     });
   });
@@ -256,7 +258,8 @@ registerVevComponent(Slideshow, {
       description: "Go to specific slide",
       args: [
         {
-          name: "index",
+          name: "slide",
+          description: "Set slide number",
           type: "number",
         },
       ],
