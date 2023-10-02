@@ -63,26 +63,13 @@ export const Slideshow = (props: Props) => {
   const [slides, setSlides] = useState(children || []);
 
   const numberOfSlides = props?.children?.length || 0;
-  const index = Math.max(
-    0,
-    editor?.disabled
-      ? children?.indexOf(editor?.activeContentChild) || 0
-      : state?.index || 0
-  );
 
   useEffect(() => {
-    // Set initial state
-    if (editor.disabled) {
-      setState({ index: 0, length: numberOfSlides || 0 });
-    } else {
-      setState({
-        index: editor?.activeContentChild
-          ? children?.indexOf(editor?.activeContentChild) || 0
-          : 0,
-        length: numberOfSlides || 0,
-      });
-    }
-  }, [numberOfSlides, editor.disabled]);
+    setState({
+      index: children.indexOf(editor.activeContentChild) || 0,
+      length: numberOfSlides || 0,
+    });
+  }, [editor.activeContentChild, editor.disabled]);
 
   useEffect(() => {
     if (random && !editor.disabled) {
@@ -96,18 +83,18 @@ export const Slideshow = (props: Props) => {
   const handleNextSlide = useCallback(() => {
     setIsTransitioning(true);
     setState({
-      index: getNextSlideIndex(index, slides),
+      index: getNextSlideIndex(state.index, slides),
       length: numberOfSlides || 0,
     });
-  }, [index, slides, numberOfSlides, isTransitioning]);
+  }, [state.index, slides, numberOfSlides, isTransitioning]);
 
   const handlePrevSlide = useCallback(() => {
     setIsTransitioning(true);
     setState({
-      index: getPrevSlideIndex(index, slides),
+      index: getPrevSlideIndex(state.index, slides),
       length: numberOfSlides || 0,
     });
-  }, [index, slides, numberOfSlides, isTransitioning]);
+  }, [state.index, slides, numberOfSlides, isTransitioning]);
 
   useTouch(hostRef, {
     onNext: handleNextSlide,
@@ -142,11 +129,11 @@ export const Slideshow = (props: Props) => {
       <Comp
         {...props}
         slides={slides}
-        currentSlide={slides[index]}
-        nextSlide={slides[getNextSlideIndex(index, slides)]}
-        prevSlide={slides[getPrevSlideIndex(index, slides)]}
+        currentSlide={slides[state.index]}
+        nextSlide={slides[getNextSlideIndex(state.index, slides)]}
+        prevSlide={slides[getPrevSlideIndex(state.index, slides)]}
         speed={editor?.disabled ? 1 : props.speed}
-        index={index}
+        index={state.index}
         editMode={editor.disabled}
       />
     </div>
