@@ -42,12 +42,14 @@ export const Carousel3d = ({
   gap = 30,
   perspective = 800,
   editMode,
+  direction,
 }: Omit<Props, "children"> & { index: number }) => {
   const { width, height } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
   const angle = Math.PI * 2;
   const prevIndex = useRef(0);
 
+  const isReverse = direction?.includes("REVERSE");
   const selectSlide = 1 - index / slides.length;
   const angleStep = (Math.PI * 2) / slides.length;
   const circleRadius = Math.max(
@@ -60,15 +62,24 @@ export const Carousel3d = ({
   useEffect(() => {
     const unit = 1 / slides.length;
 
+    const moveLeft = () => setPercentage((percentage) => percentage - unit);
+    const moveRight = () => setPercentage((percentage) => percentage + unit);
+
     if (isGoingForward(index, prevIndex.current, slides.length)) {
-      setPercentage((percentage) => percentage - unit);
+      (isReverse ? moveRight : moveLeft)();
     }
     if (isGoingBackward(index, prevIndex.current, slides.length)) {
-      setPercentage((percentage) => percentage + unit);
+      (isReverse ? moveLeft : moveRight)();
     }
 
     prevIndex.current = index;
   }, [index, prevIndex.current, slides.length]);
+
+  useEffect(() => {
+    if (editMode) {
+      setPercentage(0);
+    }
+  }, [editMode]);
 
   return (
     <div
