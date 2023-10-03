@@ -126,16 +126,18 @@ export const Slideshow = (props: Props) => {
 
   return (
     <div className={styles.wrapper}>
-      <Comp
-        {...props}
-        slides={slides}
-        currentSlide={slides[state?.index]}
-        nextSlide={slides[getNextSlideIndex(state?.index, slides)]}
-        prevSlide={slides[getPrevSlideIndex(state?.index, slides)]}
-        speed={editor?.disabled ? 1 : props.speed}
-        index={state?.index}
-        editMode={editor.disabled}
-      />
+      {slides[state?.index] && (
+        <Comp
+          {...props}
+          slides={slides}
+          currentSlide={slides[state?.index]}
+          nextSlide={slides[getNextSlideIndex(state?.index, slides)]}
+          prevSlide={slides[getPrevSlideIndex(state?.index, slides)]}
+          speed={editor?.disabled ? 1 : props.speed}
+          index={state?.index}
+          editMode={editor.disabled}
+        />
+      )}
     </div>
   );
 };
