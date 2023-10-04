@@ -45,7 +45,7 @@ export const Slide = ({
     if (
       isJumping &&
       !isGoingForward(index, prevIndex.current, slides.length) &&
-      !isGoingForward(prevIndex.current, index, slides.length)
+      !isGoingForward(index, prevIndex.current, slides.length)
     ) {
       prevIndex.current = index;
       setSlides();
