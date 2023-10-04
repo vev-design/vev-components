@@ -15,7 +15,7 @@
     "typescript-plugin-css-modules": "^3.4.0"
   },
   "dependencies": {
-    "@vev/react": "latest",
-    "react": "^17.0.2"
+    "@vev/react": "^0.1.0",
+    "react": "^18.2.0"
   }
 }
