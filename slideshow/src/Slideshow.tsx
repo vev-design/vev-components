@@ -144,7 +144,7 @@ export const Slideshow = (props: Props) => {
 
 registerVevComponent(Slideshow, {
   name: "Slideshow",
-  type: "both",
+  type: "standard",
   icon: "https://cdn.vev.design/private/5YlQ6CapVRbr7RUqaPTH7gT1clH2/li-layer-ico-card-slider.svg",
   children: {
     name: "Slide",
