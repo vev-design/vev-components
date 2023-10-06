@@ -1,35 +1,70 @@
-import React from 'react';
-import styles from './Spotify.module.css';
-import { registerVevComponent } from '@vev/react';
+import React, { useEffect, useRef, useState } from 'react';
+import { registerVevComponent, useVevEvent, useDispatchVevEvent } from '@vev/react';
+import { EventTypes, InteractionTypes } from './event-types';
+import { useSpotifyEmbed } from './use-spotify-embed';
+
+declare global {
+  interface Window {
+    onSpotifyIframeApiReady: (api) => void;
+    IFrameAPI: any;
+  }
+}
 
 type Props = {
   link: string;
-  theme: boolean;
+  hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
 const initialLink = 'https://open.spotify.com/track/4udM5F0AyU3OKKyZdlMt7P?si=f2972e9517804a14';
 
-const Spotify = ({ link = initialLink, theme = true }: Props) => {
-  const url = link.replace('open.spotify.com/', 'open.spotify.com/embed/');
-  const validUrl = url.indexOf('open.spotify.com/embed') !== -1;
-  const spotifyEmbed = validUrl ? (
-    <iframe
-      src={theme ? url : url + '&theme=0'}
-      className={styles.frameStyle}
-      width="100%"
-      height="100%"
-      allowTransparency={true}
-      allow="encrypted-media"
-    />
-  ) : (
-    <h3>{'Invalid Spotify link'}</h3>
-  );
+const Spotify = ({ link = initialLink }: Props) => {
+  const [uri, setUri] = useState('');
+  const id = useRef<string>(Date.now() + '');
+  const containerRef = useRef<HTMLDivElement>();
+  const dispatch = useDispatchVevEvent();
 
-  return (
-    <div className={validUrl ? styles.wrapperStyleValid : styles.wrapperStyleInvalid}>
-      {spotifyEmbed}
-    </div>
-  );
+  const [embeddedController, isPaused] = useSpotifyEmbed(containerRef.current, id.current, uri);
+
+  useVevEvent(InteractionTypes.PLAY, () => {
+    if (embeddedController) {
+      embeddedController.play();
+    }
+  });
+
+  useVevEvent(InteractionTypes.PAUSE, () => {
+    if (embeddedController) {
+      embeddedController.pause();
+    }
+  });
+
+  useVevEvent(InteractionTypes.TOGGLE, () => {
+    if (embeddedController) {
+      embeddedController.togglePlay();
+    }
+  });
+
+  useVevEvent(InteractionTypes.PLAY_FROM_START, () => {
+    if (embeddedController) {
+      embeddedController.playFromStart();
+    }
+  });
+
+  useEffect(() => {
+    const match = /spotify.com\/([\d\w\/]*)/gm.exec(link);
+    if (match && match[1]) {
+      setUri('spotify:' + match[1].replace('/', ':'));
+    }
+  }, [link]);
+
+  useEffect(() => {
+    if (isPaused) {
+      dispatch(EventTypes.PAUSED);
+    } else {
+      dispatch(EventTypes.PLAYING);
+    }
+  }, [dispatch, isPaused]);
+
+  return <div ref={containerRef} />;
 };
 
 registerVevComponent(Spotify, {
@@ -43,11 +78,23 @@ registerVevComponent(Spotify, {
       type: 'string',
       initialValue: initialLink,
     },
+  ],
+  interactions: [
     {
-      title: 'Theme',
-      name: 'theme',
-      type: 'boolean',
-      initialValue: true,
+      type: InteractionTypes.PLAY,
+      description: 'Play',
+    },
+    {
+      type: InteractionTypes.PLAY_FROM_START,
+      description: 'Play from start',
+    },
+    {
+      type: InteractionTypes.PAUSE,
+      description: 'Pause',
+    },
+    {
+      type: InteractionTypes.TOGGLE,
+      description: 'Toggle',
     },
   ],
 });
