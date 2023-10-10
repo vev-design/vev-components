@@ -61,14 +61,24 @@ export const Slideshow = (props: Props) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
+  const prevIndex = useRef(state?.index || 0);
 
   const numberOfSlides = props?.children?.length || 0;
 
   useEffect(() => {
     setState({
-      index: Math.max(0, children.indexOf(editor.activeContentChild) || 0),
+      index: Math.max(
+        0,
+        editor.activeContentChild
+          ? children.indexOf(editor.activeContentChild)
+          : !editor.disabled
+          ? prevIndex.current || 0
+          : 0
+      ),
       length: numberOfSlides || 0,
     });
+
+    prevIndex.current = children.indexOf(editor.activeContentChild);
   }, [editor.activeContentChild, editor.disabled]);
 
   useEffect(() => {
