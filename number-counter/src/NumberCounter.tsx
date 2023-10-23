@@ -23,6 +23,7 @@ type Props = {
   format: {
     localeFormat: boolean;
     separator: string;
+    decimalSeparator: string;
     precision: number;
     prefix: string;
     postfix: string;
@@ -42,6 +43,7 @@ const NumberCounter = ({
   format = {
     localeFormat: false,
     separator: ',',
+    decimalSeparator: '.',
     precision: 0,
     prefix: '',
     postfix: '',
@@ -51,7 +53,14 @@ const NumberCounter = ({
 }: Props) => {
   const { runWhenVisible, end: initEnd, once, start: initStart } = settings;
   const { animationLength, delay } = duration;
-  const { localeFormat, separator, precision: initPrecision, prefix = '', postfix = '' } = format;
+  const {
+    localeFormat,
+    separator,
+    decimalSeparator,
+    precision: initPrecision,
+    prefix = '',
+    postfix = '',
+  } = format;
 
   const start = initStart || 0;
   const end = initEnd || 0;
@@ -167,13 +176,21 @@ const NumberCounter = ({
   return (
     <div className={styles.wrapper}>
       <div className={styles.counter}>
-        {prefix + styleNumber(count, separator, precision, localeFormat) + postfix}
+        {prefix +
+          styleNumber(count, separator, decimalSeparator, precision, localeFormat) +
+          postfix}
       </div>
     </div>
   );
 };
 
-function styleNumber(x: number, separator: string, precision: number, localeFormat: boolean) {
+function styleNumber(
+  x: number,
+  separator: string,
+  decimalSeparator: string,
+  precision: number,
+  localeFormat: boolean,
+) {
   if (localeFormat) {
     return new Intl.NumberFormat(navigator.language, {
       maximumFractionDigits: precision,
@@ -181,10 +198,13 @@ function styleNumber(x: number, separator: string, precision: number, localeForm
     }).format(x);
   }
 
-  if (x > 1000) {
-    return x.toFixed(precision).replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+  const toFixed = x.toFixed(precision);
+  const parts = toFixed.split('.');
+  if (parts.length === 1) {
+    return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
   }
-  return x.toFixed(precision);
+
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator) + decimalSeparator + parts[1];
 }
 
 registerVevComponent(NumberCounter, {
@@ -259,12 +279,20 @@ registerVevComponent(NumberCounter, {
           initialValue: 0,
         },
         {
-          title: 'Digit separator',
+          title: 'Digit separator (thousands)',
           name: 'separator',
           type: 'string',
           initialValue: ',',
           hidden: (context) => {
-            console.log('context', context);
+            return context.value.format.localeFormat === true;
+          },
+        },
+        {
+          title: 'Digit separator (decimal)',
+          name: 'decimalSeparator',
+          type: 'string',
+          initialValue: '.',
+          hidden: (context) => {
             return context.value.format.localeFormat === true;
           },
         },
