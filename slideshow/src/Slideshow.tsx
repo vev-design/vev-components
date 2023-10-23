@@ -141,9 +141,11 @@ export const Slideshow = (props: Props) => {
 };
 
 registerVevComponent(Slideshow, {
-  name: 'Slides',
+  name: 'Slider',
   type: 'standard',
-  icon: 'https://cdn.vev.design/private/5YlQ6CapVRbr7RUqaPTH7gT1clH2/li-layer-ico-card-slider.svg',
+  icon: 'https://cdn.vev.design/assets/slider.svg',
+  description:
+    'Add a dynamic slider to display diverse design elements, tailor animation, and add Interactions for custom navigation.',
   children: {
     name: 'Slide',
     icon: 'https://cdn.vev.design/visuals/slides.png',
