@@ -1,33 +1,28 @@
-import React, { useState, useEffect, useCallback } from "react";
-import cx from "classnames";
-import usePrevious from "../../utils/usePrevious";
-import {
-  registerVevComponent,
-  useVevEvent,
-  useDispatchVevEvent,
-  useModel,
-} from "@vev/react";
-import formIcon from "../../assets/form-icon.svg";
-import FieldWrapper from "../FieldWrapper";
+import React, { useState, useEffect, useCallback } from 'react';
+import cx from 'classnames';
+import usePrevious from '../../utils/usePrevious';
+import { registerVevComponent, useVevEvent, useDispatchVevEvent, useModel } from '@vev/react';
+import formIcon from '../../assets/form-icon.svg';
+import FieldWrapper from '../FieldWrapper';
 
-import GoogleSheetConnect from "../../submit/GoogleSheetConnect";
-import ZapierConnect from "../../submit/ZapierConnect";
+import GoogleSheetConnect from '../../submit/GoogleSheetConnect';
+import ZapierConnect from '../../submit/ZapierConnect';
 
 type Props = {
   submitButton: string;
   successMessage: string;
   errorMessage?: string;
-  type: "reset" | "submit";
+  type: 'reset' | 'submit';
   children: React.ReactNode;
 };
 
 enum Interaction {
-  UPDATE_FORM = "UPDATE_FORM",
-  SUBMIT_FORM = "SUBMIT_FORM",
+  UPDATE_FORM = 'UPDATE_FORM',
+  SUBMIT_FORM = 'SUBMIT_FORM',
 }
 
 enum Event {
-  FORM_SUBMITTED = "FORM_SUBMITTED",
+  FORM_SUBMITTED = 'FORM_SUBMITTED',
 }
 
 function FormFrame({ ...props }: Props) {
@@ -36,7 +31,7 @@ function FormFrame({ ...props }: Props) {
   const dispatch = useDispatchVevEvent();
 
   const handleSubmit = useCallback(async () => {
-    console.log("** submit", formState);
+    console.log('** submit', formState);
     setSubmitting(true);
     await new Promise((res) => setTimeout(res, 1000));
     dispatch(Event.FORM_SUBMITTED);
@@ -44,7 +39,7 @@ function FormFrame({ ...props }: Props) {
   }, [formState]);
 
   useVevEvent(Interaction.UPDATE_FORM, (e: any) => {
-    console.log("** updated", e);
+    console.log('** updated', e);
     setFormState((s) => ({ ...s, ...e }));
   });
 
@@ -56,12 +51,7 @@ function FormFrame({ ...props }: Props) {
 }
 
 const Loader = () => (
-  <svg
-    role="status"
-    viewBox="0 0 100 101"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg role="status" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
       fill="#E5E7EB"
@@ -74,8 +64,8 @@ const Loader = () => (
 );
 
 registerVevComponent(FormFrame, {
-  name: "Form Frame",
-  categories: ["Form"],
+  name: 'Form Frame',
+  categories: ['Form'],
   icon: formIcon,
   size: {
     width: 40,
@@ -84,71 +74,71 @@ registerVevComponent(FormFrame, {
   events: [
     {
       type: Event.FORM_SUBMITTED,
-      description: "Form submitted",
+      description: 'Form submitted',
     },
   ],
   interactions: [
     {
       type: Interaction.UPDATE_FORM,
-      description: "Update form",
+      description: 'Update form',
     },
     {
       type: Interaction.SUBMIT_FORM,
-      description: "Submit form",
+      description: 'Submit form',
       args: [
         {
-          type: "select",
-          name: "submitType",
-          title: "Destination",
+          type: 'select',
+          name: 'submitType',
+          title: 'Destination',
           initialValue: undefined,
           options: {
-            display: "dropdown",
+            display: 'dropdown',
             items: [
               {
-                label: "Zapier",
-                value: "zapier",
+                label: 'Zapier',
+                value: 'zapier',
               },
               {
-                label: "Google Sheet",
-                value: "googleSheet",
+                label: 'Google Sheet',
+                value: 'googleSheet',
               },
               {
-                label: "Webhook",
-                value: "webhook",
+                label: 'Webhook',
+                value: 'webhook',
               },
             ],
           },
         },
         {
-          type: "string",
-          name: "webhookUrl",
-          description: "The URL to send data to (POST)",
+          type: 'string',
+          name: 'webhookUrl',
+          description: 'The URL to send data to (POST)',
           hidden({ value }) {
-            console.log("val", value);
-            return value?.submitType !== "webhook";
+            console.log('val', value);
+            return value?.submitType !== 'webhook';
           },
         },
         {
-          type: "string",
-          name: "zapierFormName",
+          type: 'string',
+          name: 'zapierFormName',
           hidden({ value }) {
-            return value?.submitType !== "zapier";
+            return value?.submitType !== 'zapier';
           },
         },
         {
-          type: "string",
-          name: "zapierFormUrl",
+          type: 'string',
+          name: 'zapierFormUrl',
           component: ZapierConnect,
           hidden({ value }) {
-            return value?.submitType !== "zapier";
+            return value?.submitType !== 'zapier';
           },
         },
         {
-          type: "string",
-          name: "googleSheetUrl",
+          type: 'string',
+          name: 'googleSheetUrl',
           component: GoogleSheetConnect,
           hidden({ value }) {
-            return value?.submitType !== "googleSheet";
+            return value?.submitType !== 'googleSheet';
           },
         },
       ],

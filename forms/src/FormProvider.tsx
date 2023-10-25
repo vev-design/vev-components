@@ -1,17 +1,11 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  FormEventHandler,
-  useCallback,
-} from "react";
-import { useGlobalStateRef, useModel, VevProps } from "@vev/react";
-import { omit, isEmpty, merge } from "lodash";
+import React, { createContext, useContext, useState, FormEventHandler, useCallback } from 'react';
+import { useGlobalStateRef, useModel, VevProps } from '@vev/react';
+import { omit, isEmpty, merge } from 'lodash';
 
-import validateForm from "./utils/validate-form";
+import validateForm from './utils/validate-form';
 
 const SUBMIT_URL =
-  "https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission";
+  'https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission';
 
 /**
  * Context
@@ -20,11 +14,7 @@ const SUBMIT_URL =
 type FormContextType = {
   formState: { [key: string]: any };
   formSchema: VevProps[];
-  onChange: (
-    key: string,
-    value: any,
-    type?: "default" | "add" | "remove"
-  ) => void;
+  onChange: (key: string, value: any, type?: 'default' | 'add' | 'remove') => void;
   errors?: { [key: string]: string };
   submitting?: boolean;
   haveContext: boolean;
@@ -47,13 +37,7 @@ const FormContext = createContext<FormContextType>({
 export const useForm = () => useContext(FormContext);
 
 export const useFormField = (field: any) => {
-  const {
-    formState,
-    onChange,
-    haveContext,
-    setFormSchema,
-    errors = {},
-  } = useContext(FormContext);
+  const { formState, onChange, haveContext, setFormSchema, errors = {} } = useContext(FormContext);
 
   React.useEffect(() => {
     setFormSchema(field);
@@ -62,7 +46,7 @@ export const useFormField = (field: any) => {
   return {
     value: formState[field?.name],
     error: errors[field?.name],
-    onChange: (name: string, value: any, type?: "default" | "add" | "remove") =>
+    onChange: (name: string, value: any, type?: 'default' | 'add' | 'remove') =>
       onChange(name, value, type),
     haveContext,
     setFormSchema,
@@ -74,7 +58,7 @@ export const useFormField = (field: any) => {
  */
 
 export type SubmitType = {
-  submitType: "zapier" | "googleSheet" | "webhook";
+  submitType: 'zapier' | 'googleSheet' | 'webhook';
   googleSheetUrl?: string;
   zapierFormUrl?: string;
   webHookUrl?: string;
@@ -115,7 +99,7 @@ function FormProvider(props: Props) {
        * Validate form
        */
       const errors = validateForm(formState, formSchema);
-      console.log("errors", errors);
+      console.log('errors', errors);
 
       if (errors && !isEmpty(errors)) {
         setErrors(errors);
@@ -128,60 +112,56 @@ function FormProvider(props: Props) {
         formId,
       };
 
-      console.log("SUBMIT_URL", SUBMIT_URL);
+      console.log('SUBMIT_URL', SUBMIT_URL);
 
       const res = await fetch(SUBMIT_URL, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify(body),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
       if (!res.ok) {
-        console.log("error submitting to google sheet");
+        console.log('error submitting to google sheet');
         return;
-      } else {
-        setFormState({});
-        setSubmitting(false);
       }
+      setFormState({});
+      setSubmitting(false);
     },
-    [JSON.stringify(formState)]
+    [JSON.stringify(formState)],
   );
 
   /*
    * Update form values
    */
 
-  const onChange = useCallback(
-    (field: string, value: any, type?: "default" | "add" | "remove") => {
-      setErrors(undefined);
+  const onChange = useCallback((field: string, value: any, type?: 'default' | 'add' | 'remove') => {
+    setErrors(undefined);
 
-      if (type === "add") {
-        return setFormState((prev) => ({
-          ...prev,
-          [field]: [...(prev[field] || []), value],
-        }));
-      }
+    if (type === 'add') {
+      return setFormState((prev) => ({
+        ...prev,
+        [field]: [...(prev[field] || []), value],
+      }));
+    }
 
-      if (type === "remove") {
-        return setFormState((prev) => ({
-          ...prev,
-          [field]: (prev[field] as any as string[])?.filter((i) => i !== value),
-        }));
-      }
+    if (type === 'remove') {
+      return setFormState((prev) => ({
+        ...prev,
+        [field]: (prev[field] as any as string[])?.filter((i) => i !== value),
+      }));
+    }
 
-      setFormState((prev) => ({ ...merge(prev, { [field]: value }) }));
-    },
-    []
-  );
+    setFormState((prev) => ({ ...merge(prev, { [field]: value }) }));
+  }, []);
 
   /*
    * Set form schema
    */
 
   const setSchema = useCallback((schema: VevProps) => {
-    const cleanedSchema = omit(schema, ["hostRef"]);
+    const cleanedSchema = omit(schema, ['hostRef']);
     setFormSchema((state) => [...state, cleanedSchema]);
   }, []);
 

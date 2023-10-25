@@ -1,8 +1,8 @@
-import { VevProps } from "@vev/react";
+import { VevProps } from '@vev/react';
 
 export default function validateForm(
   values = {},
-  schema: VevProps[]
+  schema: VevProps[],
 ): { [fieldName: string]: string } {
   let errors: { [fieldName: string]: string } = {};
 
@@ -11,7 +11,7 @@ export default function validateForm(
       if ((field as any).required && !values[field.name]) {
         errors = {
           ...errors,
-          [[parent, field.name].filter(Boolean).join(".")]: "required",
+          [[parent, field.name].filter(Boolean).join('.')]: 'required',
         };
       }
     }
