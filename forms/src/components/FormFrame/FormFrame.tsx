@@ -63,7 +63,7 @@ const Loader = () => (
   </svg>
 );
 
-registerVevComponent(FormFrame, {
+/* registerVevComponent(FormFrame, {
   name: 'Form Frame',
   categories: ['Form'],
   icon: formIcon,
@@ -144,6 +144,6 @@ registerVevComponent(FormFrame, {
       ],
     },
   ],
-});
+}); */
 
 export default FormFrame;

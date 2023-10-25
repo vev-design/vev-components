@@ -45,8 +45,6 @@ function TextField(props: Props) {
 
   const { name, multiline, type, inputType, className, required, placeholder } = props;
 
-  console.log(props);
-
   const handleChange = (value: string) => {
     onChange(value);
     dispatch(Event.onChange, {

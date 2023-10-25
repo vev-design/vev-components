@@ -74,7 +74,7 @@ const Loader = () => (
   </svg>
 );
 
-/* registerVevComponent(Button, {
+registerVevComponent(Button, {
   name: 'Form button',
   categories: ['Form'],
   icon: formIcon,
@@ -210,6 +210,6 @@ const Loader = () => (
       ],
     },
   ],
-}); */
+});
 
 export default Button;
