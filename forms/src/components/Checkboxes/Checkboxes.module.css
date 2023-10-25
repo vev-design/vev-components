@@ -17,7 +17,6 @@
 .item input {
   position: absolute;
   opacity: 0;
-  cursor: pointer;
   height: 0;
   width: 0;
 }
@@ -37,6 +36,7 @@
   width: 20px;
   background-color: #ddd;
   transition: 100ms ease-in;
+  cursor: pointer;
 }
 
 .checkmark:hover {

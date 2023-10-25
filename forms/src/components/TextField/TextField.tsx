@@ -43,19 +43,7 @@ function TextField(props: Props) {
   const [value, onChange] = useState('');
   const dispatch = useDispatchVevEvent();
 
-  const {
-    name,
-    multiline,
-    type,
-    inputType,
-    className,
-    required,
-    placeholder,
-    min,
-    max,
-    minLength,
-    maxLength,
-  } = props;
+  const { name, multiline, type, inputType, className, required, placeholder } = props;
 
   console.log(props);
 
@@ -68,13 +56,18 @@ function TextField(props: Props) {
   };
 
   useEffect(() => {
+    dispatch(Event.onValid);
+  }, []);
+
+  const handleValidate = useCallback(() => {
+    console.log('validate');
     const valid = validate(value, props);
     if (!valid) {
       dispatch(Event.onInvalid);
     } else {
       dispatch(Event.onValid);
     }
-  }, [value]);
+  }, [value, dispatch, props]);
 
   return (
     <FieldWrapper>
@@ -92,6 +85,8 @@ function TextField(props: Props) {
             rows={5}
             value={value || ''}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleValidate}
+            onFocus={() => dispatch(Event.onValid)}
             required={required}
             placeholder={placeholder}
           />
@@ -103,6 +98,8 @@ function TextField(props: Props) {
             placeholder={placeholder}
             name={name}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleValidate}
+            onFocus={() => dispatch(Event.onValid)}
             value={value || ''}
             required={required}
           />
