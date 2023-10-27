@@ -20,6 +20,11 @@ type Props = {
   successMessage: string;
   errorMessage?: string;
   type: 'reset' | 'submit';
+  submitType: 'zapier' | 'googleSheet' | 'webhook';
+  webhookUrl?: string;
+  zapierFormName?: string;
+  zapierFormUrl?: string;
+  googleSheetUrl?: string;
 };
 
 enum Interaction {
@@ -35,7 +40,6 @@ const SUBMIT_URL =
   'https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission';
 
 function Button({ ...props }: Props) {
-  console.log('props', props);
   const [submitting, setSubmitting] = useState(false);
   const [formState, setFormState] = useState({});
   const dispatch = useDispatchVevEvent();
@@ -50,6 +54,7 @@ function Button({ ...props }: Props) {
     const body = {
       formData: formState,
       formId,
+      submitType: props.submitType,
     };
 
     await fetch(SUBMIT_URL, {
@@ -162,59 +167,66 @@ registerVevComponent(Button, {
       },
     },
     {
-      type: 'select',
-      name: 'submitType',
-      title: 'Destination',
-      initialValue: undefined,
-      options: {
-        display: 'dropdown',
-        items: [
-          {
-            label: 'Zapier',
-            value: 'zapier',
+      type: 'object',
+      name: 'submit',
+      title: 'Destination config',
+      fields: [
+        {
+          type: 'select',
+          name: 'submitType',
+          title: 'Destination',
+          initialValue: undefined,
+          options: {
+            display: 'dropdown',
+            items: [
+              {
+                label: 'Zapier',
+                value: 'zapier',
+              },
+              {
+                label: 'Google Sheet',
+                value: 'googleSheet',
+              },
+              {
+                label: 'Webhook',
+                value: 'webhook',
+              },
+            ],
           },
-          {
-            label: 'Google Sheet',
-            value: 'googleSheet',
+        },
+        {
+          type: 'string',
+          name: 'webhookUrl',
+          description: 'The URL to send data to (POST)',
+          hidden({ value }) {
+            console.log('val', value);
+            return value?.submit.submitType !== 'webhook';
           },
-          {
-            label: 'Webhook',
-            value: 'webhook',
+        },
+        {
+          type: 'string',
+          name: 'zapierFormName',
+          hidden({ value }) {
+            return value?.submit.submitType !== 'zapier';
           },
-        ],
-      },
-    },
-    {
-      type: 'string',
-      name: 'webhookUrl',
-      description: 'The URL to send data to (POST)',
-      hidden({ value }) {
-        console.log('val', value);
-        return value?.submitType !== 'webhook';
-      },
-    },
-    {
-      type: 'string',
-      name: 'zapierFormName',
-      hidden({ value }) {
-        return value?.submitType !== 'zapier';
-      },
-    },
-    {
-      type: 'string',
-      name: 'zapierFormUrl',
-      component: ZapierConnect,
-      hidden({ value }) {
-        return value?.submitType !== 'zapier';
-      },
-    },
-    {
-      type: 'string',
-      name: 'googleSheetUrl',
-      component: GoogleSheetConnect,
-      hidden({ value }) {
-        return value?.submitType !== 'googleSheet';
-      },
+        },
+        {
+          type: 'string',
+          name: 'zapierFormUrl',
+          component: ZapierConnect,
+          hidden({ value }) {
+            return value?.submit.submitType !== 'zapier';
+          },
+        },
+        {
+          type: 'string',
+          name: 'googleSheetUrl',
+          component: GoogleSheetConnect,
+          hidden({ value }) {
+            return value?.submit.submitType !== 'googleSheet';
+          },
+        },
+      ],
     },
   ],
   size: {
