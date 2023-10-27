@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import cx from 'classnames';
 import usePrevious from '../../utils/usePrevious';
-import { registerVevComponent, useVevEvent, useDispatchVevEvent, useModel } from '@vev/react';
+import {
+  registerVevComponent,
+  useVevEvent,
+  useDispatchVevEvent,
+  useModel,
+  useGlobalStateRef,
+} from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Button.module.css';
 import FieldWrapper from '../FieldWrapper';
@@ -25,17 +31,40 @@ enum Event {
   FORM_SUBMITTED = 'FORM_SUBMITTED',
 }
 
+const SUBMIT_URL =
+  'https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission';
+
 function Button({ ...props }: Props) {
+  console.log('props', props);
   const [submitting, setSubmitting] = useState(false);
   const [formState, setFormState] = useState({});
   const dispatch = useDispatchVevEvent();
+  const [store] = useGlobalStateRef();
+  const model = useModel();
 
   const { submitButton, successMessage, type = 'submit' } = props;
+
+  async function handleSubmit(formState: any) {
+    const formId = `${store?.current?.project}.${model.type}.${model.key}`;
+
+    const body = {
+      formData: formState,
+      formId,
+    };
+
+    await fetch(SUBMIT_URL, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
 
   useVevEvent(Interaction.SUBMIT_FORM, async () => {
     console.log('** submit', formState);
     setSubmitting(true);
-    await new Promise((res) => setTimeout(res, 1000));
+    await handleSubmit(formState);
     dispatch(Event.FORM_SUBMITTED);
     setSubmitting(false);
   });
@@ -132,6 +161,61 @@ registerVevComponent(Button, {
         return context.value.type !== 'submit';
       },
     },
+    {
+      type: 'select',
+      name: 'submitType',
+      title: 'Destination',
+      initialValue: undefined,
+      options: {
+        display: 'dropdown',
+        items: [
+          {
+            label: 'Zapier',
+            value: 'zapier',
+          },
+          {
+            label: 'Google Sheet',
+            value: 'googleSheet',
+          },
+          {
+            label: 'Webhook',
+            value: 'webhook',
+          },
+        ],
+      },
+    },
+    {
+      type: 'string',
+      name: 'webhookUrl',
+      description: 'The URL to send data to (POST)',
+      hidden({ value }) {
+        console.log('val', value);
+        return value?.submitType !== 'webhook';
+      },
+    },
+    {
+      type: 'string',
+      name: 'zapierFormName',
+      hidden({ value }) {
+        return value?.submitType !== 'zapier';
+      },
+    },
+    {
+      type: 'string',
+      name: 'zapierFormUrl',
+      component: ZapierConnect,
+      hidden({ value }) {
+        return value?.submitType !== 'zapier';
+      },
+    },
+    {
+      type: 'string',
+      name: 'googleSheetUrl',
+      component: GoogleSheetConnect,
+      hidden({ value }) {
+        return value?.submitType !== 'googleSheet';
+      },
+    },
   ],
   size: {
     width: 40,
@@ -151,63 +235,6 @@ registerVevComponent(Button, {
     {
       type: Interaction.SUBMIT_FORM,
       description: 'Submit form',
-      args: [
-        {
-          type: 'select',
-          name: 'submitType',
-          title: 'Destination',
-          initialValue: undefined,
-          options: {
-            display: 'dropdown',
-            items: [
-              {
-                label: 'Zapier',
-                value: 'zapier',
-              },
-              {
-                label: 'Google Sheet',
-                value: 'googleSheet',
-              },
-              {
-                label: 'Webhook',
-                value: 'webhook',
-              },
-            ],
-          },
-        },
-        {
-          type: 'string',
-          name: 'webhookUrl',
-          description: 'The URL to send data to (POST)',
-          hidden({ value }) {
-            console.log('val', value);
-            return value?.submitType !== 'webhook';
-          },
-        },
-        {
-          type: 'string',
-          name: 'zapierFormName',
-          hidden({ value }) {
-            return value?.submitType !== 'zapier';
-          },
-        },
-        {
-          type: 'string',
-          name: 'zapierFormUrl',
-          component: ZapierConnect,
-          hidden({ value }) {
-            return value?.submitType !== 'zapier';
-          },
-        },
-        {
-          type: 'string',
-          name: 'googleSheetUrl',
-          component: GoogleSheetConnect,
-          hidden({ value }) {
-            return value?.submitType !== 'googleSheet';
-          },
-        },
-      ],
     },
   ],
 });
