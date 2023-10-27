@@ -20,7 +20,8 @@ function Dropdown(props: DropdownProps) {
   const handleChange = useCallback(
     (value: string) => {
       dispatch(Event.onChange, {
-        [props.name]: value,
+        name: props.name,
+        value,
       });
       setValue(value);
     },

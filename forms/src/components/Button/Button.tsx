@@ -77,7 +77,7 @@ function Button({ ...props }: Props) {
   });
 
   useVevEvent(Interaction.UPDATE_FORM, (e: any) => {
-    console.log('** updated', e);
+    console.log('-> updated', e, formState);
     setFormState((s) => ({ ...s, [e.name]: e.value }));
   });
 
