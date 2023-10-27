@@ -20,11 +20,14 @@ type Props = {
   successMessage: string;
   errorMessage?: string;
   type: 'reset' | 'submit';
+  submit: SubmitType;
+};
+
+export type SubmitType = {
   submitType: 'zapier' | 'googleSheet' | 'webhook';
-  webhookUrl?: string;
-  zapierFormName?: string;
-  zapierFormUrl?: string;
   googleSheetUrl?: string;
+  zapierFormUrl?: string;
+  webHookUrl?: string;
 };
 
 enum Interaction {
@@ -54,7 +57,6 @@ function Button({ ...props }: Props) {
     const body = {
       formData: formState,
       formId,
-      submitType: props.submitType,
     };
 
     await fetch(SUBMIT_URL, {
