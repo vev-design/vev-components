@@ -1,5 +1,7 @@
 {
   "name": "@vev/components",
+  "description": "Components for Vev [vev.design]",
+  "license": "MIT",
   "version": "1.0.0",
   "private": true,
   "scripts": {
