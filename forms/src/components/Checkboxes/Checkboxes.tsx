@@ -34,7 +34,8 @@ function Boxes(props: CheckboxesProps) {
       return setValue((prev) => {
         const updated = [...prev, value];
         dispatch(Event.onChange, {
-          [name]: updated,
+          name,
+          value: updated,
         });
         return updated;
       });
@@ -43,7 +44,8 @@ function Boxes(props: CheckboxesProps) {
       return setValue((prev) => {
         const updated = prev.filter((i) => i !== value);
         dispatch(Event.onChange, {
-          [name]: updated,
+          name,
+          value: updated,
         });
         return updated;
       });
