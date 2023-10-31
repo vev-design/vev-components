@@ -8,6 +8,7 @@ type Props = {
   hideControls: boolean;
   hideFullScreen: boolean;
   loop: boolean;
+  lockAspectRatio: boolean;
 };
 
 declare global {
@@ -45,6 +46,7 @@ const Youtube = ({
   hideControls = false,
   hideFullScreen = false,
   loop = false,
+  lockAspectRatio = true,
 }: Props) => {
   const { disabled } = useEditorState();
   const ref = useRef<HTMLIFrameElement>(null);
@@ -165,14 +167,17 @@ const Youtube = ({
   src += '&enablejsapi=1';
 
   return (
-    <iframe
-      ref={ref}
-      className={styles.frame}
-      src={src}
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowFullScreen
-    ></iframe>
+    <div className={styles.wrapper}>
+      <iframe
+        className={styles.frame}
+        style={lockAspectRatio ? { aspectRatio: '16 / 9' } : { height: '100%' }}
+        ref={ref}
+        src={src}
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    </div>
   );
 };
 
@@ -181,6 +186,10 @@ registerVevComponent(Youtube, {
   description:
     'Provide a Youtube URL (ex. https://www.youtube.com/watch?v=K_OiQguFo94&t=12s) to play a video inside a Youtube player.',
   icon: 'https://cdn.vev.design/assets/youtube.svg',
+  size: {
+    width: 512,
+    height: 500,
+  },
   props: [
     { name: 'videoId', title: 'YouTube URL', type: 'string' },
     {
@@ -202,6 +211,7 @@ registerVevComponent(Youtube, {
       initialValue: false,
     },
     { name: 'loop', title: 'Loop video', type: 'boolean', initialValue: false },
+    { name: 'lockAspectRatio', title: 'Lock aspect ratio', type: 'boolean', initialValue: true },
   ],
   type: 'both',
   events: [
