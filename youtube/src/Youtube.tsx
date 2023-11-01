@@ -186,6 +186,12 @@ registerVevComponent(Youtube, {
   description:
     'Provide a Youtube URL (ex. https://www.youtube.com/watch?v=K_OiQguFo94&t=12s) to play a video inside a Youtube player.',
   icon: 'https://cdn.vev.design/assets/youtube.svg',
+  emptyState: {
+    linkText: 'Add URL',
+    description: ' to your YouTube component',
+    checkProperty: 'videoId',
+    action: 'OPEN_PROPERTIES',
+  },
   size: {
     width: 512,
     height: 500,
