@@ -1,13 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
   useEditorState,
+  useFrame,
   useVevEvent,
   useVisible,
 } from '@vev/react';
 import styles from './NumberCounter.module.css';
 import { Events, Interactions } from './events';
+import { easeIn, easeOut, easingNone, normalize, round } from './math-utils';
 
 type Props = {
   settings: {
@@ -20,6 +22,7 @@ type Props = {
     animationLength: number;
     delay: number;
   };
+  easing: 'none' | 'easein' | 'easeout';
   format: {
     localeFormat: boolean;
     separator: string;
@@ -32,6 +35,9 @@ type Props = {
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
+// Floating point hack
+const oneIsh = 0.999999;
+
 const NumberCounter = ({
   settings = {
     start: 1,
@@ -39,6 +45,7 @@ const NumberCounter = ({
     once: true,
     runWhenVisible: false,
   },
+  easing = 'none',
   duration = { animationLength: 5, delay: 800 },
   format = {
     localeFormat: false,
@@ -66,32 +73,68 @@ const NumberCounter = ({
   const end = initEnd || 0;
   const precision = initPrecision || 0;
 
-  const internalCount = useRef<number>(start);
   const [count, setCount] = useState<number>(start);
-  const [stepSize, setStepSize] = useState<number>(1);
-  const interval = useRef<NodeJS.Timer>();
   const [hasStarted, setHasStarted] = useState(false);
   const isVisible = useVisible(hostRef);
   const { disabled, schemaOpen } = useEditorState();
-
+  const [startedTimestamp, setStartedTimestamp] = useState<number>(0);
   const dispatchVevEvent = useDispatchVevEvent();
 
   function resetCounter() {
-    internalCount.current = start;
+    setStartedTimestamp(0);
     setCount(start);
   }
 
-  useEffect(() => {
-    if (start < end) {
-      const animationLengthMs = animationLength * 1000;
-      const newStepSize = (25 * (end - start)) / animationLengthMs;
-      setStepSize(newStepSize);
-    } else {
-      const animationLengthMs = animationLength * 1000;
-      const newStepSize = (25 * (end - start)) / animationLengthMs;
-      setStepSize(newStepSize);
-    }
-  }, [animationLength, start, end, delay]);
+  useFrame(
+    (timestamp) => {
+      if (!hasStarted) return;
+
+      if (startedTimestamp === 0) {
+        setStartedTimestamp(timestamp);
+      } else {
+        const animationLengthMs = animationLength * 1000;
+        const delta = timestamp - startedTimestamp;
+        const normalizedDelta = normalize(delta, 0, animationLengthMs);
+        let animationProgress: number;
+
+        switch (easing) {
+          case 'none':
+            animationProgress = easingNone(normalizedDelta);
+            break;
+          case 'easein':
+            animationProgress = easeIn(normalizedDelta);
+            break;
+          case 'easeout':
+            animationProgress = easeOut(normalizedDelta);
+            break;
+        }
+
+        // Animation done
+        if (animationProgress >= oneIsh) {
+          if (once) {
+            setCount(end);
+            dispatchVevEvent(Events.COMPLETE);
+            setHasStarted(false);
+          } else {
+            resetCounter();
+            dispatchVevEvent(Events.COMPLETE);
+          }
+          return;
+        }
+
+        // Set count
+        if (end > start) {
+          const newCount = round(animationProgress * (end - start) + start);
+          setCount(newCount);
+        } else {
+          // end < start
+          const newCount = round(start - (start - end) * animationProgress);
+          setCount(newCount);
+        }
+      }
+    },
+    [hasStarted, startedTimestamp],
+  );
 
   useEffect(() => {
     if (!isVisible) {
@@ -122,9 +165,10 @@ const NumberCounter = ({
   }, [delay, isVisible, runWhenVisible, disabled, schemaOpen]);
 
   useEffect(() => {
-    clearInterval(interval.current);
     resetCounter();
-  }, [start, end, stepSize, precision, delay]);
+    setHasStarted(true);
+    setStartedTimestamp(0);
+  }, [start, end, precision, delay, easing, disabled, duration, delay]);
 
   useVevEvent(Interactions.START, () => {
     setHasStarted(true);
@@ -136,42 +180,7 @@ const NumberCounter = ({
 
   useVevEvent(Interactions.RESET, () => {
     setCount(start);
-    internalCount.current = start;
   });
-
-  useEffect(() => {
-    if (interval.current) {
-      clearInterval(interval.current);
-    }
-
-    interval.current = setInterval(() => {
-      if (hasStarted) {
-        if (end < start) {
-          if (internalCount.current + stepSize >= end) {
-            setCount((internalCount.current += stepSize));
-          } else {
-            dispatchVevEvent(Events.COMPLETE);
-            internalCount.current = end;
-            setCount(end);
-          }
-        } else {
-          if (internalCount.current + stepSize <= end) {
-            setCount((internalCount.current += stepSize));
-          } else {
-            dispatchVevEvent(Events.COMPLETE);
-            internalCount.current = end;
-            setCount(end);
-          }
-        }
-
-        if (internalCount.current === end && !once) {
-          resetCounter();
-        }
-      }
-    }, 25);
-
-    return () => {};
-  }, [hasStarted, end, once, start, stepSize]);
 
   return (
     <div className={styles.wrapper}>
@@ -258,6 +267,20 @@ registerVevComponent(NumberCounter, {
           initialValue: 800,
         },
       ],
+    },
+    {
+      title: 'Easing',
+      name: 'easing',
+      type: 'select',
+      initialValue: 'none',
+      options: {
+        display: 'dropdown',
+        items: [
+          { label: 'None', value: 'none' },
+          { label: 'Ease in', value: 'easein' },
+          { label: 'Ease out', value: 'easeout' },
+        ],
+      },
     },
     {
       name: 'format',
