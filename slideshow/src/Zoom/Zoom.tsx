@@ -99,7 +99,7 @@ export const Zoom = ({
               }ms`,
               opacity: i === move ? 1 : 0,
               pointerEvents: i === move ? "auto" : "none",
-              zIndex: scaleFactor === 100 ? (i === move ? 1 : 0) : "auto",
+              zIndex: scaleFactor === 100 ? (i === move ? "auto" : -1) : "auto",
               transform:
                 i === move || i === move - 1
                   ? "scale(1)"
