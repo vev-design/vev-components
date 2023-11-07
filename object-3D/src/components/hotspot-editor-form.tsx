@@ -90,6 +90,7 @@ export function HotSpotModal({ context }: { context: Context }) {
           controls: true,
           animation: NO_ANIMATION,
           zoom: true,
+          rotationSpeed: 2,
           hotspots: hotspots || [],
           addHotSpot: (spot) => {
             const newHotspot = { index: hotspots.length + 1, position: spot };

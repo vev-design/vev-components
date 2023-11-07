@@ -1,13 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { SchemaFieldProps, StringField } from "@vev/react";
-import {
-  SilkeBox,
-  SilkeButton,
-  SilkeIcon,
-  SilkeLink,
-  SilkeButtonLink,
-} from "@vev/silke";
-import createGoogleSheet from "../utils/google-create-sheet";
+import React, { useCallback, useEffect, useState } from 'react';
+import { SchemaFieldProps, StringField } from '@vev/react';
+import { SilkeBox, SilkeButton, SilkeIcon, SilkeLink, SilkeButtonLink } from '@vev/silke';
+import createGoogleSheet from '../utils/google-create-sheet';
 
 interface AuthResponse {
   accessToken: string;
@@ -25,24 +19,17 @@ function RevokeButton(props: {
     <SilkeBox column gap="s">
       <SilkeBox gap="s">
         <SilkeBox gap="s">
-          <SilkeIcon
-            icon="check"
-            style={{ color: "lightgreen", fontSize: 24 }}
-          />
+          <SilkeIcon icon="check" style={{ color: 'lightgreen', fontSize: 24 }} />
           Connected
         </SilkeBox>
-        <SilkeButtonLink style={{ color: "red" }} onClick={handleRevokeAccess}>
+        <SilkeButtonLink style={{ color: 'red' }} onClick={handleRevokeAccess}>
           Revoke access
         </SilkeButtonLink>
       </SilkeBox>
       {googleSheetUrl && (
         <>
           <SilkeBox>
-            <SilkeLink
-              href={googleSheetUrl}
-              target="_blank"
-              style={{ wordBreak: "break-all" }}
-            >
+            <SilkeLink href={googleSheetUrl} target="_blank" style={{ wordBreak: 'break-all' }}>
               {googleSheetUrl}
             </SilkeLink>
           </SilkeBox>
@@ -74,7 +61,7 @@ function GoogleSheetConnect(props: SchemaFieldProps<StringField>) {
 
   useEffect(() => {
     (async () => {
-      const accessToken = await storage.getItem("accessToken", "project");
+      const accessToken = await storage.getItem('accessToken', 'project');
       if (accessToken) {
         setIsAuthenticated(true);
         setLoading(false);
@@ -85,9 +72,7 @@ function GoogleSheetConnect(props: SchemaFieldProps<StringField>) {
   const handleRequestAccess = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await actions.authenticateGoogle(
-        "https://www.googleapis.com/auth/drive.file"
-      );
+      const res = await actions.authenticateGoogle('https://www.googleapis.com/auth/drive.file');
       await handleCreateSheet(res);
       setLoading(false);
       if (res.accessToken && res.refreshToken) setIsAuthenticated(true);
@@ -97,9 +82,7 @@ function GoogleSheetConnect(props: SchemaFieldProps<StringField>) {
   }, []);
 
   const handleReAuth = useCallback(async () => {
-    const res = await actions.authenticateGoogle(
-      "https://www.googleapis.com/auth/drive.file"
-    );
+    const res = await actions.authenticateGoogle('https://www.googleapis.com/auth/drive.file');
     if (res.accessToken && res.refreshToken) {
       setIsAuthenticated(true);
       setNeedReAuth(false);
@@ -125,19 +108,16 @@ function GoogleSheetConnect(props: SchemaFieldProps<StringField>) {
     await actions.revokeGoogle();
   }, [isAuthenticated]);
 
-  const handleCreateSheet = useCallback(
-    async ({ accessToken, refreshToken }: AuthResponse) => {
-      setLoading(true);
-      const sheet = await createGoogleSheet({
-        accessToken,
-        refreshToken,
-        formTitle: "Vev Form Submission",
-      });
-      if (sheet) props.onChange(sheet);
-      setLoading(false);
-    },
-    []
-  );
+  const handleCreateSheet = useCallback(async ({ accessToken, refreshToken }: AuthResponse) => {
+    setLoading(true);
+    const sheet = await createGoogleSheet({
+      accessToken,
+      refreshToken,
+      formTitle: 'Vev Form Submission',
+    });
+    if (sheet) props.onChange(sheet);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     handleCheckHasAccess();
@@ -182,14 +162,8 @@ function GoogleSheetConnect(props: SchemaFieldProps<StringField>) {
         <SilkeBox>
           <SilkeButton
             onClick={async () => {
-              const accessToken = await storage.getItem(
-                "accessToken",
-                "project"
-              );
-              const refreshToken = await storage.getItem(
-                "refreshToken",
-                "project"
-              );
+              const accessToken = await storage.getItem('accessToken', 'project');
+              const refreshToken = await storage.getItem('refreshToken', 'project');
               handleCreateSheet({ accessToken, refreshToken });
             }}
             label="Create Google Sheet"

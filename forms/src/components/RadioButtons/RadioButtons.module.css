@@ -38,6 +38,7 @@
   background-color: #ddd;
   transition: 100ms ease-in;
   border-radius: 50%;
+  cursor: pointer;
 }
 
 .radioButton:hover {

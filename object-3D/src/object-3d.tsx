@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import styles from './object-3d.module.css';
-import {registerVevComponent, useDispatchVevEvent, useEditorState, useSize, useVevEvent} from '@vev/react';
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useEditorState,
+  useSize,
+  useVevEvent,
+} from '@vev/react';
 import { Object3DContextProvider } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
@@ -8,8 +14,8 @@ import { HotspotEditorForm } from './components/hotspot-editor-form';
 import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
-import {EventTypes, InteractionTypes} from "./event-types";
-import SpeedSlider from "./SpeedSlider";
+import { EventTypes, InteractionTypes } from './event-types';
+import SpeedSlider from './SpeedSlider';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -93,8 +99,8 @@ const Object3d = ({
 
   useVevEvent(InteractionTypes.SELECT_HOTSPOT, (args: any) => {
     console.log('internal', clickHotspot);
-    clickHotspot(args.select_hotspot)
-  })
+    clickHotspot(args.select_hotspot);
+  });
 
   return (
     <div className={styles.wrapper}>
@@ -126,7 +132,7 @@ const Object3d = ({
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
               [EventTypes.HOTSPOT_CLICKED]: index,
             });
-          }
+          },
         }}
       >
         <Object3dViewer />
@@ -225,16 +231,22 @@ registerVevComponent(Object3d, {
       title: 'Hotspot',
     },
   ],
-  events: [{
-    type: EventTypes.HOTSPOT_CLICKED,
-    description: 'Hotspot clicked',
-    args: [{name: EventTypes.HOTSPOT_CLICKED, description: 'Hotspot number clicked', type: 'number'}],
-  }],
-  interactions: [{
-    type:InteractionTypes.SELECT_HOTSPOT,
-    description: 'Select hotspot',
-    args: [{name: 'select_hotspot', title: 'Hotspot number', type: 'number'}],
-  }],
+  events: [
+    {
+      type: EventTypes.HOTSPOT_CLICKED,
+      description: 'Hotspot clicked',
+      args: [
+        { name: EventTypes.HOTSPOT_CLICKED, description: 'Hotspot number clicked', type: 'number' },
+      ],
+    },
+  ],
+  interactions: [
+    {
+      type: InteractionTypes.SELECT_HOTSPOT,
+      description: 'Select hotspot',
+      args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
+    },
+  ],
   type: 'both',
 });
 

@@ -2,7 +2,7 @@ export default function deepen(obj: { [key: string]: any }) {
   const result = {};
 
   for (const objectPath in obj) {
-    const parts = objectPath.split(".");
+    const parts = objectPath.split('.');
 
     let target = result;
     while (parts.length > 1) {

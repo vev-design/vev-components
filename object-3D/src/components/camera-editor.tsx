@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
 import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
-import { Camera, Vector3 } from 'three';
+import { Camera } from 'three';
 import { Object3dViewer } from './object-3d-viewer';
 import styles from '../object-3d.module.css';
 import { CameraEditorForm } from './camera-editor-form';
-import { InternalHotspot, Position, SavedCameraPosition, StorageHotspot } from '../types';
+import { SavedCameraPosition, StorageHotspot } from '../types';
 import { useConvertedHotspots } from '../hooks/use-converted-hotspots';
 
 export interface Context {
@@ -97,6 +97,7 @@ export function CameraEditModal({ context }: { context: Context }) {
           hotspots,
           camera: currentCamera.current,
           control: currentControl.current,
+          rotationSpeed: 2,
           setContextCamera: (camera) => {
             currentCamera.current = camera;
           },

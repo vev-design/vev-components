@@ -1,17 +1,17 @@
-import React, { useCallback, useState } from "react";
-import { FieldProps, Event } from "../../types";
-import { registerVevComponent, useDispatchVevEvent } from "@vev/react";
-import formIcon from "../../assets/form-icon.svg";
-import styles from "./Checkboxes.module.css";
-import cx from "classnames";
-import FieldWrapper from "../FieldWrapper";
+import React, { useCallback, useState } from 'react';
+import { FieldProps, Event } from '../../types';
+import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import formIcon from '../../assets/form-icon.svg';
+import styles from './Checkboxes.module.css';
+import cx from 'classnames';
+import FieldWrapper from '../FieldWrapper';
 
 type Props = FieldProps & {
   items: { item: { label: string; value: string } }[];
 };
 
 function Checkboxes(props: Props) {
-  const items = props?.items?.map((opt) => opt["item"]);
+  const items = props?.items?.map((opt) => opt.item);
 
   return (
     <div>
@@ -29,21 +29,23 @@ function Boxes(props: CheckboxesProps) {
   const [value, setValue] = useState([]);
   const dispatch = useDispatchVevEvent();
 
-  const handleChange = useCallback((value: any, type?: "add" | "remove") => {
-    if (type === "add")
+  const handleChange = useCallback((value: any, type?: 'add' | 'remove') => {
+    if (type === 'add')
       return setValue((prev) => {
         const updated = [...prev, value];
         dispatch(Event.onChange, {
-          [name]: updated,
+          name,
+          value: updated,
         });
         return updated;
       });
 
-    if (type === "remove")
+    if (type === 'remove')
       return setValue((prev) => {
         const updated = prev.filter((i) => i !== value);
         dispatch(Event.onChange, {
-          [name]: updated,
+          name,
+          value: updated,
         });
         return updated;
       });
@@ -66,9 +68,9 @@ function Boxes(props: CheckboxesProps) {
                   onChange={(e) => {
                     const { value, checked } = e.target;
                     if (checked) {
-                      handleChange(value, "add");
+                      handleChange(value, 'add');
                     } else {
-                      handleChange(value, "remove");
+                      handleChange(value, 'remove');
                     }
                   }}
                 />
@@ -99,23 +101,23 @@ function Boxes(props: CheckboxesProps) {
 }
 
 registerVevComponent(Checkboxes, {
-  name: "Checkboxes",
-  categories: ["Form"],
+  name: 'Checkboxes',
+  categories: ['Form'],
   icon: formIcon,
   editableCSS: [
     {
       selector: styles.itemLabel,
-      title: "Item label",
-      properties: ["color", "padding", "font-family", "font-size"],
+      title: 'Item label',
+      properties: ['color', 'padding', 'font-family', 'font-size'],
     },
     {
       selector: styles.checkmarkChecked,
-      title: "Checkmark",
-      properties: ["background"],
+      title: 'Checkmark',
+      properties: ['background'],
     },
   ],
   size: {
-    height: "auto",
+    height: 'auto',
     width: 300,
   },
   events: [
@@ -125,50 +127,50 @@ registerVevComponent(Checkboxes, {
   ],
   props: [
     {
-      name: "name",
-      type: "string",
-      initialValue: "fruits",
+      name: 'name',
+      type: 'string',
+      initialValue: 'fruits',
     },
     {
-      name: "title",
-      type: "string",
-      initialValue: "Fruits",
+      name: 'title',
+      type: 'string',
+      initialValue: 'Fruits',
     },
     {
-      name: "items",
-      type: "array",
+      name: 'items',
+      type: 'array',
       initialValue: [
         {
           item: {
-            label: "Apple",
-            value: "apple",
+            label: 'Apple',
+            value: 'apple',
           },
         },
         {
           item: {
-            label: "Orange",
-            value: "orange",
+            label: 'Orange',
+            value: 'orange',
           },
         },
         {
           item: {
-            label: "Pear",
-            value: "pear",
+            label: 'Pear',
+            value: 'pear',
           },
         },
       ],
       of: [
         {
-          type: "object",
-          name: "item",
+          type: 'object',
+          name: 'item',
           fields: [
             {
-              type: "string",
-              name: "label",
+              type: 'string',
+              name: 'label',
             },
             {
-              type: "string",
-              name: "value",
+              type: 'string',
+              name: 'value',
             },
           ],
         },

@@ -1,20 +1,16 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { FieldProps, Event } from "../../types";
-import {
-  registerVevComponent,
-  VevProps,
-  useDispatchVevEvent,
-} from "@vev/react";
-import formIcon from "../../assets/form-icon.svg";
-import styles from "./TextField.module.css";
-import FieldWrapper from "../FieldWrapper";
+import React, { useState, useCallback, useEffect } from 'react';
+import { FieldProps, Event } from '../../types';
+import { registerVevComponent, VevProps, useDispatchVevEvent } from '@vev/react';
+import formIcon from '../../assets/form-icon.svg';
+import styles from './TextField.module.css';
+import FieldWrapper from '../FieldWrapper';
 
 type Props = FieldProps &
   Validation & {
-    inputType?: "text" | "number";
+    inputType?: 'text' | 'number';
     placeholder?: string;
     multiline?: boolean;
-    type?: "text" | "date" | "email" | "url";
+    type?: 'text' | 'date' | 'email' | 'url';
   };
 
 type Validation = {
@@ -44,24 +40,10 @@ const validate = (value: string, validate: Validation) => {
 };
 
 function TextField(props: Props) {
-  const [value, onChange] = useState("");
+  const [value, onChange] = useState('');
   const dispatch = useDispatchVevEvent();
 
-  const {
-    name,
-    multiline,
-    type,
-    inputType,
-    className,
-    required,
-    placeholder,
-    min,
-    max,
-    minLength,
-    maxLength,
-  } = props;
-
-  console.log(props);
+  const { name, multiline, type, inputType, className, required, placeholder } = props;
 
   const handleChange = (value: string) => {
     onChange(value);
@@ -72,13 +54,18 @@ function TextField(props: Props) {
   };
 
   useEffect(() => {
+    dispatch(Event.onValid);
+  }, []);
+
+  const handleValidate = useCallback(() => {
+    console.log('validate');
     const valid = validate(value, props);
     if (!valid) {
       dispatch(Event.onInvalid);
     } else {
       dispatch(Event.onValid);
     }
-  }, [value]);
+  }, [value, dispatch, props]);
 
   return (
     <FieldWrapper>
@@ -94,8 +81,10 @@ function TextField(props: Props) {
             className={styles.input}
             name={name}
             rows={5}
-            value={value || ""}
+            value={value || ''}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleValidate}
+            onFocus={() => dispatch(Event.onValid)}
             required={required}
             placeholder={placeholder}
           />
@@ -103,11 +92,13 @@ function TextField(props: Props) {
           <input
             id={name}
             className={styles.input}
-            type={inputType || type || "text"}
+            type={inputType || type || 'text'}
             placeholder={placeholder}
             name={name}
             onChange={(e) => handleChange(e.target.value)}
-            value={value || ""}
+            onBlur={handleValidate}
+            onFocus={() => dispatch(Event.onValid)}
+            value={value || ''}
             required={required}
           />
         )}
@@ -118,127 +109,127 @@ function TextField(props: Props) {
 
 const props: VevProps[] = [
   {
-    name: "name",
-    type: "string",
-    initialValue: "field",
+    name: 'name',
+    type: 'string',
+    initialValue: 'field',
   },
   {
-    name: "required",
-    title: "Required",
-    type: "boolean",
+    name: 'required',
+    title: 'Required',
+    type: 'boolean',
   },
   {
-    type: "select",
-    name: "type",
-    initialValue: "text",
+    type: 'select',
+    name: 'type',
+    initialValue: 'text',
     options: {
-      display: "radio",
+      display: 'radio',
       items: [
         {
-          value: "text",
-          label: "Text",
+          value: 'text',
+          label: 'Text',
         },
         {
-          value: "number",
-          label: "Number",
+          value: 'number',
+          label: 'Number',
         },
         {
-          value: "date",
-          label: "Date",
+          value: 'date',
+          label: 'Date',
         },
         {
-          value: "datetime-local",
-          label: "Date & time",
+          value: 'datetime-local',
+          label: 'Date & time',
         },
         {
-          value: "time",
-          label: "Time",
+          value: 'time',
+          label: 'Time',
         },
         {
-          value: "email",
-          label: "Email",
+          value: 'email',
+          label: 'Email',
         },
         {
-          value: "url",
-          label: "Url",
+          value: 'url',
+          label: 'Url',
         },
       ],
     },
   },
   {
-    name: "placeholder",
-    type: "string",
-    initialValue: "Placeholder",
-    hidden: (context) => context.value["type"] === "date",
+    name: 'placeholder',
+    type: 'string',
+    initialValue: 'Placeholder',
+    hidden: (context) => context.value.type === 'date',
   },
   {
-    type: "number",
-    name: "minLength",
-    hidden: (context) => !["text", "email"].includes(context.value["type"]),
+    type: 'number',
+    name: 'minLength',
+    hidden: (context) => !['text', 'email'].includes(context.value.type),
   },
   {
-    type: "number",
-    name: "maxLength",
-    hidden: (context) => !["text", "email"].includes(context.value["type"]),
+    type: 'number',
+    name: 'maxLength',
+    hidden: (context) => !['text', 'email'].includes(context.value.type),
   },
   {
-    type: "select",
-    name: "display",
-    hidden: (context) => context.value["type"] !== "number",
-    initialValue: "input",
+    type: 'select',
+    name: 'display',
+    hidden: (context) => context.value.type !== 'number',
+    initialValue: 'input',
     options: {
-      display: "dropdown",
+      display: 'dropdown',
       items: [
         {
-          value: "input",
-          label: "input",
+          value: 'input',
+          label: 'input',
         },
         {
-          value: "slider",
-          label: "slider",
+          value: 'slider',
+          label: 'slider',
         },
       ],
     },
   },
   {
-    type: "number",
-    name: "min",
-    hidden: (context) => context.value["type"] !== "number",
+    type: 'number',
+    name: 'min',
+    hidden: (context) => context.value.type !== 'number',
   },
   {
-    type: "number",
-    name: "max",
-    hidden: (context) => context.value["type"] !== "number",
+    type: 'number',
+    name: 'max',
+    hidden: (context) => context.value.type !== 'number',
   },
   {
-    type: "boolean",
-    name: "multiline",
-    hidden: (context) => context.value["type"] !== "text",
+    type: 'boolean',
+    name: 'multiline',
+    hidden: (context) => context.value.type !== 'text',
   },
 ];
 
 registerVevComponent(TextField, {
-  name: "Text Field",
+  name: 'Text Field',
   icon: formIcon,
-  categories: ["Form"],
+  categories: ['Form'],
   editableCSS: [
     {
       selector: styles.input,
-      title: "Input",
+      title: 'Input',
       properties: [
-        "border",
-        "background",
-        "box-shadow",
-        "padding",
-        "color",
-        "border-radius",
-        "font-family",
-        "font-size",
+        'border',
+        'background',
+        'box-shadow',
+        'padding',
+        'color',
+        'border-radius',
+        'font-family',
+        'font-size',
       ],
     },
   ],
   size: {
-    height: "auto",
+    height: 'auto',
     width: 300,
   },
   props,
@@ -247,12 +238,12 @@ registerVevComponent(TextField, {
       type: Event.onChange,
       args: [
         {
-          name: "name",
-          type: "string",
+          name: 'name',
+          type: 'string',
         },
         {
-          name: "value",
-          type: "string",
+          name: 'value',
+          type: 'string',
         },
       ],
     },
