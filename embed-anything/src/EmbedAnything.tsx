@@ -139,9 +139,16 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
 }
 
 registerVevComponent(EmbedAnything, {
-  name: 'EmbedAnything',
+  name: 'Embed Anything',
   props: [
-    { title: 'Embed HTML', name: 'html', type: 'string' },
+    {
+      title: 'Embed HTML',
+      name: 'html',
+      type: 'string',
+      options: {
+        multiline: true,
+      },
+    },
     { title: 'Encapsulate', name: 'encapsulate', type: 'boolean', initialValue: false },
   ],
   type: 'both',
