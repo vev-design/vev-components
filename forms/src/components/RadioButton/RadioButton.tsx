@@ -45,6 +45,7 @@ function RadioButton(props: RadioButton) {
             id={props.value}
             type="radio"
             value={props.value}
+            className={styles.radioButton}
             onChange={(e) => {
               handleChange(e.target.value);
             }}
