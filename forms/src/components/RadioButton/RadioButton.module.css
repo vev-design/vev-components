@@ -1,0 +1,52 @@
+.wrapper {
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.item {
+  display: flex;
+  display: block;
+  width: 100%;
+  position: relative;
+  margin: 2px 0;
+}
+
+.itemLabel {
+  display: inline-block;
+  text-align: middle;
+  font-size: 14px;
+}
+
+.radioButton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  background-color: #ddd;
+  transition: 100ms ease-in;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.radioButton:hover {
+  background-color: #ccc;
+}
+
+.radioButtonChecked,
+.radioButtonChecked:hover {
+  background-color: rgb(92, 76, 230);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+}
