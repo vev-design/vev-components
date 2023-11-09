@@ -1,10 +1,14 @@
-import React, { useCallback, useState } from 'react';
-import { FieldProps, Event } from '../../types';
-import cx from 'classnames';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './Toggle.module.css';
-import FieldWrapper from '../FieldWrapper';
+import React, { useCallback, useState } from "react";
+import { FieldProps, Event } from "../../types";
+import cx from "classnames";
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useVevEvent,
+} from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./Toggle.module.css";
+import FieldWrapper from "../FieldWrapper";
 
 function Toggle(props: FieldProps) {
   const [value, setValue] = useState(false);
@@ -20,8 +24,12 @@ function Toggle(props: FieldProps) {
       });
       setValue(value);
     },
-    [name],
+    [name]
   );
+
+  useVevEvent("SET", (e: any) => {
+    setValue(e.value);
+  });
 
   return (
     <FieldWrapper>
@@ -34,7 +42,7 @@ function Toggle(props: FieldProps) {
           <input
             className={styles.checkbox}
             type="checkbox"
-            value={value.toString() || ''}
+            value={value.toString() || ""}
             id={name}
             name={name}
             onChange={() => handleChange(!value)}
@@ -52,49 +60,67 @@ function Toggle(props: FieldProps) {
 }
 
 registerVevComponent(Toggle, {
-  name: 'Toggle',
+  name: "Toggle",
   icon: formIcon,
-  categories: ['Form'],
+  categories: ["Form"],
   editableCSS: [
     {
       selector: styles.field,
-      title: 'Field',
-      properties: ['background'],
+      title: "Field",
+      properties: ["background"],
     },
     {
       selector: styles.switch,
-      title: 'Switch',
-      properties: ['background'],
+      title: "Switch",
+      properties: ["background"],
     },
     {
       selector: styles.switchActive,
-      title: 'Switch',
-      properties: ['background'],
+      title: "Switch",
+      properties: ["background"],
     },
   ],
   size: {
-    height: 'auto',
-    width: 'auto',
+    height: "auto",
+    width: "auto",
   },
   events: [
     {
       type: Event.onChange,
+      args: [
+        {
+          name: "value",
+          type: "boolean",
+        },
+      ],
     },
   ],
   props: [
     {
-      name: 'name',
-      type: 'string',
-      initialValue: 'toggle',
+      name: "name",
+      type: "string",
+      initialValue: "toggle",
     },
     {
-      name: 'title',
-      type: 'string',
-      initialValue: 'Toggle',
+      name: "title",
+      type: "string",
+      initialValue: "Toggle",
     },
     {
-      name: 'required',
-      type: 'boolean',
+      name: "required",
+      type: "boolean",
+    },
+  ],
+  interactions: [
+    {
+      type: "SET",
+      description: "Set value",
+      args: [
+        {
+          name: "value",
+          type: "boolean",
+        },
+      ],
     },
   ],
 });
