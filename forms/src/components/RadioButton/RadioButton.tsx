@@ -30,7 +30,9 @@ function RadioButton(props: RadioButton) {
 
   useEffect(() => {
     if (props.initialValue) {
-      handleChange(props.value);
+      setTimeout(() => {
+        handleChange(props.value);
+      }, 1000);
       ref.current.checked = true;
     }
   }, []);

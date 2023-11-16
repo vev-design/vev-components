@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FieldProps, Event } from "../../types";
 import cx from "classnames";
 import {
@@ -11,7 +11,7 @@ import styles from "./Toggle.module.css";
 import FieldWrapper from "../FieldWrapper";
 
 function Toggle(props: FieldProps) {
-  const [value, setValue] = useState(false);
+  const [value, setValue] = useState(props.initialValue);
   const dispatch = useDispatchVevEvent();
 
   const { name, required } = props;
@@ -30,6 +30,16 @@ function Toggle(props: FieldProps) {
   useVevEvent("SET", (e: any) => {
     setValue(e.value);
   });
+
+  useEffect(() => {
+    if (props.initialValue) {
+      dispatch(Event.onChange, {
+        name,
+        value,
+      });
+      setValue(value);
+    }
+  }, []);
 
   return (
     <FieldWrapper>
@@ -109,6 +119,11 @@ registerVevComponent(Toggle, {
     {
       name: "required",
       type: "boolean",
+    },
+    {
+      name: "initialValue",
+      type: "boolean",
+      title: "Initial value",
     },
   ],
   interactions: [

@@ -3,6 +3,7 @@ export type FieldProps = {
   value: string;
   className?: string;
   required?: boolean;
+  initialValue?: boolean;
 };
 
 export enum Event {

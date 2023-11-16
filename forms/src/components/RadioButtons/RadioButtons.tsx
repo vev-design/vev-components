@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './RadioButtons.module.css';
-import cx from 'classnames';
-import FieldWrapper from '../FieldWrapper';
+import React, { useCallback, useEffect, useState } from "react";
+import { FieldProps, Event } from "../../types";
+import { registerVevComponent, useDispatchVevEvent } from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./RadioButtons.module.css";
+import cx from "classnames";
+import FieldWrapper from "../FieldWrapper";
 
 type RadioButtons = FieldProps & {
   placeholder?: string;
@@ -12,7 +12,7 @@ type RadioButtons = FieldProps & {
 };
 
 function RadioButtons(props: RadioButtons) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
   const dispatch = useDispatchVevEvent();
 
   const options = props.items?.map((opt) => opt.item);
@@ -25,7 +25,7 @@ function RadioButtons(props: RadioButtons) {
       });
       setValue(value);
     },
-    [props.name],
+    [props.name]
   );
 
   useEffect(() => {
@@ -66,23 +66,23 @@ function RadioButtons(props: RadioButtons) {
 }
 
 registerVevComponent(RadioButtons, {
-  name: 'Radio buttons',
-  categories: ['Form'],
+  name: "Radio buttons",
+  categories: ["Forms"],
   icon: formIcon,
   size: {
-    height: 'auto',
+    height: "auto",
     width: 300,
   },
   editableCSS: [
     {
       selector: styles.itemLabel,
-      title: 'Item label',
-      properties: ['color', 'padding', 'font-family', 'font-size'],
+      title: "Item label",
+      properties: ["color", "padding", "font-family", "font-size"],
     },
     {
       selector: styles.radioButtonChecked,
-      title: 'Radio button',
-      properties: ['background'],
+      title: "Radio button",
+      properties: ["background"],
     },
   ],
   events: [
@@ -92,54 +92,54 @@ registerVevComponent(RadioButtons, {
   ],
   props: [
     {
-      name: 'name',
-      type: 'string',
-      initialValue: 'radio',
+      name: "name",
+      type: "string",
+      initialValue: "radio",
     },
     {
-      type: 'boolean',
-      name: 'required',
+      type: "boolean",
+      name: "required",
     },
     {
-      name: 'items',
-      type: 'array',
+      name: "items",
+      type: "array",
       initialValue: [
         {
           item: {
-            label: 'Option 1',
-            value: 'option1',
+            label: "Option 1",
+            value: "option1",
           },
         },
         {
           item: {
-            label: 'Option 2',
-            value: 'option2',
+            label: "Option 2",
+            value: "option2",
           },
         },
         {
           item: {
-            label: 'Option 3',
-            value: 'option3',
+            label: "Option 3",
+            value: "option3",
           },
         },
       ],
       of: [
         {
-          type: 'object',
-          name: 'item',
+          type: "object",
+          name: "item",
           fields: [
             {
-              type: 'string',
-              name: 'label',
+              type: "string",
+              name: "label",
             },
             {
-              type: 'string',
-              name: 'value',
+              type: "string",
+              name: "value",
             },
             {
-              type: 'boolean',
-              name: 'initialValue',
-              title: 'Initial value',
+              type: "boolean",
+              name: "initialValue",
+              title: "Initial value",
             },
           ],
         },
