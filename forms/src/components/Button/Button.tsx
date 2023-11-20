@@ -170,7 +170,6 @@ registerVevComponent(Button, {
       type: "string",
       initialValue: "Thank you",
       hidden: (context) => {
-        console.log(context);
         return context.value.type !== "submit";
       },
     },
@@ -196,20 +195,112 @@ registerVevComponent(Button, {
                 value: "googleSheet",
               },
               {
-                label: "Webhook",
-                value: "webhook",
+                label: "HTTP Request",
+                value: "httpRequest",
               },
             ],
           },
         },
         {
-          type: "string",
-          name: "webhookUrl",
-          description: "The URL to send data to (POST)",
+          type: "object",
+          name: "htmlRequest",
+          title: "HTML request",
+          description: "Send data to a custom URL",
           hidden({ value }) {
-            console.log("val", value);
-            return value?.submit.submitType !== "webhook";
+            return value?.submit.submitType !== "httpRequest";
           },
+          fields: [
+            {
+              type: "select",
+              name: "method",
+              initialValue: "POST",
+              options: {
+                multiselect: false,
+                display: "dropdown",
+                items: [
+                  {
+                    label: "GET",
+                    value: "GET",
+                  },
+                  {
+                    label: "POST",
+                    value: "POST",
+                  },
+                ],
+              },
+            },
+            {
+              type: "string",
+              name: "url",
+              initialValue: "https://example.com",
+              options: {
+                type: "text",
+                multiline: true,
+              },
+            },
+            {
+              type: "boolean",
+              name: "newTab",
+              title: "Open as link",
+              hidden({ value }) {
+                return value?.submit?.htmlRequest?.method !== "GET";
+              },
+            },
+            {
+              type: "boolean",
+              name: "queryParams",
+              title: "Query params",
+              description:
+                "Send data as query params, if not it will be sent as JSON in body",
+              initialValue: false,
+            },
+            {
+              name: "defaultData",
+              title: "Default data",
+              type: "array",
+              of: [
+                {
+                  type: "object",
+                  name: "data",
+                  fields: [
+                    {
+                      type: "string",
+                      name: "key",
+                      title: "Key",
+                    },
+                    {
+                      type: "string",
+                      name: "value",
+                      title: "Value",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "defaultHeaders",
+              title: "Headers",
+              type: "array",
+              of: [
+                {
+                  type: "object",
+                  name: "defaultValue",
+                  fields: [
+                    {
+                      type: "string",
+                      name: "name",
+                      title: "Key",
+                    },
+                    {
+                      type: "string",
+                      name: "value",
+                      title: "Value",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         },
         {
           type: "string",
