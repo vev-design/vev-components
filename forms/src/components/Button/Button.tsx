@@ -81,8 +81,6 @@ function Button({ ...props }: Props) {
 
   const { submitButton, successMessage, type = "submit" } = props;
 
-  console.log("props", props, formState);
-
   const handleSubmit = useCallback(async (formState: any) => {
     console.log("** submit", formState);
     setSubmitting(true);
@@ -93,9 +91,10 @@ function Button({ ...props }: Props) {
     ) {
       const defaultValues = (
         props.submit.httpRequest?.defaultData || []
-      ).reduce((res, curr) => {
-        return { ...res, [curr.data.key]: curr.data.value };
-      }, {});
+      ).reduce(
+        (res, curr) => ({ ...res, [curr.data.key]: curr.data.value }),
+        {}
+      );
 
       window.open(
         props.submit.httpRequest + serialize({ ...defaultValues, ...formState })
