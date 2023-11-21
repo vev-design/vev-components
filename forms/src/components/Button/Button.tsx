@@ -7,10 +7,10 @@ import {
   useDispatchVevEvent,
   useModel,
   useGlobalStateRef,
+  ProjectInteraction,
 } from "@vev/react";
 import formIcon from "../../assets/form-icon.svg";
 import styles from "./Button.module.css";
-import FieldWrapper from "../FieldWrapper";
 
 import GoogleSheetConnect from "../../submit/GoogleSheetConnect";
 import ZapierConnect from "../../submit/ZapierConnect";
@@ -67,9 +67,47 @@ const serialize = function (obj) {
       str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
     }
 
-  console.log("str", str.join("&"));
-
   return str.length ? `?${str.join("&")}` : "";
+};
+
+type FormModel = {
+  key: string;
+  type: string;
+  content: {
+    name: string;
+    minLength: number;
+    maxLength: number;
+    required: boolean;
+  };
+};
+
+const getFormModels = (
+  modelKey: string,
+  interactions: ProjectInteraction[],
+  models: any[]
+): FormModel[] => {
+  const usedInteractions = interactions.filter(
+    (interaction) => interaction.event?.contentKey === modelKey
+  );
+  const triggerKeys = usedInteractions.map(
+    (interaction) => interaction.trigger?.contentKey
+  );
+  return models.filter((model) => triggerKeys.includes(model.key));
+};
+
+const validateForm = (formState: any, formModels: FormModel[]) => {
+  let errors = [];
+  for (const model of formModels) {
+    const value = formState[model.content.name];
+    const isRequired = model.content.required;
+    if (!value && isRequired) {
+      errors.push({
+        key: model.content.name,
+        message: "Required",
+      });
+    }
+  }
+  return errors;
 };
 
 function Button({ ...props }: Props) {
@@ -85,22 +123,34 @@ function Button({ ...props }: Props) {
     console.log("** submit", formState);
     setSubmitting(true);
 
-    const isLinkSubmission = (props) =>
-      props.submit.submitType === "httpRequest" &&
-      props.submit.httpRequest.newTab;
+    const formModels = getFormModels(
+      model.key,
+      store?.current?.interactions,
+      store?.current?.models
+    );
+    const errors = validateForm(formState, formModels);
+    console.log("errors", errors);
 
-    if (isLinkSubmission(props)) {
+    if (errors?.length) {
+      console.log("have errors", errors);
+      setSubmitting(false);
+      return;
+    }
+
+    const isLinkSubmission = (submit: Props["submit"]) =>
+      submit.submitType === "httpRequest" && submit.httpRequest?.newTab;
+
+    if (isLinkSubmission(props.submit)) {
       const defaultValues = (
         props.submit.httpRequest?.defaultData || []
       ).reduce(
         (res, curr) => ({ ...res, [curr.data.key]: curr.data.value }),
         {}
       );
-
-      window.open(
-        props.submit.httpRequest + serialize({ ...defaultValues, ...formState })
-      );
-      return;
+      const url =
+        props.submit.httpRequest +
+        serialize({ ...defaultValues, ...formState });
+      return window.open(url);
     }
 
     const formId = `${store?.current?.project}.${model.type}.${model.key}`;
