@@ -261,7 +261,7 @@ registerVevComponent(Button, {
           type: "select",
           name: "submitType",
           title: "Destination",
-          initialValue: undefined,
+          initialValue: "httpRequest",
           options: {
             display: "dropdown",
             items: [
