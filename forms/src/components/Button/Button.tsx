@@ -85,10 +85,11 @@ function Button({ ...props }: Props) {
     console.log("** submit", formState);
     setSubmitting(true);
 
-    if (
+    const isLinkSubmission = (props) =>
       props.submit.submitType === "httpRequest" &&
-      props.submit.httpRequest.newTab
-    ) {
+      props.submit.httpRequest.newTab;
+
+    if (isLinkSubmission(props)) {
       const defaultValues = (
         props.submit.httpRequest?.defaultData || []
       ).reduce(
