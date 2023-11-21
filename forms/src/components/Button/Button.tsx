@@ -56,9 +56,12 @@ enum Interaction {
 enum Event {
   FORM_SUBMITTED = "FORM_SUBMITTED",
 }
+/* 
+const SUBMIT_URL =
+  "https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission"; */
 
 const SUBMIT_URL =
-  "https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission";
+  "https://us-central1-vev-prod.cloudfunctions.net/publicApiHttps/form-submission";
 
 const serialize = function (obj) {
   var str = [];
@@ -174,6 +177,7 @@ function Button({ ...props }: Props) {
 
   useVevEvent(Interaction.UPDATE_FORM, (e: any) => {
     console.log("-> updated", e, formState);
+    if (!e) return;
     setFormState((s) => ({ ...s, [e.name]: e.value }));
   });
 

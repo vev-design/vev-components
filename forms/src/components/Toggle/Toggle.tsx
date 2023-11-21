@@ -11,7 +11,7 @@ import styles from "./Toggle.module.css";
 import FieldWrapper from "../FieldWrapper";
 
 function Toggle(props: FieldProps) {
-  const [value, setValue] = useState(props.initialValue);
+  const [value, setValue] = useState(props.initialValue || "false");
   const dispatch = useDispatchVevEvent();
 
   const { name, required } = props;
