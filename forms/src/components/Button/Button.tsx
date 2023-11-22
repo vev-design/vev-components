@@ -55,6 +55,8 @@ enum Interaction {
 
 enum Event {
   FORM_SUBMITTED = "FORM_SUBMITTED",
+  FORM_INVALID = "FORM_INVALID",
+  FORM_VALID = "FORM_VALID",
 }
 /* 
 const SUBMIT_URL =
@@ -132,10 +134,10 @@ function Button({ ...props }: Props) {
       store?.current?.models
     );
     const errors = validateForm(formState, formModels);
-    console.log("errors", errors);
 
     if (errors?.length) {
       console.log("have errors", errors);
+      dispatch(Event.FORM_INVALID, { errors });
       setSubmitting(false);
       return;
     }
@@ -178,6 +180,7 @@ function Button({ ...props }: Props) {
   useVevEvent(Interaction.UPDATE_FORM, (e: any) => {
     console.log("-> updated", e, formState);
     if (!e) return;
+    dispatch(Event.FORM_VALID);
     setFormState((s) => ({ ...s, [e.name]: e.value }));
   });
 
@@ -419,6 +422,14 @@ registerVevComponent(Button, {
     {
       type: Event.FORM_SUBMITTED,
       description: "Form submitted",
+    },
+    {
+      type: Event.FORM_INVALID,
+      description: "Form invalid",
+    },
+    {
+      type: Event.FORM_VALID,
+      description: "Form valid",
     },
   ],
   interactions: [
