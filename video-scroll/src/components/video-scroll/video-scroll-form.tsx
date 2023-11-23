@@ -1,19 +1,16 @@
-import { SchemaContextModel } from "@vev/react";
-import React, { useRef, useState } from "react";
-import { useDropZone } from "../../hooks/use-drop-zone";
-import { unpackFrames } from "../../video-unpack";
-import styles from "./video-scroll-form.module.scss";
+import { SchemaContextModel } from '@vev/react';
+import React, { useRef, useState } from 'react';
+import { useDropZone } from '../../hooks/use-drop-zone';
+import { unpackFrames } from '../../video-unpack';
+import styles from './video-scroll-form.module.scss';
+
 type VideoScrollFormProps = {
   context: SchemaContextModel;
   value: any;
   onChange: (value: any) => void;
 };
 
-export function VideoScrollForm({
-  context,
-  value,
-  onChange,
-}: VideoScrollFormProps) {
+export function VideoScrollForm({ context, value, onChange }: VideoScrollFormProps) {
   const ref = useRef<HTMLLabelElement>(null);
   useDropZone(
     ref,
@@ -23,7 +20,7 @@ export function VideoScrollForm({
       handleUpload(file);
     },
     () => setDragOver(true),
-    () => setDragOver(false)
+    () => setDragOver(false),
   );
   const [progress, setProgress] = useState<number>(0);
   const [unpacking, setUnpacking] = useState<boolean>(false);
@@ -34,8 +31,7 @@ export function VideoScrollForm({
 
   const handleUpload = async (file?: File) => {
     if (!file) return;
-    if (file.size > 1024 * 1024 * 512)
-      return setError("To big file, max size is 512MB");
+    if (file.size > 1024 * 1024 * 512) return setError('To big file, max size is 512MB');
 
     const uploadFile = context.actions?.uploadFile;
     if (!uploadFile) return;
@@ -49,8 +45,8 @@ export function VideoScrollForm({
 
       onChange(images);
     } catch (e) {
-      console.error("Failed to unpack frames", e);
-      setError("Failed to unpack frames");
+      console.error('Failed to unpack frames', e);
+      setError('Failed to unpack frames');
     }
     setUnpacking(false);
   };
@@ -60,25 +56,23 @@ export function VideoScrollForm({
     <label
       ref={ref}
       style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        borderRadius: "8px",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        borderRadius: '8px',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: 8,
-        border: "1px solid var(--color-neutral-low-soft)",
+        border: '1px solid var(--color-neutral-low-soft)',
       }}
-      className={
-        styles.label + (!unpacking && dragOver ? " " + styles.dragOver : "")
-      }
+      className={styles.label + (!unpacking && dragOver ? ' ' + styles.dragOver : '')}
     >
       {unpacking ? (
         <>
           <img
-             style={{
+            style={{
               height: 120,
-              objectFit: "cover",
+              objectFit: 'cover',
               borderRadius: 8,
             }}
             src={frame}
@@ -89,10 +83,10 @@ export function VideoScrollForm({
       ) : (
         <>
           {hasValue && (
-              <img
+            <img
               style={{
                 height: 120,
-                objectFit: "cover",
+                objectFit: 'cover',
                 borderRadius: 8,
               }}
               src={value[Math.floor(previewProgress * (value.length - 1))]}
@@ -105,24 +99,25 @@ export function VideoScrollForm({
             />
           )}
           <h5 style={{ margin: 0 }}>
-            {hasValue
-              ? `Unpacked video with ${value.length} frames`
-              : "Drop video files here"}
+            {hasValue ? `Unpacked video with ${value.length} frames` : 'Drop video files here'}
           </h5>
           {error ? (
-              <small style={{ color: "var(--color-feedback-warning-spark)" }} className={styles.error}>{error}</small>
+            <small
+              style={{ color: 'var(--color-feedback-warning-spark)' }}
+              className={styles.error}
+            >
+              {error}
+            </small>
           ) : (
-            <small style={{ color: "--color-neutral-high-soft" }}>
-              {hasValue
-                ? "Drop or click to browse for new video"
-                : "(Click to browse)"}
+            <small style={{ color: '--color-neutral-high-soft' }}>
+              {hasValue ? 'Drop or click to browse for new video' : '(Click to browse)'}
             </small>
           )}
           <input
             type="file"
             accept="video/*"
             onChange={(e) => handleUpload(e.currentTarget.files?.[0])}
-            style={{ opacity: 0, position: "absolute" }}
+            style={{ opacity: 0, position: 'absolute' }}
           />
         </>
       )}

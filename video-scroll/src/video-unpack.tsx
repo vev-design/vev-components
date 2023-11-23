@@ -12,11 +12,11 @@ function sleep(ms: number): Promise<void> {
 const waitForPlaythrough = async (videoElement: HTMLVideoElement) => {
   return new Promise<void>((resolve, reject) => {
     const handler = () => {
-      videoElement.removeEventListener("canplaythrough", handler);
+      videoElement.removeEventListener('canplaythrough', handler);
       resolve();
     };
-    videoElement.addEventListener("canplaythrough", handler);
-    videoElement.addEventListener("error", reject);
+    videoElement.addEventListener('canplaythrough', handler);
+    videoElement.addEventListener('error', reject);
   });
 };
 
@@ -39,11 +39,11 @@ type FileUpload = {
 export const unpackFrames = async (
   file: File,
   uploadFile: (file: string, filename: string) => Promise<FileUpload>,
-  progressCb: (progress: number, frame: string) => void
+  progressCb: (progress: number, frame: string) => void,
 ): Promise<string[]> => {
-  const videoElement = document.createElement("video");
-  videoElement.crossOrigin = "Anonymous";
-  videoElement.preload = "metadata";
+  const videoElement = document.createElement('video');
+  videoElement.crossOrigin = 'Anonymous';
+  videoElement.preload = 'metadata';
   videoElement.src = URL.createObjectURL(file);
   videoElement.muted = true;
   videoElement.loop = false;
@@ -53,20 +53,16 @@ export const unpackFrames = async (
   const width = videoElement.videoWidth;
   const height = videoElement.videoHeight;
   const { duration } = videoElement;
-  const imageCount = Math.floor(
-    Math.min(duration * FRAMES_PR_SECOND, MAX_FRAMES)
-  );
+  const imageCount = Math.floor(Math.min(duration * FRAMES_PR_SECOND, MAX_FRAMES));
   const snapshotInterval = Math.floor((duration * 1000) / imageCount); // in milliseconds
 
-  console.log(
-    `Unpacking frames:${imageCount} Snapshot interval:${snapshotInterval}`
-  );
+  console.log(`Unpacking frames:${imageCount} Snapshot interval:${snapshotInterval}`);
   const offscreenCanvasElement = new OffscreenCanvas(width, height);
 
-  const context = offscreenCanvasElement.getContext("2d");
+  const context = offscreenCanvasElement.getContext('2d');
   if (!context) return [];
   context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
+  context.imageSmoothingQuality = 'high';
 
   const imageUploadPromises: Promise<FileUpload>[] = [];
 
@@ -83,28 +79,23 @@ export const unpackFrames = async (
     if (time * 1000 > frameIndex * snapshotInterval) {
       console.log(
         `Progress: ${Math.round(
-          (frameIndex / imageCount) * 100
-        )}% Frame:${frameIndex} / ${imageCount} Time:${Math.round(
-          time * 1000
-        )} frameIndexTime:${frameIndex * snapshotInterval}`
+          (frameIndex / imageCount) * 100,
+        )}% Frame:${frameIndex} / ${imageCount} Time:${Math.round(time * 1000)} frameIndexTime:${
+          frameIndex * snapshotInterval
+        }`,
       );
       frameIndex++;
       // pause videoElement here to get snapshots
       videoElement.pause();
       // const progress = videoElement.currentTime / videoElement.duration;
 
-      const base64Snapshot = await createScreenshot(
-        videoElement,
-        context,
-        width,
-        height
-      );
+      const base64Snapshot = await createScreenshot(videoElement, context, width, height);
       imageUploadPromises.push(
         uploadFile(base64Snapshot, `frame-${frameIndex}.jpg`).then((file) => {
           imageDoneCount++;
           progressCb(imageDoneCount / imageCount, base64Snapshot);
           return file;
-        })
+        }),
       );
 
       // push into the list
@@ -119,23 +110,17 @@ async function createScreenshot(
   videoElement: HTMLVideoElement,
   context: OffscreenCanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
 ): Promise<string> {
-  // return new Promise((resolve) => {
-  // requestAnimationFrame(async () => {
   context.drawImage(videoElement, 0, 0, width, height);
 
   // create blob
   const blob = await context.canvas.convertToBlob({
-    type: "image/jpeg",
+    type: 'image/jpeg',
     quality: 100,
   });
 
   return blobToBase64(blob);
-
-  // resolve(base64Snapshot);
-  // });
-  // });
 }
 
 const blobToBase64 = (blob: Blob): Promise<string> => {

@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -12,7 +12,7 @@ declare global {
 
 function getWorker() {
   const workerCode = () => {
-    self.addEventListener("message", async (e) => {
+    self.addEventListener('message', async (e) => {
       const { images, screenWidth } = e.data as {
         images: string[];
         screenWidth: number;
@@ -22,12 +22,11 @@ function getWorker() {
         const isLocalAsset = !/^(https?)?:\/\//.test(url);
         try {
           const fetchUrl = isLocalAsset
-            ? self.location.origin + (!url.startsWith("/") ? `/${url}` : url)
+            ? self.location.origin + (!url.startsWith('/') ? `/${url}` : url)
             : url;
           const response = await fetch(fetchUrl);
           const fileBlob = await response.blob();
-          if (fileBlob.type === "image/jpeg" || isLocalAsset)
-            return URL.createObjectURL(fileBlob);
+          if (fileBlob.type === 'image/jpeg' || isLocalAsset) return URL.createObjectURL(fileBlob);
         } catch (e) {
           return null;
         }
@@ -46,7 +45,7 @@ function getWorker() {
         }
 
         if (arr.length >= 3) {
-          let middle = Math.floor(arr.length / 2);
+          const middle = Math.floor(arr.length / 2);
           res.push(arr[middle]);
           self.heapIndexMap(arr.slice(1, middle), res);
           self.heapIndexMap(arr.slice(middle + 1, arr.length - 1), res);
@@ -57,7 +56,7 @@ function getWorker() {
 
       const indexes = self.heapIndexMap(
         images.map((_, index) => index),
-        []
+        [],
       );
 
       self.startLoad = async (): Promise<void> => {
@@ -66,10 +65,10 @@ function getWorker() {
         let url = images[index];
 
         if (url) {
-          let width = screenWidth <= 1024 ? 1024 : 1600;
+          const width = screenWidth <= 1024 ? 1024 : 1600;
           url = url.replace(
-            "cdn-cgi/image/f=auto,q=82,w=1920",
-            `cdn-cgi/image/f=auto,q=87,w=${width}`
+            'cdn-cgi/image/f=auto,q=82,w=1920',
+            `cdn-cgi/image/f=auto,q=87,w=${width}`,
           );
           const blobUrl = await self.loadImage(url);
           if (blobUrl) self.send(blobUrl, index);
@@ -77,14 +76,12 @@ function getWorker() {
         }
       };
 
-      // Start 5 parallel loads
+      // Start 10 parallel loads
       for (let i = 0; i < 10; i++) self.startLoad();
     });
   };
   return new Worker(
-    URL.createObjectURL(
-      new Blob([`(${workerCode})()`.toString()], { type: "text/javascript" })
-    )
+    URL.createObjectURL(new Blob([`(${workerCode})()`.toString()], { type: 'text/javascript' })),
   );
 }
 
@@ -108,7 +105,7 @@ export function useVideoImageWorker(images: string[]) {
     const imageElements = new Array(images.length);
     imagesRef.current = imageElements;
     const worker = getWorker();
-    worker.addEventListener("message", async (e) => {
+    worker.addEventListener('message', async (e) => {
       const { url, index } = e.data as { index: number; url: string };
       imageElements[index] = await resolveImage(url);
     });

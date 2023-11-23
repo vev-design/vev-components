@@ -38,6 +38,7 @@ enum YoutubeEvent {
   onPlay = 'onPlay',
   onPause = 'onPause',
   onEnd = 'onEnd',
+  currentTime = 'currentTime',
 }
 
 const Youtube = ({
@@ -50,7 +51,9 @@ const Youtube = ({
 }: Props) => {
   const { disabled } = useEditorState();
   const ref = useRef<HTMLIFrameElement>(null);
-  const playerRef = useRef<any>();
+  const playerRef = useRef<any>(-1);
+  const currentTimeRef = useRef<number>();
+  const dispatch = useDispatchVevEvent();
 
   useVevEvent(YoutubeInteraction.play, () => playerRef.current?.playVideo());
   useVevEvent(YoutubeInteraction.togglePlay, () => {
@@ -79,7 +82,24 @@ const Youtube = ({
     playerRef.current?.isMuted() ? playerRef.current?.unMute() : playerRef.current?.mute(),
   );
 
-  const dispatch = useDispatchVevEvent();
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (playerRef.current) {
+        const currentTime = Math.floor(playerRef.current.getCurrentTime());
+
+        if (currentTime !== currentTimeRef.current) {
+          currentTimeRef.current = currentTime;
+          dispatch(YoutubeEvent.currentTime, {
+            currentTime,
+          });
+        }
+      }
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     let mounted = true;
@@ -113,6 +133,7 @@ const Youtube = ({
     function onPlayerReady(event) {}
 
     function onPlayerStateChange(event) {
+      console.log('event', event);
       switch (event.data) {
         case YT.PlayerState.PLAYING:
           dispatch(YoutubeEvent.onPlay);
@@ -135,6 +156,7 @@ const Youtube = ({
   useEffect(() => {
     const player = playerRef.current;
     if (!player) return;
+    if (!player.pauseVideo) return;
     if (disabled) player.pauseVideo();
     else if (autoplay) player.playVideo();
   }, [disabled]);
@@ -217,21 +239,37 @@ registerVevComponent(Youtube, {
       initialValue: false,
     },
     { name: 'loop', title: 'Loop video', type: 'boolean', initialValue: false },
-    { name: 'lockAspectRatio', title: 'Lock aspect ratio', type: 'boolean', initialValue: true },
+    {
+      name: 'lockAspectRatio',
+      title: 'Lock aspect ratio',
+      type: 'boolean',
+      initialValue: true,
+    },
   ],
   type: 'both',
   events: [
     {
       type: YoutubeEvent.onPlay,
-      description: 'On Play',
+      description: 'On play',
     },
     {
       type: YoutubeEvent.onPause,
-      description: 'On Pause.',
+      description: 'On pause',
     },
     {
       type: YoutubeEvent.onEnd,
-      description: 'On End.',
+      description: 'On end',
+    },
+    {
+      type: YoutubeEvent.currentTime,
+      description: 'On play time',
+      args: [
+        {
+          name: 'currentTime',
+          description: 'currentTime',
+          type: 'number',
+        },
+      ],
     },
   ],
 
