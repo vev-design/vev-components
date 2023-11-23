@@ -438,11 +438,11 @@ registerVevComponent(Button, {
   events: [
     {
       type: Event.FORM_SUBMITTED,
-      description: "Form submitted",
+      description: "On submitted form",
     },
     {
       type: Event.FORM_INVALID,
-      description: "Form invalid",
+      description: "On invalid form",
     },
     {
       type: Event.FORM_VALID,
