@@ -122,6 +122,8 @@ function Button({ ...props }: Props) {
   const [store] = useGlobalStateRef();
   const model = useModel();
 
+  console.log("formState", formState);
+
   const { submitButton, successMessage, type = "submit" } = props;
 
   const handleSubmit = useCallback(async (formState: any) => {
@@ -181,7 +183,22 @@ function Button({ ...props }: Props) {
     console.log("-> updated", e, formState);
     if (!e) return;
     dispatch(Event.FORM_VALID);
-    setFormState((s) => ({ ...s, [e.name]: e.value }));
+
+    let value = e.value;
+
+    if (["add", "remove"].includes(e.type)) {
+      const prev = formState[e.name] || [];
+
+      if (e.type === "add") {
+        value = [...prev, e.value];
+      }
+
+      if (e.type === "remove") {
+        value = prev.filter((i) => i !== value);
+      }
+    }
+
+    setFormState((s) => ({ ...s, [e.name]: value }));
   });
 
   const messages = (state: string) =>

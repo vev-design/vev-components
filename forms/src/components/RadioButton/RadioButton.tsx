@@ -65,7 +65,7 @@ registerVevComponent(RadioButton, {
     {
       selector: styles.radioButton,
       title: "Radio Background",
-      properties: ["background", "border"],
+      properties: ["background", "border", "border-radius"],
     },
     {
       selector: styles.radioButton + ":checked:before",
