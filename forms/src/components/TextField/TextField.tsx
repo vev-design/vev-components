@@ -232,6 +232,11 @@ registerVevComponent(TextField, {
         "font-size",
       ],
     },
+    {
+      selector: styles.input + "::placeholder",
+      title: "Placeholder",
+      properties: ["color", "font-family", "font-size"],
+    },
   ],
   size: {
     height: "auto",
