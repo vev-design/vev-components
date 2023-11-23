@@ -19,7 +19,6 @@ function RadioButton(props: RadioButton) {
 
   const handleChange = useCallback(
     (value: string) => {
-      console.log("value", value);
       dispatch(Event.onChange, {
         name: props.name,
         value,
@@ -39,22 +38,17 @@ function RadioButton(props: RadioButton) {
 
   return (
     <FieldWrapper>
-      <div className={styles.item}>
-        <label className={styles.itemLabel}>
-          {props.label}
-          <input
-            ref={ref}
-            id={props.value}
-            type="radio"
-            value={props.value}
-            className={styles.radioButton}
-            onChange={(e) => {
-              handleChange(e.target.value);
-            }}
-            name={props.name}
-          />
-        </label>
-      </div>
+      <input
+        ref={ref}
+        id={props.value}
+        type="radio"
+        value={props.value}
+        className={styles.radioButton}
+        onChange={(e) => {
+          handleChange(e.target.value);
+        }}
+        name={props.name}
+      />
     </FieldWrapper>
   );
 }
@@ -69,13 +63,13 @@ registerVevComponent(RadioButton, {
   },
   editableCSS: [
     {
-      selector: styles.itemLabel,
-      title: "Item label",
-      properties: ["color", "padding", "font-family", "font-size"],
+      selector: styles.radioButton,
+      title: "Radio Background",
+      properties: ["background", "border"],
     },
     {
-      selector: styles.radioButtonChecked,
-      title: "Radio button",
+      selector: styles.radioButton + ":checked:before",
+      title: "Radio",
       properties: ["background"],
     },
   ],
@@ -88,10 +82,6 @@ registerVevComponent(RadioButton, {
     {
       name: "name",
       type: "string",
-    },
-    {
-      type: "string",
-      name: "label",
     },
     {
       type: "string",
