@@ -69,14 +69,19 @@ registerVevComponent(Checkbox, {
   ],
   editableCSS: [
     {
-      selector: styles.item + " input",
-      title: "Checkmark",
-      properties: ["color"],
+      selector: styles.item,
+      title: "Unchecked",
+      properties: ["background", "border", "border-radius"],
+    },
+    {
+      selector: styles.item + " input:checked",
+      title: "Checked",
+      properties: ["background"],
     },
   ],
   size: {
-    height: "auto",
-    width: 300,
+    width: 50,
+    height: 50,
   },
   events: [
     {
