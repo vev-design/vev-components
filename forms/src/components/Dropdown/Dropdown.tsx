@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './Dropdown.module.css';
-import FieldWrapper from '../FieldWrapper';
+import React, { useEffect, useState, useCallback } from "react";
+import { FieldProps, Event } from "../../types";
+import { registerVevComponent, useDispatchVevEvent } from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./Dropdown.module.css";
+import FieldWrapper from "../FieldWrapper";
 
 type DropdownProps = FieldProps & {
   placeholder?: string;
@@ -11,7 +11,7 @@ type DropdownProps = FieldProps & {
 };
 
 function Dropdown(props: DropdownProps) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
   const dispatch = useDispatchVevEvent();
 
   const { name, required, items, placeholder } = props;
@@ -25,7 +25,7 @@ function Dropdown(props: DropdownProps) {
       });
       setValue(value);
     },
-    [props.name],
+    [props.name]
   );
 
   useEffect(() => {
@@ -34,60 +34,58 @@ function Dropdown(props: DropdownProps) {
   }, []);
 
   return (
-    <FieldWrapper>
-      <div className={styles.wrapper}>
-        <select
-          name={name}
-          value={value || ''}
-          onChange={(e) => handleChange(e.target.value)}
-          className={styles.select}
-        >
-          <option value="" disabled selected>
-            {placeholder || 'Select your option'}
+    <div className={styles.wrapper}>
+      <select
+        name={name}
+        value={value || ""}
+        onChange={(e) => handleChange(e.target.value)}
+        className={styles.select}
+      >
+        <option value="" disabled selected>
+          {placeholder || "Select your option"}
+        </option>
+        {options?.map((opt, i) => (
+          <option value={opt.value} key={i}>
+            {opt.label}
           </option>
-          {options?.map((opt, i) => (
-            <option value={opt.value} key={i}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <div className={styles.arrow}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-          </svg>
-        </div>
+        ))}
+      </select>
+      <div className={styles.arrow}>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+        </svg>
       </div>
-    </FieldWrapper>
+    </div>
   );
 }
 
 registerVevComponent(Dropdown, {
-  name: 'Dropdown',
-  categories: ['Form'],
+  name: "Dropdown",
+  categories: ["Form"],
   icon: formIcon,
   size: {
-    height: 'auto',
+    height: "auto",
     width: 300,
   },
   editableCSS: [
     {
       selector: styles.select,
-      title: 'Input',
+      title: "Input",
       properties: [
-        'border',
-        'background',
-        'box-shadow',
-        'padding',
-        'color',
-        'border-radius',
-        'font-family',
-        'font-size',
+        "border",
+        "background",
+        "box-shadow",
+        "padding",
+        "color",
+        "border-radius",
+        "font-family",
+        "font-size",
       ],
     },
     {
       selector: styles.arrow,
-      title: 'Arrow',
-      properties: ['fill'],
+      title: "Arrow",
+      properties: ["color", "font-family", "font-size"],
     },
   ],
   events: [
@@ -97,33 +95,33 @@ registerVevComponent(Dropdown, {
   ],
   props: [
     {
-      name: 'name',
-      type: 'string',
+      name: "name",
+      type: "string",
     },
     {
-      name: 'placeholder',
-      type: 'string',
+      name: "placeholder",
+      type: "string",
     },
     {
-      name: 'items',
-      type: 'array',
+      name: "items",
+      type: "array",
       of: [
         {
-          type: 'object',
-          name: 'item',
+          type: "object",
+          name: "item",
           fields: [
             {
-              type: 'string',
-              name: 'label',
+              type: "string",
+              name: "label",
             },
             {
-              type: 'string',
-              name: 'value',
+              type: "string",
+              name: "value",
             },
             {
-              type: 'boolean',
-              name: 'initialValue',
-              title: 'Initial value',
+              type: "boolean",
+              name: "initialValue",
+              title: "Initial value",
             },
           ],
         },
