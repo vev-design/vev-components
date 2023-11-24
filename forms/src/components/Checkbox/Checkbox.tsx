@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FieldProps, Event } from "../../types";
 import { registerVevComponent, useDispatchVevEvent } from "@vev/react";
 import formIcon from "../../assets/form-icon.svg";
@@ -12,13 +12,22 @@ type Props = FieldProps & {
 
 function Checkbox(props: Props) {
   const { name, value } = props;
+  const ref = useRef<HTMLInputElement>();
   const dispatch = useDispatchVevEvent();
 
   const isChecked = false;
 
+  useEffect(() => {
+    if (props.initialValue) {
+      console.log("initialValue", props.initialValue);
+      ref?.current && (ref.current.checked = true);
+    }
+  }, []);
+
   return (
-    <div className={styles.item}>
+    <div className={styles.checkbox}>
       <input
+        ref={ref}
         name={name}
         id={name}
         type="checkbox"
@@ -66,15 +75,19 @@ registerVevComponent(Checkbox, {
       name: "value",
       type: "string",
     },
+    {
+      name: "initialValue",
+      type: "boolean",
+    },
   ],
   editableCSS: [
     {
-      selector: styles.item,
-      title: "Unchecked",
+      selector: styles.checkbox,
+      title: "Background",
       properties: ["background", "border", "border-radius"],
     },
     {
-      selector: styles.item + " input:checked",
+      selector: styles.checkbox + " input:checked",
       title: "Checked",
       properties: ["background"],
     },
