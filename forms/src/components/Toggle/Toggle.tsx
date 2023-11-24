@@ -11,8 +11,10 @@ import styles from "./Toggle.module.css";
 import FieldWrapper from "../FieldWrapper";
 
 function Toggle(props: FieldProps) {
-  const [value, setValue] = useState(props.initialValue || "false");
+  const [value, setValue] = useState(props.initialValue || false);
   const dispatch = useDispatchVevEvent();
+
+  console.log("toggle", value);
 
   const { name, required } = props;
 
@@ -47,6 +49,7 @@ function Toggle(props: FieldProps) {
         <span
           className={cx(styles.field, {
             [styles.fieldActive]: !!value,
+            [styles.fieldInactive]: !value,
           })}
         >
           <input
@@ -75,9 +78,14 @@ registerVevComponent(Toggle, {
   categories: ["Form"],
   editableCSS: [
     {
-      selector: styles.field,
-      title: "Field",
+      selector: styles.fieldInactive,
+      title: "Background",
       properties: ["background"],
+    },
+    {
+      selector: styles.field,
+      title: "Toggle",
+      properties: ["border-radius", "border"],
     },
     {
       selector: styles.switch,
@@ -85,8 +93,8 @@ registerVevComponent(Toggle, {
       properties: ["background"],
     },
     {
-      selector: styles.switchActive,
-      title: "Switch",
+      selector: styles.fieldActive,
+      title: "Background Active",
       properties: ["background"],
     },
   ],
