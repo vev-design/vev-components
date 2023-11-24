@@ -147,6 +147,10 @@ const props: VevProps[] = [
           label: "Date & time",
         },
         {
+          value: "tel",
+          label: "Phone",
+        },
+        {
           value: "time",
           label: "Time",
         },
