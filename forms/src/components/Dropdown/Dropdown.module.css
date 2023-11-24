@@ -13,6 +13,7 @@
   top: 0;
   bottom: 0;
   display: flex;
+  padding-left: 10%;
 }
 
 .select:focus {

@@ -64,7 +64,7 @@ registerVevComponent(Dropdown, {
   categories: ["Form"],
   icon: formIcon,
   size: {
-    height: "auto",
+    height: 50,
     width: 300,
   },
   editableCSS: [

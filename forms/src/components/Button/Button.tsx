@@ -58,8 +58,8 @@ enum Event {
   FORM_INVALID = "FORM_INVALID",
   FORM_VALID = "FORM_VALID",
 }
-/* 
-const SUBMIT_URL =
+
+/* const SUBMIT_URL =
   "https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission"; */
 
 const SUBMIT_URL =
