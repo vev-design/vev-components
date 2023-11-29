@@ -3,7 +3,7 @@
   "categories": ["Forms"],
   "public": true,
   "shareWithAccount": true,
-  "adminOnly": true,
+  "admin": true,
   "key": "86Z7EgRdiX7DepHUHRnS",
   "beta": true
 }
