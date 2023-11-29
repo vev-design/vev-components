@@ -241,7 +241,7 @@ registerVevComponent(Object3d, {
   interactions: [
     {
       type: InteractionTypes.SELECT_HOTSPOT,
-      description: 'Select hotspot',
+      description: 'Focus hotspot',
       args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
     },
   ],
