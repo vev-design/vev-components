@@ -11,7 +11,7 @@ interface Props {
 
 export function HotspotList({ hotspots, deleteHotspot }: Props) {
   const [sortedHotspots, setSortedHotspots] = useState(hotspots);
-  console.log('hotspots', hotspots);
+
   useEffect(() => {
     setSortedHotspots(sortBy(hotspots, 'index'));
   }, [hotspots]);

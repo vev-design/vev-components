@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './object-3d.module.css';
 import {
   registerVevComponent,
@@ -66,7 +66,7 @@ const Object3d = ({
 }: Props) => {
   const { width, height } = useSize(hostRef);
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
-  const [clickHotspot, setClickHotspot] = useState<(index: number) => void | null>();
+  const clickHotspotCallback = useRef((args: any) => {});
 
   const [initialCameraPosition, setInitialCameraPosition] =
     useState<SavedCameraPosition>(initialCamera);
@@ -98,8 +98,7 @@ const Object3d = ({
   }, [hotspots]);
 
   useVevEvent(InteractionTypes.SELECT_HOTSPOT, (args: any) => {
-    console.log('internal', clickHotspot);
-    clickHotspot(args.select_hotspot);
+    clickHotspotCallback.current(args.select_hotspot);
   });
 
   return (
@@ -125,8 +124,7 @@ const Object3d = ({
           schemaOpen,
           savedCameraPosition: initialCameraPosition,
           setClickHotspotCallback: (cb) => {
-            console.log('cb', cb);
-            setClickHotspot(cb);
+            clickHotspotCallback.current = cb;
           },
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
@@ -243,7 +241,7 @@ registerVevComponent(Object3d, {
   interactions: [
     {
       type: InteractionTypes.SELECT_HOTSPOT,
-      description: 'Select hotspot',
+      description: 'Focus hotspot',
       args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
     },
   ],

@@ -1,11 +1,11 @@
-import { useContext, useEffect, useRef } from "react";
-import { Camera, Scene, Vector3 } from "three";
+import { useContext, useEffect, useRef } from 'react';
+import { Camera, Scene, Vector3 } from 'three';
 // @ts-expect-error - no types
-import { CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
-import { Object3dContext } from "../context/object-3d-context";
-import styles from "../object-3d.module.css";
-import { InternalHotspot } from "../types";
-import TWEEN from "@tweenjs/tween.js";
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { Object3dContext } from '../context/object-3d-context';
+import styles from '../object-3d.module.css';
+import { InternalHotspot } from '../types';
+import TWEEN from '@tweenjs/tween.js';
 
 export interface CanvasHotspot {
   element: HTMLDivElement;
@@ -13,17 +13,13 @@ export interface CanvasHotspot {
   hotspot: InternalHotspot;
 }
 
-function zoomHotspot(
-  camera: Camera,
-  storageHotspot: InternalHotspot,
-  controls: any
-) {
+function zoomHotspot(camera: Camera, storageHotspot: InternalHotspot, controls: any) {
   const from = camera.position.clone();
   const camDistance = camera.position.length();
   const target = new Vector3(
     storageHotspot.position.x,
     storageHotspot.position.y,
-    storageHotspot.position.z
+    storageHotspot.position.z,
   )
     .normalize()
     .multiplyScalar(camDistance);
@@ -37,11 +33,7 @@ function zoomHotspot(
     .start();
 }
 
-export function useHotspots(
-  scene: Scene | undefined,
-  camera: Camera | undefined,
-  controls: any
-) {
+export function useHotspots(scene: Scene | undefined, camera: Camera | undefined, controls: any) {
   const { hotspots, editMode, hotspotClicked, setClickHotspotCallback } =
     useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
@@ -49,7 +41,13 @@ export function useHotspots(
   useEffect(() => {
     if (setClickHotspotCallback) {
       setClickHotspotCallback((index: number) => {
-        console.log("index", index);
+        const internalHotspot = hotspots.find((hotspot) => {
+          return hotspot.index === index;
+        });
+        if (internalHotspot) {
+          zoomHotspot(camera, internalHotspot, controls);
+          hotspotClicked(index);
+        }
       });
     }
   }, [setClickHotspotCallback]);
@@ -63,8 +61,8 @@ export function useHotspots(
       hotspotMap.current = [];
 
       hotspots.forEach((storageHotspot) => {
-        const outer = document.createElement("div");
-        const innerElem = document.createElement("div");
+        const outer = document.createElement('div');
+        const innerElem = document.createElement('div');
 
         outer.appendChild(innerElem);
         innerElem.innerText = `${storageHotspot.index}`;
@@ -73,13 +71,13 @@ export function useHotspots(
         sceneObject.position.set(
           storageHotspot.position.x,
           storageHotspot.position.y,
-          storageHotspot.position.z
+          storageHotspot.position.z,
         );
         scene.add(sceneObject);
         sceneObject.layers.set(1);
 
         if (!editMode) {
-          innerElem.addEventListener("pointerdown", () => {
+          innerElem.addEventListener('pointerdown', () => {
             zoomHotspot(camera, storageHotspot, controls);
             if (hotspotClicked) hotspotClicked(storageHotspot.index);
           });
