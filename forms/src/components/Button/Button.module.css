@@ -8,6 +8,7 @@
   cursor: pointer;
   transition: background 200ms;
   outline: none;
+  text-align: center;
 }
 
 .button svg {

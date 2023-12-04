@@ -235,6 +235,7 @@ registerVevComponent(Button, {
         "padding",
         "font-family",
         "font-size",
+        "text-align",
       ],
     },
     {
