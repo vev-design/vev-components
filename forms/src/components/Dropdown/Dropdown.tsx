@@ -103,6 +103,11 @@ registerVevComponent(Dropdown, {
       type: "string",
     },
     {
+      name: "required",
+      title: "Required",
+      type: "boolean",
+    },
+    {
       name: "items",
       type: "array",
       of: [

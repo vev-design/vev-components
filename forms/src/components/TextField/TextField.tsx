@@ -14,7 +14,7 @@ type Props = FieldProps &
     inputType?: "text" | "number";
     placeholder?: string;
     multiline?: boolean;
-    type?: "text" | "date" | "email" | "url";
+    type?: "text" | "date" | "email" | "url" | "tel" | "number" | "time";
   };
 
 type Validation = {
@@ -22,9 +22,14 @@ type Validation = {
   max: number;
   minLength: number;
   maxLength: number;
+  required: boolean;
 };
 
 const validate = (value: string, validate: Validation) => {
+  if (!value && validate.required) {
+    return false;
+  }
+
   if (value.length < validate.minLength) {
     return false;
   }
@@ -174,7 +179,8 @@ const props: VevProps[] = [
   {
     type: "number",
     name: "minLength",
-    hidden: (context) => !["text", "email"].includes(context.value.type),
+    hidden: (context) =>
+      !["text", "email", "tel", "url"].includes(context.value.type),
   },
   {
     type: "number",
