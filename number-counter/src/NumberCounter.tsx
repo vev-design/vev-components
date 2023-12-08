@@ -79,10 +79,12 @@ const NumberCounter = ({
   const { disabled, schemaOpen } = useEditorState();
   const [startedTimestamp, setStartedTimestamp] = useState<number>(0);
   const dispatchVevEvent = useDispatchVevEvent();
+  const actualSchemaOpen = disabled && schemaOpen;
 
   function resetCounter() {
     setStartedTimestamp(0);
     setCount(start);
+    setHasStarted(false);
   }
 
   useFrame(
@@ -145,16 +147,16 @@ const NumberCounter = ({
   useEffect(() => {
     if (runWhenVisible && !isVisible) {
       resetCounter();
-      setHasStarted(false);
       return;
     }
-    if (disabled && !schemaOpen) {
+
+    if (disabled && !actualSchemaOpen) {
       resetCounter();
-      setHasStarted(false);
       return;
     }
+
     const initialDelay = setTimeout(() => {
-      if (!disable) {
+      if (!disable && isVisible) {
         setHasStarted(true);
       }
     }, delay);
@@ -162,13 +164,15 @@ const NumberCounter = ({
     return () => {
       clearTimeout(initialDelay);
     };
-  }, [delay, isVisible, runWhenVisible, disabled, schemaOpen]);
+  }, [delay, isVisible, runWhenVisible, disabled, actualSchemaOpen]);
 
+  // For restarting counter when changing props in editor
   useEffect(() => {
-    resetCounter();
-    setHasStarted(true);
-    setStartedTimestamp(0);
-  }, [start, end, precision, delay, easing, disabled, duration, delay]);
+    if (actualSchemaOpen) {
+      resetCounter();
+      setHasStarted(true);
+    }
+  }, [start, end, precision, delay, easing, disabled, duration, delay, actualSchemaOpen]);
 
   useVevEvent(Interactions.START, () => {
     setHasStarted(true);
