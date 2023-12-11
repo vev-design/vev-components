@@ -24,6 +24,7 @@ type Props = {
   trigger: 'visible' | 'hover' | 'click' | 'scroll' | 'never';
   hostRef: React.RefObject<HTMLDivElement>;
   loop: boolean;
+  delay: number;
   speed: number;
   colors: LottieColorReplacement[];
   offsetStart?: number;
@@ -35,6 +36,7 @@ const Lottie = ({
   trigger,
   hostRef,
   loop = true,
+  delay = 0,
   speed = 1,
   colors,
   offsetStart = 0,
@@ -65,7 +67,9 @@ const Lottie = ({
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
       lottieRef.current.setDirection(1);
-      lottieRef.current.play();
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
     }
   });
 
@@ -73,7 +77,9 @@ const Lottie = ({
     if (lottieRef.current) {
       lottieRef.current.setDirection(-1);
       console.log(lottieRef.current.setDirection, lottieRef.current.play);
-      lottieRef.current.play();
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
     }
   });
 
@@ -86,7 +92,9 @@ const Lottie = ({
   useVevEvent(Interactions.TOGGLE, () => {
     if (lottieRef.current) {
       if (lottieRef.current.isPaused) {
-        lottieRef.current?.play();
+        setTimeout(() => {
+          lottieRef.current?.play();
+        }, delay);
       } else {
         lottieRef.current?.pause();
       }
@@ -125,14 +133,20 @@ const Lottie = ({
       ...defaultSettings,
       animationData: colorOverrides && json && colorify(colorOverrides, json),
       container: canvasRef.current,
-      autoplay,
+      autoplay: false,
       loop,
     };
 
     lottieRef.current = LottieWeb.loadAnimation(settings);
     if (speed !== 1) lottieRef.current.setSpeed(speed);
 
-    // @ts-expect-error
+    if (autoplay) {
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
+    }
+
+    // @ts-expect-error - works
     lottieRef.current.addEventListener('_pause', () => {
       dispatchVevEvent(Events.PAUSE);
     });
@@ -164,7 +178,9 @@ const Lottie = ({
     if (!lottieRef.current || trigger !== 'hover') return;
 
     if (isHovering) {
-      lottieRef.current.play();
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
     } else {
       lottieRef.current.pause();
     }
@@ -195,7 +211,14 @@ const Lottie = ({
     if (!lottieRef.current) return;
 
     if (trigger === 'click') {
-      lottieRef.current[lottieRef.current.isPaused ? 'play' : 'pause']();
+      console.log('lottieRef.current', lottieRef.current);
+      if (lottieRef.current.isPaused) {
+        setTimeout(() => {
+          lottieRef.current?.play();
+        }, delay);
+      } else {
+        lottieRef.current[lottieRef.current.isPaused ? 'play' : 'pause']();
+      }
     }
   };
 
@@ -304,6 +327,13 @@ registerVevComponent(Lottie, {
       title: 'Loop',
       type: 'boolean',
       initialValue: true,
+      hidden: (context) => context?.value?.trigger === 'scroll',
+    },
+    {
+      name: 'delay',
+      title: 'Delay start (ms)',
+      type: 'number',
+      initialValue: 0,
       hidden: (context) => context?.value?.trigger === 'scroll',
     },
     {
