@@ -341,7 +341,7 @@ registerVevComponent(NumberCounter, {
   events: [
     {
       type: Events.COMPLETE,
-      description: 'Completed',
+      description: 'On end',
     },
   ],
   interactions: [
@@ -365,17 +365,17 @@ registerVevComponent(NumberCounter, {
       properties: [
         'font-family',
         'font-size',
+        'font-style',
         'letter-spacing',
         'word-spacing',
         'font-weight',
         'color',
-        'font-style',
         'text-align',
         'text-decoration',
       ],
     },
     {
-      title: 'Number',
+      title: 'Margin and padding',
       selector: styles.wrapper,
       properties: ['margin', 'padding'],
     },
