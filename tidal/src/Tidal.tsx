@@ -38,7 +38,14 @@ registerVevComponent(Tidal, {
   name: 'Tidal',
   description:
     'Embed a Tidal music player directly to your canvas. \n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
-  props: [{ title: 'Tidal URL', name: 'url', type: 'string', initialValue: initialLink }],
+  props: [
+    {
+      title: 'Tidal URL',
+      name: 'url',
+      type: 'string',
+      initialValue: initialLink,
+    },
+  ],
 });
 
 export default Tidal;

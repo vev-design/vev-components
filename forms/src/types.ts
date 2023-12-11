@@ -7,7 +7,7 @@ export type FieldProps = {
 };
 
 export enum Event {
-  onChange = "On change",
-  onInvalid = "On invalid change",
-  onValid = "On valid change",
+  onChange = 'On change',
+  onInvalid = 'On invalid change',
+  onValid = 'On valid change',
 }

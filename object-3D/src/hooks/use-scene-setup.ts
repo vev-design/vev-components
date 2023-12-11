@@ -37,7 +37,7 @@ export function useSceneSetup(
     setContextControls,
     savedCameraPosition,
     hotspots,
-    rotationSpeed
+    rotationSpeed,
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
@@ -105,7 +105,7 @@ export function useSceneSetup(
   }, [canvasRef, labelRef]);
 
   useEffect(() => {
-    if(controls) {
+    if (controls) {
       controls.autoRotateSpeed = rotationSpeed;
     }
   }, [rotationSpeed]);

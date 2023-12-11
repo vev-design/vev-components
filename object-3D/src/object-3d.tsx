@@ -234,7 +234,11 @@ registerVevComponent(Object3d, {
       type: EventTypes.HOTSPOT_CLICKED,
       description: 'Hotspot clicked',
       args: [
-        { name: EventTypes.HOTSPOT_CLICKED, description: 'Hotspot number clicked', type: 'number' },
+        {
+          name: EventTypes.HOTSPOT_CLICKED,
+          description: 'Hotspot number clicked',
+          type: 'number',
+        },
       ],
     },
   ],

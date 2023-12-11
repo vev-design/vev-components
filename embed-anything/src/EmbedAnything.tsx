@@ -149,7 +149,12 @@ registerVevComponent(EmbedAnything, {
         multiline: true,
       },
     },
-    { title: 'Encapsulate', name: 'encapsulate', type: 'boolean', initialValue: false },
+    {
+      title: 'Encapsulate',
+      name: 'encapsulate',
+      type: 'boolean',
+      initialValue: false,
+    },
   ],
   type: 'both',
 });

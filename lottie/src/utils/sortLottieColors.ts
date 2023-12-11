@@ -1,5 +1,5 @@
-import { LottieColor } from "../types";
-import rgbToHsl from "./rgbToHsl";
+import { LottieColor } from '../types';
+import rgbToHsl from './rgbToHsl';
 
 const sortLottieColors = (colors: LottieColor[]): any => {
   return colors

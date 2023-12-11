@@ -1,21 +1,21 @@
 .iframe {
-    border: 0;
-    height: 100%;
-    width: 100%;
+  border: 0;
+  height: 100%;
+  width: 100%;
 }
 
 .invalidUrl {
-    background-color: #a6dbff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    font-size: 2rem;
-    border-radius: 15px;
+  background-color: #a6dbff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 2rem;
+  border-radius: 15px;
 }
 
 .logo {
-    width: 78px;
-    height: 78px;
+  width: 78px;
+  height: 78px;
 }

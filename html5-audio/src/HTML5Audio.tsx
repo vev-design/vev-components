@@ -43,8 +43,18 @@ registerVevComponent(HTML5Audio, {
     'Embed a HTML5 audio player directly to your canvas.\n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
   props: [
     { name: 'audioUrl', title: 'Upload audio file', type: 'upload' },
-    { name: 'showControls', title: 'Show controls', type: 'boolean', initialValue: true },
-    { name: 'autoplay', title: 'Autoplay', type: 'boolean', initialValue: false },
+    {
+      name: 'showControls',
+      title: 'Show controls',
+      type: 'boolean',
+      initialValue: true,
+    },
+    {
+      name: 'autoplay',
+      title: 'Autoplay',
+      type: 'boolean',
+      initialValue: false,
+    },
     { name: 'loop', title: 'Loop audio', type: 'boolean', initialValue: false },
   ],
   type: 'standard',

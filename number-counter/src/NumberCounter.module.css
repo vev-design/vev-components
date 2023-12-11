@@ -1,18 +1,18 @@
 .counter {
-    width: 100%;
-    font-size: 42px;
-    font-weight: bold;
-    font-family: Lato, serif;
-    color: #0b0b0b;
-    padding: 0;
-    margin: 0;
-    text-align: center;
+  width: 100%;
+  font-size: 42px;
+  font-weight: bold;
+  font-family: Lato, serif;
+  color: #0b0b0b;
+  padding: 0;
+  margin: 0;
+  text-align: center;
 }
 
 .wrapper {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

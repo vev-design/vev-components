@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FieldProps, Event } from "../../types";
-import { registerVevComponent, useDispatchVevEvent } from "@vev/react";
-import formIcon from "../../assets/form-icon.svg";
-import styles from "./RadioButton.module.css";
-import cx from "classnames";
-import FieldWrapper from "../FieldWrapper";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FieldProps, Event } from '../../types';
+import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import formIcon from '../../assets/form-icon.svg';
+import styles from './RadioButton.module.css';
+import cx from 'classnames';
+import FieldWrapper from '../FieldWrapper';
 
 type RadioButton = FieldProps & {
   name: string;
@@ -24,7 +24,7 @@ function RadioButton(props: RadioButton) {
         value,
       });
     },
-    [props.name]
+    [props.name],
   );
 
   useEffect(() => {
@@ -54,23 +54,23 @@ function RadioButton(props: RadioButton) {
 }
 
 registerVevComponent(RadioButton, {
-  name: "Radio button",
-  categories: ["Form"],
+  name: 'Radio button',
+  categories: ['Form'],
   icon: formIcon,
   size: {
-    height: "auto",
+    height: 'auto',
     width: 300,
   },
   editableCSS: [
     {
       selector: styles.radioButton,
-      title: "Radio Background",
-      properties: ["background", "border", "border-radius"],
+      title: 'Radio Background',
+      properties: ['background', 'border', 'border-radius'],
     },
     {
-      selector: styles.radioButton + ":checked:before",
-      title: "Radio",
-      properties: ["background"],
+      selector: styles.radioButton + ':checked:before',
+      title: 'Radio',
+      properties: ['background'],
     },
   ],
   events: [
@@ -80,17 +80,17 @@ registerVevComponent(RadioButton, {
   ],
   props: [
     {
-      name: "name",
-      type: "string",
+      name: 'name',
+      type: 'string',
     },
     {
-      type: "string",
-      name: "value",
+      type: 'string',
+      name: 'value',
     },
     {
-      type: "boolean",
-      name: "initialValue",
-      title: "Initial value",
+      type: 'boolean',
+      name: 'initialValue',
+      title: 'Initial value',
     },
   ],
 });

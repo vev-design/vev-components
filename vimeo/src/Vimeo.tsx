@@ -141,12 +141,27 @@ registerVevComponent(Vimeo, {
       },
       component: VimeoUrl,
     },
-    { title: 'Autoplay', name: 'autoplay', type: 'boolean', initialValue: false },
+    {
+      title: 'Autoplay',
+      name: 'autoplay',
+      type: 'boolean',
+      initialValue: false,
+    },
     { title: 'Lazy load', name: 'lazy', type: 'boolean', initialValue: false },
     { title: 'Mute', name: 'mute', type: 'boolean', initialValue: false },
-    { title: 'Disable controls', name: 'disableControls', type: 'boolean', initialValue: false },
+    {
+      title: 'Disable controls',
+      name: 'disableControls',
+      type: 'boolean',
+      initialValue: false,
+    },
     { title: 'Loop', name: 'loop', type: 'boolean', initialValue: false },
-    { title: 'Background', name: 'background', type: 'boolean', initialValue: false },
+    {
+      title: 'Background',
+      name: 'background',
+      type: 'boolean',
+      initialValue: false,
+    },
   ],
   editableCSS: [
     {

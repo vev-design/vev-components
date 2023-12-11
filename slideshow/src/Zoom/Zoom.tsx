@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useId } from "react";
-import { WidgetNode } from "@vev/react";
-import { Props } from "../Slideshow";
-import { isGoingForward, isGoingBackward } from "../utils";
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
+import { WidgetNode } from '@vev/react';
+import { Props } from '../Slideshow';
+import { isGoingForward, isGoingBackward } from '../utils';
 
-import styles from "./Zoom.module.css";
+import styles from './Zoom.module.css';
 
 export const Zoom = ({
   index,
@@ -14,11 +14,11 @@ export const Zoom = ({
   nextSlide,
   prevSlide,
   scaleFactor = 300,
-}: Omit<Props, "children"> & {
+}: Omit<Props, 'children'> & {
   index: number;
   preview?: boolean;
 }) => {
-  const reverse = !direction?.includes("REVERSE");
+  const reverse = !direction?.includes('REVERSE');
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(1);
   const prevIndex = useRef(index);
@@ -30,15 +30,12 @@ export const Zoom = ({
 
   const setSlides = useCallback(() => {
     setCurrentSlides(
-      reverse
-        ? [nextSlide, currentSlide, prevSlide]
-        : [prevSlide, currentSlide, nextSlide]
+      reverse ? [nextSlide, currentSlide, prevSlide] : [prevSlide, currentSlide, nextSlide],
     );
   }, [nextSlide, currentSlide, prevSlide]);
 
   useEffect(() => {
-    const isJumping =
-      prevIndex.current - index > 1 || index - prevIndex.current > 1;
+    const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
     if (
       isJumping &&
@@ -79,7 +76,7 @@ export const Zoom = ({
         transition: `transform ${transitionSpeed}ms linear`,
       }}
       onTransitionEnd={(e) => {
-        if (e.propertyName === "opacity") {
+        if (e.propertyName === 'opacity') {
           setTransitionSpeed(1);
           setSlides();
           setMove(1);
@@ -98,12 +95,9 @@ export const Zoom = ({
                 transitionSpeed || 200
               }ms`,
               opacity: i === move ? 1 : 0,
-              pointerEvents: i === move ? "auto" : "none",
-              zIndex: scaleFactor === 100 ? (i === move ? "auto" : -1) : "auto",
-              transform:
-                i === move || i === move - 1
-                  ? "scale(1)"
-                  : `scale(${scaleFactor}%)`,
+              pointerEvents: i === move ? 'auto' : 'none',
+              zIndex: scaleFactor === 100 ? (i === move ? 'auto' : -1) : 'auto',
+              transform: i === move || i === move - 1 ? 'scale(1)' : `scale(${scaleFactor}%)`,
             }}
           >
             {child && <WidgetNode id={child} />}

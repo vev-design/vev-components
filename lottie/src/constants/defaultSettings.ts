@@ -1,7 +1,7 @@
 const defaultSettings: any = {
-  renderer: "svg",
+  renderer: 'svg',
   rendererSettings: {
-    title: "Lottie animation",
+    title: 'Lottie animation',
     clearCanvas: false,
     progressiveLoad: true,
   },
