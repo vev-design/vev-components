@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef } from 'react';
-import { Camera, Scene, Vector3 } from 'three';
+import { Camera, Mesh, MeshBasicMaterial, Scene, SphereGeometry, Vector3 } from 'three';
 // @ts-expect-error - no types
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Object3dContext } from '../context/object-3d-context';
@@ -10,6 +10,7 @@ import TWEEN from '@tweenjs/tween.js';
 export interface CanvasHotspot {
   element: HTMLDivElement;
   sceneObject: CSS2DObject;
+  intersectionSphere: Mesh;
   hotspot: InternalHotspot;
 }
 
@@ -25,10 +26,10 @@ function zoomHotspot(camera: Camera, storageHotspot: InternalHotspot, controls: 
     .multiplyScalar(camDistance);
 
   new TWEEN.Tween(from)
-    .to(target, 400)
+    .to({ x: target.x, y: target.y, z: target.z }, 400)
     .onUpdate((newPosition) => {
       camera.position.copy(newPosition);
-      controls.update(); // update of controls is here now
+      controls.update();
     })
     .start();
 }
@@ -56,6 +57,7 @@ export function useHotspots(scene: Scene | undefined, camera: Camera | undefined
     if (scene) {
       hotspotMap.current.forEach((hotspot) => {
         scene.remove(hotspot.sceneObject);
+        scene.remove(hotspot.intersectionSphere);
         hotspot.element.parentElement.remove();
       });
       hotspotMap.current = [];
@@ -83,7 +85,20 @@ export function useHotspots(scene: Scene | undefined, camera: Camera | undefined
           });
         }
 
+        // Add a transparent sphere used for determining if the hotspot is visible or not
+        const geometry = new SphereGeometry(0.1, 32, 16);
+        const material = new MeshBasicMaterial({ color: 0xffff00, opacity: 0, transparent: true });
+        const sphere = new Mesh(geometry, material);
+        sphere.position.set(
+          storageHotspot.position.x,
+          storageHotspot.position.y,
+          storageHotspot.position.z,
+        );
+        sphere.name = 'intersection_sphere';
+        scene.add(sphere);
+
         hotspotMap.current.push({
+          intersectionSphere: sphere,
           element: innerElem,
           sceneObject,
           hotspot: storageHotspot,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { sortBy } from 'lodash';
-import { SilkeButton } from '@vev/silke';
+import { SilkeButton, SilkeText, SilkeBox } from '@vev/silke';
 import styles from '../object-3d.module.css';
 import { InternalHotspot } from '../types';
 
@@ -18,19 +18,25 @@ export function HotspotList({ hotspots, deleteHotspot }: Props) {
 
   return (
     <div className={styles.hotspotList}>
-      {sortedHotspots.map((hotspot) => {
-        return (
-          <div key={hotspot.index} className={styles.hotspotListItem}>
-            <div>{`Hotspot ${hotspot.index}`}</div>
-            <SilkeButton
-              icon="delete"
-              onClick={() => {
-                deleteHotspot(hotspot.index);
-              }}
-            />
-          </div>
-        );
-      })}
+      <SilkeBox gap="m" column>
+        <SilkeText>
+          Add hotspot(s) on your 3D model by clicking on the target area. Connect the hotspots to
+          components on the canvas using Interactions.
+        </SilkeText>
+        {sortedHotspots.map((hotspot) => {
+          return (
+            <div key={hotspot.index} className={styles.hotspotListItem}>
+              <div>{`Hotspot ${hotspot.index}`}</div>
+              <SilkeButton
+                icon="delete"
+                onClick={() => {
+                  deleteHotspot(hotspot.index);
+                }}
+              />
+            </div>
+          );
+        })}
+      </SilkeBox>
     </div>
   );
 }
