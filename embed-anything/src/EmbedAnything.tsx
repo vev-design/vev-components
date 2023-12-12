@@ -116,7 +116,7 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
 
   if (disabled) {
     return (
-      <div className={styles.instructions}>
+      <div className={styles.instructions + ' ' + styles.wrapper}>
         <h3>Embedded code will run in preview and on published site</h3>
         <p>
           If you want more coding flexibility, we recommend using a coded element created in the
@@ -127,7 +127,7 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
   }
   if (!html)
     return (
-      <div className={styles.instructions}>
+      <div className={styles.instructions + ' ' + styles.wrapper}>
         <h3>Double-click this widget to add your HTML inside</h3>
         <p>
           Note: Not all embed codes will only run on published site, as it may behave differently in
@@ -140,6 +140,12 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
 
 registerVevComponent(EmbedAnything, {
   name: 'Embed Anything',
+  emptyState: {
+    action: 'OPEN_PROPERTIES',
+    linkText: 'Add embed code',
+    description: ' to your embed component',
+    checkProperty: 'html',
+  },
   props: [
     {
       title: 'Embed HTML',
@@ -154,6 +160,13 @@ registerVevComponent(EmbedAnything, {
       name: 'encapsulate',
       type: 'boolean',
       initialValue: false,
+    },
+  ],
+  editableCSS: [
+    {
+      title: 'Container',
+      selector: styles.wrapper,
+      properties: ['background', 'border-radius', 'border'],
     },
   ],
   type: 'both',
