@@ -161,18 +161,6 @@ const Youtube = ({
     else if (autoplay) player.playVideo();
   }, [disabled]);
 
-  /** Video is not set. return */
-  if (!videoId)
-    return (
-      <div className={styles.empty}>
-        <p className={styles.emptyLink} onClick={() => {}}>
-          Add URL
-        </p>
-        &nbsp;
-        <p>to your YouTube component</p>
-      </div>
-    );
-
   let src = 'https://www.youtube.com/embed/';
 
   if (videoId) src += youTubeParseUrl(videoId) + '?';
@@ -204,7 +192,7 @@ const Youtube = ({
 };
 
 registerVevComponent(Youtube, {
-  name: 'YouTube',
+  name: 'YouTube player',
   description:
     'Provide a Youtube URL (ex. https://www.youtube.com/watch?v=K_OiQguFo94&t=12s) to play a video inside a Youtube player.',
   icon: 'https://cdn.vev.design/assets/youtube.svg',
@@ -305,6 +293,7 @@ registerVevComponent(Youtube, {
   ],
   editableCSS: [
     {
+      title: 'Border',
       selector: styles.frame,
       properties: ['border', 'border-radius'],
     },
