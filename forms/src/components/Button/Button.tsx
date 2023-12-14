@@ -50,7 +50,6 @@ export type SubmitType = {
 
 enum Interaction {
   UPDATE_FORM = "UPDATE_FORM",
-  SUBMIT_FORM = "SUBMIT_FORM",
 }
 
 enum Event {
@@ -454,10 +453,6 @@ registerVevComponent(Button, {
     {
       type: Interaction.UPDATE_FORM,
       description: "Update form",
-    },
-    {
-      type: Interaction.SUBMIT_FORM,
-      description: "Submit form",
     },
   ],
 });
