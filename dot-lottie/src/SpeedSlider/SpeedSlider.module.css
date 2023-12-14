@@ -1,0 +1,18 @@
+.wrapper {
+  width: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 4px,
+    rgba(var(--color-neutral-100-rgb), var(--opacity-level-light)) 5px,
+    rgba(var(--color-neutral-100-rgb), var(--opacity-level-light)) 9px,
+    transparent 10px,
+    transparent 12px,
+    rgba(var(--color-neutral-100-rgb), var(--opacity-level-light)) 13px,
+    rgba(var(--color-neutral-100-rgb), var(--opacity-level-light)) 17px,
+    transparent 18px
+  );
+  /* background: linear-gradient(180deg,transparent,rgba(var(--color-neutral-100-rgb),var(--opacity-level-light)) 21%, rgba(var(--color-neutral-100-rgb),var(--opacity-level-light)) 79%,transparent 80%); */
+  background-position: 49.5%;
+  background-repeat: repeat-y;
+  background-size: 2px auto;
+}

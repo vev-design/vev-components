@@ -39,9 +39,24 @@ const SoundCloud = (playerParams: Props) => {
 registerVevComponent(SoundCloud, {
   name: 'SoundCloud',
   props: [
-    { name: 'url', title: 'SoundCloud link', type: 'string', initialValue: initialLink },
-    { name: 'classic', title: 'Classic look', type: 'boolean', initialValue: true },
-    { name: 'autoplay', title: 'Autoplay', type: 'boolean', initialValue: false },
+    {
+      name: 'url',
+      title: 'SoundCloud link',
+      type: 'string',
+      initialValue: initialLink,
+    },
+    {
+      name: 'classic',
+      title: 'Classic look',
+      type: 'boolean',
+      initialValue: true,
+    },
+    {
+      name: 'autoplay',
+      title: 'Autoplay',
+      type: 'boolean',
+      initialValue: false,
+    },
   ],
 });
 

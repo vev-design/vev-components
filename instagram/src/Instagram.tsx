@@ -80,7 +80,12 @@ registerVevComponent(Instagram, {
       type: 'string',
       initialValue: 'https://www.instagram.com/p/CpAQZfDDseY',
     },
-    { title: 'Include captions', name: 'isCaptioned', type: 'boolean', initialValue: false },
+    {
+      title: 'Include captions',
+      name: 'isCaptioned',
+      type: 'boolean',
+      initialValue: false,
+    },
   ],
   type: 'standard',
 });

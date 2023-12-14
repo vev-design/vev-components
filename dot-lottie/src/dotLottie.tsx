@@ -1,8 +1,16 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import styles from './dotLottie.module.css';
-import { registerVevComponent, useScrollTop, useVisible, View } from '@vev/react';
-import '@johanaarstein/dotlottie-player';
+import {
+  registerVevComponent,
+  useScrollTop,
+  useVisible,
+  View,
+  useDispatchVevEvent,
+  useVevEvent,
+} from '@vev/react';
 import { DotLottiePlayer, PlayMode } from '@johanaarstein/dotlottie-player';
+import { EventTypes, InteractionTypes } from './event-types';
+import SpeedSlider from './SpeedSlider';
 
 type Props = {
   file: {
@@ -14,9 +22,10 @@ type Props = {
   loop: boolean;
   controls: boolean;
   speed: number;
+  delay: number;
   scrollOffsetStart: number;
   scrollOffsetStop: number;
-  animationTrigger: 'visible' | 'hover' | 'click' | 'scroll';
+  onscroll: boolean;
   mode: 'normal' | 'bounce';
 };
 
@@ -27,8 +36,9 @@ const DotLottie = ({
   file,
   loop = true,
   controls = false,
-  animationTrigger = 'visible',
+  onscroll = false,
   speed = 1000,
+  delay = 0,
   scrollOffsetStart = 0,
   scrollOffsetStop = 0,
   mode,
@@ -37,54 +47,63 @@ const DotLottie = ({
   const isVisible = useVisible(animation);
   const scrollTop = useScrollTop(true);
   const actualUrl = (file && file.url) || defaultAnimation;
+  const dispatch = useDispatchVevEvent();
+
+  useVevEvent(InteractionTypes.PLAY, () => {
+    if (animation.current) {
+      setTimeout(() => {
+        animation.current.play();
+      }, delay);
+    }
+  });
+
+  useVevEvent(InteractionTypes.PAUSE, () => {
+    if (animation.current) {
+      animation.current.pause();
+    }
+  });
+
+  useVevEvent(InteractionTypes.TOGGLE, () => {
+    if (animation.current) {
+      setTimeout(() => {
+        animation.current.togglePlay();
+      }, delay);
+    }
+  });
 
   useEffect(() => {
     if (animation.current) {
       // Hack to make the DotLottiePlayer respect the values set, even if it is seems to be available :(
       setTimeout(() => {
         animation.current.controls = controls;
-        animation.current.loop = loop;
+        animation.current.getLottie().setLoop(loop);
         animation.current.setSpeed(speed / 1000);
         animation.current.mode = mode === 'normal' ? PlayMode.Normal : PlayMode.Bounce;
 
-        switch (animationTrigger) {
-          case 'hover':
-            animation.current.stop();
-            animation.current.hover = true;
-            break;
-          case 'click':
-            animation.current.stop();
-            animation.current.addEventListener('click', () => {
-              animation.current.play();
-            });
-            break;
-          case 'scroll':
-            break;
-        }
+        animation.current.onplay = () => {
+          dispatch(EventTypes.PLAY);
+        };
+
+        animation.current.onpause = () => {
+          dispatch(EventTypes.PAUSE);
+        };
+
+        animation.current.addEventListener('complete', () => {
+          dispatch(EventTypes.COMPLETE);
+        });
+
+        animation.current.addEventListener('loop', () => {
+          dispatch(EventTypes.LOOP_COMPLETE);
+        });
       }, 100);
     }
-  }, [animation, speed, loop, controls, animationTrigger, mode]);
-
-  // OnClick trigger
-  useEffect(() => {
-    if (animation && animationTrigger === 'visible') {
-      if (isVisible) {
-        setTimeout(() => {
-          animation.current.play();
-        }, 50);
-      } else {
-        if (!loop) {
-          animation.current.stop();
-        }
-      }
-    }
-  }, [isVisible, animation, loop, animationTrigger]);
+  }, [animation, speed, loop, controls, mode]);
 
   // Scroll trigger
   useEffect(() => {
     const lottie = animation && animation.current && animation.current.getLottie();
     if (lottie) {
-      if (animationTrigger === 'scroll' && lottie.totalFrames) {
+      if (onscroll && lottie.totalFrames) {
         let percent: number;
         if (isVisible) {
           const rect = animation.current.getBoundingClientRect();
@@ -95,16 +114,16 @@ const DotLottie = ({
         lottie.goToAndStop((lottie.totalFrames / lottie.frameRate) * 1000 * (1 - percent));
       }
     }
-  }, [animationTrigger, isVisible, scrollOffsetStart, scrollOffsetStop, scrollTop]);
+  }, [onscroll, isVisible, scrollOffsetStart, scrollOffsetStop, scrollTop]);
 
   // Hack to make this annoying web component thing reload its props when it should
   const comp = useMemo(() => {
     return (
       <div key={Date.now()}>
-        <dotlottie-player ref={animation} loop={loop} src={actualUrl} />
+        <dotlottie-player ref={animation} src={actualUrl} />
       </div>
     );
-  }, [loop, actualUrl, animationTrigger, mode]);
+  }, [actualUrl, onscroll, mode]);
 
   return <div className={styles.wrapper}>{comp}</div>;
 };
@@ -118,19 +137,10 @@ registerVevComponent(DotLottie, {
       type: 'upload',
     },
     {
-      title: 'Play trigger',
-      name: 'animationTrigger',
-      type: 'select',
-      initialValue: 'visible',
-      options: {
-        display: 'dropdown',
-        items: [
-          { label: 'When visible', value: 'visible' },
-          { label: 'On hover', value: 'hover' },
-          { label: 'On click', value: 'click' },
-          { label: 'On scroll', value: 'scroll' },
-        ],
-      },
+      title: 'Animate on scroll',
+      name: 'onscroll',
+      type: 'boolean',
+      initialValue: false,
     },
     {
       title: 'Loop',
@@ -138,7 +148,7 @@ registerVevComponent(DotLottie, {
       type: 'boolean',
       initialValue: true,
       hidden: (context) => {
-        return context.value.animationTrigger === 'scroll';
+        return context.value.onscroll === true;
       },
     },
     {
@@ -154,7 +164,7 @@ registerVevComponent(DotLottie, {
         ],
       },
       hidden: (context) => {
-        return context.value.animationTrigger === 'scroll';
+        return context.value.onscroll === true;
       },
     },
     {
@@ -168,9 +178,15 @@ registerVevComponent(DotLottie, {
       name: 'speed',
       type: 'number',
       initialValue: 1000,
-      hidden: (context) => {
-        return context.value.animationTrigger === 'scroll';
-      },
+      component: SpeedSlider,
+      hidden: (context) => context?.value?.onscroll === true,
+    },
+    {
+      title: 'Delay (ms)',
+      name: 'delay',
+      type: 'number',
+      initialValue: 0,
+      hidden: (context) => context.value.onscroll === true,
     },
     {
       title: 'Scroll offset start',
@@ -179,7 +195,7 @@ registerVevComponent(DotLottie, {
       type: 'number',
       initialValue: 0,
       hidden: (context) => {
-        return context.value.animationTrigger !== 'scroll';
+        return context.value.onscroll !== true;
       },
     },
     {
@@ -189,14 +205,47 @@ registerVevComponent(DotLottie, {
       type: 'number',
       initialValue: 0,
       hidden: (context) => {
-        return context.value.animationTrigger !== 'scroll';
+        return context.value.onscroll !== true;
       },
+    },
+  ],
+  interactions: [
+    {
+      type: InteractionTypes.PLAY,
+      description: 'Play',
+    },
+    {
+      type: InteractionTypes.PAUSE,
+      description: 'Pause',
+    },
+    {
+      type: InteractionTypes.TOGGLE,
+      description: 'Toggle',
+    },
+  ],
+  events: [
+    {
+      type: EventTypes.PLAY,
+      description: 'on Play',
+    },
+    {
+      type: EventTypes.PAUSE,
+      description: 'on Pause',
+    },
+    {
+      type: EventTypes.COMPLETE,
+      description: 'on Complete',
+    },
+    {
+      type: EventTypes.LOOP_COMPLETE,
+      description: 'on Loop Complete',
     },
   ],
   editableCSS: [
     {
+      title: 'Animation',
       selector: styles.wrapper,
-      properties: ['background'],
+      properties: ['background', 'padding', 'border', 'border-radius'],
     },
   ],
   type: 'standard',

@@ -4,14 +4,13 @@ import { SilkeBox, SilkeText, SilkeOverflowMenu, SilkeSlider } from '@vev/silke'
 
 import styles from './SpeedSlider.module.css';
 
-const MAX = 8;
-const MIN = -8;
+const MAX = 2000;
+const MIN = 0;
 
-const SpeedSlider = ({ value = 2, onChange }: SchemaFieldProps<SchemaFieldTypes['number']>) => {
+const SpeedSlider = ({ value = 1000, onChange }: SchemaFieldProps<SchemaFieldTypes['number']>) => {
   const currentValue = (value - MIN) / (MAX - MIN);
 
   const onSlide = (percentage: number) => {
-    // Snap to 1 if value within +- 20
     const newValue = percentage * (MAX - MIN) + MIN;
     onChange(newValue);
   };

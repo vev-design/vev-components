@@ -51,7 +51,7 @@ const GoogleForms = ({ formUrl, hostRef }: Props) => {
     console.log('google forms loaded', form);
     form.addEventListener('submit', handleFormSubmit);
   };
-  console.log('url', url);
+
   if (url === '' || !url) {
     return (
       <div className={styles.instructions}>
@@ -96,6 +96,12 @@ registerVevComponent(GoogleForms, {
   description:
     "Embed Google Forms into your Vev project by simply copying the form's URL and inserting it into the form element. [Read documentation](https://help.vev.design/en/articles/6288851-google-forms)",
   props: [{ title: 'Google Forms URL', name: 'formUrl', type: 'string' }],
+  emptyState: {
+    linkText: 'Add URL',
+    description: ' to your Google form component',
+    action: 'OPEN_PROPERTIES',
+    checkProperty: 'formUrl',
+  },
   type: 'both',
 });
 

@@ -10,14 +10,13 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/react": "latest",
     "prettier": "2.7.0",
     "typescript-plugin-css-modules": "^3.4.0"
   },
   "dependencies": {
     "@lottiefiles/react-lottie-player": "^3.5.3",
-    "@johanaarstein/dotlottie-player": "^1.5.11",
-    "@vev/react": "latest",
+    "@johanaarstein/dotlottie-player": "^1.5.23",
+    "@vev/react": "^0.1.2",
     "react": "^18.2.0"
   }
 }

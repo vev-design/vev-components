@@ -1,19 +1,19 @@
 .wrapper {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 .instructions {
-    height: 100%;
-    width: 100%;
-    padding: 20px;
-    background: #444;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px;
-    text-align: center;
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+  background: #e3e3e3;
+  color: #525252;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  text-align: center;
 }

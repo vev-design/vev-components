@@ -34,7 +34,7 @@
 
 .switch {
   position: absolute;
-  content: "";
+  content: '';
   top: 2px;
   height: 80%;
   left: 3px;

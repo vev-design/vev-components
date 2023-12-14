@@ -177,8 +177,18 @@ registerVevComponent(JWPlayer, {
       initialValue: false,
     },
     { name: 'loop', title: 'Loop', type: 'boolean', initialValue: false },
-    { name: 'controls', title: 'Show controls', type: 'boolean', initialValue: true },
-    { name: 'displayTitle', title: 'Display title', type: 'boolean', initialValue: false },
+    {
+      name: 'controls',
+      title: 'Show controls',
+      type: 'boolean',
+      initialValue: true,
+    },
+    {
+      name: 'displayTitle',
+      title: 'Display title',
+      type: 'boolean',
+      initialValue: false,
+    },
     {
       name: 'displayDescription',
       title: 'Display description',
@@ -197,8 +207,14 @@ registerVevComponent(JWPlayer, {
       type: 'select',
       options: {
         items: [
-          { label: 'Uniform - Fits JW Player, maintain aspect ratio', value: 'uniform' },
-          { label: 'Exact Fit - Fits JW Player, stretch aspect ratio', value: 'exactfit' },
+          {
+            label: 'Uniform - Fits JW Player, maintain aspect ratio',
+            value: 'uniform',
+          },
+          {
+            label: 'Exact Fit - Fits JW Player, stretch aspect ratio',
+            value: 'exactfit',
+          },
           { label: 'Fill - Zoom & Crop video to fill widget', value: 'fill' },
           { label: 'None - Actual size, with black borders', value: 'none' },
         ],

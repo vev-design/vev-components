@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
@@ -7,23 +7,24 @@ import {
   useScrollTop,
   useVevEvent,
   useVisible,
-} from "@vev/react";
-import LottieWeb, { AnimationConfigWithData, AnimationItem } from "lottie-web";
-import { colorify, getColors } from "lottie-colorify";
-import { File, LottieColor, LottieColorReplacement } from "./types";
-import defaultSettings from "./constants/defaultSettings";
-import defaultAnimation from "./constants/defaultAnimation";
-import ColorPicker from "./components/ColorPicker";
+} from '@vev/react';
+import LottieWeb, { AnimationConfigWithData, AnimationItem } from 'lottie-web';
+import { colorify, getColors } from 'lottie-colorify';
+import { File, LottieColor, LottieColorReplacement } from './types';
+import defaultSettings from './constants/defaultSettings';
+import defaultAnimation from './constants/defaultAnimation';
+import ColorPicker from './components/ColorPicker';
 
-import styles from "./Lottie.module.css";
-import SpeedSlider from "./components/SpeedSlider";
-import { Events, Interactions } from "./events";
+import styles from './Lottie.module.css';
+import SpeedSlider from './components/SpeedSlider';
+import { Events, Interactions } from './events';
 
 type Props = {
   file: File;
-  trigger: "visible" | "hover" | "click" | "scroll" | "never";
+  trigger: 'visible' | 'hover' | 'click' | 'scroll' | 'never';
   hostRef: React.RefObject<HTMLDivElement>;
   loop: boolean;
+  delay: number;
   speed: number;
   colors: LottieColorReplacement[];
   offsetStart?: number;
@@ -35,6 +36,7 @@ const Lottie = ({
   trigger,
   hostRef,
   loop = true,
+  delay = 0,
   speed = 1,
   colors,
   offsetStart = 0,
@@ -52,7 +54,7 @@ const Lottie = ({
   const [isHovering, bindHover] = useHover();
 
   const path = (file && file.url) || defaultAnimation;
-  const autoplay = trigger === "visible" && isVisible;
+  const autoplay = trigger === 'visible' && isVisible;
   const colorsChanged = JSON.stringify({ lottieColors, colors });
 
   const colorOverrides = useMemo(() => {
@@ -65,7 +67,9 @@ const Lottie = ({
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
       lottieRef.current.setDirection(1);
-      lottieRef.current.play();
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
     }
   });
 
@@ -73,7 +77,9 @@ const Lottie = ({
     if (lottieRef.current) {
       lottieRef.current.setDirection(-1);
       console.log(lottieRef.current.setDirection, lottieRef.current.play);
-      lottieRef.current.play();
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
     }
   });
 
@@ -86,7 +92,9 @@ const Lottie = ({
   useVevEvent(Interactions.TOGGLE, () => {
     if (lottieRef.current) {
       if (lottieRef.current.isPaused) {
-        lottieRef.current?.play();
+        setTimeout(() => {
+          lottieRef.current?.play();
+        }, delay);
       } else {
         lottieRef.current?.pause();
       }
@@ -125,23 +133,29 @@ const Lottie = ({
       ...defaultSettings,
       animationData: colorOverrides && json && colorify(colorOverrides, json),
       container: canvasRef.current,
-      autoplay,
+      autoplay: false,
       loop,
     };
 
     lottieRef.current = LottieWeb.loadAnimation(settings);
     if (speed !== 1) lottieRef.current.setSpeed(speed);
 
-    // @ts-expect-error
-    lottieRef.current.addEventListener("_pause", () => {
+    if (autoplay) {
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
+    }
+
+    // @ts-expect-error - works
+    lottieRef.current.addEventListener('_pause', () => {
       dispatchVevEvent(Events.PAUSE);
     });
 
-    lottieRef.current.addEventListener("loopComplete", () => {
+    lottieRef.current.addEventListener('loopComplete', () => {
       dispatchVevEvent(Events.LOOP_COMPLETED);
     });
 
-    lottieRef.current.addEventListener("complete", () => {
+    lottieRef.current.addEventListener('complete', () => {
       dispatchVevEvent(Events.COMPLETE);
     });
 
@@ -161,10 +175,12 @@ const Lottie = ({
 
   // Hover trigger
   useEffect(() => {
-    if (!lottieRef.current || trigger !== "hover") return;
+    if (!lottieRef.current || trigger !== 'hover') return;
 
     if (isHovering) {
-      lottieRef.current.play();
+      setTimeout(() => {
+        lottieRef.current?.play();
+      }, delay);
     } else {
       lottieRef.current.pause();
     }
@@ -172,28 +188,20 @@ const Lottie = ({
 
   // Scroll trigger
   useEffect(() => {
-    if (
-      !lottieRef.current ||
-      !canvasRef.current ||
-      !hostRef.current ||
-      trigger !== "scroll"
-    )
+    if (!lottieRef.current || !canvasRef.current || !hostRef.current || trigger !== 'scroll')
       return;
 
     if (lottieRef.current.totalFrames) {
       let percent = scrollTop;
-      if (!hostRef.current.classList.contains("__f") && isVisible) {
+      if (!hostRef.current.classList.contains('__f') && isVisible) {
         const rect = canvasRef.current.getBoundingClientRect();
         percent =
-          (rect.top + offsetStart + rect.height) /
-          (window.innerHeight + rect.height + offsetStop);
+          (rect.top + offsetStart + rect.height) / (window.innerHeight + rect.height + offsetStop);
       } else {
         percent = 1 - scrollTop;
       }
       lottieRef.current.goToAndStop(
-        (lottieRef.current.totalFrames / lottieRef.current.frameRate) *
-          1000 *
-          (1 - percent)
+        (lottieRef.current.totalFrames / lottieRef.current.frameRate) * 1000 * (1 - percent),
       );
     }
   }, [scrollTop]);
@@ -202,8 +210,15 @@ const Lottie = ({
   const onClick = () => {
     if (!lottieRef.current) return;
 
-    if (trigger === "click") {
-      lottieRef.current[lottieRef.current.isPaused ? "play" : "pause"]();
+    if (trigger === 'click') {
+      console.log('lottieRef.current', lottieRef.current);
+      if (lottieRef.current.isPaused) {
+        setTimeout(() => {
+          lottieRef.current?.play();
+        }, delay);
+      } else {
+        lottieRef.current[lottieRef.current.isPaused ? 'play' : 'pause']();
+      }
     }
   };
 
@@ -221,104 +236,110 @@ const Lottie = ({
 };
 
 registerVevComponent(Lottie, {
-  name: "Lottie Animation",
+  name: 'Lottie Animation',
   description:
-    "Lottie is a JSON-based animation file format that enables designers to ship animations on any platform as easily as shipping static assets. Make your own Lottie animations in Adobe After Effects, or more easily, find animations on [lottiefiles.com](https://lottiefiles.com/featured) \n\nUse this element to upload and display your JSON file containing the Lottie animation.",
-  icon: "https://cdn.vev.design/private/pK53XiUzGnRFw1uPeFta7gdedx22/5Vtsm6QxVv_lottieFiles.png.png",
+    'Lottie is a JSON-based animation file format that enables designers to ship animations on any platform as easily as shipping static assets. Make your own Lottie animations in Adobe After Effects, or more easily, find animations on [lottiefiles.com](https://lottiefiles.com/featured) \n\nUse this element to upload and display your JSON file containing the Lottie animation.',
+  icon: 'https://cdn.vev.design/private/pK53XiUzGnRFw1uPeFta7gdedx22/5Vtsm6QxVv_lottieFiles.png.png',
   events: [
     {
       type: Events.PLAY,
-      description: "Playing",
+      description: 'Playing',
     },
     {
       type: Events.PAUSE,
-      description: "Paused",
+      description: 'Paused',
     },
     {
       type: Events.LOOP_COMPLETED,
-      description: "Loop completed",
+      description: 'Loop completed',
     },
     {
       type: Events.COMPLETE,
-      description: "Completed",
+      description: 'Completed',
     },
   ],
   interactions: [
     {
       type: Interactions.PLAY,
-      description: "Play",
+      description: 'Play',
     },
     {
       type: Interactions.PLAY_REVERSE,
-      description: "Play reverse",
+      description: 'Play reverse',
     },
     {
       type: Interactions.PAUSE,
-      description: "Pause",
+      description: 'Pause',
     },
     {
       type: Interactions.TOGGLE,
-      description: "Toggle",
+      description: 'Toggle',
     },
     {
       type: Interactions.RESET_ANIMATION,
-      description: "Reset animation",
+      description: 'Reset animation',
     },
   ],
   props: [
     {
-      name: "file",
-      title: "Lottie file",
-      type: "upload",
-      accept: "application/json",
-      description:
-        "JSON file exported from After Effects or downloaded from lottiefiles.com",
+      name: 'file',
+      title: 'Lottie file',
+      type: 'upload',
+      accept: 'application/json',
+      description: 'JSON file exported from After Effects or downloaded from lottiefiles.com',
     },
     {
-      name: "trigger",
-      title: "Trigger",
-      type: "select",
-      initialValue: "visible",
+      name: 'trigger',
+      title: 'Trigger',
+      type: 'select',
+      initialValue: 'visible',
       options: {
-        display: "radio",
+        display: 'radio',
         items: [
-          { label: "Play when visible", value: "visible" },
-          { label: "Play on hover", value: "hover" },
-          { label: "Play on click", value: "click" },
-          { label: "Play on scroll", value: "scroll" },
-          { label: "No trigger", value: "never" },
+          { label: 'Play when visible', value: 'visible' },
+          { label: 'Play on hover', value: 'hover' },
+          { label: 'Play on click', value: 'click' },
+          { label: 'Play on scroll', value: 'scroll' },
+          { label: 'No trigger', value: 'never' },
         ],
       },
     },
     {
-      name: "offsetStart",
-      type: "number",
-      title: "Offset top",
+      name: 'offsetStart',
+      type: 'number',
+      title: 'Offset top',
       description:
-        "If you want the animation to start before it is in view, add a pixel value for this offset.",
+        'If you want the animation to start before it is in view, add a pixel value for this offset.',
       initialValue: 0,
-      hidden: (context) => context?.value?.trigger !== "scroll",
+      hidden: (context) => context?.value?.trigger !== 'scroll',
     },
     {
-      name: "offsetStop",
-      type: "number",
-      title: "Offset bottom",
+      name: 'offsetStop',
+      type: 'number',
+      title: 'Offset bottom',
       description:
-        "If you want the animation to end before it leaves the view, add a pixel value for this offset.",
+        'If you want the animation to end before it leaves the view, add a pixel value for this offset.',
       initialValue: 0,
-      hidden: (context) => context?.value?.trigger !== "scroll",
+      hidden: (context) => context?.value?.trigger !== 'scroll',
     },
     {
-      name: "loop",
-      title: "Loop",
-      type: "boolean",
+      name: 'loop',
+      title: 'Loop',
+      type: 'boolean',
       initialValue: true,
-      hidden: (context) => context?.value?.trigger === "scroll",
+      hidden: (context) => context?.value?.trigger === 'scroll',
     },
     {
-      name: "speed",
-      title: "Speed",
-      type: "number",
+      name: 'delay',
+      title: 'Delay start (ms)',
+      type: 'number',
+      initialValue: 0,
+      hidden: (context) => context?.value?.trigger === 'scroll',
+    },
+    {
+      name: 'speed',
+      title: 'Speed',
+      type: 'number',
       initialValue: 1,
       // options: {
       //   display: 'slider',
@@ -326,31 +347,24 @@ registerVevComponent(Lottie, {
       //   max: 2,
       // },
       component: SpeedSlider,
-      hidden: (context) => context?.value?.trigger === "scroll",
+      hidden: (context) => context?.value?.trigger === 'scroll',
     },
     {
-      name: "colors",
-      title: "Colors",
-      type: "array",
-      of: "string",
+      name: 'colors',
+      title: 'Colors',
+      type: 'array',
+      of: 'string',
       component: ColorPicker,
     },
   ],
   editableCSS: [
     {
       selector: styles.wrapper,
-      title: "Container",
-      properties: [
-        "background",
-        "border",
-        "border-radius",
-        "padding",
-        "opacity",
-        "filter",
-      ],
+      title: 'Container',
+      properties: ['background', 'border', 'border-radius', 'padding', 'opacity', 'filter'],
     },
   ],
-  type: "both",
+  type: 'both',
 });
 
 export default Lottie;

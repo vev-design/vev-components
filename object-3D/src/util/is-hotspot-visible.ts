@@ -1,13 +1,17 @@
 import { CanvasHotspot } from '../hooks/use-hotspots';
-import { Camera, Vector3 } from 'three';
+import { Camera, Raycaster, Scene } from 'three';
 
-export function isHotspotVisible(hotspot: CanvasHotspot, camera: Camera) {
-  const target = hotspot.hotspot;
-  const normalVector = new Vector3(target.position.x, target.position.y, target.position.z);
-  const camVector = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-  if (normalVector.angleTo(camVector) > Math.PI / 2) {
-    hotspot.element.style.opacity = '1';
+const raycaster = new Raycaster();
+export function isHotspotVisible(hotspot: CanvasHotspot, camera: Camera, scene: Scene) {
+  const hotspotPos = hotspot.hotspot.position;
+  const direction = hotspotPos.clone().sub(camera.position);
+
+  raycaster.set(camera.position, direction.normalize());
+
+  const intersects = raycaster.intersectObjects(scene.children);
+  if (intersects[0].object.name !== 'intersection_sphere') {
+    hotspot.element.style.opacity = '0.2';
   } else {
-    hotspot.element.style.opacity = '0.1';
+    hotspot.element.style.opacity = '1';
   }
 }

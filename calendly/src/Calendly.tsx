@@ -67,7 +67,12 @@ const Calendly = ({
 registerVevComponent(Calendly, {
   name: 'Calendly',
   props: [
-    { title: 'Calendly URL', name: 'calendlyUrl', type: 'string', initialValue: null },
+    {
+      title: 'Calendly URL',
+      name: 'calendlyUrl',
+      type: 'string',
+      initialValue: null,
+    },
     {
       title: 'Hide event type details',
       name: 'hideEventTypeDetails',
@@ -80,7 +85,12 @@ registerVevComponent(Calendly, {
       type: 'boolean',
       initialValue: false,
     },
-    { title: 'Hide cookie banner', name: 'hideGdprBanner', type: 'boolean', initialValue: false },
+    {
+      title: 'Hide cookie banner',
+      name: 'hideGdprBanner',
+      type: 'boolean',
+      initialValue: false,
+    },
   ],
   editableCSS: [],
   description: 'Embed Calendly',

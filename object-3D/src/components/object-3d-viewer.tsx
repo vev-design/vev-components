@@ -55,7 +55,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
       labelRenderer.render(scene, camera);
 
       hotspotsRef.current.forEach((hotspot) => {
-        isHotspotVisible(hotspot, camera);
+        isHotspotVisible(hotspot, camera, scene);
       });
 
       if (mixer) {
@@ -73,7 +73,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
       labelRenderer.render(scene, camera);
 
       hotspotsRef.current.forEach((hotspot) => {
-        isHotspotVisible(hotspot, camera);
+        isHotspotVisible(hotspot, camera, scene);
       });
     }
   }, [camera, controls, hotspotsRef, labelRenderer, renderer, scene]);

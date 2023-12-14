@@ -65,8 +65,8 @@ const SUBMIT_URL =
   "https://us-central1-vev-prod.cloudfunctions.net/publicApiHttps/form-submission";
 
 const serialize = function (obj) {
-  var str = [];
-  for (var p in obj)
+  const str = [];
+  for (const p in obj)
     if (obj.hasOwnProperty(p)) {
       str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
     }
@@ -100,7 +100,7 @@ const getFormModels = (
 };
 
 const validateForm = (formState: any, formModels: FormModel[]) => {
-  let errors = [];
+  const errors = [];
   for (const model of formModels) {
     const value = formState[model.content.name];
     const isRequired = model.content.required;
@@ -183,7 +183,7 @@ function Button({ ...props }: Props) {
     if (!e) return;
     dispatch(Event.FORM_VALID);
 
-    let value = e.value;
+    let { value } = e;
 
     if (["add", "remove"].includes(e.type)) {
       const prev = formState[e.name] || [];
