@@ -15,21 +15,20 @@ type Props = {
   settings: {
     start: number;
     end: number;
-    once: boolean;
-    runWhenVisible: boolean;
+    prefix: string;
+    postfix: string;
+    localeFormat: boolean;
   };
-  duration: {
+  animation: {
     animationLength: number;
     delay: number;
+    easing: 'none' | 'easein' | 'easeout';
+    loop: boolean;
   };
-  easing: 'none' | 'easein' | 'easeout';
   format: {
-    localeFormat: boolean;
     separator: string;
     decimalSeparator: string;
     precision: number;
-    prefix: string;
-    postfix: string;
   };
   disable: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
@@ -42,32 +41,28 @@ const NumberCounter = ({
   settings = {
     start: 1,
     end: 100,
-    once: true,
-    runWhenVisible: false,
-  },
-  easing = 'none',
-  duration = { animationLength: 5, delay: 800 },
-  format = {
+    prefix: '',
+    postfix: '',
     localeFormat: false,
+  },
+  animation = { animationLength: 5, delay: 800, easing: 'none', loop: false },
+  format = {
     separator: ',',
     decimalSeparator: '.',
     precision: 0,
-    prefix: '',
-    postfix: '',
   },
   hostRef,
   disable = false,
 }: Props) => {
-  const { runWhenVisible, end: initEnd, once, start: initStart } = settings;
-  const { animationLength, delay } = duration;
   const {
-    localeFormat,
-    separator,
-    decimalSeparator,
-    precision: initPrecision,
+    end: initEnd,
+    start: initStart,
     prefix = '',
     postfix = '',
-  } = format;
+    localeFormat = false,
+  } = settings;
+  const { animationLength, delay, easing, loop } = animation;
+  const { separator, decimalSeparator, precision: initPrecision } = format;
 
   const start = initStart || 0;
   const end = initEnd || 0;
@@ -86,6 +81,27 @@ const NumberCounter = ({
     setCount(start);
     setHasStarted(false);
   }
+
+  useVevEvent(Interactions.START, () => {
+    setTimeout(() => {
+      if (!disable) {
+        setHasStarted(true);
+      }
+    }, delay);
+  });
+
+  useVevEvent(Interactions.STOP, () => {
+    setHasStarted(false);
+  });
+
+  useVevEvent(Interactions.STOP_AND_RESET, () => {
+    resetCounter();
+  });
+
+  useVevEvent(Interactions.RESET, () => {
+    resetCounter();
+    setHasStarted(true);
+  });
 
   useFrame(
     (timestamp) => {
@@ -113,7 +129,7 @@ const NumberCounter = ({
 
         // Animation done
         if (animationProgress >= oneIsh) {
-          if (once) {
+          if (!loop) {
             setCount(end);
             dispatchVevEvent(Events.COMPLETE);
             setHasStarted(false);
@@ -145,26 +161,11 @@ const NumberCounter = ({
   }, [isVisible]);
 
   useEffect(() => {
-    if (runWhenVisible && !isVisible) {
-      resetCounter();
-      return;
-    }
-
     if (disabled && !actualSchemaOpen) {
       resetCounter();
       return;
     }
-
-    const initialDelay = setTimeout(() => {
-      if (!disable && isVisible) {
-        setHasStarted(true);
-      }
-    }, delay);
-
-    return () => {
-      clearTimeout(initialDelay);
-    };
-  }, [delay, isVisible, runWhenVisible, disabled, actualSchemaOpen]);
+  }, [delay, isVisible, disabled, actualSchemaOpen, disabled]);
 
   // For restarting counter when changing props in editor
   useEffect(() => {
@@ -172,19 +173,7 @@ const NumberCounter = ({
       resetCounter();
       setHasStarted(true);
     }
-  }, [start, end, precision, delay, easing, disabled, duration, delay, actualSchemaOpen]);
-
-  useVevEvent(Interactions.START, () => {
-    setHasStarted(true);
-  });
-
-  useVevEvent(Interactions.STOP, () => {
-    setHasStarted(false);
-  });
-
-  useVevEvent(Interactions.RESET, () => {
-    setCount(start);
-  });
+  }, [start, end, precision, delay, easing, disabled, animationLength, delay, actualSchemaOpen]);
 
   return (
     <div className={styles.wrapper}>
@@ -239,22 +228,31 @@ registerVevComponent(NumberCounter, {
         { title: 'Start', name: 'start', type: 'number', initialValue: 1 },
         { title: 'End', name: 'end', type: 'number', initialValue: 100 },
         {
-          title: 'Run once',
-          name: 'once',
-          type: 'boolean',
-          initialValue: true,
+          title: 'Prefix',
+          description: 'Shows at the start of the component',
+          name: 'prefix',
+          type: 'string',
+          initialValue: '',
         },
         {
-          title: 'Run when visible',
-          name: 'runWhenVisible',
+          title: 'Postfix',
+          description: 'Shows at the end of the component',
+          name: 'postfix',
+          type: 'string',
+          initialValue: '',
+        },
+        {
+          title: 'Location',
+          description: 'Determine formatting based on user location',
+          name: 'localeFormat',
           type: 'boolean',
           initialValue: false,
         },
       ],
     },
     {
-      title: 'Duration',
-      name: 'duration',
+      title: 'Animation',
+      name: 'animation',
       type: 'object',
       initialValue: { increment: 2, delay: 800, stepSize: 1 },
       fields: [
@@ -270,21 +268,27 @@ registerVevComponent(NumberCounter, {
           type: 'number',
           initialValue: 800,
         },
+        {
+          title: 'Easing',
+          name: 'easing',
+          type: 'select',
+          initialValue: 'none',
+          options: {
+            display: 'dropdown',
+            items: [
+              { label: 'None', value: 'none' },
+              { label: 'Ease in', value: 'easein' },
+              { label: 'Ease out', value: 'easeout' },
+            ],
+          },
+        },
+        {
+          title: 'Loop',
+          name: 'loop',
+          type: 'boolean',
+          initialValue: false,
+        },
       ],
-    },
-    {
-      title: 'Easing',
-      name: 'easing',
-      type: 'select',
-      initialValue: 'none',
-      options: {
-        display: 'dropdown',
-        items: [
-          { label: 'None', value: 'none' },
-          { label: 'Ease in', value: 'easein' },
-          { label: 'Ease out', value: 'easeout' },
-        ],
-      },
     },
     {
       name: 'format',
@@ -292,13 +296,6 @@ registerVevComponent(NumberCounter, {
       type: 'object',
       initialValue: { localeFormat: false, separator: ',' },
       fields: [
-        {
-          title: 'Locale formatting',
-          description: 'Use users locale to determine number formatting',
-          name: 'localeFormat',
-          type: 'boolean',
-          initialValue: false,
-        },
         {
           title: 'Decimal precision',
           name: 'precision',
@@ -323,25 +320,13 @@ registerVevComponent(NumberCounter, {
             return context.value.format.localeFormat === true;
           },
         },
-        {
-          title: 'Prefix',
-          name: 'prefix',
-          type: 'string',
-          initialValue: '',
-        },
-        {
-          title: 'Postfix',
-          name: 'postfix',
-          type: 'string',
-          initialValue: '',
-        },
       ],
     },
   ],
   events: [
     {
       type: Events.COMPLETE,
-      description: 'On end',
+      description: 'on End',
     },
   ],
   interactions: [
@@ -355,7 +340,11 @@ registerVevComponent(NumberCounter, {
     },
     {
       type: Interactions.RESET,
-      description: 'Stop',
+      description: 'Reset',
+    },
+    {
+      type: Interactions.STOP_AND_RESET,
+      description: 'Stop and reset',
     },
   ],
   editableCSS: [
