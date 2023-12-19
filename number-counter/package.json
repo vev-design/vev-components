@@ -20,6 +20,7 @@
   "dependencies": {
     "numeral": "^2.0.6",
     "@vev/react": "^0.0.4",
+    "@vev/silke": "^1.0.18",
     "react": "^18.2.0"
   }
 }

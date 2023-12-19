@@ -10,6 +10,7 @@ import {
 import styles from './NumberCounter.module.css';
 import { Events, Interactions } from './events';
 import { easeIn, easeOut, easingNone, normalize, round } from './math-utils';
+import TextFieldInlineLabel from './components/TextFieldInlineLabel';
 
 type Props = {
   settings: {
@@ -171,7 +172,11 @@ const NumberCounter = ({
   useEffect(() => {
     if (actualSchemaOpen) {
       resetCounter();
-      setHasStarted(true);
+      setTimeout(() => {
+        setHasStarted(true);
+      }, delay);
+    } else {
+      resetCounter();
     }
   }, [start, end, precision, delay, easing, disabled, animationLength, delay, actualSchemaOpen]);
 
@@ -257,16 +262,42 @@ registerVevComponent(NumberCounter, {
       initialValue: { increment: 2, delay: 800, stepSize: 1 },
       fields: [
         {
-          title: 'Duration (s)',
+          title: 'Duration',
           name: 'animationLength',
           type: 'number',
           initialValue: 5,
+          component: (context) => {
+            console.log('context', context);
+            return (
+              <TextFieldInlineLabel
+                label="s"
+                title="Duration"
+                name="animationLength"
+                type="number"
+                value={context.value}
+                onChange={context.onChange}
+              />
+            );
+          },
         },
         {
-          title: 'Delay animation start (ms)',
+          title: 'Delay animation start',
           name: 'delay',
           type: 'number',
-          initialValue: 800,
+          initialValue: 5,
+          component: (context) => {
+            console.log('context', context);
+            return (
+              <TextFieldInlineLabel
+                label="ms"
+                title="Delay"
+                name="animationLength"
+                type="number"
+                value={context.value}
+                onChange={context.onChange}
+              />
+            );
+          },
         },
         {
           title: 'Easing',
