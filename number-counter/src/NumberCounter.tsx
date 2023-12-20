@@ -357,7 +357,7 @@ registerVevComponent(NumberCounter, {
   events: [
     {
       type: Events.COMPLETE,
-      description: 'on End',
+      description: 'On end',
     },
   ],
   interactions: [
