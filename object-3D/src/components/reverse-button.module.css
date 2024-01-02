@@ -1,0 +1,14 @@
+.iconInactive {
+    i {
+        color: #777777;
+        cursor: pointer;
+    }
+}
+
+
+.iconActive {
+    i {
+        color: #ffffff;
+        cursor: pointer;
+    }
+}

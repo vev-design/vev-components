@@ -8,38 +8,34 @@ import styles from '../object-3d.module.css';
 import { sortBy } from 'lodash';
 import { StorageHotspot } from '../types';
 import { useConvertedHotspots } from '../hooks/use-converted-hotspots';
-
-export interface Context {
-  value: StorageHotspot[];
-  context: {
-    value?: {
-      hotspots?: StorageHotspot[];
-      modelUrl?: {
-        url?: string;
-      };
-    };
-  };
-  onChange: (hotspots: StorageHotspot[]) => void;
-}
+import { ObjectField, SchemaFieldProps } from '@vev/react';
 
 const EDITOR_WIDTH = 640;
 const EDITOR_HEIGHT = 640;
 
-export function HotspotEditorForm(context) {
-  const [modalOpen, setModalOpen] = useState(false);
+interface Props {
+  context: SchemaFieldProps<ObjectField>;
+  onChange: (hotspots: StorageHotspot[]) => void;
+}
 
+export function HotspotEditorForm({ context, onChange }: Props) {
+  const [modalOpen, setModalOpen] = useState(false);
   return (
     <>
-      <SilkeModal
-        hide={!modalOpen}
-        title="Edit hotspots"
-        onClose={() => {
-          setModalOpen(false);
-        }}
-      >
-        <HotSpotModal context={context} />
-      </SilkeModal>
+      {modalOpen && (
+        <SilkeModal
+          hide={!modalOpen}
+          title="Edit hotspots"
+          onClose={() => {
+            setModalOpen(false);
+          }}
+        >
+          <HotSpotModal context={context} onChange={onChange} />
+        </SilkeModal>
+      )}
       <SilkeButton
+        kind="tertiary"
+        size="s"
         style={{ width: '100%' }}
         label="Edit hotspots"
         onClick={() => {
@@ -50,9 +46,15 @@ export function HotspotEditorForm(context) {
   );
 }
 
-export function HotSpotModal({ context }: { context: Context }) {
+export function HotSpotModal({
+  context,
+  onChange,
+}: {
+  context: SchemaFieldProps<ObjectField>;
+  onChange: (hotspots: StorageHotspot[]) => void;
+}) {
   // Convert positions from storage from x,y,z to Vector3
-  const [hotspots, setHotspots] = useConvertedHotspots(context.context?.value?.hotspots);
+  const [hotspots, setHotspots] = useConvertedHotspots(context?.value?.hotspots);
 
   const modelUrl = context.context.value?.modelUrl?.url;
 
@@ -63,15 +65,11 @@ export function HotSpotModal({ context }: { context: Context }) {
       sortedHotspots.forEach((hotspot, index) => {
         hotspot.index = index + 1;
       });
-      context.onChange(sortedHotspots);
+      onChange(sortedHotspots);
       setHotspots(sortedHotspots);
     },
-    [context, hotspots, setHotspots],
+    [context, hotspots, setHotspots, onChange],
   );
-
-  useEffect(() => {
-    context.onChange([]);
-  }, [modelUrl]);
 
   return (
     <SilkeModalContent>
@@ -94,7 +92,7 @@ export function HotSpotModal({ context }: { context: Context }) {
           hotspots: hotspots || [],
           addHotSpot: (spot) => {
             const newHotspot = { index: hotspots.length + 1, position: spot };
-            context.onChange([newHotspot, ...hotspots]);
+            onChange([newHotspot, ...hotspots]);
             setHotspots([newHotspot, ...hotspots]);
           },
         }}

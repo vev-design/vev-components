@@ -8,38 +8,35 @@ import styles from '../object-3d.module.css';
 import { CameraEditorForm } from './camera-editor-form';
 import { SavedCameraPosition, StorageHotspot } from '../types';
 import { useConvertedHotspots } from '../hooks/use-converted-hotspots';
+import { ObjectField, SchemaFieldProps } from '@vev/react';
 
-export interface Context {
-  value: StorageHotspot[];
-  context: {
-    value?: {
-      modelUrl?: {
-        url?: string;
-      };
-      hotspots?: StorageHotspot[];
-    };
-  };
-  onChange: (hotspots: SavedCameraPosition) => void;
+interface Props {
+  context: SchemaFieldProps<ObjectField>;
+  onChange: (cameraPosition: SavedCameraPosition) => void;
 }
 
 const EDITOR_WIDTH = 640;
 const EDITOR_HEIGHT = 640;
 
-export function CameraEditor(context) {
+export function CameraEditor({ context, onChange }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
-  useEffect(() => {}, [context.context.value.modelUrl]);
+
   return (
     <>
-      <SilkeModal
-        hide={!modalOpen}
-        title="Edit initial camera position"
-        onClose={() => {
-          setModalOpen(false);
-        }}
-      >
-        <CameraEditModal context={context} />
-      </SilkeModal>
+      {modalOpen && (
+        <SilkeModal
+          hide={!modalOpen}
+          title="Edit initial camera position"
+          onClose={() => {
+            setModalOpen(false);
+          }}
+        >
+          <CameraEditModal context={context} onChange={onChange} />
+        </SilkeModal>
+      )}
       <SilkeButton
+        kind="tertiary"
+        size="s"
         style={{ width: '100%' }}
         label="Edit initial camera"
         onClick={() => {
@@ -50,19 +47,25 @@ export function CameraEditor(context) {
   );
 }
 
-export function CameraEditModal({ context }: { context: Context }) {
+export function CameraEditModal({
+  context,
+  onChange,
+}: {
+  context: SchemaFieldProps<ObjectField>;
+  onChange: (cameraPosition: SavedCameraPosition) => void;
+}) {
   const currentCamera = useRef<Camera>();
   const currentControl = useRef<any>();
 
   // Convert positions from storage from x,y,z to Vector3
-  const [hotspots, setHotspots] = useConvertedHotspots(context.context?.value?.hotspots);
+  const [hotspots, _] = useConvertedHotspots(context?.value?.hotspots);
   const modelUrl = context.context.value?.modelUrl?.url;
 
   function saveCameraPosition(camera: Camera, controls: any) {
     if (!camera || !controls) {
-      context.onChange(undefined);
+      onChange(undefined);
     }
-    context.onChange({
+    onChange({
       position: camera.position,
       rotation: {
         x: camera.rotation.x,
@@ -72,10 +75,6 @@ export function CameraEditModal({ context }: { context: Context }) {
       target: controls.target,
     });
   }
-
-  useEffect(() => {
-    context.onChange(undefined);
-  }, [modelUrl]);
 
   return (
     <SilkeModalContent>
@@ -109,7 +108,7 @@ export function CameraEditModal({ context }: { context: Context }) {
         <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
           <div className={styles.hotspotEditor}>
             <Object3dViewer className={styles.editorViewer} />
-            <CameraEditorForm saveCameraPosition={saveCameraPosition} />
+            <CameraEditorForm saveCameraPosition={saveCameraPosition} context={context} />
           </div>
         </div>
       </Object3DContextProvider>

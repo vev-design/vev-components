@@ -1,14 +1,16 @@
 import { SilkeBox, SilkeText, SilkeIcon, SilkeButton, SilkeButtonSet } from '@vev/silke';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
 import { Camera } from 'three';
 import style from './camera-editor.module.css';
+import { ObjectField, SchemaFieldProps } from '@vev/react';
 
 interface Props {
   saveCameraPosition: (camera: Camera, control: any) => void;
+  context: SchemaFieldProps<ObjectField>;
 }
 
-export function CameraEditorForm({ saveCameraPosition }: Props) {
+export function CameraEditorForm({ saveCameraPosition, context }: Props) {
   const { camera, control } = useContext(Object3dContext);
 
   return (

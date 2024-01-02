@@ -28,7 +28,7 @@ export function useSceneSetup(
     height,
     width,
     animation,
-    zoom,
+    zoom: enableZoom,
     fov,
     aspect,
     near,
@@ -88,7 +88,7 @@ export function useSceneSetup(
       controls.autoRotate = rotate;
       controls.autoRotateSpeed = rotationSpeed;
       controls.enableDamping = true;
-      controls.enableZoom = zoom;
+      controls.enableZoom = enableZoom;
       controls.dampingFactor = 0.1;
       controls.update();
 
@@ -195,8 +195,9 @@ export function useSceneSetup(
     if (controls) {
       controls.autoRotate = rotate;
       controls.enabled = enableControls;
+      controls.enableZoom = enableZoom;
     }
-  }, [rotate, enableControls, controls]);
+  }, [rotate, enableControls, controls, enableZoom]);
 
   // Rerender when initial camera position or hotspots change
   useEffect(() => {
