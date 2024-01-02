@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  SilkeTextField,
-  SilkeTextFieldItem,
-  SilkeText,
-  SilkeBox,
-  SilkeTextSmall,
-} from '@vev/silke';
+import { SilkeBox, SilkeTextField, SilkeTextFieldItem, SilkeTextSmall } from '@vev/silke';
 
 interface Props {
   name: string;
@@ -28,7 +22,7 @@ export default function TextFieldInlineLabel({ value, onChange, title, type, lab
         <SilkeBox flex pad="xs" style={{ width: '140px' }}>
           <SilkeTextField inline value={value} type={type} onChange={onChange} size="xs" flex>
             <SilkeTextFieldItem hPad="s">
-              <SilkeText color="neutral-60">{label}</SilkeText>
+              <SilkeTextSmall color="neutral-60">{label}</SilkeTextSmall>
             </SilkeTextFieldItem>
           </SilkeTextField>
         </SilkeBox>

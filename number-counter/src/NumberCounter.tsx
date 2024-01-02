@@ -286,7 +286,6 @@ registerVevComponent(NumberCounter, {
           type: 'number',
           initialValue: 5,
           component: (context) => {
-            console.log('context', context);
             return (
               <TextFieldInlineLabel
                 label="ms"
@@ -339,7 +338,7 @@ registerVevComponent(NumberCounter, {
           type: 'string',
           initialValue: ',',
           hidden: (context) => {
-            return context.value.format.localeFormat === true;
+            return context.value.format?.localeFormat === true;
           },
         },
         {
@@ -348,7 +347,7 @@ registerVevComponent(NumberCounter, {
           type: 'string',
           initialValue: '.',
           hidden: (context) => {
-            return context.value.format.localeFormat === true;
+            return context.value.format?.localeFormat === true;
           },
         },
       ],
