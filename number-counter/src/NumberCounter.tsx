@@ -325,6 +325,9 @@ registerVevComponent(NumberCounter, {
       title: 'Formatting',
       type: 'object',
       initialValue: { localeFormat: false, separator: ',' },
+      hidden: (context) => {
+        return context.value?.settings?.localeFormat === true;
+      },
       fields: [
         {
           title: 'Decimal precision',
@@ -337,18 +340,12 @@ registerVevComponent(NumberCounter, {
           name: 'separator',
           type: 'string',
           initialValue: ',',
-          hidden: (context) => {
-            return context.value.format?.localeFormat === true;
-          },
         },
         {
           title: 'Digit separator (decimal)',
           name: 'decimalSeparator',
           type: 'string',
           initialValue: '.',
-          hidden: (context) => {
-            return context.value.format?.localeFormat === true;
-          },
         },
       ],
     },
