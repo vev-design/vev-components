@@ -17,6 +17,7 @@
     "@lottiefiles/react-lottie-player": "^3.5.3",
     "@johanaarstein/dotlottie-player": "^1.5.23",
     "@vev/react": "^0.1.2",
+    "@vev/silke": "^1.0.18",
     "react": "^18.2.0"
   }
 }
