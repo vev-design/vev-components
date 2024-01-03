@@ -47,6 +47,7 @@ type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
   settings: { lighting: LightingOptions; controls: boolean; zoom: boolean };
+  poster: { url: string };
   hotspots_camera?: {
     hotspots: StorageHotspot[];
     initialCamera: SavedCameraPosition;
@@ -62,6 +63,7 @@ type Props = {
 const Object3d = ({
   hostRef,
   modelUrl = defaultModel,
+  poster,
   settings,
   animationSettings,
   hotspots_camera,
@@ -135,6 +137,7 @@ const Object3d = ({
           hotspots: internalHotspots,
           disabled,
           schemaOpen,
+          posterUrl: poster ? poster.url : null,
           savedCameraPosition: initialCameraPosition,
           setClickHotspotCallback: (cb) => {
             clickHotspotCallback.current = cb;
@@ -194,18 +197,21 @@ registerVevComponent(Object3d, {
             <CameraEditor
               context={context}
               onChange={(camera) => {
-                console.log('Camera', camera);
-                const update = {
+                context.onChange({
                   hotspots,
                   initialCamera: camera,
-                };
-                console.log('update', update);
-                context.onChange(update);
+                });
               }}
             />
           </SilkeBox>
         );
       },
+    },
+    {
+      name: 'poster',
+      title: 'Poster image',
+      type: 'upload',
+      accept: 'image/*',
     },
     {
       name: 'settings',

@@ -6,13 +6,11 @@ import style from './camera-editor.module.css';
 import { ObjectField, SchemaFieldProps } from '@vev/react';
 
 interface Props {
-  saveCameraPosition: (camera: Camera, control: any) => void;
-  context: SchemaFieldProps<ObjectField>;
+  saveCameraPosition: () => void;
+  resetCameraPosition: () => void;
 }
 
-export function CameraEditorForm({ saveCameraPosition, context }: Props) {
-  const { camera, control } = useContext(Object3dContext);
-
+export function CameraEditorForm({ saveCameraPosition, resetCameraPosition }: Props) {
   return (
     <div className={style.instructions}>
       <SilkeBox gap="m" column>
@@ -36,14 +34,14 @@ export function CameraEditorForm({ saveCameraPosition, context }: Props) {
             <SilkeButton
               label="Save"
               onClick={() => {
-                saveCameraPosition(camera, control);
+                saveCameraPosition();
               }}
             />
             <SilkeButton
               label="Reset"
               kind="secondary"
               onClick={() => {
-                saveCameraPosition(null, null);
+                resetCameraPosition();
               }}
             />
           </SilkeButtonSet>

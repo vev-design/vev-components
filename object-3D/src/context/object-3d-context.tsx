@@ -4,6 +4,7 @@ import { InternalHotspot, SavedCameraPosition } from '../types';
 
 export interface Object3DContextProps {
   modelUrl: string;
+  posterUrl?: string;
   height: number;
   width: number;
   fov: number;

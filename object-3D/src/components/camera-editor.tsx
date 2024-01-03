@@ -61,19 +61,20 @@ export function CameraEditModal({
   const [hotspots, _] = useConvertedHotspots(context?.value?.hotspots);
   const modelUrl = context.context.value?.modelUrl?.url;
 
-  function saveCameraPosition(camera: Camera, controls: any) {
-    if (!camera || !controls) {
-      onChange(undefined);
-    }
+  function saveCameraPosition() {
     onChange({
-      position: camera.position,
+      position: currentCamera.current.position,
       rotation: {
-        x: camera.rotation.x,
-        y: camera.rotation.y,
-        z: camera.rotation.z,
+        x: currentCamera.current.rotation.x,
+        y: currentCamera.current.rotation.y,
+        z: currentCamera.current.rotation.z,
       },
-      target: controls.target,
+      target: currentControl.current.target,
     });
+  }
+
+  function resetCameraPosition() {
+    onChange(undefined);
   }
 
   return (
@@ -108,7 +109,10 @@ export function CameraEditModal({
         <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
           <div className={styles.hotspotEditor}>
             <Object3dViewer className={styles.editorViewer} />
-            <CameraEditorForm saveCameraPosition={saveCameraPosition} context={context} />
+            <CameraEditorForm
+              saveCameraPosition={saveCameraPosition}
+              resetCameraPosition={resetCameraPosition}
+            />
           </div>
         </div>
       </Object3DContextProvider>
