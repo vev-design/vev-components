@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './GoogleMaps.module.css';
 import { registerVevComponent } from '@vev/react';
 import { SilkeAutocompleteField } from '@vev/silke';
+import ZoomButton from './zoom-button/zoom-button';
 
 declare global {
   interface Window {
@@ -74,12 +75,12 @@ const MapsAutoComplete = (props) => {
     <SilkeAutocompleteField
       label="Address"
       name="address"
+      placeholder="Search and select"
       onChange={(value) => {
         props.onChange(value);
         setSearch(value);
       }}
       onSearch={setSearch}
-      onC
       value={search}
       items={predictions.map((prediction) => {
         return {
@@ -103,14 +104,20 @@ registerVevComponent(GoogleMaps, {
       component: MapsAutoComplete,
     },
     {
-      title: 'Initial Zoom',
+      title: 'Zoom',
       name: 'zoom',
       type: 'number',
       initialValue: 16,
-      options: {
-        display: 'slider',
-        min: 0,
-        max: 21,
+      component: (context) => {
+        return (
+          <ZoomButton
+            name="zoom"
+            title="Zoom"
+            label="%"
+            value={context.value}
+            onChange={context.onChange}
+          />
+        );
       },
     },
     {
@@ -121,7 +128,7 @@ registerVevComponent(GoogleMaps, {
       options: {
         display: 'dropdown',
         items: [
-          { label: 'Roadmap', value: 'roadmap' },
+          { label: 'Default', value: 'roadmap' },
           { label: 'Satellite', value: 'satellite' },
         ],
       },
