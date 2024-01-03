@@ -267,7 +267,6 @@ registerVevComponent(NumberCounter, {
           type: 'number',
           initialValue: 5,
           component: (context) => {
-            console.log('context', context);
             return (
               <TextFieldInlineLabel
                 label="s"
