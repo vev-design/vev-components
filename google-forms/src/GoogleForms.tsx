@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './GoogleForms.module.css';
 import { registerVevComponent, useEditorState } from '@vev/react';
+import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   formUrl: string;
@@ -95,7 +96,25 @@ registerVevComponent(GoogleForms, {
   name: 'Google Forms',
   description:
     "Embed Google Forms into your Vev project by simply copying the form's URL and inserting it into the form element. [Read documentation](https://help.vev.design/en/articles/6288851-google-forms)",
-  props: [{ title: 'Google Forms URL', name: 'formUrl', type: 'string' }],
+  props: [
+    {
+      title: 'Google Forms URL',
+      name: 'formUrl',
+      type: 'string',
+      component: (context) => {
+        return (
+          <TextFieldColumn
+            name="formUrl"
+            title="Google Forms URL"
+            placeholder="https://docs.google.com/forms/example"
+            value={context.value}
+            onChange={context.onChange}
+            type="text"
+          />
+        );
+      },
+    },
+  ],
   emptyState: {
     linkText: 'Add URL',
     description: ' to your Google form component',
