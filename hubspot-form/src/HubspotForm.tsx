@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import styles from './HubspotForm.module.css';
 import { registerVevComponent } from '@vev/react';
 import { HubspotProvider } from '@aaronhayes/react-use-hubspot-form';
 import { HubspotFormElement } from './HubspotElement';
@@ -9,15 +8,6 @@ type Props = {
   portalId: string;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
-
-function ConfigScreen() {
-  return (
-    <div className={styles.info}>
-      <h3>Hubspot</h3>
-      <p>Set Hubspot ID and form ID in the properties panel</p>
-    </div>
-  );
-}
 
 const HubspotForm = ({ formId, portalId, hostRef }: Props) => {
   const [usePortalId, setUsePortalId] = useState<string>(null);
@@ -33,8 +23,7 @@ const HubspotForm = ({ formId, portalId, hostRef }: Props) => {
     if (portalId && portalId !== usePortalId) setUsePortalId(portalId);
   }, [formId, portalId, useFormId, usePortalId]);
 
-  if (!formId || !portalId) return <ConfigScreen />;
-  if (!elementId) return null;
+  if (!elementId || !formId || !portalId) return null;
 
   return (
     <HubspotProvider>
@@ -50,11 +39,31 @@ const HubspotForm = ({ formId, portalId, hostRef }: Props) => {
 
 registerVevComponent(HubspotForm, {
   name: 'HubspotForm',
+  emptyState: {
+    action: 'OPEN_PROPERTIES',
+    linkText: 'Add portal and form ID',
+    description: ' to your HubSpot component',
+    checkProperty: 'portalId',
+  },
   description:
     'Embed HubSpot Forms into your Vev project by simply pasting the portal and form ID into this form element. [Read documentation](https://help.vev.design/en/articles/6272253-hubspot-forms-beta)',
   props: [
-    { name: 'portalId', title: 'Portal ID', type: 'string' },
-    { name: 'formId', title: 'Form ID', type: 'string' },
+    {
+      name: 'portalId',
+      title: 'Portal ID',
+      type: 'string',
+      options: {
+        placeholder: '1234567',
+      },
+    },
+    {
+      name: 'formId',
+      title: 'Form ID',
+      type: 'string',
+      options: {
+        placeholder: '1yegf7831-8wh7-7b91',
+      },
+    },
   ],
   type: 'both',
 });
