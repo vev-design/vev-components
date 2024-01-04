@@ -188,7 +188,7 @@ registerVevComponent(EmbedAnything, {
     {
       title: 'Container',
       selector: styles.wrapper,
-      properties: ['background', 'border-radius', 'border'],
+      properties: ['background', 'border-radius', 'border', 'filter'],
     },
   ],
   type: 'both',

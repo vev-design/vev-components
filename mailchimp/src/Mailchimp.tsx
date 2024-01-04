@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { registerVevComponent } from '@vev/react';
 import { addVevClasses, textToDom } from './util';
 import style from './Mailchimp.module.css';
+import TextFieldColumn from '../../shared-components/text-field-column';
 
 const NO_EMBED_CODE_TEXT =
   'Double-click and put in the Mailchimp embed code as supplied from Mailchimp.';
@@ -38,6 +39,8 @@ const Mailchimp = ({ embedCode, styleWithVev = true, hostRef }: Props) => {
     }
   }, [embedCode, hostRef, styleWithVev]);
 
+  if (!embedCode) return null;
+
   if (!finalCode || typeof finalCode === 'undefined' || error !== null) {
     return (
       <div className={style.info}>
@@ -71,23 +74,28 @@ registerVevComponent(Mailchimp, {
   },
   props: [
     {
-      hidden: true,
-      name: 'styleWithVev',
-      title: 'Turn this off to use the default Mailchimp styling',
-      type: 'boolean',
-      initialValue: false,
-    },
-    {
+      title: 'Embed code from Mailchimp',
       name: 'embedCode',
-      title: 'Mailchimp embed code',
-      valueType: '',
       type: 'string',
+      component: (context) => {
+        return (
+          <TextFieldColumn
+            name="html"
+            title="Embed code from Mailchimp"
+            value={context.value}
+            onChange={context.onChange}
+            type="text"
+            multiline
+          />
+        );
+      },
     },
   ],
   editableCSS: [
     {
+      title: 'Mailchimp',
       selector: '.vev-input',
-      properties: ['background'],
+      properties: ['background', 'border-radius', 'border', 'filter'],
     },
   ],
   type: 'both',
