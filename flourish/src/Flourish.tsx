@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './Flourish.module.css';
 import { registerVevComponent, useScrollTop, useSize, useViewport } from '@vev/react';
+import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   formUrl: string;
@@ -110,12 +111,14 @@ const Flourish = ({
   }, [slide, url]);
 
   return (
-    <iframe
-      className="flourish fill"
-      src={url}
-      sandbox="allow-scripts allow-popups"
-      frameBorder="0"
-    />
+    <div className={`flourish fill ${styles.container}`}>
+      <iframe
+        className={styles.frame}
+        src={url}
+        sandbox="allow-scripts allow-popups"
+        frameBorder="0"
+      />
+    </div>
   );
 };
 
@@ -127,6 +130,18 @@ registerVevComponent(Flourish, {
       name: 'formUrl',
       type: 'string',
       initialValue: 'https://flo.uri.sh/story/1767962/embed',
+      component: (context) => {
+        return (
+          <TextFieldColumn
+            name="formUrl"
+            title="Flourish URL"
+            placeholder="https://flo.uri.sh/story/example"
+            value={context.value}
+            onChange={context.onChange}
+            type="text"
+          />
+        );
+      },
     },
     {
       title: 'Scrollytelling',
@@ -188,8 +203,9 @@ registerVevComponent(Flourish, {
   ],
   editableCSS: [
     {
-      selector: styles.wrapper,
-      properties: ['background'],
+      title: 'Florish frame',
+      selector: styles.container,
+      properties: ['background', 'margin', 'border', 'border-radius', 'filter'],
     },
   ],
   type: 'both',

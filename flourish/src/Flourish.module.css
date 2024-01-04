@@ -1,7 +1,11 @@
-.wrapper {
+.container {
+  width: 100%;
   height: 100%;
-  background: pink;
-  padding: 2rem;
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
 }
 
 .info {
