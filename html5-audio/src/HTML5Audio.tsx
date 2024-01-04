@@ -12,18 +12,22 @@ type Audio = {
 
 type Props = {
   audioUrl?: Audio;
-  audioUrlLink?: string;
-  showControls: boolean;
-  autoplay: boolean;
-  loop: boolean;
+  settings: {
+    showControls: boolean;
+    autoplay: boolean;
+    loop: boolean;
+  };
 };
 
 const HTML5Audio = (props: Props) => {
   const audioRef = useRef<HTMLAudioElement>();
-  const { showControls, audioUrl, audioUrlLink, loop, autoplay } = props;
+  const { audioUrl, settings } = props;
+  const showControls = settings?.showControls || true;
+  const loop = settings?.loop || false;
+  const autoplay = settings?.autoplay || false;
   const { disabled } = useEditorState();
   const shouldAutoPlay = !disabled && autoplay;
-  const actualUrl = audioUrl ? audioUrl.url : audioUrlLink;
+  const actualUrl = audioUrl ? audioUrl.url : '';
   const dispatch = useDispatchVevEvent();
 
   useVevEvent(Interactions.PLAY, () => {
@@ -86,38 +90,37 @@ registerVevComponent(HTML5Audio, {
   props: [
     {
       name: 'audioUrl',
-      title: 'Upload audio file',
+      title: 'Audio file',
       type: 'upload',
       hidden: (context) => {
         return !!context.value.audioUrlLink;
       },
     },
     {
-      name: 'audioUrlLink',
-      title: 'File source',
-      type: 'string',
-      hidden: (context) => {
-        return !!context.value.audioUrl;
-      },
+      name: 'settings',
+      title: 'Settings',
+      type: 'object',
+      fields: [
+        {
+          name: 'showControls',
+          title: 'Controls',
+          type: 'boolean',
+          initialValue: true,
+        },
+        {
+          name: 'autoplay',
+          title: 'Auto play',
+          type: 'boolean',
+          initialValue: false,
+        },
+        { name: 'loop', title: 'Loop', type: 'boolean', initialValue: false },
+      ],
     },
-    {
-      name: 'showControls',
-      title: 'Show controls',
-      type: 'boolean',
-      initialValue: true,
-    },
-    {
-      name: 'autoplay',
-      title: 'Autoplay',
-      type: 'boolean',
-      initialValue: false,
-    },
-    { name: 'loop', title: 'Loop audio', type: 'boolean', initialValue: false },
   ],
   events: [
-    { type: Events.PLAY, description: 'on Play' },
-    { type: Events.PAUSE, description: 'on Pause' },
-    { type: Events.COMPLETE, description: 'on Complete' },
+    { type: Events.PLAY, description: 'On play' },
+    { type: Events.PAUSE, description: 'On pause' },
+    { type: Events.COMPLETE, description: 'On complete' },
   ],
   interactions: [
     { type: Interactions.PLAY, description: 'Play' },
