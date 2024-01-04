@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from './Tidal.module.css';
 import { registerVevComponent } from '@vev/react';
+import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   url: string;
@@ -44,6 +45,18 @@ registerVevComponent(Tidal, {
       name: 'url',
       type: 'string',
       initialValue: initialLink,
+      component: (context) => {
+        return (
+          <TextFieldColumn
+            name="url"
+            title="Tidal URL"
+            placeholder="https://embed.tidal.com/example"
+            value={context.value}
+            onChange={context.onChange}
+            type="text"
+          />
+        );
+      },
     },
   ],
 });
