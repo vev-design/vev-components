@@ -137,7 +137,7 @@ registerVevComponent(GoogleMaps, {
   editableCSS: [
     {
       selector: styles.wrapper,
-      properties: ['background'],
+      properties: ['background', 'margin', 'border', 'border-radius', 'filter'],
     },
   ],
   type: 'both',
