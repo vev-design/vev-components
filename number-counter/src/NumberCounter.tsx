@@ -10,7 +10,7 @@ import {
 import styles from './NumberCounter.module.css';
 import { Events, Interactions } from './events';
 import { easeIn, easeOut, easingNone, normalize, round } from './math-utils';
-import TextFieldInlineLabel from './components/TextFieldInlineLabel';
+import TextFieldInlineLabel from '../../shared-components/text-field-inline-label';
 
 type Props = {
   settings: {

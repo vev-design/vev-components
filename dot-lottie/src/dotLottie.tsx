@@ -9,8 +9,8 @@ import {
   useVevEvent,
 } from '@vev/react';
 import { EventTypes, InteractionTypes } from './event-types';
-import TextFieldInlineLabel from './components/TextFieldInlineLabel';
 import { DotLottiePlayer, PlayMode } from '@johanaarstein/dotlottie-player';
+import TextFieldInlineLabel from '../../shared-components/text-field-inline-label';
 
 type Props = {
   file: {

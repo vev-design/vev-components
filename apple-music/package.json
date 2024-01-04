@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@vev/react": "latest",
+    "@vev/silke": "latest",
     "react": "^17.0.2"
   }
 }

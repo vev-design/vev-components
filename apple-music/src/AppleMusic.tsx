@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './AppleMusic.module.css';
 import { registerVevComponent } from '@vev/react';
+import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   link: string;
@@ -41,10 +42,22 @@ registerVevComponent(AppleMusic, {
     'Embed an Apple music player directly to your canvas. \n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
   props: [
     {
-      title: 'Apple Music link',
+      title: 'Apple Music URL',
       name: 'link',
       type: 'string',
       initialValue: initialLink,
+      component: (context) => {
+        return (
+          <TextFieldColumn
+            name="link"
+            title="Apple Music URL"
+            placeholder="https://embed.music.apple.com/example"
+            value={context.value}
+            onChange={context.onChange}
+            type="text"
+          />
+        );
+      },
     },
   ],
   icon: './apple-logo',
