@@ -166,7 +166,7 @@ registerVevComponent(Vimeo, {
   editableCSS: [
     {
       selector: styles.frame,
-      properties: ['background'],
+      properties: ['background', 'border-radius', 'border', 'filter'],
     },
   ],
   type: 'both',
