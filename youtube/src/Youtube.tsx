@@ -1,14 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import styles from './Youtube.module.css';
 import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
+import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   videoId: string;
-  autoplay: boolean;
-  hideControls: boolean;
-  hideFullScreen: boolean;
-  loop: boolean;
-  lockAspectRatio: boolean;
+  settings: {
+    autoplay: boolean;
+    hideControls: boolean;
+    hideFullScreen: boolean;
+    loop: boolean;
+    lockAspectRatio: boolean;
+  };
 };
 
 declare global {
@@ -41,14 +44,14 @@ enum YoutubeEvent {
   currentTime = 'currentTime',
 }
 
-const Youtube = ({
-  videoId,
-  autoplay = false,
-  hideControls = false,
-  hideFullScreen = false,
-  loop = false,
-  lockAspectRatio = true,
-}: Props) => {
+const Youtube = ({ videoId, settings }: Props) => {
+  // Default values
+  const autoplay = settings?.autoplay;
+  const hideControls = settings?.hideControls;
+  const hideFullScreen = settings?.hideFullScreen;
+  const loop = settings?.loop;
+  const lockAspectRatio = settings?.lockAspectRatio;
+
   const { disabled } = useEditorState();
   const ref = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<any>(-1);
@@ -207,31 +210,54 @@ registerVevComponent(Youtube, {
     height: 500,
   },
   props: [
-    { name: 'videoId', title: 'YouTube URL', type: 'string' },
     {
-      name: 'autoplay',
-      title: 'Autoplay',
-      type: 'boolean',
-      initialValue: false,
+      name: 'videoId',
+      title: 'YouTube URL',
+      type: 'string',
+      component: (context) => {
+        return (
+          <TextFieldColumn
+            name="videoId"
+            title="YouTube URL"
+            placeholder="https://youtube.com/example"
+            value={context.value}
+            onChange={context.onChange}
+            type="text"
+          />
+        );
+      },
     },
     {
-      name: 'hideControls',
-      title: 'Hide controls',
-      type: 'boolean',
-      initialValue: false,
-    },
-    {
-      name: 'hideFullScreen',
-      title: 'Hide fullscreen',
-      type: 'boolean',
-      initialValue: false,
-    },
-    { name: 'loop', title: 'Loop video', type: 'boolean', initialValue: false },
-    {
-      name: 'lockAspectRatio',
-      title: 'Lock aspect ratio',
-      type: 'boolean',
-      initialValue: true,
+      title: 'Settings',
+      name: 'settings',
+      type: 'object',
+      fields: [
+        {
+          name: 'autoplay',
+          title: 'Autoplay',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'hideControls',
+          title: 'Hide controls',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'hideFullScreen',
+          title: 'Hide fullscreen',
+          type: 'boolean',
+          initialValue: false,
+        },
+        { name: 'loop', title: 'Loop video', type: 'boolean', initialValue: false },
+        {
+          name: 'lockAspectRatio',
+          title: 'Lock aspect ratio',
+          type: 'boolean',
+          initialValue: true,
+        },
+      ],
     },
   ],
   type: 'both',
