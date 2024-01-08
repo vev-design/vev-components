@@ -14,6 +14,8 @@
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
+    "@splinetool/react-spline": "^2.2.6",
+    "@splinetool/runtime": "^1.0.17",
     "@vev/react": "latest",
     "react": "^18.2.0"
   }
