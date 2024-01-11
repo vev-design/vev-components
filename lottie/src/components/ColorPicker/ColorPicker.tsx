@@ -7,7 +7,7 @@ import sortLottieColors from '../../utils/sortLottieColors';
 import {
   SilkeBox,
   SilkeColorPickerButton,
-  SilkeOverflowMenu,
+  SilkeButton,
   SilkeText,
   SilkeTextField,
 } from '@vev/silke';
@@ -80,22 +80,13 @@ const ColorPicker = ({
 
   return (
     <SilkeBox column flex gap="s">
-      <SilkeBox flex gap="m" hAlign="spread">
-        <SilkeText tag="label">Colors</SilkeText>
-        <SilkeOverflowMenu
-          icon="menuMore"
-          kind="ghost"
-          size="s"
-          items={[
-            {
-              label: `Reset colors`,
-              value: 'reset',
-              onClick: () => onReset(),
-            },
-          ]}
-        />
+      <SilkeBox flex gap="m" hAlign="spread" vAlign="center">
+        <SilkeText weight="strong" size="small">
+          Colors
+        </SilkeText>
+        <SilkeButton size="base" icon="undo" kind="ghost" onClick={onReset} />
       </SilkeBox>
-      <SilkeBox column flex gap="m">
+      <SilkeBox column flex gap="m" hPad="s" style={{ paddingLeft: '84px', paddingBottom: '8px' }}>
         {lottieColors?.map((color, index) => {
           const replacement = value.find(
             (v) => String(v.oldColor) === String(color),

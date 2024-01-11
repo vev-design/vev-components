@@ -17,7 +17,7 @@ import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
 import SpeedSlider from './SpeedSlider';
 import { SilkeBox } from '@vev/silke';
-import ReverseButton from './components/reverse-button';
+import ReverseButton from '../../shared-components/reverse-button/reverse-button';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',

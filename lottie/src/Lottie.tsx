@@ -14,6 +14,7 @@ import { File, LottieColor, LottieColorReplacement } from './types';
 import defaultSettings from './constants/defaultSettings';
 import defaultAnimation from './constants/defaultAnimation';
 import ColorPicker from './components/ColorPicker';
+import ReverseButton from '../../shared-components/reverse-button/reverse-button';
 
 import styles from './Lottie.module.css';
 import SpeedSlider from './components/SpeedSlider';
@@ -26,6 +27,7 @@ type Props = {
   loop: boolean;
   delay: number;
   speed: number;
+  reversed: boolean;
   colors: LottieColorReplacement[];
   offsetStart?: number;
   offsetStop?: number;
@@ -38,6 +40,7 @@ const Lottie = ({
   loop = true,
   delay = 0,
   speed = 1,
+  reversed,
   colors,
   offsetStart = 0,
   offsetStop = 0,
@@ -66,7 +69,7 @@ const Lottie = ({
 
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
-      lottieRef.current.setDirection(1);
+      lottieRef.current.setDirection(reversed ? -1 : 1);
       setTimeout(() => {
         lottieRef.current?.play();
       }, delay);
@@ -76,7 +79,6 @@ const Lottie = ({
   useVevEvent(Interactions.PLAY_REVERSE, () => {
     if (lottieRef.current) {
       lottieRef.current.setDirection(-1);
-      console.log(lottieRef.current.setDirection, lottieRef.current.play);
       setTimeout(() => {
         lottieRef.current?.play();
       }, delay);
@@ -141,6 +143,8 @@ const Lottie = ({
     if (speed !== 1) lottieRef.current.setSpeed(speed);
 
     if (autoplay) {
+      lottieRef.current?.setDirection(reversed ? -1 : 1);
+
       setTimeout(() => {
         lottieRef.current?.play();
       }, delay);
@@ -164,7 +168,7 @@ const Lottie = ({
         lottieRef.current.destroy();
       }
     };
-  }, [json, colorOverrides, loop, autoplay]);
+  }, [json, colorOverrides, loop, autoplay, reversed]);
 
   // Listen for speed changes
   useEffect(() => {
@@ -179,12 +183,13 @@ const Lottie = ({
 
     if (isHovering) {
       setTimeout(() => {
+        lottieRef.current?.setDirection(reversed ? -1 : 1);
         lottieRef.current?.play();
       }, delay);
     } else {
       lottieRef.current.pause();
     }
-  }, [isVisible, isHovering, lottieRef]);
+  }, [isVisible, isHovering, lottieRef, reversed]);
 
   // Scroll trigger
   useEffect(() => {
@@ -211,9 +216,9 @@ const Lottie = ({
     if (!lottieRef.current) return;
 
     if (trigger === 'click') {
-      console.log('lottieRef.current', lottieRef.current);
       if (lottieRef.current.isPaused) {
         setTimeout(() => {
+          lottieRef.current?.setDirection(reversed ? -1 : 1);
           lottieRef.current?.play();
         }, delay);
       } else {
@@ -290,16 +295,16 @@ registerVevComponent(Lottie, {
     },
     {
       name: 'trigger',
-      title: 'Trigger',
+      title: 'Play',
       type: 'select',
       initialValue: 'visible',
       options: {
         display: 'radio',
         items: [
-          { label: 'Play when visible', value: 'visible' },
-          { label: 'Play on hover', value: 'hover' },
-          { label: 'Play on click', value: 'click' },
-          { label: 'Play on scroll', value: 'scroll' },
+          { label: 'When visible', value: 'visible' },
+          { label: 'On hover', value: 'hover' },
+          { label: 'On click', value: 'click' },
+          { label: 'On scroll', value: 'scroll' },
           { label: 'No trigger', value: 'never' },
         ],
       },
@@ -314,6 +319,13 @@ registerVevComponent(Lottie, {
       hidden: (context) => context?.value?.trigger !== 'scroll',
     },
     {
+      name: 'colors',
+      title: 'Colors',
+      type: 'array',
+      of: 'string',
+      component: ColorPicker,
+    },
+    {
       name: 'offsetStop',
       type: 'number',
       title: 'Offset bottom',
@@ -323,38 +335,35 @@ registerVevComponent(Lottie, {
       hidden: (context) => context?.value?.trigger !== 'scroll',
     },
     {
+      name: 'speed',
+      title: 'Speed',
+      type: 'number',
+      initialValue: 1,
+      component: SpeedSlider,
+      hidden: (context) => context?.value?.trigger === 'scroll',
+    },
+    {
+      name: 'delay',
+      title: 'Delay',
+      type: 'number',
+      description: 'Delay in milliseconds',
+      initialValue: 0,
+      hidden: (context) => context?.value?.trigger === 'scroll',
+    },
+    {
+      name: 'reversed',
+      title: 'Reversed',
+      type: 'boolean',
+      initialValue: false,
+      component: ReverseButton,
+      hidden: (context) => context?.value?.trigger === 'scroll',
+    },
+    {
       name: 'loop',
       title: 'Loop',
       type: 'boolean',
       initialValue: true,
       hidden: (context) => context?.value?.trigger === 'scroll',
-    },
-    {
-      name: 'delay',
-      title: 'Delay start (ms)',
-      type: 'number',
-      initialValue: 0,
-      hidden: (context) => context?.value?.trigger === 'scroll',
-    },
-    {
-      name: 'speed',
-      title: 'Speed',
-      type: 'number',
-      initialValue: 1,
-      // options: {
-      //   display: 'slider',
-      //   min: -2,
-      //   max: 2,
-      // },
-      component: SpeedSlider,
-      hidden: (context) => context?.value?.trigger === 'scroll',
-    },
-    {
-      name: 'colors',
-      title: 'Colors',
-      type: 'array',
-      of: 'string',
-      component: ColorPicker,
     },
   ],
   editableCSS: [

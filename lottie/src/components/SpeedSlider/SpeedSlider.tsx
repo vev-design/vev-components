@@ -1,6 +1,6 @@
 import React from 'react';
 import { SchemaFieldProps, SchemaFieldTypes } from '@vev/react';
-import { SilkeBox, SilkeText, SilkeOverflowMenu, SilkeSlider } from '@vev/silke';
+import { SilkeBox, SilkeText, SilkeButton, SilkeSlider } from '@vev/silke';
 
 import styles from './SpeedSlider.module.css';
 
@@ -23,22 +23,13 @@ const SpeedSlider = ({ value = 1, onChange }: SchemaFieldProps<SchemaFieldTypes[
 
   return (
     <SilkeBox column flex gap="s">
-      <SilkeBox flex gap="m" hAlign="spread">
-        <SilkeText tag="label">Speed</SilkeText>
-        <SilkeOverflowMenu
-          icon="menuMore"
-          kind="ghost"
-          size="s"
-          items={[
-            {
-              label: `Reset speed`,
-              value: 'reset',
-              onClick: () => onReset(),
-            },
-          ]}
-        />
+      <SilkeBox flex gap="m" hAlign="spread" vAlign="center">
+        <SilkeText weight="strong" size="small">
+          Speed
+        </SilkeText>
+        <SilkeButton size="base" icon="undo" kind="ghost" onClick={onReset} />
       </SilkeBox>
-      <SilkeBox column flex gap="m">
+      <SilkeBox column flex gap="m" hPad="s" style={{ paddingLeft: '84px' }}>
         <div className={styles.wrapper}>
           <SilkeSlider value={currentValue} onChange={onSlide} />
         </div>
