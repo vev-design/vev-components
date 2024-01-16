@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './SoundCloud.module.css';
 import { registerVevComponent, useEditorState } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   url: string;
@@ -45,18 +44,9 @@ registerVevComponent(SoundCloud, {
       title: 'SoundCloud URL',
       type: 'string',
       initialValue: initialLink,
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="url"
-            title="SoundCloud URL"
-            placeholder="https://soundcloud.com/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
     {
       name: 'classic',

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './AppleMusic.module.css';
 import { registerVevComponent } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   link: string;
@@ -46,18 +45,9 @@ registerVevComponent(AppleMusic, {
       name: 'link',
       type: 'string',
       initialValue: initialLink,
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="link"
-            title="Apple Music URL"
-            placeholder="https://embed.music.apple.com/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
   ],
   icon: './apple-logo',

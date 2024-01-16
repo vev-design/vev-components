@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './Flourish.module.css';
 import { registerVevComponent, useScrollTop, useSize, useViewport } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   formUrl: string;
@@ -130,18 +129,9 @@ registerVevComponent(Flourish, {
       name: 'formUrl',
       type: 'string',
       initialValue: 'https://flo.uri.sh/story/1767962/embed',
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="formUrl"
-            title="Flourish URL"
-            placeholder="https://flo.uri.sh/story/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
     {
       title: 'Scrollytelling',

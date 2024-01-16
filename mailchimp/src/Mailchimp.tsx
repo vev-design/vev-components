@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { registerVevComponent } from '@vev/react';
 import { addVevClasses, textToDom } from './util';
 import style from './Mailchimp.module.css';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 const NO_EMBED_CODE_TEXT =
   'Double-click and put in the Mailchimp embed code as supplied from Mailchimp.';
@@ -77,18 +76,9 @@ registerVevComponent(Mailchimp, {
       title: 'Embed code from Mailchimp',
       name: 'embedCode',
       type: 'string',
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="html"
-            title="Embed code from Mailchimp"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-            multiline
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
   ],
   editableCSS: [

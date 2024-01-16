@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
 import { registerVevComponent, useEditorState } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
-import BooleanFieldCheckbox from '../../shared-components/boolean-field-checkbox';
 
 type Props = {
   html: string;
@@ -153,18 +151,9 @@ registerVevComponent(EmbedAnything, {
       title: 'Embed HTML',
       name: 'html',
       type: 'string',
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="html"
-            title="Embed code"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-            multiline
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
     {
       title: 'Encapsulate',
@@ -172,16 +161,6 @@ registerVevComponent(EmbedAnything, {
       type: 'boolean',
       description: 'Contain the embed code within its own browser instance',
       initialValue: false,
-      component: (context) => {
-        return (
-          <BooleanFieldCheckbox
-            title="Encapsulate code"
-            value={context.value}
-            onChange={context.onChange}
-            description="Contain the embed code within its own browser instance"
-          />
-        );
-      },
     },
   ],
   editableCSS: [

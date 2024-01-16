@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import styles from './Youtube.module.css';
 import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   videoId: string;
@@ -214,18 +213,9 @@ registerVevComponent(Youtube, {
       name: 'videoId',
       title: 'YouTube URL',
       type: 'string',
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="videoId"
-            title="YouTube URL"
-            placeholder="https://youtube.com/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
     {
       title: 'Settings',

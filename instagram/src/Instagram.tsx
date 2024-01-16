@@ -1,7 +1,6 @@
 import React from 'react';
 import styles from './Instagram.module.css';
 import { registerVevComponent } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 const INSTA_PREFIX = 'https://www.instagram.com/p/';
 const INSTA_POSTFIX = '/embed';
@@ -80,18 +79,9 @@ registerVevComponent(Instagram, {
       name: 'url',
       type: 'string',
       initialValue: 'https://www.instagram.com/p/CpAQZfDDseY',
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="url"
-            title="Instagram URL"
-            placeholder="https://instagram.com/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
     {
       title: 'Captions',

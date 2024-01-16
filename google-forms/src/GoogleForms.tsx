@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './GoogleForms.module.css';
 import { registerVevComponent, useEditorState } from '@vev/react';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 type Props = {
   formUrl: string;
@@ -101,18 +100,9 @@ registerVevComponent(GoogleForms, {
       title: 'Google Forms URL',
       name: 'formUrl',
       type: 'string',
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="formUrl"
-            title="Google Forms URL"
-            placeholder="https://docs.google.com/forms/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
   ],
   emptyState: {

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { registerVevComponent, useVevEvent, useDispatchVevEvent } from '@vev/react';
 import { EventTypes, InteractionTypes } from './event-types';
 import { useSpotifyEmbed } from './use-spotify-embed';
-import TextFieldColumn from '../../shared-components/text-field-column';
 
 declare global {
   interface Window {
@@ -78,18 +77,9 @@ registerVevComponent(Spotify, {
       name: 'link',
       type: 'string',
       initialValue: initialLink,
-      component: (context) => {
-        return (
-          <TextFieldColumn
-            name="link"
-            title="Spotify URL"
-            placeholder="https://open.spotify.com/example"
-            value={context.value}
-            onChange={context.onChange}
-            type="text"
-          />
-        );
-      },
+      options: {
+        multiline: true,
+      }
     },
   ],
   interactions: [
