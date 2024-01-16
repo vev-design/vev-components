@@ -10,7 +10,6 @@ import {
 } from '@vev/react';
 import { EventTypes, InteractionTypes } from './event-types';
 import { DotLottiePlayer, PlayMode } from '@johanaarstein/dotlottie-player';
-import TextFieldInlineLabel from '../../shared-components/text-field-inline-label';
 
 type Props = {
   file: {
@@ -166,17 +165,8 @@ registerVevComponent(DotLottie, {
           name: 'speed',
           type: 'number',
           initialValue: 1000,
-          component: (context) => {
-            return (
-              <TextFieldInlineLabel
-                label="ms"
-                title="Speed"
-                name="speed"
-                type="number"
-                value={context.value}
-                onChange={context.onChange}
-              />
-            );
+          options: {
+            format: 'ms',
           },
         },
         {
@@ -218,17 +208,8 @@ registerVevComponent(DotLottie, {
           name: 'delay',
           type: 'number',
           initialValue: 1000,
-          component: (context) => {
-            return (
-              <TextFieldInlineLabel
-                label="ms"
-                title="Delay"
-                name="delay"
-                type="number"
-                value={context.value}
-                onChange={context.onChange}
-              />
-            );
+          options: {
+            format: 'ms'
           },
           hidden: (context) => context.value.animation.loop !== true,
         },

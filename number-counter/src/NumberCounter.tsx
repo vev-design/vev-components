@@ -10,7 +10,6 @@ import {
 import styles from './NumberCounter.module.css';
 import { Events, Interactions } from './events';
 import { easeIn, easeOut, easingNone, normalize, round } from './math-utils';
-import TextFieldInlineLabel from '../../shared-components/text-field-inline-label';
 
 type Props = {
   settings: {
@@ -266,36 +265,18 @@ registerVevComponent(NumberCounter, {
           name: 'animationLength',
           type: 'number',
           initialValue: 5,
-          component: (context) => {
-            return (
-              <TextFieldInlineLabel
-                label="s"
-                title="Duration"
-                name="animationLength"
-                type="number"
-                value={context.value}
-                onChange={context.onChange}
-              />
-            );
-          },
+          options: {
+            format: 's',
+          }
         },
         {
           title: 'Delay animation start',
           name: 'delay',
           type: 'number',
           initialValue: 5,
-          component: (context) => {
-            return (
-              <TextFieldInlineLabel
-                label="ms"
-                title="Delay"
-                name="animationLength"
-                type="number"
-                value={context.value}
-                onChange={context.onChange}
-              />
-            );
-          },
+          options: {
+            format: 'ms',
+          }
         },
         {
           title: 'Easing',

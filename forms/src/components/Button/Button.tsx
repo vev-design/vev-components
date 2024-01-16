@@ -279,7 +279,7 @@ registerVevComponent(Button, {
     {
       type: "object",
       name: "submit",
-      title: "Destination config",
+      title: "Destination configuration",
       fields: [
         {
           type: "select",
