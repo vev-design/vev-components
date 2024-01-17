@@ -170,33 +170,38 @@ const Vimeo = ({
   });
 
   useEffect(() => {
-    if (iframeRef.current) {
-      const iframe = document.querySelector("iframe");
-      const player = new Player(iframe);
-      playerRef.current = player;
+    try {
+      if (iframeRef.current) {
+        const iframe = document.querySelector("iframe");
+        const player = new Player(iframe);
+        playerRef.current = player;
 
-      player.on("play", () => {
-        dispatch(Events.ON_PLAY);
-      });
+        player.on("play", () => {
+          dispatch(Events.ON_PLAY);
+        });
 
-      player.on("pause", () => {
-        dispatch(Events.ON_PAUSE);
-      });
+        player.on("pause", () => {
+          dispatch(Events.ON_PAUSE);
+        });
 
-      player.on("ended", () => {
-        dispatch(Events.ON_END);
-      });
+        player.on("ended", () => {
+          dispatch(Events.ON_END);
+        });
 
-      player.on("timeupdate", (event) => {
-        const currentSec = Math.floor(event.seconds);
+        player.on("timeupdate", (event) => {
+          const currentSec = Math.floor(event.seconds);
 
-        if (currentSec !== currentTime.current) {
-          currentTime.current = currentSec;
-          dispatch(Events.CURRENT_TIME, {
-            currentTime: currentSec,
-          });
-        }
-      });
+          if (currentSec !== currentTime.current) {
+            currentTime.current = currentSec;
+            dispatch(Events.CURRENT_TIME, {
+              currentTime: currentSec,
+            });
+          }
+        });
+      }
+
+    } catch (e) {
+
     }
   }, [iframeRef]);
 
