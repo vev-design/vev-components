@@ -199,10 +199,7 @@ const Vimeo = ({
           }
         });
       }
-
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }, [iframeRef]);
 
   const iframe = (
