@@ -52,17 +52,6 @@ const GoogleForms = ({ formUrl, hostRef }: Props) => {
     form.addEventListener('submit', handleFormSubmit);
   };
 
-  if (url === '' || !url) {
-    return (
-      <div className={styles.instructions}>
-        <div>
-          <h3>Double-click this Element to add your Google Forms URL</h3>
-          <p>Note: Click on Send in Google forms to get the share link.</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!url.includes('google')) {
     return (
       <div className={styles.instructions}>

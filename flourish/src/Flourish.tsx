@@ -123,6 +123,12 @@ const Flourish = ({
 
 registerVevComponent(Flourish, {
   name: 'Flourish',
+  emptyState: {
+    linkText: "Add URL",
+    description: " to your Flourish component",
+    checkProperty: "formUrl",
+    action: "OPEN_PROPERTIES"
+  },
   props: [
     {
       title: 'Flourish URL',
