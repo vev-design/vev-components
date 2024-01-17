@@ -74,7 +74,7 @@ const NumberCounter = ({
   const { disabled, schemaOpen } = useEditorState();
   const [startedTimestamp, setStartedTimestamp] = useState<number>(0);
   const dispatchVevEvent = useDispatchVevEvent();
-  const actualSchemaOpen = disabled && schemaOpen;
+  const actualSchemaOpen = !disabled || schemaOpen;
 
   function resetCounter() {
     setStartedTimestamp(0);
