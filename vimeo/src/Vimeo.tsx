@@ -200,19 +200,6 @@ const Vimeo = ({
     }
   }, [iframeRef]);
 
-  console.log(
-    "url",
-    getVimeoUrl(
-      videoInfo.videoId || defaultVideoId,
-      autoplay,
-      loop,
-      mute,
-      disableControls,
-      background,
-      disabled
-    )
-  );
-
   const iframe = (
     <iframe
       ref={iframeRef}
