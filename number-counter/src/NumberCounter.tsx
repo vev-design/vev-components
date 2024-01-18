@@ -61,6 +61,7 @@ const NumberCounter = ({
     postfix = '',
     localeFormat = false,
   } = settings;
+
   const { animationLength, delay, easing, loop } = animation;
   const { separator, decimalSeparator, precision: initPrecision } = format;
 
@@ -157,6 +158,9 @@ const NumberCounter = ({
   useEffect(() => {
     if (!isVisible) {
       resetCounter();
+    } else {
+      resetCounter();
+      setHasStarted(true);
     }
   }, [isVisible]);
 
