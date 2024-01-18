@@ -209,6 +209,9 @@ registerVevComponent(Slideshow, {
       description: "Specify how long the animation should last",
       title: "Duration",
       initialValue: 200,
+      options: {
+        format: "ms",
+      },
     },
     {
       name: "direction",
