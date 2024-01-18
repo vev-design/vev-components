@@ -91,12 +91,10 @@ const VimeoUrl = (props) => {
   }, [fullUrl]);
 
   return (
-    <SilkeBox column gap="s" fill>
-      <SilkeBox>
-        <SilkeTextSmall weight="strong">{"Video URL"}</SilkeTextSmall>
-      </SilkeBox>
+    <SilkeBox column gap="s" fill style={{ marginBottom: "16px" }}>
       <SilkeBox>
         <SilkeTextField
+          label="Video URL"
           size="xs"
           value={props.value.fullUrl}
           onChange={(value) => {
