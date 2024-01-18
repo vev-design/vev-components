@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 import {
   SilkeBox,
   SilkeTextField,
   SilkeTextFieldItem,
   SilkeTextSmall,
   SilkeButton,
-} from '@vev/silke';
+} from "@vev/silke";
 
 interface Props {
   name: string;
@@ -28,14 +28,14 @@ export default function ZoomButton({ value, onChange, title, label }: Props) {
   }
 
   return (
-    <SilkeBox pad="xs">
-      <SilkeBox align="center" style={{ width: '80px' }}>
+    <SilkeBox column flex>
+      <SilkeBox align="center">
         <SilkeBox vAlign="center" flex>
-          <SilkeTextSmall weight="strong">{title}</SilkeTextSmall>
+          <SilkeTextSmall>{title}</SilkeTextSmall>
         </SilkeBox>
       </SilkeBox>
-      <SilkeBox style={{ width: '130px' }}>
-        <SilkeTextField inline value={actualValue} onChange={updateValue}>
+      <SilkeBox vPad="xs">
+        <SilkeTextField inline value={actualValue} onChange={updateValue} flex>
           <SilkeTextFieldItem hPad="s">
             <SilkeTextSmall color="neutral-60">{label}</SilkeTextSmall>
           </SilkeTextFieldItem>
