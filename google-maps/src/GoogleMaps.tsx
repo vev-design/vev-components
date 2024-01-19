@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import styles from './GoogleMaps.module.css';
-import { registerVevComponent } from '@vev/react';
-import { SilkeAutocompleteField } from '@vev/silke';
-import ZoomButton from './zoom-button/zoom-button';
+import React, { useEffect, useState } from "react";
+import styles from "./GoogleMaps.module.css";
+import { registerVevComponent } from "@vev/react";
+import { SilkeAutocompleteField } from "@vev/silke";
+import ZoomButton from "./zoom-button/zoom-button";
 
 declare global {
   interface Window {
@@ -10,8 +10,8 @@ declare global {
   }
 }
 
-const apiKey = 'AIzaSyAkQRDoMLeuxVyX1QvG_JIxo8P7rajLMxo';
-const baseUrl = 'https://www.google.com/maps/embed/v1/';
+const apiKey = "AIzaSyAkQRDoMLeuxVyX1QvG_JIxo8P7rajLMxo";
+const baseUrl = "https://www.google.com/maps/embed/v1/";
 
 type Props = {
   address: string;
@@ -20,14 +20,14 @@ type Props = {
 };
 
 function getUrl(address, zoom, type: string) {
-  const params = ['key=' + apiKey];
+  const params = ["key=" + apiKey];
   if (zoom) params.push(`zoom=${zoom}`);
   if (type) params.push(`maptype=${type}`);
-  params.push('q=' + encodeURIComponent(address || 'Vev, Oslo, Norway'));
-  return baseUrl + 'place' + '?' + params.join('&');
+  params.push("q=" + encodeURIComponent(address || "Vev, Oslo, Norway"));
+  return baseUrl + "place" + "?" + params.join("&");
 }
 
-const GoogleMaps = ({ address = '', zoom = 16, type = 'roadmap' }: Props) => {
+const GoogleMaps = ({ address = "", zoom = 16, type = "roadmap" }: Props) => {
   return (
     <iframe
       className={styles.wrapper}
@@ -40,22 +40,25 @@ const GoogleMaps = ({ address = '', zoom = 16, type = 'roadmap' }: Props) => {
 };
 
 const MapsAutoComplete = (props) => {
-  const [predictions, setPredictions] = useState<google.maps.places.QueryAutocompletePrediction[]>(
-    [],
-  );
-  const [service, setService] = useState<google.maps.places.AutocompleteService | null>(null);
-  const [search, setSearch] = useState<string>(props.value || '');
+  const [predictions, setPredictions] = useState<
+    google.maps.places.QueryAutocompletePrediction[]
+  >([]);
+  const [service, setService] =
+    useState<google.maps.places.AutocompleteService | null>(null);
+  const [search, setSearch] = useState<string>(props.value || "");
 
   useEffect(() => {
     if (service) {
       if (search) {
         service.getQueryPredictions(
           { input: search },
-          (predictions: google.maps.places.QueryAutocompletePrediction[] | null) => {
+          (
+            predictions: google.maps.places.QueryAutocompletePrediction[] | null
+          ) => {
             if (predictions) {
               setPredictions(predictions);
             }
-          },
+          }
         );
       }
     }
@@ -65,7 +68,7 @@ const MapsAutoComplete = (props) => {
     window.initGMapsService = () => {
       setService(new google.maps.places.AutocompleteService());
     };
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGMapsService`;
     script.async = true;
     document.body.appendChild(script);
@@ -76,6 +79,7 @@ const MapsAutoComplete = (props) => {
       label="Address"
       name="address"
       placeholder="Search and select"
+      size="xs"
       onChange={(value) => {
         props.onChange(value);
         setSearch(value);
@@ -93,20 +97,20 @@ const MapsAutoComplete = (props) => {
 };
 
 registerVevComponent(GoogleMaps, {
-  name: 'Google Maps',
+  name: "Google Maps",
   description:
     "Help readers locate your business or event by adding Google Maps to your project. Vev's Google Map element is a zoomable map snippet for showing a current or custom set location. [Read Documentation](https://help.vev.design/design/elements/google-maps?ref=addmenu)",
   props: [
     {
-      title: 'Address',
-      name: 'address',
-      type: 'string',
+      title: "Address",
+      name: "address",
+      type: "string",
       component: MapsAutoComplete,
     },
     {
-      title: 'Zoom',
-      name: 'zoom',
-      type: 'number',
+      title: "Zoom",
+      name: "zoom",
+      type: "number",
       initialValue: 16,
       component: (context) => {
         return (
@@ -121,15 +125,15 @@ registerVevComponent(GoogleMaps, {
       },
     },
     {
-      title: 'Map Type',
-      name: 'type',
-      type: 'select',
-      initialValue: 'roadmap',
+      title: "Map Type",
+      name: "type",
+      type: "select",
+      initialValue: "roadmap",
       options: {
-        display: 'dropdown',
+        display: "dropdown",
         items: [
-          { label: 'Default', value: 'roadmap' },
-          { label: 'Satellite', value: 'satellite' },
+          { label: "Default", value: "roadmap" },
+          { label: "Satellite", value: "satellite" },
         ],
       },
     },
@@ -137,10 +141,10 @@ registerVevComponent(GoogleMaps, {
   editableCSS: [
     {
       selector: styles.wrapper,
-      properties: ['background', 'margin', 'border', 'border-radius', 'filter'],
+      properties: ["background", "margin", "border", "border-radius", "filter"],
     },
   ],
-  type: 'both',
+  type: "both",
 });
 
 export default GoogleMaps;
