@@ -65,6 +65,7 @@ const NumberCounter = ({
   const { animationLength, delay, easing, loop } = animation;
   const { separator, decimalSeparator, precision: initPrecision } = format;
 
+  const actualDelay = 1000 * delay;
   const start = initStart || 0;
   const end = initEnd || 0;
   const precision = initPrecision || 0;
@@ -88,7 +89,7 @@ const NumberCounter = ({
       if (!disable) {
         setHasStarted(true);
       }
-    }, delay);
+    }, actualDelay);
   });
 
   useVevEvent(Interactions.STOP, () => {
@@ -160,7 +161,9 @@ const NumberCounter = ({
       resetCounter();
     } else {
       resetCounter();
-      setHasStarted(true);
+      setTimeout(() => {
+        setHasStarted(true);
+      }, actualDelay);
     }
   }, [isVisible]);
 
@@ -169,7 +172,7 @@ const NumberCounter = ({
       resetCounter();
       return;
     }
-  }, [delay, isVisible, disabled, actualSchemaOpen, disabled]);
+  }, [actualDelay, isVisible, disabled, actualSchemaOpen, disabled]);
 
   // For restarting counter when changing props in editor
   useEffect(() => {
@@ -177,11 +180,11 @@ const NumberCounter = ({
       resetCounter();
       setTimeout(() => {
         setHasStarted(true);
-      }, delay);
+      }, actualDelay);
     } else {
       resetCounter();
     }
-  }, [start, end, precision, delay, easing, disabled, animationLength, delay, actualSchemaOpen]);
+  }, [start, end, precision, actualDelay, easing, disabled, animationLength, actualDelay, actualSchemaOpen]);
 
   return (
     <div className={styles.wrapper}>
