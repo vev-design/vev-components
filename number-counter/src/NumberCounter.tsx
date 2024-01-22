@@ -372,6 +372,7 @@ registerVevComponent(NumberCounter, {
         'color',
         'text-align',
         'text-decoration',
+        'line-height',
       ],
     },
     {
