@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './Checkbox.module.css';
-import cx from 'classnames';
-import FieldWrapper from '../FieldWrapper';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { FieldProps, Event } from "../../types";
+import { registerVevComponent, useDispatchVevEvent } from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./Checkbox.module.css";
+import cx from "classnames";
+import FieldWrapper from "../FieldWrapper";
 
 type Props = FieldProps & {
   name: string;
@@ -35,7 +35,7 @@ function Checkbox(props: Props) {
           dispatch(Event.onChange, {
             name,
             value,
-            type: checked ? 'add' : 'remove',
+            type: checked ? "add" : "remove",
           });
         }}
       />
@@ -44,34 +44,38 @@ function Checkbox(props: Props) {
 }
 
 registerVevComponent(Checkbox, {
-  name: 'Checkbox',
-  categories: ['Form'],
+  name: "Checkbox",
+  categories: ["Form"],
   icon: formIcon,
   props: [
     {
-      name: 'name',
-      type: 'string',
-      initialValue: 'fruits',
+      name: "name",
+      type: "string",
+      initialValue: "fruits",
     },
     {
-      name: 'value',
-      type: 'string',
+      name: "value",
+      type: "string",
     },
     {
-      name: 'initialValue',
-      type: 'boolean',
+      name: "initialValue",
+      type: "boolean",
+    },
+    {
+      name: "required",
+      type: "boolean",
     },
   ],
   editableCSS: [
     {
       selector: styles.checkbox,
-      title: 'Background',
-      properties: ['background', 'border', 'border-radius'],
+      title: "Background",
+      properties: ["background", "border", "border-radius"],
     },
     {
-      selector: styles.checkbox + ' input:checked',
-      title: 'Checked',
-      properties: ['background'],
+      selector: styles.checkbox + " input:checked",
+      title: "Checked",
+      properties: ["background"],
     },
   ],
   size: {
