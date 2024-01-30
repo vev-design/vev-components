@@ -101,6 +101,7 @@ const VimeoUrl = (props) => {
             props.onChange({ fullUrl: value, videoId: props.value.videoId });
           }}
           error={error}
+          multiline
         />
       </SilkeBox>
     </SilkeBox>
