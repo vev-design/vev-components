@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
-import styles from './Spline.module.css';
-import { registerVevComponent } from '@vev/react';
+import React, { useRef } from "react";
+import styles from "./Spline.module.css";
+import { registerVevComponent } from "@vev/react";
 
 type Props = {
   formUrl: string;
@@ -8,11 +8,11 @@ type Props = {
 };
 
 const Spline = ({
-  formUrl = 'https://my.spline.design/carcampingphysicscopy-56fe6d4adf9415188037704bd4b6d775/',
+  formUrl = "https://my.spline.design/carcampingphysicscopy-56fe6d4adf9415188037704bd4b6d775/",
 }: Props) => {
   const frameRef = useRef<HTMLIFrameElement>(null);
 
-  if (formUrl === '') {
+  if (formUrl === "") {
     return (
       <div className={styles.info}>
         <h3>Double-click this Element to add your Spline URL</h3>
@@ -35,11 +35,21 @@ const Spline = ({
 };
 
 registerVevComponent(Spline, {
-  name: 'Spline',
+  name: "Spline",
   description:
-    'Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.',
-  props: [{ name: 'formUrl', title: 'Spline URL', type: 'string', initialValue: '' }],
-  type: 'both',
+    "Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.",
+  props: [
+    {
+      name: "formUrl",
+      title: "Spline URL",
+      type: "string",
+      initialValue: "",
+      options: {
+        multiline: true,
+      },
+    },
+  ],
+  type: "both",
 });
 
 export default Spline;
