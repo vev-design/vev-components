@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import styles from './dotLottie.module.css';
+import React, { useEffect, useMemo, useRef } from "react";
+import styles from "./dotLottie.module.css";
 import {
   registerVevComponent,
   useScrollTop,
@@ -7,9 +7,9 @@ import {
   View,
   useDispatchVevEvent,
   useVevEvent,
-} from '@vev/react';
-import { EventTypes, InteractionTypes } from './event-types';
-import { DotLottiePlayer, PlayMode } from '@johanaarstein/dotlottie-player';
+} from "@vev/react";
+import { EventTypes, InteractionTypes } from "./event-types";
+import { DotLottiePlayer, PlayMode } from "@johanaarstein/dotlottie-player";
 
 type Props = {
   file: {
@@ -28,12 +28,12 @@ type Props = {
     scrollOffsetStart: number;
     scrollOffsetStop: number;
     onscroll: boolean;
-    mode: 'normal' | 'bounce';
+    mode: "normal" | "bounce";
   };
 };
 
 const defaultAnimation =
-  'https://cdn.vev.design/private/an2K3NyIunQ4E5tG3LwwGhVDbi23/cea-animation.lottie';
+  "https://cdn.vev.design/private/an2K3NyIunQ4E5tG3LwwGhVDbi23/cea-animation.lottie";
 
 const DotLottie = ({ file, settings, animation }: Props) => {
   // Default values
@@ -44,7 +44,7 @@ const DotLottie = ({ file, settings, animation }: Props) => {
   const delay = animation.delay || 0;
   const scrollOffsetStart = animation.scrollOffsetStart || 0;
   const scrollOffsetStop = animation.scrollOffsetStop || 0;
-  const mode = animation.mode || 'normal';
+  const mode = animation.mode || "normal";
 
   const animationRef = useRef<DotLottiePlayer | null>(null);
   const isVisible = useVisible(animationRef);
@@ -53,7 +53,7 @@ const DotLottie = ({ file, settings, animation }: Props) => {
   const dispatch = useDispatchVevEvent();
 
   useVevEvent(InteractionTypes.PLAY, () => {
-    console.log('EVENT');
+    console.log("EVENT");
     if (animationRef.current) {
       setTimeout(() => {
         animationRef.current.play();
@@ -82,7 +82,8 @@ const DotLottie = ({ file, settings, animation }: Props) => {
         animationRef.current.controls = controls;
         animationRef.current.getLottie().setLoop(loop);
         animationRef.current.setSpeed(speed);
-        animationRef.current.mode = mode === 'normal' ? PlayMode.Normal : PlayMode.Bounce;
+        animationRef.current.mode =
+          mode === "normal" ? PlayMode.Normal : PlayMode.Bounce;
 
         animationRef.current.onplay = () => {
           dispatch(EventTypes.PLAY);
@@ -92,11 +93,11 @@ const DotLottie = ({ file, settings, animation }: Props) => {
           dispatch(EventTypes.PAUSE);
         };
 
-        animationRef.current.addEventListener('complete', () => {
+        animationRef.current.addEventListener("complete", () => {
           dispatch(EventTypes.COMPLETE);
         });
 
-        animationRef.current.addEventListener('loop', () => {
+        animationRef.current.addEventListener("loop", () => {
           dispatch(EventTypes.LOOP_COMPLETE);
         });
       }, 100);
@@ -105,7 +106,8 @@ const DotLottie = ({ file, settings, animation }: Props) => {
 
   // Scroll trigger
   useEffect(() => {
-    const lottie = animationRef && animationRef.current && animationRef.current.getLottie();
+    const lottie =
+      animationRef && animationRef.current && animationRef.current.getLottie();
     if (lottie) {
       if (onscroll && lottie.totalFrames) {
         let percent: number;
@@ -115,7 +117,9 @@ const DotLottie = ({ file, settings, animation }: Props) => {
             (rect.top + scrollOffsetStart + rect.height) /
             (View.height + rect.height + scrollOffsetStop);
         } else percent = 1 - scrollTop;
-        lottie.goToAndStop((lottie.totalFrames / lottie.frameRate) * 1000 * (1 - percent));
+        lottie.goToAndStop(
+          (lottie.totalFrames / lottie.frameRate) * 1000 * (1 - percent)
+        );
       }
     }
   }, [onscroll, isVisible, scrollOffsetStart, scrollOffsetStop, scrollTop]);
@@ -133,70 +137,70 @@ const DotLottie = ({ file, settings, animation }: Props) => {
 };
 
 registerVevComponent(DotLottie, {
-  name: 'dotLottie',
+  name: "dotLottie",
   props: [
     {
-      title: 'Lottie file',
-      name: 'file',
-      description: 'Only .lottie file supported',
-      type: 'upload',
-      accept: '.lottie,',
+      title: "Lottie file",
+      name: "file",
+      description: "Only .lottie file supported",
+      type: "upload",
+      accept: ".lottie,",
     },
     {
-      title: 'Settings',
-      name: 'settings',
-      type: 'object',
+      title: "Settings",
+      name: "settings",
+      type: "object",
       fields: [
         {
-          title: 'Controls',
-          name: 'controls',
-          type: 'boolean',
+          title: "Controls",
+          name: "controls",
+          type: "boolean",
           initialValue: false,
         },
       ],
     },
     {
-      title: 'Animation',
-      name: 'animation',
-      type: 'object',
+      title: "Animation",
+      name: "animation",
+      type: "object",
       fields: [
         {
-          title: 'Speed',
-          name: 'speed',
-          type: 'number',
+          title: "Playback speed",
+          name: "speed",
+          type: "number",
           initialValue: 1000,
           options: {
-            format: 'ms',
+            format: "ms",
           },
         },
         {
-          title: 'Loop',
-          name: 'loop',
-          type: 'boolean',
+          title: "Loop",
+          name: "loop",
+          type: "boolean",
           initialValue: true,
           hidden: (context) => {
             return context.value.animation.onscroll === true;
           },
         },
         {
-          title: 'Animate on scroll',
-          name: 'onscroll',
-          type: 'boolean',
+          title: "Animate on scroll",
+          name: "onscroll",
+          type: "boolean",
           initialValue: false,
           hidden: (context) => {
             return context.value.animation.loop === true;
           },
         },
         {
-          title: 'Loop behavior',
-          name: 'mode',
-          type: 'select',
-          initialValue: 'normal',
+          title: "Loop behavior",
+          name: "mode",
+          type: "select",
+          initialValue: "normal",
           options: {
-            display: 'dropdown',
+            display: "dropdown",
             items: [
-              { label: 'Normal', value: 'normal' },
-              { label: 'Bounce', value: 'bounce' },
+              { label: "Normal", value: "normal" },
+              { label: "Bounce", value: "bounce" },
             ],
           },
           hidden: (context) => {
@@ -204,30 +208,30 @@ registerVevComponent(DotLottie, {
           },
         },
         {
-          title: 'Delay',
-          name: 'delay',
-          type: 'number',
+          title: "Delay",
+          name: "delay",
+          type: "number",
           initialValue: 1000,
           options: {
-            format: 'ms'
+            format: "ms",
           },
           hidden: (context) => context.value.animation.loop !== true,
         },
         {
-          title: 'Offset start',
-          name: 'scrollOffsetStart',
-          description: 'Start animation x pixels later',
-          type: 'number',
+          title: "Offset start",
+          name: "scrollOffsetStart",
+          description: "Start animation x pixels later",
+          type: "number",
           initialValue: 0,
           hidden: (context) => {
             return context.value.animation.onscroll !== true;
           },
         },
         {
-          title: 'Offset stop',
-          name: 'scrollOffsetStop',
-          description: 'Stop animation x pixels later',
-          type: 'number',
+          title: "Offset stop",
+          name: "scrollOffsetStop",
+          description: "Stop animation x pixels later",
+          type: "number",
           initialValue: 0,
           hidden: (context) => {
             return context.value.animation.onscroll !== true;
@@ -239,43 +243,43 @@ registerVevComponent(DotLottie, {
   interactions: [
     {
       type: InteractionTypes.PLAY,
-      description: 'Play',
+      description: "Play",
     },
     {
       type: InteractionTypes.PAUSE,
-      description: 'Pause',
+      description: "Pause",
     },
     {
       type: InteractionTypes.TOGGLE,
-      description: 'Toggle',
+      description: "Toggle",
     },
   ],
   events: [
     {
       type: EventTypes.PLAY,
-      description: 'On play',
+      description: "On play",
     },
     {
       type: EventTypes.PAUSE,
-      description: 'On pause',
+      description: "On pause",
     },
     {
       type: EventTypes.COMPLETE,
-      description: 'On complete',
+      description: "On complete",
     },
     {
       type: EventTypes.LOOP_COMPLETE,
-      description: 'On loop complete',
+      description: "On loop complete",
     },
   ],
   editableCSS: [
     {
-      title: 'Animation',
+      title: "Animation",
       selector: styles.wrapper,
-      properties: ['background', 'padding', 'border', 'border-radius'],
+      properties: ["background", "padding", "border", "border-radius"],
     },
   ],
-  type: 'standard',
+  type: "standard",
 });
 
 export default DotLottie;
