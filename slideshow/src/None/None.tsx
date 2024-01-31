@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState, useEffect, useRef, useCallback, useId } from "react";
+import { WidgetNode } from "@vev/react";
 import { Props } from "../Slideshow";
-import Zoom from "../Zoom";
 
-export const None = (props: Omit<Props, "children"> & { index: number }) => {
-  return <Zoom {...props} scaleFactor={100} speed={0.1} />;
+export const None = ({
+  currentSlide,
+}: Omit<Props, "children"> & {
+  index: number;
+  preview?: boolean;
+}) => {
+  return <WidgetNode id={currentSlide} />;
 };

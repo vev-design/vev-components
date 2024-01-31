@@ -24,8 +24,6 @@ export const Zoom = ({
   const prevIndex = useRef(index);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 0);
 
-  console.log("speed", transitionSpeed);
-
   useEffect(() => {
     setSlides();
   }, [reverse]);
