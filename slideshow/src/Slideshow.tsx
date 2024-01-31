@@ -19,6 +19,8 @@ import Slide from "./Slide";
 import Fade from "./Fade";
 import Zoom from "./Zoom";
 import Carousel from "./Carousel3d";
+import None from "./None";
+
 import { useTouch } from "./use-touch";
 import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
 
@@ -134,6 +136,7 @@ export const Slideshow = (props: Props) => {
     fade: Fade,
     zoom: Zoom,
     "3d": Carousel,
+    none: None,
   };
 
   const Comp = render[animation] || Slide;
@@ -200,6 +203,10 @@ registerVevComponent(Slideshow, {
             label: "3D",
             value: "3d",
           },
+          {
+            label: "None",
+            value: "none",
+          },
         ],
       },
     },
@@ -212,6 +219,7 @@ registerVevComponent(Slideshow, {
       options: {
         format: "ms",
       },
+      hidden: (context) => context.value?.animation === "none",
     },
     {
       name: "direction",

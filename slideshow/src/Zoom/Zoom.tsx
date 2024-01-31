@@ -1,28 +1,30 @@
-import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
-import { WidgetNode } from '@vev/react';
-import { Props } from '../Slideshow';
-import { isGoingForward, isGoingBackward } from '../utils';
+import React, { useState, useEffect, useRef, useCallback, useId } from "react";
+import { WidgetNode } from "@vev/react";
+import { Props } from "../Slideshow";
+import { isGoingForward, isGoingBackward } from "../utils";
 
-import styles from './Zoom.module.css';
+import styles from "./Zoom.module.css";
 
 export const Zoom = ({
   index,
-  speed,
+  speed = 0.1, // Have to be 0.1 to trigger onTransitionEnd
   slides,
   direction,
   currentSlide,
   nextSlide,
   prevSlide,
   scaleFactor = 300,
-}: Omit<Props, 'children'> & {
+}: Omit<Props, "children"> & {
   index: number;
   preview?: boolean;
 }) => {
-  const reverse = !direction?.includes('REVERSE');
+  const reverse = !direction?.includes("REVERSE");
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(1);
   const prevIndex = useRef(index);
-  const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
+  const [transitionSpeed, setTransitionSpeed] = useState(speed || 0);
+
+  console.log("speed", transitionSpeed);
 
   useEffect(() => {
     setSlides();
@@ -30,12 +32,15 @@ export const Zoom = ({
 
   const setSlides = useCallback(() => {
     setCurrentSlides(
-      reverse ? [nextSlide, currentSlide, prevSlide] : [prevSlide, currentSlide, nextSlide],
+      reverse
+        ? [nextSlide, currentSlide, prevSlide]
+        : [prevSlide, currentSlide, nextSlide]
     );
   }, [nextSlide, currentSlide, prevSlide]);
 
   useEffect(() => {
-    const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
+    const isJumping =
+      prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
     if (
       isJumping &&
@@ -43,20 +48,20 @@ export const Zoom = ({
       !isGoingForward(prevIndex.current, index, slides.length)
     ) {
       prevIndex.current = index;
-      setTransitionSpeed(1);
+      setTransitionSpeed(0.1);
       setMove(1);
       setSlides();
     }
 
     if (isGoingForward(index, prevIndex.current, slides.length)) {
       prevIndex.current = index;
-      setTransitionSpeed(speed || 200);
+      setTransitionSpeed(speed);
       reverse ? setMove(0) : setMove(2);
     }
 
     if (isGoingBackward(index, prevIndex.current, slides.length)) {
       prevIndex.current = index;
-      setTransitionSpeed(speed || 200);
+      setTransitionSpeed(speed);
       reverse ? setMove(2) : setMove(0);
     }
   }, [index, prevIndex, speed]);
@@ -76,7 +81,7 @@ export const Zoom = ({
         transition: `transform ${transitionSpeed}ms linear`,
       }}
       onTransitionEnd={(e) => {
-        if (e.propertyName === 'opacity') {
+        if (e.propertyName === "opacity") {
           setTransitionSpeed(1);
           setSlides();
           setMove(1);
@@ -91,13 +96,14 @@ export const Zoom = ({
             className={styles.slide}
             key={key}
             style={{
-              transition: `opacity ${transitionSpeed || 200}ms, transform ${
-                transitionSpeed || 200
-              }ms`,
+              transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
               opacity: i === move ? 1 : 0,
-              pointerEvents: i === move ? 'auto' : 'none',
-              zIndex: scaleFactor === 100 ? (i === move ? 'auto' : -1) : 'auto',
-              transform: i === move || i === move - 1 ? 'scale(1)' : `scale(${scaleFactor}%)`,
+              pointerEvents: i === move ? "auto" : "none",
+              zIndex: scaleFactor === 100 ? (i === move ? "auto" : -1) : "auto",
+              transform:
+                i === move || i === move - 1
+                  ? "scale(1)"
+                  : `scale(${scaleFactor}%)`,
             }}
           >
             {child && <WidgetNode id={child} />}
