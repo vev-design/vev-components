@@ -87,12 +87,14 @@ type FormModel = {
 
 const getFormModels = (
   modelKey: string,
-  interactions: ProjectInteraction[] = [],
+  interactions: {
+    [key: string]: ProjectInteraction[];
+  } = {},
   models: any[] = []
 ): FormModel[] => {
-  const usedInteractions = interactions.filter(
-    (interaction) => interaction.event?.contentKey === modelKey
-  );
+  const usedInteractions = Object.values(interactions?.widgets || {})
+    .reduce((res = [], cur = []) => [...res, ...cur], [])
+    .filter((interaction) => interaction.event?.contentKey === modelKey);
   const triggerKeys = usedInteractions.map(
     (interaction) => interaction.trigger?.contentKey
   );
