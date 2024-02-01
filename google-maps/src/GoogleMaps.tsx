@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import styles from "./GoogleMaps.module.css";
 import { registerVevComponent } from "@vev/react";
 import { SilkeAutocompleteField } from "@vev/silke";
-import ZoomButton from "./zoom-button/zoom-button";
 
 declare global {
   interface Window {
@@ -112,16 +111,11 @@ registerVevComponent(GoogleMaps, {
       name: "zoom",
       type: "number",
       initialValue: 16,
-      component: (context) => {
-        return (
-          <ZoomButton
-            name="zoom"
-            title="Zoom"
-            label="%"
-            value={context.value}
-            onChange={context.onChange}
-          />
-        );
+      options: {
+        display: "slider",
+        min: 1,
+        max: 100,
+        format: "%",
       },
     },
     {

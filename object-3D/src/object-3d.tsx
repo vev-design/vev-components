@@ -15,9 +15,7 @@ import { Vector3 } from "three";
 import { CameraEditor } from "./components/camera-editor";
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from "./types";
 import { EventTypes, InteractionTypes } from "./event-types";
-import SpeedSlider from "./SpeedSlider";
 import { SilkeBox, SilkeDivider } from "@vev/silke";
-import ReverseButton from "./components/reverse-button";
 
 export const defaultModel = {
   url: "https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb",
@@ -292,16 +290,19 @@ registerVevComponent(Object3d, {
           title: "Rotation speed",
           type: "number",
           initialValue: 2,
-          component: SpeedSlider,
+          options: {
+            display: "slider",
+            min: 0,
+            max: 20,
+          },
           hidden: (context) =>
             context?.value?.animationSettings?.rotate !== true,
         },
         {
           name: "reverseSpeed",
-          title: "Reverse",
+          title: "Loop alternate direction",
           type: "boolean",
           initialValue: false,
-          component: ReverseButton,
           hidden: (context) =>
             context?.value?.animationSettings?.rotate !== true,
         },
