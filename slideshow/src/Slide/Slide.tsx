@@ -13,6 +13,7 @@ export const Slide = ({
   currentSlide,
   nextSlide,
   prevSlide,
+  infinite,
 }: Omit<Props, "children"> & {
   index: number;
 }) => {
@@ -80,6 +81,16 @@ export const Slide = ({
     );
   }
 
+  const hideLastAndFirst = useCallback(
+    (key: string) => {
+      return (
+        (key == slides[slides.length - 1] && currentSlides[0] === key) ||
+        (key == slides[0] && currentSlides[2] === key)
+      );
+    },
+    [slides, currentSlides]
+  );
+
   return (
     <div
       className={styles.wrapper}
@@ -97,7 +108,6 @@ export const Slide = ({
     >
       {currentSlides?.map((child: string, i: number) => {
         const key = slides.length <= 2 ? `${child}-${i}` : child;
-
         return (
           <div
             className={styles.slide}
@@ -109,7 +119,9 @@ export const Slide = ({
               pointerEvents: i === 1 ? "auto" : "none",
             }}
           >
-            {child && <WidgetNode id={child} />}
+            {!infinite && hideLastAndFirst(child)
+              ? null
+              : child && <WidgetNode id={child} />}
           </div>
         );
       })}
