@@ -13,8 +13,27 @@ export const getNextSlideIndex = (index: number, slides: string[]): number =>
 export const getPrevSlideIndex = (index: number, slides: string[]): number =>
   slides?.length < 2 ? 1 : index === 0 ? (slides?.length || 0) - 1 : index - 1;
 
-export const isGoingForward = (index: number, prevIndex: number, total: number) =>
-  index === prevIndex + 1 || (prevIndex === total - 1 && index === 0 && total !== 1);
+export const isGoingForward = (
+  index: number,
+  prevIndex: number,
+  total: number,
+  infinite: boolean,
+  action: "NEXT" | "PREV"
+): boolean => {
+  if (total === 2) {
+    if (infinite) return action === "NEXT" ? true : false;
+    return index > prevIndex;
+  }
+  return (
+    index === prevIndex + 1 ||
+    (prevIndex === total - 1 && index === 0 && total !== 1)
+  );
+};
 
-export const isGoingBackward = (index: number, prevIndex: number, total: number) =>
-  index === prevIndex - 1 || (prevIndex === 0 && index === total - 1 && total !== 1);
+export const isGoingBackward = (
+  index: number,
+  prevIndex: number,
+  total: number
+): boolean =>
+  index === prevIndex - 1 ||
+  (prevIndex === 0 && index === total - 1 && total !== 1);

@@ -49,6 +49,7 @@ export type Props = {
   prevSlide: string;
   editMode?: boolean;
   index: number;
+  action: "NEXT" | "PREV";
 };
 
 enum Events {
@@ -79,7 +80,6 @@ export const Slideshow = (props: Props) => {
       ),
       length: numberOfSlides || 0,
     });
-
     prevIndex.current = children.indexOf(editor.activeContentChild);
   }, [editor.activeContentChild, editor.disabled]);
 
@@ -94,21 +94,21 @@ export const Slideshow = (props: Props) => {
 
   const handleNextSlide = useCallback(() => {
     if (!props.infinite && state?.index === numberOfSlides - 1) return;
-
     setIsTransitioning(true);
     setState({
       index: getNextSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
+      action: "NEXT",
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
   const handlePrevSlide = useCallback(() => {
     if (!props.infinite && state?.index === 0) return;
-
     setIsTransitioning(true);
     setState({
       index: getPrevSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
+      action: "PREV",
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
@@ -119,7 +119,6 @@ export const Slideshow = (props: Props) => {
 
   useVevEvent(Events.NEXT, handleNextSlide);
   useVevEvent(Events.PREV, handlePrevSlide);
-
   useVevEvent(Events.SET, (args: { slide: number }) => {
     setState({
       index: Math.max(0, Number(args?.slide) - 1),
@@ -153,6 +152,7 @@ export const Slideshow = (props: Props) => {
           speed={editor?.disabled ? 1 : props.speed}
           index={state?.index}
           editMode={editor.disabled}
+          action={state?.action}
         />
       )}
     </div>

@@ -14,6 +14,7 @@ export const Slide = ({
   nextSlide,
   prevSlide,
   infinite,
+  action,
 }: Omit<Props, "children"> & {
   index: number;
 }) => {
@@ -43,15 +44,6 @@ export const Slide = ({
     const isJumping =
       prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
-    if (
-      isJumping &&
-      !isGoingForward(index, prevIndex.current, slides.length) &&
-      !isGoingForward(index, prevIndex.current, slides.length)
-    ) {
-      prevIndex.current = index;
-      setSlides();
-    }
-
     const moveLeft = () => {
       setTransitionSpeed(speed || 200);
       setMove(-200);
@@ -62,14 +54,21 @@ export const Slide = ({
       setMove(0);
     };
 
-    if (isGoingForward(index, prevIndex.current, slides.length)) {
+    if (
+      isGoingForward(index, prevIndex.current, slides.length, infinite, action)
+    ) {
       prevIndex.current = index;
-      reverse ? moveRight() : moveLeft();
+      return reverse ? moveRight() : moveLeft();
     }
 
     if (isGoingBackward(index, prevIndex.current, slides.length)) {
       prevIndex.current = index;
-      reverse ? moveLeft() : moveRight();
+      return reverse ? moveLeft() : moveRight();
+    }
+
+    if (isJumping) {
+      prevIndex.current = index;
+      return setSlides();
     }
   }, [index, prevIndex, speed]);
 
@@ -82,10 +81,20 @@ export const Slide = ({
   }
 
   const hideLastAndFirst = useCallback(
-    (key: string) => {
+    (key: string, index: number, reverse: boolean) => {
+      if (reverse) {
+        return (
+          (key == slides[slides.length - 1] &&
+            currentSlides[2] === key &&
+            index === 2) ||
+          (key == slides[0] && currentSlides[0] === key && index === 0)
+        );
+      }
       return (
-        (key == slides[slides.length - 1] && currentSlides[0] === key) ||
-        (key == slides[0] && currentSlides[2] === key)
+        (key == slides[slides.length - 1] &&
+          currentSlides[0] === key &&
+          index === 0) ||
+        (key == slides[0] && currentSlides[2] === key && index === 2)
       );
     },
     [slides, currentSlides]
@@ -100,6 +109,7 @@ export const Slide = ({
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === "transform") {
+          console.log("transition end");
           setTransitionSpeed(0);
           setMove(-100);
           setSlides();
@@ -119,7 +129,7 @@ export const Slide = ({
               pointerEvents: i === 1 ? "auto" : "none",
             }}
           >
-            {!infinite && hideLastAndFirst(child)
+            {!infinite && hideLastAndFirst(child, i, reverse)
               ? null
               : child && <WidgetNode id={child} />}
           </div>
