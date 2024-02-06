@@ -43,20 +43,13 @@ const Lottie = ({
   const dispatchVevEvent = useDispatchVevEvent();
   const { disabled } = useEditorState();
 
-  const isJson = (file && file?.type === "application/json") || !file?.url;
+  const isJSON = (file?.url && file?.type === "application/json") || !file?.url;
 
   const [json, setJson] = useState({});
   const [lottieColors, setLottieColors] = useState<LottieColor[]>([]);
 
   const path = (file && file.url) || defaultAnimation;
   const colorsChanged = JSON.stringify({ lottieColors, colors });
-
-  const colorOverrides = useMemo(() => {
-    return lottieColors.map((lc) => {
-      const match = colors?.find((c) => String(c.oldColor) === String(lc));
-      return match ? match.newColor : lc;
-    });
-  }, [colorsChanged]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
@@ -94,18 +87,33 @@ const Lottie = ({
     }
   });
 
+  console.log("colors", colors);
+
   // Fetch json data when file url changes
   useEffect(() => {
     const fetchJson = async () => {
       try {
         const response = await fetch(path);
         if (response.ok) {
+          console.log("fetch");
           const result = await response.json();
-          console.log(result);
-          setJson(result);
+          const lottieColors = getColors(result);
 
-          const colors = getColors(result);
-          setLottieColors(colors);
+          const colorOverrides = lottieColors.map(
+            (lc: string | { oldColor: string }) => {
+              const match = colors?.find(
+                (c) => String(c.oldColor) === String(lc)
+              );
+              return match ? match.newColor : lc;
+            }
+          );
+
+          if (colorOverrides.length && isJSON) {
+            const jsonWithColor = colorify(colorOverrides, result);
+            setJson(jsonWithColor);
+          } else {
+            setJson(json);
+          }
         }
       } catch (e) {
         console.log("error", e);
@@ -113,17 +121,8 @@ const Lottie = ({
       }
     };
 
-    isJson && fetchJson();
-  }, [path]);
-
-  // Initial setup
-  useEffect(() => {
-    if (!isJson) return;
-    console.log("set colors", colors);
-    const data = colorOverrides && json && colorify(colorOverrides, json);
-    console.log("data", data);
-    setJson(data);
-  }, [colorOverrides]);
+    isJSON && fetchJson();
+  }, [colorsChanged]);
 
   useEffect(() => {
     if (disabled) {
@@ -136,7 +135,7 @@ const Lottie = ({
 
   return (
     <DotLottiePlayer
-      src={isJson ? json : path}
+      src={isJSON ? json : path}
       ref={lottieRef}
       speed={speed}
       onEvent={(event: PlayerEvents) => {
