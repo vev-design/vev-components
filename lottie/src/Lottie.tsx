@@ -42,6 +42,7 @@ const Lottie = ({
   const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
   const { disabled } = useEditorState();
+  const [loaded, setLoaded] = useState(false);
 
   const isJSON = (file?.url && file?.type === "application/json") || !file?.url;
 
@@ -87,8 +88,6 @@ const Lottie = ({
     }
   });
 
-  console.log("colors", colors);
-
   // Fetch json data when file url changes
   useEffect(() => {
     const fetchJson = async () => {
@@ -125,13 +124,16 @@ const Lottie = ({
   }, [colorsChanged]);
 
   useEffect(() => {
+    console.log("run", loaded);
+    if (!loaded) return;
     if (disabled) {
       lottieRef.current?.goToAndStop(0);
     } else {
       lottieRef.current?.setLoop(!!loop);
+      console.log("lottie", lottieRef.current, autoplay);
       autoplay ? lottieRef.current?.play() : lottieRef.current?.pause();
     }
-  }, [autoplay, loop, speed, disabled]);
+  }, [autoplay, loop, speed, disabled, loaded]);
 
   return (
     <DotLottiePlayer
@@ -148,6 +150,10 @@ const Lottie = ({
 
         if (Object.keys(events).includes(event)) {
           dispatchVevEvent(events[event as keyof typeof events]);
+        }
+
+        if (event === PlayerEvents.Ready) {
+          setLoaded(true);
         }
       }}
     >
