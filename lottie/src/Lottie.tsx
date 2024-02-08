@@ -18,7 +18,6 @@ import {
 import "@dotlottie/react-player/dist/index.css";
 
 import styles from "./Lottie.module.css";
-import SpeedSlider from "./components/SpeedSlider";
 import { Events, Interactions } from "./events";
 
 type Props = {
@@ -97,6 +96,7 @@ const Lottie = ({
           console.log("fetch");
           const result = await response.json();
           const lottieColors = getColors(result);
+          console.log(result);
 
           const colorOverrides = lottieColors.map(
             (lc: string | { oldColor: string }) => {
@@ -123,23 +123,14 @@ const Lottie = ({
     isJSON && fetchJson();
   }, [colorsChanged]);
 
-  useEffect(() => {
-    console.log("run", loaded);
-    if (!loaded) return;
-    if (disabled) {
-      lottieRef.current?.goToAndStop(0);
-    } else {
-      lottieRef.current?.setLoop(!!loop);
-      console.log("lottie", lottieRef.current, autoplay);
-      autoplay ? lottieRef.current?.play() : lottieRef.current?.pause();
-    }
-  }, [autoplay, loop, speed, disabled, loaded]);
-
   return (
     <DotLottiePlayer
       src={isJSON ? json : path}
       ref={lottieRef}
+      autoplay={autoplay}
+      loop={loop}
       speed={speed}
+      className={styles.wrapper}
       onEvent={(event: PlayerEvents) => {
         const events = {
           [PlayerEvents.Play]: Events.PLAY,
@@ -213,8 +204,7 @@ registerVevComponent(Lottie, {
       title: "Lottie file",
       type: "upload",
       accept: ".lottie,.json",
-      description:
-        "JSON file exported from After Effects or downloaded from lottiefiles.com",
+      description: "Only .lottie or JSON files are supported",
     },
     {
       name: "autoplay",
@@ -239,7 +229,12 @@ registerVevComponent(Lottie, {
       title: "Playback speed",
       type: "number",
       initialValue: 1,
-      component: SpeedSlider,
+      options: {
+        display: "slider",
+        min: -2,
+        max: 4,
+        format: "x",
+      },
       hidden: (context) => context?.value?.trigger === "scroll",
     },
     {
