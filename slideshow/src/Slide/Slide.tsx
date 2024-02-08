@@ -109,7 +109,6 @@ export const Slide = ({
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === "transform") {
-          console.log("transition end");
           setTransitionSpeed(0);
           setMove(-100);
           setSlides();
