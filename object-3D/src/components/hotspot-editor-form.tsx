@@ -97,7 +97,7 @@ export function HotSpotModal({
           rotate: false,
           controls: true,
           animation: NO_ANIMATION,
-          zoom: true,
+          zoom: false,
           rotationSpeed: 2,
           hotspots: hotspots || [],
           addHotSpot: (spot) => {
