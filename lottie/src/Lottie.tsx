@@ -3,7 +3,6 @@ import {
   registerVevComponent,
   useDispatchVevEvent,
   useVevEvent,
-  useEditorState,
 } from "@vev/react";
 import { colorify, getColors } from "lottie-colorify";
 import { File, LottieColor, LottieColorReplacement } from "./types";
@@ -27,7 +26,7 @@ type Props = {
   loop: boolean;
   speed: number;
   colors: LottieColorReplacement[];
-  controls: boolean;
+  hideControls: boolean;
 };
 
 const Lottie = ({
@@ -36,20 +35,15 @@ const Lottie = ({
   speed = 1,
   colors,
   autoplay = true,
-  controls,
+  hideControls = false,
 }: Props) => {
   const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
-  const { disabled } = useEditorState();
-  const [loaded, setLoaded] = useState(false);
-
   const isJSON = (file?.url && file?.type === "application/json") || !file?.url;
-
   const [json, setJson] = useState({});
-  const [lottieColors, setLottieColors] = useState<LottieColor[]>([]);
 
   const path = (file && file.url) || defaultAnimation;
-  const colorsChanged = JSON.stringify({ lottieColors, colors });
+  const colorsChanged = JSON.stringify(colors);
 
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
@@ -93,10 +87,8 @@ const Lottie = ({
       try {
         const response = await fetch(path);
         if (response.ok) {
-          console.log("fetch");
           const result = await response.json();
           const lottieColors = getColors(result);
-          console.log(result);
 
           const colorOverrides = lottieColors.map(
             (lc: string | { oldColor: string }) => {
@@ -142,13 +134,9 @@ const Lottie = ({
         if (Object.keys(events).includes(event)) {
           dispatchVevEvent(events[event as keyof typeof events]);
         }
-
-        if (event === PlayerEvents.Ready) {
-          setLoaded(true);
-        }
       }}
     >
-      {controls && <Controls />}
+      {!hideControls && <Controls />}
     </DotLottiePlayer>
   );
 };
@@ -219,10 +207,10 @@ registerVevComponent(Lottie, {
       initialValue: true,
     },
     {
-      name: "controls",
-      title: "Controls",
+      name: "hideControls",
+      title: "Hide controls",
       type: "boolean",
-      initialValue: false,
+      initialValue: true,
     },
     {
       name: "speed",
