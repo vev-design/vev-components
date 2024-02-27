@@ -43,6 +43,8 @@ export const Carousel3d = ({
   perspective = 800,
   editMode,
   direction,
+  action,
+  infinite,
 }: Omit<Props, "children"> & { index: number }) => {
   const { width, height } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
@@ -65,7 +67,9 @@ export const Carousel3d = ({
     const moveLeft = () => setPercentage((percentage) => percentage - unit);
     const moveRight = () => setPercentage((percentage) => percentage + unit);
 
-    if (isGoingForward(index, prevIndex.current, slides.length)) {
+    if (
+      isGoingForward(index, prevIndex.current, slides.length, infinite, action)
+    ) {
       (isReverse ? moveRight : moveLeft)();
     }
     if (isGoingBackward(index, prevIndex.current, slides.length)) {

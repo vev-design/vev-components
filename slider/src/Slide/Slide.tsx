@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { WidgetNode } from "@vev/react";
-import { Props } from "../Slideshow";
+import { Props } from "../Slider";
 import { isGoingForward, isGoingBackward } from "../utils";
 
 import styles from "./Slide.module.css";
@@ -18,15 +18,16 @@ export const Slide = ({
 }: Omit<Props, "children"> & {
   index: number;
 }) => {
-  const reverse = direction?.includes("REVERSE");
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
-
-  const prevIndex = useRef(0);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
+  const prevIndex = useRef(0);
+
   const moveDirection = ["VERTICAL", "VERTICAL_REVERSE"].includes(direction)
     ? "Y"
     : "X";
+
+  const reverse = direction?.includes("REVERSE");
 
   useEffect(() => {
     setSlides();
@@ -72,14 +73,6 @@ export const Slide = ({
     }
   }, [index, prevIndex, speed]);
 
-  if (slides.length === 1) {
-    return (
-      <div className={styles.slide}>
-        <WidgetNode id={currentSlide} />
-      </div>
-    );
-  }
-
   const hideLastAndFirst = useCallback(
     (key: string, index: number, reverse: boolean) => {
       if (reverse) {
@@ -99,6 +92,14 @@ export const Slide = ({
     },
     [slides, currentSlides]
   );
+
+  if (slides.length === 1) {
+    return (
+      <div className={styles.slide}>
+        <WidgetNode id={currentSlide} />
+      </div>
+    );
+  }
 
   return (
     <div

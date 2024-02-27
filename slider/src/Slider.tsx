@@ -218,7 +218,7 @@ registerVevComponent(Slideshow, {
       initialValue: 200,
       options: {
         format: "ms",
-      },
+      } as any, // Need to update CLI
       hidden: (context) => context.value?.animation === "none",
     },
     {

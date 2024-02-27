@@ -18,7 +18,7 @@ export const isGoingForward = (
   prevIndex: number,
   total: number,
   infinite: boolean,
-  action: "NEXT" | "PREV"
+  action?: "NEXT" | "PREV"
 ): boolean => {
   if (total === 2) {
     if (infinite) return action === "NEXT" ? true : false;

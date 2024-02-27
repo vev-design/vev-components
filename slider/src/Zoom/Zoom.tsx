@@ -14,6 +14,8 @@ export const Zoom = ({
   nextSlide,
   prevSlide,
   scaleFactor = 300,
+  action,
+  infinite,
 }: Omit<Props, "children"> & {
   index: number;
   preview?: boolean;
@@ -42,8 +44,14 @@ export const Zoom = ({
 
     if (
       isJumping &&
-      !isGoingForward(index, prevIndex.current, slides.length) &&
-      !isGoingForward(prevIndex.current, index, slides.length)
+      !isGoingForward(
+        index,
+        prevIndex.current,
+        slides.length,
+        infinite,
+        action
+      ) &&
+      !isGoingForward(prevIndex.current, index, slides.length, infinite, action)
     ) {
       prevIndex.current = index;
       setTransitionSpeed(0.1);
@@ -51,7 +59,9 @@ export const Zoom = ({
       setSlides();
     }
 
-    if (isGoingForward(index, prevIndex.current, slides.length)) {
+    if (
+      isGoingForward(index, prevIndex.current, slides.length, infinite, action)
+    ) {
       prevIndex.current = index;
       setTransitionSpeed(speed);
       reverse ? setMove(0) : setMove(2);
