@@ -213,8 +213,7 @@ registerVevComponent(Slideshow, {
     {
       name: "speed",
       type: "number",
-      description: "Specify how long the animation should last",
-      title: "Duration",
+      title: "Transition speed",
       initialValue: 200,
       options: {
         format: "ms",
