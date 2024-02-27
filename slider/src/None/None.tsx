@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from "react";
 import { WidgetNode } from "@vev/react";
-import { Props } from "../Slideshow";
+import { Props } from "../Slider";
 
 export const None = ({
   currentSlide,

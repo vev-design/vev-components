@@ -24,7 +24,7 @@ import None from "./None";
 import { useTouch } from "./use-touch";
 import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
 
-import styles from "./Slideshow.module.css";
+import styles from "./Slider.module.css";
 
 export type Props = {
   hostRef: RefObject<any>;

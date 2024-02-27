@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from "react";
 import { WidgetNode } from "@vev/react";
-import { Props } from "../Slideshow";
+import { Props } from "../Slider";
 import { isGoingForward, isGoingBackward } from "../utils";
 
 import styles from "./Zoom.module.css";
