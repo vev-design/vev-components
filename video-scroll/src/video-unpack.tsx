@@ -91,7 +91,7 @@ export const unpackFrames = async (
 
       const base64Snapshot = await createScreenshot(videoElement, context, width, height);
       imageUploadPromises.push(
-        uploadFile(base64Snapshot, `frame-${frameIndex}.jpg`).then((file) => {
+        uploadFile(base64Snapshot, `frame-${frameIndex}.webp`).then((file) => {
           imageDoneCount++;
           progressCb(imageDoneCount / imageCount, base64Snapshot);
           return file;
@@ -112,11 +112,13 @@ async function createScreenshot(
   width: number,
   height: number,
 ): Promise<string> {
+  // Clear canvas if video supports transparency
+  context.clearRect(0, 0, width, height);
   context.drawImage(videoElement, 0, 0, width, height);
 
   // create blob
   const blob = await context.canvas.convertToBlob({
-    type: 'image/jpeg',
+    type: 'image/webp',
     quality: 100,
   });
 

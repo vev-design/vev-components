@@ -26,7 +26,8 @@ function getWorker() {
             : url;
           const response = await fetch(fetchUrl);
           const fileBlob = await response.blob();
-          if (fileBlob.type === 'image/jpeg' || isLocalAsset) return URL.createObjectURL(fileBlob);
+          // fileBlob.type says the MIME-type is png, but it is image/webp
+          if (fileBlob.type === 'image/png' || isLocalAsset) return URL.createObjectURL(fileBlob);
         } catch (e) {
           return null;
         }
