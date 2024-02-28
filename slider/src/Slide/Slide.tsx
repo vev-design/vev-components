@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { WidgetNode } from "@vev/react";
 import { Props } from "../Slider";
-import { isGoingForward, isGoingBackward } from "../utils";
+import {
+  isGoingForward,
+  isGoingBackward,
+  getNextSlideIndex,
+  getPrevSlideIndex,
+} from "../utils";
 
 import styles from "./Slide.module.css";
 
@@ -10,17 +15,16 @@ export const Slide = ({
   speed,
   slides,
   direction,
-  currentSlide,
-  nextSlide,
-  prevSlide,
   infinite,
   action,
+  slidesToLoad: slidesToLoadProp,
 }: Omit<Props, "children"> & {
   index: number;
 }) => {
+  const slidesToLoad = Math.min(Math.max(slidesToLoadProp, 1), 5) || 1;
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(-100);
-  const [transitionSpeed, setTransitionSpeed] = useState(speed || 200);
+  const [transitionSpeed, setTransitionSpeed] = useState(speed || 1);
   const prevIndex = useRef(0);
 
   const moveDirection = ["VERTICAL", "VERTICAL_REVERSE"].includes(direction)
@@ -29,29 +33,52 @@ export const Slide = ({
 
   const reverse = direction?.includes("REVERSE");
 
+  const setSlides = useCallback(() => {
+    const getIndexValue = (val: any, curr: number) =>
+      val === undefined ? curr : val;
+    const indexes = [
+      ...Array(slidesToLoad)
+        .fill(null)
+        .reduce((res) => {
+          return [
+            getPrevSlideIndex(getIndexValue(res[0], index), slides, infinite),
+            ...res,
+          ];
+        }, []),
+      index,
+      ...Array(slidesToLoad)
+        .fill(null)
+        .reduce((res) => {
+          return [
+            ...res,
+            getNextSlideIndex(
+              getIndexValue(res[res.length - 1], index),
+              slides,
+              infinite
+            ),
+          ];
+        }, []),
+    ];
+
+    const slideKeys = indexes.map((i) => slides[i]);
+    setCurrentSlides(reverse ? slideKeys.reverse() : slideKeys);
+  }, [reverse, slidesToLoad, infinite]);
+
   useEffect(() => {
     setSlides();
-  }, [reverse]);
-
-  const setSlides = useCallback(() => {
-    setCurrentSlides(
-      reverse
-        ? [nextSlide, currentSlide, prevSlide]
-        : [prevSlide, currentSlide, nextSlide]
-    );
-  }, [nextSlide, currentSlide, prevSlide, direction]);
+  }, [reverse, slidesToLoad, infinite]);
 
   useEffect(() => {
     const isJumping =
       prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
     const moveLeft = () => {
-      setTransitionSpeed(speed || 200);
+      setTransitionSpeed(speed || 1);
       setMove(-200);
     };
 
     const moveRight = () => {
-      setTransitionSpeed(speed || 200);
+      setTransitionSpeed(speed || 1);
       setMove(0);
     };
 
@@ -73,30 +100,10 @@ export const Slide = ({
     }
   }, [index, prevIndex, speed]);
 
-  const hideLastAndFirst = useCallback(
-    (key: string, index: number, reverse: boolean) => {
-      if (reverse) {
-        return (
-          (key == slides[slides.length - 1] &&
-            currentSlides[2] === key &&
-            index === 2) ||
-          (key == slides[0] && currentSlides[0] === key && index === 0)
-        );
-      }
-      return (
-        (key == slides[slides.length - 1] &&
-          currentSlides[0] === key &&
-          index === 0) ||
-        (key == slides[0] && currentSlides[2] === key && index === 2)
-      );
-    },
-    [slides, currentSlides]
-  );
-
   if (slides.length === 1) {
     return (
       <div className={styles.slide}>
-        <WidgetNode id={currentSlide} />
+        <WidgetNode id={slides[index]} />
       </div>
     );
   }
@@ -105,36 +112,42 @@ export const Slide = ({
     <div
       className={styles.wrapper}
       style={{
-        transform: `translate${moveDirection}(${move}%)`,
-        transition: `transform ${transitionSpeed}ms linear`,
-      }}
-      onTransitionEnd={(e) => {
-        if (e.propertyName === "transform") {
-          setTransitionSpeed(0);
-          setMove(-100);
-          setSlides();
-        }
+        transform: `translate${moveDirection}(${-100 * (slidesToLoad - 1)}%)`,
       }}
     >
-      {currentSlides?.map((child: string, i: number) => {
-        const key = slides.length <= 2 ? `${child}-${i}` : child;
-        return (
-          <div
-            className={styles.slide}
-            key={key}
-            style={{
-              transform: `translate${moveDirection}(${100 * i}%)`,
-              width: "100%",
-              zIndex: i === 1 ? "1" : "0",
-              pointerEvents: i === 1 ? "auto" : "none",
-            }}
-          >
-            {!infinite && hideLastAndFirst(child, i, reverse)
-              ? null
-              : child && <WidgetNode id={child} />}
-          </div>
-        );
-      })}
+      <div
+        className={styles.wrapper}
+        style={{
+          transform: `translate${moveDirection}(${move}%)`,
+          transition: `transform ${transitionSpeed}ms linear`,
+        }}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === "transform") {
+            setTransitionSpeed(0);
+            setMove(-100);
+            setSlides();
+          }
+        }}
+      >
+        {currentSlides?.map((child: string, i: number) => {
+          const key = slides.length <= 2 ? `${child || "key"}-${i}` : child;
+          console.log("key", key);
+          return (
+            <div
+              className={styles.slide}
+              key={key || i}
+              style={{
+                transform: `translate${moveDirection}(${100 * i}%)`,
+                width: "100%",
+                zIndex: i === 1 ? "1" : "0",
+                pointerEvents: i === 1 ? "auto" : "none",
+              }}
+            >
+              {child && <WidgetNode id={child} />}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

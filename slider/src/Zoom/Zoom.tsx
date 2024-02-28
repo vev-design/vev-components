@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from "react";
 import { WidgetNode } from "@vev/react";
 import { Props } from "../Slider";
-import { isGoingForward, isGoingBackward } from "../utils";
+import {
+  isGoingForward,
+  isGoingBackward,
+  getNextSlideIndex,
+  getPrevSlideIndex,
+} from "../utils";
 
 import styles from "./Zoom.module.css";
 
@@ -10,9 +15,6 @@ export const Zoom = ({
   speed = 0.1, // Have to be 0.1 to trigger onTransitionEnd
   slides,
   direction,
-  currentSlide,
-  nextSlide,
-  prevSlide,
   scaleFactor = 300,
   action,
   infinite,
@@ -25,6 +27,10 @@ export const Zoom = ({
   const [move, setMove] = useState(1);
   const prevIndex = useRef(index);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 0);
+
+  const currentSlide = slides[index];
+  const nextSlide = slides[getNextSlideIndex(index, slides)];
+  const prevSlide = slides[getPrevSlideIndex(index, slides)];
 
   useEffect(() => {
     setSlides();

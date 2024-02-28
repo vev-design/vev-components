@@ -44,12 +44,10 @@ export type Props = {
     | "VERTICAL_REVERSE";
 
   slides: string[];
-  currentSlide: string;
-  nextSlide: string;
-  prevSlide: string;
   editMode?: boolean;
   index: number;
   action: "NEXT" | "PREV";
+  slidesToLoad: number;
 };
 
 enum Events {
@@ -146,9 +144,6 @@ export const Slideshow = (props: Props) => {
         <Comp
           {...props}
           slides={slides}
-          currentSlide={slides[state?.index]}
-          nextSlide={slides[getNextSlideIndex(state?.index, slides)]}
-          prevSlide={slides[getPrevSlideIndex(state?.index, slides)]}
           speed={editor?.disabled ? 1 : props.speed}
           index={state?.index}
           editMode={editor.disabled}
@@ -257,6 +252,16 @@ registerVevComponent(Slideshow, {
       title: "Scale (%)",
       initialValue: 300,
       hidden: (context) => context.value?.animation !== "zoom",
+    },
+    {
+      name: "slidesToLoad",
+      type: "number",
+      hidden: (context) => context.value?.animation !== "slide",
+      initialValue: 1,
+      options: {
+        min: 1,
+        max: 5,
+      },
     },
   ],
   interactions: [

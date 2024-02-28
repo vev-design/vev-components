@@ -34,7 +34,7 @@ const SlideshowDots = (props: Props) => {
 };
 
 registerVevComponent(SlideshowDots, {
-  name: "Slideshow Dots",
+  name: "Slider Dots",
   size: {
     width: "auto",
     height: "auto",

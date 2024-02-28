@@ -1,12 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback, useId } from "react";
+import React from "react";
 import { WidgetNode } from "@vev/react";
 import { Props } from "../Slider";
 
-export const None = ({
-  currentSlide,
-}: Omit<Props, "children"> & {
-  index: number;
-  preview?: boolean;
-}) => {
-  return <WidgetNode id={currentSlide} />;
+export const None = ({ slides, index }: Props) => {
+  return <WidgetNode id={slides[index]} />;
 };

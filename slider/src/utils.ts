@@ -7,11 +7,31 @@ export const shuffleArray = (array: any[]) => {
   return newArray;
 };
 
-export const getNextSlideIndex = (index: number, slides: string[]): number =>
-  slides.length < 2 ? 1 : index + 1 === slides?.length ? 0 : index + 1;
+export const getNextSlideIndex = (
+  index: number,
+  slides: string[],
+  infinite?: boolean
+): number =>
+  slides.length < 2
+    ? 1
+    : index + 1 === slides?.length
+    ? !infinite
+      ? 0
+      : -1
+    : index + 1;
 
-export const getPrevSlideIndex = (index: number, slides: string[]): number =>
-  slides?.length < 2 ? 1 : index === 0 ? (slides?.length || 0) - 1 : index - 1;
+export const getPrevSlideIndex = (
+  index: number,
+  slides: string[],
+  infinite?: boolean
+): number =>
+  slides?.length < 2
+    ? 1
+    : index === 0
+    ? infinite
+      ? (slides?.length || 0) - 1
+      : -1
+    : index - 1;
 
 export const isGoingForward = (
   index: number,
