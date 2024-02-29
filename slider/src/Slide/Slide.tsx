@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useId } from "react";
 import { WidgetNode } from "@vev/react";
 import { Props } from "../Slider";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../utils";
 
 import styles from "./Slide.module.css";
+const tempId = () => "tmp-" + Math.random().toString(16).slice(2);
 
 export const Slide = ({
   index,
@@ -36,33 +37,31 @@ export const Slide = ({
   const setSlides = useCallback(() => {
     const getIndexValue = (val: any, curr: number) =>
       val === undefined ? curr : val;
+
     const indexes = [
       ...Array(slidesToLoad)
         .fill(null)
         .reduce((res) => {
-          return [
-            getPrevSlideIndex(getIndexValue(res[0], index), slides, infinite),
-            ...res,
-          ];
+          const prevIndex = getPrevSlideIndex(
+            getIndexValue(res[0], index),
+            slides
+          );
+          return [!infinite && prevIndex > index ? -1 : prevIndex, ...res];
         }, []),
       index,
       ...Array(slidesToLoad)
         .fill(null)
         .reduce((res) => {
-          return [
-            ...res,
-            getNextSlideIndex(
-              getIndexValue(res[res.length - 1], index),
-              slides,
-              infinite
-            ),
-          ];
+          const nextIndex = getNextSlideIndex(
+            getIndexValue(res[res.length - 1], index),
+            slides
+          );
+          return [...res, !infinite && nextIndex < index ? -1 : nextIndex];
         }, []),
     ];
-
-    const slideKeys = indexes.map((i) => slides[i]);
+    const slideKeys = indexes.map((index) => slides[index] || tempId());
     setCurrentSlides(reverse ? slideKeys.reverse() : slideKeys);
-  }, [reverse, slidesToLoad, infinite]);
+  }, [reverse, slidesToLoad, infinite, index]);
 
   useEffect(() => {
     setSlides();
@@ -131,11 +130,10 @@ export const Slide = ({
       >
         {currentSlides?.map((child: string, i: number) => {
           const key = slides.length <= 2 ? `${child || "key"}-${i}` : child;
-          console.log("key", key);
           return (
             <div
               className={styles.slide}
-              key={key || i}
+              key={key}
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,
                 width: "100%",
