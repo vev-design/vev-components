@@ -22,7 +22,9 @@ export const Slide = ({
 }: Omit<Props, "children"> & {
   index: number;
 }) => {
-  const slidesToLoad = Math.min(Math.max(slidesToLoadProp, 1), 5) || 1;
+  const slidesToLoad =
+    Math.min(Math.max(slidesToLoadProp, 1), Math.min(5, slides.length - 1)) ||
+    1;
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(-100);
   const [transitionSpeed, setTransitionSpeed] = useState(speed || 1);
