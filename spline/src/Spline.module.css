@@ -2,13 +2,3 @@
   height: 100%;
   width: 100%;
 }
-
-.info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #565656;
-  color: white;
-  height: 100%;
-  padding: 1rem;
-}

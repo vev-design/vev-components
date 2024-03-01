@@ -1,45 +1,63 @@
-import React, { useRef } from 'react';
-import styles from './Spline.module.css';
-import { registerVevComponent } from '@vev/react';
+import React, { useEffect, useRef } from "react";
+import styles from "./Spline.module.css";
+import { registerVevComponent } from "@vev/react";
 
 type Props = {
-  formUrl: string;
+  sceneUrl: string;
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
+const scriptAlreadyExists = () =>
+  document.querySelector('script#spline-viewer') !== null
+
 const Spline = ({
-  formUrl = 'https://my.spline.design/carcampingphysicscopy-56fe6d4adf9415188037704bd4b6d775/',
+                  sceneUrl = "https://my.spline.design/carcampingphysicscopy-56fe6d4adf9415188037704bd4b6d775/",
 }: Props) => {
   const frameRef = useRef<HTMLIFrameElement>(null);
 
-  if (formUrl === '') {
-    return (
-      <div className={styles.info}>
-        <h3>Double-click this Element to add your Spline URL</h3>
-      </div>
-    );
-  }
+  useEffect(() => {
+      const tag = document.createElement("script");
+      tag.type = "module";
+      tag.id = "script#spline-viewer";
+      tag.src = "https://unpkg.com/@splinetool/viewer/build/spline-viewer.js";
+      document.body.appendChild(tag);
+  }, []);
 
   return (
-    <iframe
-      src={formUrl}
-      ref={frameRef}
-      className={styles.wrapper}
-      frameBorder={0}
-      marginHeight={0}
-      marginWidth={0}
-    >
-      Loading…
-    </iframe>
+    <div className={styles.wrapper}>
+      <spline-viewer url={sceneUrl} loading-anim-type="spinner-small-dark"></spline-viewer>
+    </div>
   );
 };
 
 registerVevComponent(Spline, {
-  name: 'Spline',
+  name: "Spline",
+  emptyState: {
+    linkText: "Add URL",
+    description: " to your Spline scene",
+    checkProperty: "sceneUrl",
+    action: "OPEN_PROPERTIES"
+  },
   description:
-    'Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.',
-  props: [{ name: 'formUrl', title: 'Spline URL', type: 'string', initialValue: '' }],
-  type: 'both',
+    "Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.",
+  props: [
+    {
+      name: "sceneUrl",
+      title: "Spline Scene URL",
+      type: "string",
+      options: {
+        multiline: true,
+      },
+    },
+  ],
+  editableCSS: [
+    {
+      title: "Spline",
+      selector: styles.wrapper,
+      properties: ["background", "border-radius", "border", "filter"],
+    },
+  ],
+  type: "both",
 });
 
 export default Spline;

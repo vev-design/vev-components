@@ -19,10 +19,12 @@ import Slide from "./Slide";
 import Fade from "./Fade";
 import Zoom from "./Zoom";
 import Carousel from "./Carousel3d";
+import None from "./None";
+
 import { useTouch } from "./use-touch";
 import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
 
-import styles from "./Slideshow.module.css";
+import styles from "./Slider.module.css";
 
 export type Props = {
   hostRef: RefObject<any>;
@@ -42,11 +44,10 @@ export type Props = {
     | "VERTICAL_REVERSE";
 
   slides: string[];
-  currentSlide: string;
-  nextSlide: string;
-  prevSlide: string;
   editMode?: boolean;
   index: number;
+  action: "NEXT" | "PREV";
+  slidesToLoad: number;
 };
 
 enum Events {
@@ -77,7 +78,6 @@ export const Slideshow = (props: Props) => {
       ),
       length: numberOfSlides || 0,
     });
-
     prevIndex.current = children.indexOf(editor.activeContentChild);
   }, [editor.activeContentChild, editor.disabled]);
 
@@ -92,21 +92,21 @@ export const Slideshow = (props: Props) => {
 
   const handleNextSlide = useCallback(() => {
     if (!props.infinite && state?.index === numberOfSlides - 1) return;
-
     setIsTransitioning(true);
     setState({
       index: getNextSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
+      action: "NEXT",
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
   const handlePrevSlide = useCallback(() => {
     if (!props.infinite && state?.index === 0) return;
-
     setIsTransitioning(true);
     setState({
       index: getPrevSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
+      action: "PREV",
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
@@ -117,7 +117,6 @@ export const Slideshow = (props: Props) => {
 
   useVevEvent(Events.NEXT, handleNextSlide);
   useVevEvent(Events.PREV, handlePrevSlide);
-
   useVevEvent(Events.SET, (args: { slide: number }) => {
     setState({
       index: Math.max(0, Number(args?.slide) - 1),
@@ -134,6 +133,7 @@ export const Slideshow = (props: Props) => {
     fade: Fade,
     zoom: Zoom,
     "3d": Carousel,
+    none: None,
   };
 
   const Comp = render[animation] || Slide;
@@ -144,12 +144,10 @@ export const Slideshow = (props: Props) => {
         <Comp
           {...props}
           slides={slides}
-          currentSlide={slides[state?.index]}
-          nextSlide={slides[getNextSlideIndex(state?.index, slides)]}
-          prevSlide={slides[getPrevSlideIndex(state?.index, slides)]}
           speed={editor?.disabled ? 1 : props.speed}
           index={state?.index}
           editMode={editor.disabled}
+          action={state?.action}
         />
       )}
     </div>
@@ -200,18 +198,22 @@ registerVevComponent(Slideshow, {
             label: "3D",
             value: "3d",
           },
+          {
+            label: "None",
+            value: "none",
+          },
         ],
       },
     },
     {
       name: "speed",
       type: "number",
-      description: "Specify how long the animation should last",
-      title: "Duration",
+      title: "Transition speed",
       initialValue: 200,
       options: {
         format: "ms",
-      },
+      } as any, // Need to update CLI
+      hidden: (context) => context.value?.animation === "none",
     },
     {
       name: "direction",
@@ -250,6 +252,16 @@ registerVevComponent(Slideshow, {
       title: "Scale (%)",
       initialValue: 300,
       hidden: (context) => context.value?.animation !== "zoom",
+    },
+    {
+      name: "slidesToLoad",
+      type: "number",
+      hidden: (context) => context.value?.animation !== "slide",
+      initialValue: 1,
+      options: {
+        min: 1,
+        max: 5,
+      },
     },
   ],
   interactions: [
