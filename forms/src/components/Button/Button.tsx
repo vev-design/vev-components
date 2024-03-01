@@ -1,19 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
-import cx from "classnames";
-import usePrevious from "../../utils/usePrevious";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   registerVevComponent,
-  useVevEvent,
   useDispatchVevEvent,
-  useModel,
   useGlobalStateRef,
-  ProjectInteraction,
+  useModel,
+  useVevEvent,
 } from "@vev/react";
 import formIcon from "../../assets/form-icon.svg";
 import styles from "./Button.module.css";
 
 import GoogleSheetConnect from "../../submit/GoogleSheetConnect";
 import ZapierConnect from "../../submit/ZapierConnect";
+import { InteractionMap } from "@vev/utils";
 
 type Props = {
   submitButton: string;
@@ -87,22 +85,22 @@ type FormModel = {
 
 const getFormModels = (
   modelKey: string,
-  interactions: {
-    [key: string]: ProjectInteraction[];
-  } = {},
+  interactions: InteractionMap,
   models: any[] = []
 ): FormModel[] => {
-  const usedInteractions = Object.values(interactions?.widgets || {})
+
+  const usedInteractions = Object.values(interactions?.event.widget || {})
     .reduce((res = [], cur = []) => [...res, ...cur], [])
     .filter((interaction) => interaction.event?.contentKey === modelKey);
+
   const triggerKeys = usedInteractions.map(
     (interaction) => interaction.trigger?.contentKey
   );
   return models.filter((model) => triggerKeys?.includes(model.key));
 };
 
-const validateForm = (formState: any, formModels: FormModel[]) => {
-  const errors = [];
+const validateForm = (formState: any, formModels: FormModel[]): {key: string; message: string}[] => {
+  const errors: {key: string; message: string}[] = [];
   for (const model of formModels) {
     const value = formState[model.content.name];
     const isRequired = model.content.required;
@@ -124,6 +122,17 @@ function Button({ ...props }: Props) {
   const model = useModel();
 
   console.log("formState", formState);
+
+  const isValid  = useMemo(() => {
+    const formModels = getFormModels(
+      model.key,
+      store?.current?.interactions,
+      store?.current?.models
+    );
+
+    const errors = validateForm(formState, formModels);
+    return errors.length === 0;
+  }, [formState, model.key, store?.current?.interactions, store?.current?.models]);
 
   const { submitButton, successMessage, type = "submit" } = props;
 
@@ -211,7 +220,7 @@ function Button({ ...props }: Props) {
 
   return (
     <button
-      disabled={submitting}
+      disabled={submitting || !isValid}
       onClick={() => handleSubmit(formState)}
       className={styles.button}
     >
@@ -243,6 +252,20 @@ registerVevComponent(Button, {
       selector: styles.button + ":hover",
       title: "Hover",
       properties: ["background", "color", "box-shadow"],
+    },
+    {
+      selector: styles.button + ":disabled",
+      title: "Disabled",
+      properties: [
+        "background",
+        "color",
+        "border-radius",
+        "box-shadow",
+        "padding",
+        "font-family",
+        "font-size",
+        "text-align",
+      ],
     },
   ],
   props: [

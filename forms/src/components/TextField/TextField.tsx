@@ -250,16 +250,6 @@ registerVevComponent(TextField, {
   events: [
     {
       type: Event.onChange,
-      args: [
-        {
-          name: 'name',
-          type: 'string',
-        },
-        {
-          name: 'value',
-          type: 'string',
-        },
-      ],
     },
     {
       type: Event.onInvalid,

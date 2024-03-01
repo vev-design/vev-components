@@ -11,6 +11,11 @@
   text-align: center;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  background: rgb(173, 173, 173);
+}
+
 .button svg {
   width: 20px;
 }
