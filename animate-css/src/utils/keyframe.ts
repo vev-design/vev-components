@@ -34,7 +34,6 @@ export type VevAnimation = {
 };
 
 export function createCSSKeyframe(keyframe: AnimationKeyframe): Keyframe {
-  if (typeof keyframe === "string") return null;
   const result: Keyframe = {};
   if (typeof keyframe.offset === "number") result.offset = keyframe.offset;
   for (const key in keyframe) {

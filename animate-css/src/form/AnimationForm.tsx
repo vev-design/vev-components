@@ -21,9 +21,11 @@ type AnimationFormProps = {
 
 export function AnimationForm({ value, onChange }: AnimationFormProps) {
   const [prompt, setPrompt] = React.useState("");
+  const [prompts, setPrompts] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);
 
   if (!value) value = [];
+  if (!Array.isArray(value)) value = [value];
   return (
     <TextFieldContext inline="label-inside" size="xs">
       <SilkeBox column gap="m" fill flex>
@@ -55,39 +57,44 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
         ))}
         <SilkeBox hAlign="center" column gap="m">
           <SilkeBox fill>
-            <SilkeTextField
-              flex
-              size="l"
-              value={prompt}
-              onChange={(prompt) => setPrompt(prompt)}
-              label=""
-              placeholder="Describe your new fancy animation!"
-            >
-              <SilkeTextFieldItem>
-                <SilkeButton
-                  label="Send"
-                  size="l"
-                  onClick={async () => {
-                    setLoading(true);
-                    const res = await fetch("http://localhost:8000", {
-                      method: "POST",
-                      body: JSON.stringify({ message: prompt }),
-                    });
-                    const data = await res.json();
-                    setLoading(false);
-
-                    onChange([
-                      ...value,
-                      {
-                        type: AnimationType.visible,
-                        keyframes: data,
-                      },
-                    ]);
-                  }}
-                  loading={loading}
-                />
-              </SilkeTextFieldItem>
-            </SilkeTextField>
+            <SilkeBox column fill gap="s" align="center">
+              <SilkeTitle kind="s">Animation AI 🧙‍♂️</SilkeTitle>
+              <SilkeTextField
+                flex
+                size="l"
+                value={prompt}
+                onChange={(prompt) => setPrompt(prompt)}
+                label=""
+                placeholder="Describe your new fancy animation!"
+                disabled={loading}
+              >
+                <SilkeTextFieldItem>
+                  <SilkeButton
+                    label="Send"
+                    size="l"
+                    onClick={async () => {
+                      setLoading(true);
+                      setPrompts([...prompts, prompt]);
+                      try {
+                        const res = await fetch("http://localhost:8000", {
+                          method: "POST",
+                          body: JSON.stringify({ messages: prompts }),
+                        });
+                        const data = await res.json();
+                        onChange(data);
+                        console.log("res", data);
+                      } catch (e) {
+                        console.log(e);
+                      } finally {
+                        setLoading(false);
+                        setPrompt("");
+                      }
+                    }}
+                    loading={loading}
+                  />
+                </SilkeTextFieldItem>
+              </SilkeTextField>
+            </SilkeBox>
           </SilkeBox>
           <SilkeOverflowMenu
             icon="add"

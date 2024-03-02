@@ -31,26 +31,24 @@ export default function AnimationCSS({
 
     const unsubscribes: (() => void)[] = [];
 
+    if (!Array.isArray(animations)) return;
     for (const animation of animations) {
       willChange.push(getWillChange(animation.keyframes));
 
-      if (
-        !Array.isArray(animation.keyframes?.length) ||
-        !animation.keyframes.length
-      )
-        continue;
-
       let keyframes: Keyframe[] = animation.keyframes.map(createCSSKeyframe);
+
       const isScrollAnimation = animation.type === AnimationType.scroll;
       const options: KeyframeAnimationOptions = {
         fill: "both",
         duration:
-          Number((animation.duration || "").replace("s", "")) * 1000 || 1000,
+          typeof animation.duration !== "number"
+            ? Number((animation.duration || "").replace("s", "")) * 1000 || 1000
+            : animation.duration,
         delay: animation.delay || 0,
         easing: animation.easing || "ease-out",
-        iterations: Infinity,
+        iterations: animation.type === "visible" ? Infinity : 1,
       };
-
+      console.log(options, animation);
       const start = animation.start || "entry-crossing";
       const startOffset = animation.startOffset || 0;
       const end = animation.end || "exit-crossing";
@@ -64,7 +62,7 @@ export default function AnimationCSS({
         delete options.delay;
       }
 
-      const cssAnimation = el.animate(keyframes, options);
+      const cssAnimation = el.animate && el.animate(keyframes, options);
 
       if (animation.type === AnimationType.visible) {
         cssAnimation.pause();
