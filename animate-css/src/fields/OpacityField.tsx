@@ -4,7 +4,6 @@ import { KeyframeFieldProps, toPercentString } from "./utils";
 import { SilkeBox, SilkeButton, SilkeCssNumberField } from "@vev/silke";
 
 export function OpacityField({ value, onChange }: KeyframeFieldProps) {
-  console.log("OPACITY", value, toPercentString(value || "1", 1));
   return (
     <SilkeBox gap="s">
       <SilkeCssNumberField

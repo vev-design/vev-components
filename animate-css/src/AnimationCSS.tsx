@@ -31,6 +31,8 @@ export default function AnimationCSS({
 
     const unsubscribes: (() => void)[] = [];
 
+    console.log("animations", animations);
+
     if (!Array.isArray(animations)) return;
     for (const animation of animations) {
       willChange.push(getWillChange(animation.keyframes));
