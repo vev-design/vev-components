@@ -39,7 +39,11 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
                 icon="delete"
                 size="s"
                 kind="ghost"
-                onClick={() => onChange(value.filter((a, i) => i !== index))}
+                onClick={() => {
+                  onChange(value.filter((a, i) => i !== index));
+                  setPrompts([]);
+                  setPrompt("");
+                }}
               />
               <SilkeButton icon="chevron.down" size="s" kind="ghost" />
             </SilkeBox>
@@ -74,14 +78,16 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
                     size="l"
                     onClick={async () => {
                       setLoading(true);
-                      setPrompts([...prompts, prompt]);
                       try {
                         const res = await fetch("http://localhost:8000", {
                           method: "POST",
-                          body: JSON.stringify({ messages: prompts }),
+                          body: JSON.stringify({
+                            messages: [...prompts, prompt],
+                          }),
                         });
+                        setPrompts([...prompts, prompt]);
                         const data = await res.json();
-                        onChange([data]);
+                        onChange(data);
                         console.log("res", data);
                       } catch (e) {
                         console.log(e);
