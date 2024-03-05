@@ -255,6 +255,8 @@ registerVevComponent(Slideshow, {
     },
     {
       name: "slidesToLoad",
+      title: "Slides before/after",
+      description: "Turn off overflow to make the before/after slides visible",
       type: "number",
       hidden: (context) => context.value?.animation !== "slide",
       initialValue: 1,

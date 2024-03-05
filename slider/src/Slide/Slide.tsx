@@ -131,7 +131,7 @@ export const Slide = ({
         }}
       >
         {currentSlides?.map((child: string, i: number) => {
-          const key = slides.length <= 2 ? `${child || "key"}-${i}` : child;
+          const key = `${child || "key"}-${i}`;
           return (
             <div
               className={styles.slide}
