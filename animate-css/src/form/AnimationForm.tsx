@@ -21,7 +21,6 @@ type AnimationFormProps = {
 
 export function AnimationForm({ value, onChange }: AnimationFormProps) {
   const [prompt, setPrompt] = React.useState("");
-  const [prompts, setPrompts] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);
 
   if (!value) value = [];
@@ -41,7 +40,6 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
                 kind="ghost"
                 onClick={() => {
                   onChange(value.filter((a, i) => i !== index));
-                  setPrompts([]);
                   setPrompt("");
                 }}
               />
@@ -82,12 +80,12 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
                         const res = await fetch("http://localhost:8000", {
                           method: "POST",
                           body: JSON.stringify({
-                            messages: [...prompts, prompt],
+                            messages: [prompt],
                           }),
                         });
-                        setPrompts([...prompts, prompt]);
                         const data = await res.json();
-                        onChange(data);
+                        console.log(data);
+                        onChange([...value, data]);
                         console.log("res", data);
                       } catch (e) {
                         console.log(e);
