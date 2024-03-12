@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-import cx from "classnames";
-import usePrevious from "../../utils/usePrevious";
 import {
   registerVevComponent,
   useVevEvent,
   useDispatchVevEvent,
   useModel,
   useGlobalStateRef,
-  ProjectInteraction,
 } from "@vev/react";
+import { InteractionMap } from "@vev/utils";
 import formIcon from "../../assets/form-icon.svg";
 import styles from "./Button.module.css";
 
 import GoogleSheetConnect from "../../submit/GoogleSheetConnect";
 import ZapierConnect from "../../submit/ZapierConnect";
+import { validate, Validation } from "../../utils/validate";
 
 type Props = {
   submitButton: string;
@@ -77,22 +76,18 @@ const serialize = function (obj) {
 type FormModel = {
   key: string;
   type: string;
-  content: {
+  content: Validation & {
     name: string;
-    minLength: number;
-    maxLength: number;
-    required: boolean;
   };
 };
 
 const getFormModels = (
   modelKey: string,
-  interactions: {
-    [key: string]: ProjectInteraction[];
-  } = {},
+  interactions: InteractionMap,
   models: any[] = []
 ): FormModel[] => {
-  const usedInteractions = Object.values(interactions?.widgets || {})
+  console.log(modelKey, interactions, models);
+  const usedInteractions = Object.values(interactions?.trigger?.widget || {})
     .reduce((res = [], cur = []) => [...res, ...cur], [])
     .filter((interaction) => interaction.event?.contentKey === modelKey);
   const triggerKeys = usedInteractions.map(
@@ -112,6 +107,9 @@ const validateForm = (formState: any, formModels: FormModel[]) => {
         message: "Required",
       });
     }
+
+    const valid = validate(value, model?.content);
+    if (!valid) errors.push({ key: model.content.name, message: "Invalid" });
   }
   return errors;
 };
@@ -122,8 +120,6 @@ function Button({ ...props }: Props) {
   const dispatch = useDispatchVevEvent();
   const [store] = useGlobalStateRef();
   const model = useModel();
-
-  console.log("formState", formState);
 
   const { submitButton, successMessage, type = "submit" } = props;
 
@@ -143,6 +139,8 @@ function Button({ ...props }: Props) {
       dispatch(Event.FORM_INVALID, { errors });
       setSubmitting(false);
       return;
+    } else {
+      dispatch(Event.FORM_VALID);
     }
 
     const isLinkSubmission = (submit: Props["submit"]) =>
@@ -168,13 +166,19 @@ function Button({ ...props }: Props) {
       formId,
     };
 
-    await fetch(SUBMIT_URL, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      await fetch(SUBMIT_URL, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.error("Error submitting form", e);
+      setSubmitting(false);
+      return;
+    }
 
     dispatch(Event.FORM_SUBMITTED);
     setSubmitting(false);
