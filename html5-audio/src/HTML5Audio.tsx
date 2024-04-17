@@ -29,6 +29,7 @@ const HTML5Audio = (props: Props) => {
   const shouldAutoPlay = !disabled && autoplay;
   const actualUrl = audioUrl ? audioUrl.url : '';
   const dispatch = useDispatchVevEvent();
+  const intervalRef = useRef<number>();
 
   useVevEvent(Interactions.PLAY, () => {
     if (audioRef.current) {
@@ -49,6 +50,51 @@ const HTML5Audio = (props: Props) => {
       } else {
         audioRef.current.pause();
       }
+    }
+  });
+
+  useVevEvent(Interactions.FADE_OUT, (args: { duration: number }) => {
+    if (audioRef.current) {
+      // Fade out the audio over the given duration in 100 intervals
+      const durationMs = (args?.duration || 1) * 1000;
+      const intervalTime = durationMs / 100;
+
+      const endVolume = 0;
+      const step = audioRef.current.volume / 100;
+
+      intervalRef.current = setInterval(() => {
+        if (audioRef.current.volume > endVolume) {
+          const newVolume = Math.max(audioRef.current.volume - step, 0);
+          audioRef.current.volume = newVolume;
+        } else {
+          clearInterval(intervalRef.current);
+          audioRef.current.pause();
+        }
+      }, intervalTime);
+    }
+  });
+
+  useVevEvent(Interactions.FADE_IN, (args: { duration: number }) => {
+    if (audioRef.current) {
+      // Fade in the audio over the given duration in 100 intervals
+      const durationMs = (args?.duration || 1) * 1000;
+      const intervalTime = durationMs / 100;
+
+      const endVolume = 1;
+      const step = 1 / 100;
+
+      // Set initial volume and play
+      audioRef.current.volume = 0;
+      audioRef.current.play();
+
+      intervalRef.current = setInterval(() => {
+        if (audioRef.current.volume < endVolume) {
+          const newVolume = Math.min(audioRef.current.volume + step, 1);
+          audioRef.current.volume = newVolume;
+        } else {
+          clearInterval(intervalRef.current);
+        }
+      }, intervalTime);
     }
   });
 
@@ -126,6 +172,28 @@ registerVevComponent(HTML5Audio, {
     { type: Interactions.PLAY, description: 'Play' },
     { type: Interactions.PAUSE, description: 'Pause' },
     { type: Interactions.TOGGLE, description: 'Toggle playback' },
+    {
+      type: Interactions.FADE_OUT,
+      description: 'Fade out',
+      args: [
+        {
+          name: 'duration',
+          description: 'Duration of fade in seconds',
+          type: 'number',
+        },
+      ],
+    },
+    {
+      type: Interactions.FADE_IN,
+      description: 'Fade in',
+      args: [
+        {
+          name: 'duration',
+          description: 'Duration of fade in seconds',
+          type: 'number',
+        },
+      ],
+    },
   ],
   type: 'standard',
 });
