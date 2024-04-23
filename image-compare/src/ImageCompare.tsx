@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styles from "./ImageCompare.module.css";
-import { Gesture, registerVevComponent, useImage } from "@vev/react";
+import { Gesture, registerVevComponent, useHover, useImage } from "@vev/react";
 import {
   DEFAULT_LEFT_ICON,
   DEFAULT_LEFT_IMAGE,
@@ -28,23 +28,44 @@ const ImageCompare = ({
   animate = false,
 }: Props) => {
   const [offset, setOffset] = useState(50);
-  const [shouldAnimate, setShouldAnimate] = useState(animate);
-
+  const [hover, setHover] = useState<boolean>(false);
   const leftImage: { src: string } = useImage(left?.key);
   const rightImage: { src: string } = useImage(right?.key);
 
   leftIcon = leftIcon ? leftIcon : DEFAULT_LEFT_ICON;
   rightIcon = rightIcon ? rightIcon : DEFAULT_RIGHT_ICON;
 
-  useEffect(() => {
-      window.requestAnimationFrame(() => {
+  const imageClassname =
+    hover || !animate
+      ? styles.image
+      : `${styles.animateInsetImage} ${styles.image}`;
 
-      });
-    
-  }, [shouldAnimate]);
+  const handleClassname =
+    hover || !animate
+      ? styles.handleContainer
+      : `${styles.handleContainer} ${styles.animateHandle}`;
+
+  useEffect(() => {
+    const hoverHandler = () => {
+      setHover(true);
+    };
+    const removeHoverHandler = () => {
+      setHover(false);
+    };
+
+    hostRef.current.addEventListener("mouseenter", hoverHandler);
+    hostRef.current.addEventListener("mouseleave", removeHoverHandler);
+
+    return () => {
+      if(hostRef.current) {
+        hostRef.current.removeEventListener("mouseenter", hoverHandler);
+        hostRef.current.removeEventListener("mouseleave", removeHoverHandler);
+      }
+    };
+  }, []);
 
   return (
-    <>
+    <div className={styles.host}>
       <div draggable={false} className={styles.wrapper}>
         <div
           className={styles.image}
@@ -53,7 +74,7 @@ const ImageCompare = ({
           }}
         />
         <div
-          className={styles.image}
+          className={imageClassname}
           style={{
             backgroundImage: `url("${leftImage?.src || DEFAULT_LEFT_IMAGE}")`,
             clipPath: `inset(0px ${100 - offset}% 0px 0px)`,
@@ -72,7 +93,7 @@ const ImageCompare = ({
           setOffset(newOffset);
         }}
       >
-        <div style={{ left: `${offset}%` }} className={styles.handleContainer}>
+        <div style={{ left: `${offset}%` }} className={handleClassname}>
           {!hideHandle && (
             <svg
               className={`${styles.iconLeft} ${styles.icon}`}
@@ -92,7 +113,7 @@ const ImageCompare = ({
           )}
         </div>
       </Gesture>
-    </>
+    </div>
   );
 };
 
@@ -127,6 +148,11 @@ registerVevComponent(ImageCompare, {
       selector: styles.icon,
       properties: ["fill"],
     },
+    {
+      title: "Border",
+      selector: styles.host,
+      properties: ["border", "border-radius"]
+    }
   ],
   type: "both",
 });

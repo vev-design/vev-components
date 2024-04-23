@@ -1,3 +1,9 @@
+.host {
+  height: 100%;
+  overflow: hidden;
+  perspective: 0;
+}
+
 .wrapper {
   height: 100%;
   display: flex;
@@ -47,4 +53,54 @@
   width: 15px;
   min-height: 100%;
   cursor: ew-resize;
+}
+
+.animateInsetImage {
+  animation: clipAnimation infinite 10s linear;
+}
+
+.animateHandle {
+  animation: handleAnimation infinite 10s linear;
+}
+
+@keyframes handleAnimation {
+  0% {
+    left: 50%;
+  }
+  20% {
+    left: 60%;
+  }
+  40% {
+    left: 40%;
+  }
+  60% {
+    left: 60%;
+  }
+  70% {
+    left: 55%;
+  }
+  100% {
+    left: 50%;
+  }
+}
+
+@keyframes clipAnimation {
+  0% {
+    clip-path: inset(0px 50% 0px 0px);
+  }
+  20% {
+    clip-path: inset(0px 40% 0px 0px);
+  }
+  40% {
+    clip-path: inset(0px 60% 0px 0px);
+  }
+  60% {
+    clip-path: inset(0px 40% 0px 0px);
+  }
+  70% {
+    clip-path: inset(0px 45% 0px 0px);
+  }
+  100% {
+    clip-path: inset(0px 50% 0px 0px);
+  }
 }
