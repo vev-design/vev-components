@@ -88,7 +88,7 @@ export const Zoom = ({
     >
       {currentSlides?.map((child: string, i: number) => {
         // If only two slides, and index to prevent duplicate keys
-        const key = slides.length <= 2 ? child + i : child;
+        const key = slides.length <= 2 ? `${child}-${i}` : child;
         return (
           <div
             className={styles.slide}

@@ -21,6 +21,14 @@ import Zoom from "./Zoom";
 import Carousel from "./Carousel3d";
 import None from "./None";
 
+const render = {
+  slide: Slide,
+  fade: Fade,
+  zoom: Zoom,
+  "3d": Carousel,
+  none: None,
+};
+
 import { useTouch } from "./use-touch";
 import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
 
@@ -130,15 +138,9 @@ export const Slideshow = (props: Props) => {
     return <div className={styles.empty}>No slides</div>;
   }
 
-  const render = {
-    slide: Slide,
-    fade: Fade,
-    zoom: Zoom,
-    "3d": Carousel,
-    none: None,
-  };
-
-  const Comp = render[animation] || Slide;
+  const Comp = useMemo(() => {
+    return render[animation] || Slide;
+  }, [animation]);
 
   return (
     <div className={styles.wrapper}>
