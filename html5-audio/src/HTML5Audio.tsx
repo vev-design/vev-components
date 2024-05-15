@@ -171,7 +171,7 @@ registerVevComponent(HTML5Audio, {
   events: [
     { type: Events.PLAY, description: "On play" },
     { type: Events.PAUSE, description: "On pause" },
-    { type: Events.COMPLETE, description: "On complete" },
+    { type: Events.COMPLETE, description: "On end" },
   ],
   interactions: [
     { type: Interactions.PLAY, description: "Play" },

@@ -149,19 +149,19 @@ registerVevComponent(Lottie, {
   events: [
     {
       type: Events.PLAY,
-      description: "Playing",
+      description: "On play",
     },
     {
       type: Events.PAUSE,
-      description: "Paused",
+      description: "On pause",
     },
     {
       type: Events.LOOP_COMPLETED,
-      description: "Loop completed",
+      description: "On loop end",
     },
     {
       type: Events.COMPLETE,
-      description: "Completed",
+      description: "On end",
     },
   ],
   interactions: [
