@@ -32,7 +32,7 @@ const render = {
 import { useTouch } from "./use-touch";
 import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
 
-import styles from "./Slideshow.module.css";
+import styles from "./Slider.module.css";
 
 export type Props = {
   hostRef: RefObject<any>;
@@ -52,12 +52,10 @@ export type Props = {
     | "VERTICAL_REVERSE";
 
   slides: string[];
-  currentSlide: string;
-  nextSlide: string;
-  prevSlide: string;
   editMode?: boolean;
   index: number;
   action: "NEXT" | "PREV";
+  slidesToLoad: number;
 };
 
 enum Events {
@@ -129,7 +127,7 @@ export const Slideshow = (props: Props) => {
   useVevEvent(Events.PREV, handlePrevSlide);
   useVevEvent(Events.SET, (args: { slide: number }) => {
     setState({
-      index: Math.max(0, Number(args?.slide) - 1),
+      index: Math.max(0, Number(args?.slide || 0) - 1),
       length: numberOfSlides || 0,
     });
   });
@@ -144,15 +142,12 @@ export const Slideshow = (props: Props) => {
 
   return (
     <div className={styles.wrapper}>
-      {slides[state?.index] && (
+      {(slides[state?.index] || slides[0]) && (
         <Comp
           {...props}
           slides={slides}
-          currentSlide={slides[state?.index]}
-          nextSlide={slides[getNextSlideIndex(state?.index, slides)]}
-          prevSlide={slides[getPrevSlideIndex(state?.index, slides)]}
           speed={editor?.disabled ? 1 : props.speed}
-          index={state?.index}
+          index={isNaN(state?.index) ? 0 : state?.index}
           editMode={editor.disabled}
           action={state?.action}
         />
@@ -215,12 +210,11 @@ registerVevComponent(Slideshow, {
     {
       name: "speed",
       type: "number",
-      description: "Specify how long the animation should last",
-      title: "Duration",
+      title: "Transition speed",
       initialValue: 200,
       options: {
         format: "ms",
-      },
+      } as any, // Need to update CLI
       hidden: (context) => context.value?.animation === "none",
     },
     {
@@ -260,6 +254,19 @@ registerVevComponent(Slideshow, {
       title: "Scale (%)",
       initialValue: 300,
       hidden: (context) => context.value?.animation !== "zoom",
+    },
+    {
+      name: "slidesToLoad",
+      title: "Slides before/after",
+      description:
+        "Turn off clip content in the style tab to make the before/after slides visible",
+      type: "number",
+      hidden: (context) => context.value?.animation !== "slide",
+      initialValue: 1,
+      options: {
+        min: 1,
+        max: 5,
+      },
     },
   ],
   interactions: [

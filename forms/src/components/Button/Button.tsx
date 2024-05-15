@@ -1,17 +1,18 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   registerVevComponent,
-  useDispatchVevEvent,
-  useGlobalStateRef,
-  useModel,
   useVevEvent,
+  useDispatchVevEvent,
+  useModel,
+  useGlobalStateRef,
 } from "@vev/react";
+import { InteractionMap } from "@vev/utils";
 import formIcon from "../../assets/form-icon.svg";
 import styles from "./Button.module.css";
 
 import GoogleSheetConnect from "../../submit/GoogleSheetConnect";
 import ZapierConnect from "../../submit/ZapierConnect";
-import { InteractionMap } from "@vev/utils";
+import { validate, Validation } from "../../utils/validate";
 
 type Props = {
   submitButton: string;
@@ -75,11 +76,8 @@ const serialize = function (obj) {
 type FormModel = {
   key: string;
   type: string;
-  content: {
+  content: Validation & {
     name: string;
-    minLength: number;
-    maxLength: number;
-    required: boolean;
   };
 };
 
@@ -88,19 +86,18 @@ const getFormModels = (
   interactions: InteractionMap,
   models: any[] = []
 ): FormModel[] => {
-
-  const usedInteractions = Object.values(interactions?.event.widget || {})
+  console.log(modelKey, interactions, models);
+  const usedInteractions = Object.values(interactions?.trigger?.widget || {})
     .reduce((res = [], cur = []) => [...res, ...cur], [])
     .filter((interaction) => interaction.event?.contentKey === modelKey);
-
   const triggerKeys = usedInteractions.map(
     (interaction) => interaction.trigger?.contentKey
   );
   return models.filter((model) => triggerKeys?.includes(model.key));
 };
 
-const validateForm = (formState: any, formModels: FormModel[]): {key: string; message: string}[] => {
-  const errors: {key: string; message: string}[] = [];
+const validateForm = (formState: any, formModels: FormModel[]) => {
+  const errors = [];
   for (const model of formModels) {
     const value = formState[model.content.name];
     const isRequired = model.content.required;
@@ -110,6 +107,9 @@ const validateForm = (formState: any, formModels: FormModel[]): {key: string; me
         message: "Required",
       });
     }
+
+    const valid = validate(value, model?.content);
+    if (!valid) errors.push({ key: model.content.name, message: "Invalid" });
   }
   return errors;
 };
@@ -120,19 +120,6 @@ function Button({ ...props }: Props) {
   const dispatch = useDispatchVevEvent();
   const [store] = useGlobalStateRef();
   const model = useModel();
-
-  console.log("formState", formState);
-
-  const isValid  = useMemo(() => {
-    const formModels = getFormModels(
-      model.key,
-      store?.current?.interactions,
-      store?.current?.models
-    );
-
-    const errors = validateForm(formState, formModels);
-    return errors.length === 0;
-  }, [formState, model.key, store?.current?.interactions, store?.current?.models]);
 
   const { submitButton, successMessage, type = "submit" } = props;
 
@@ -152,6 +139,8 @@ function Button({ ...props }: Props) {
       dispatch(Event.FORM_INVALID, { errors });
       setSubmitting(false);
       return;
+    } else {
+      dispatch(Event.FORM_VALID);
     }
 
     const isLinkSubmission = (submit: Props["submit"]) =>
@@ -177,13 +166,19 @@ function Button({ ...props }: Props) {
       formId,
     };
 
-    await fetch(SUBMIT_URL, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      await fetch(SUBMIT_URL, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.error("Error submitting form", e);
+      setSubmitting(false);
+      return;
+    }
 
     dispatch(Event.FORM_SUBMITTED);
     setSubmitting(false);
@@ -220,7 +215,7 @@ function Button({ ...props }: Props) {
 
   return (
     <button
-      disabled={submitting || !isValid}
+      disabled={submitting}
       onClick={() => handleSubmit(formState)}
       className={styles.button}
     >
@@ -252,20 +247,6 @@ registerVevComponent(Button, {
       selector: styles.button + ":hover",
       title: "Hover",
       properties: ["background", "color", "box-shadow"],
-    },
-    {
-      selector: styles.button + ":disabled",
-      title: "Disabled",
-      properties: [
-        "background",
-        "color",
-        "border-radius",
-        "box-shadow",
-        "padding",
-        "font-family",
-        "font-size",
-        "text-align",
-      ],
     },
   ],
   props: [

@@ -7,18 +7,24 @@ export const shuffleArray = (array: any[]) => {
   return newArray;
 };
 
-export const getNextSlideIndex = (index: number, slides: string[]): number =>
+export const getNextSlideIndex = (
+  index: number = 0,
+  slides: string[] = []
+): number =>
   slides.length < 2 ? 1 : index + 1 === slides?.length ? 0 : index + 1;
 
-export const getPrevSlideIndex = (index: number, slides: string[]): number =>
+export const getPrevSlideIndex = (
+  index: number = 0,
+  slides: string[] = []
+): number =>
   slides?.length < 2 ? 1 : index === 0 ? (slides?.length || 0) - 1 : index - 1;
 
 export const isGoingForward = (
-  index: number,
+  index: number = 0,
   prevIndex: number,
   total: number,
   infinite: boolean,
-  action: "NEXT" | "PREV"
+  action?: "NEXT" | "PREV"
 ): boolean => {
   if (total === 2) {
     if (infinite) return action === "NEXT" ? true : false;
@@ -31,7 +37,7 @@ export const isGoingForward = (
 };
 
 export const isGoingBackward = (
-  index: number,
+  index: number = 0,
   prevIndex: number,
   total: number
 ): boolean =>
