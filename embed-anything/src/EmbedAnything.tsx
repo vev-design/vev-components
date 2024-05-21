@@ -5,12 +5,33 @@ import { registerVevComponent, useEditorState } from '@vev/react';
 type Props = {
   html: string;
   encapsulate: boolean;
+  isStatic: boolean;
+  allowScroll: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
-function EmbedAnything({ html, encapsulate = false, hostRef }: Props) {
+function StaticHTML({ html, allowScroll }) {
+  return <div className="fill" style={{ overflow: allowScroll ? "auto" : "hidden" }} dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStatic = false, hostRef }: Props) {
+  const { disabled } = useEditorState();
+
+  if (disabled) {
+    return (
+      <div className={styles.instructions + ' ' + styles.wrapper}>
+        <h3>Embedded code will run in preview and on published site</h3>
+        <p>
+          If you want more coding flexibility, we recommend using a coded element created in the
+          Code Editor.
+        </p>
+      </div>
+    );
+  }
+
+  if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />
   if (encapsulate) return <EmbedIframe html={html} />;
-  return <EmbedScript html={html} hostRef={hostRef} />;
+  return <EmbedScript html={html} hostRef={hostRef} allowScroll={allowScroll} />;
 }
 
 function EmbedIframe({ html }: { html: string }) {
@@ -83,8 +104,7 @@ function EmbedIframe({ html }: { html: string }) {
   );
 }
 
-function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
-  const { disabled } = useEditorState();
+function EmbedScript({ html, hostRef, allowScroll }: Pick<Props, 'hostRef' | 'html' | 'allowScroll'>) {
   const [loaded, setLoaded] = useState<boolean>(false);
 
   useEffect(() => {
@@ -92,7 +112,7 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
   }, []);
 
   useEffect(() => {
-    if (disabled || !loaded) return;
+    if (!loaded) return;
     const scriptTags: HTMLScriptElement[] = [];
     hostRef.current.querySelectorAll('script').forEach((script) => {
       const scriptElement = document.createElement('script');
@@ -110,21 +130,10 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
     return () => {
       scriptTags.forEach((tag) => tag.remove());
     };
-  }, [hostRef.current, html, disabled]);
+  }, [hostRef.current, html]);
 
   if (!loaded) return null;
 
-  if (disabled) {
-    return (
-      <div className={styles.instructions + ' ' + styles.wrapper}>
-        <h3>Embedded code will run in preview and on published site</h3>
-        <p>
-          If you want more coding flexibility, we recommend using a coded element created in the
-          Code Editor.
-        </p>
-      </div>
-    );
-  }
   if (!html)
     return (
       <div className={styles.instructions + ' ' + styles.wrapper}>
@@ -135,7 +144,7 @@ function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
         </p>
       </div>
     );
-  return <div className={styles.wrapper} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className={styles.wrapper} style={{ overflow: allowScroll ? "auto" : "hidden" }} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 registerVevComponent(EmbedAnything, {
@@ -160,6 +169,19 @@ registerVevComponent(EmbedAnything, {
       name: 'encapsulate',
       type: 'boolean',
       description: 'Contain the embed code within its own browser instance',
+      initialValue: false,
+    },
+    {
+      title: 'Static HTML',
+      name: 'isStatic',
+      type: 'boolean',
+      description: 'Static HTML (mounted directly)',
+      initialValue: false,
+    },
+    {
+      title: 'Allow inner scroll',
+      name: 'allowScroll',
+      type: 'boolean',
       initialValue: false,
     },
   ],
