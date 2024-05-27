@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import styles from "./Spline.module.css";
 import { registerVevComponent } from "@vev/react";
+import SplineViewer from '@splinetool/react-spline';
 
 type Props = {
   sceneUrl: string;
@@ -11,21 +12,12 @@ const scriptAlreadyExists = () =>
   document.querySelector('script#spline-viewer') !== null
 
 const Spline = ({
-                  sceneUrl = "https://my.spline.design/carcampingphysicscopy-56fe6d4adf9415188037704bd4b6d775/",
+                  sceneUrl = "https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode",
 }: Props) => {
-  const frameRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-      const tag = document.createElement("script");
-      tag.type = "module";
-      tag.id = "script#spline-viewer";
-      tag.src = "https://unpkg.com/@splinetool/viewer/build/spline-viewer.js";
-      document.body.appendChild(tag);
-  }, []);
 
   return (
     <div className={styles.wrapper}>
-      <spline-viewer url={sceneUrl} loading-anim-type="spinner-small-dark"></spline-viewer>
+      <SplineViewer scene={sceneUrl} />
     </div>
   );
 };
@@ -46,6 +38,7 @@ registerVevComponent(Spline, {
       title: "Spline Scene URL",
       type: "string",
       options: {
+        type: 'text',
         multiline: true,
       },
     },
