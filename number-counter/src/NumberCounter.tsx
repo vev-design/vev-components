@@ -392,11 +392,11 @@ registerVevComponent(NumberCounter, {
     },
     {
       type: Interactions.RESET,
-      description: "Reset",
+      description: "Reset and continue",
     },
     {
       type: Interactions.STOP_AND_RESET,
-      description: "Stop and reset",
+      description: "Reset and stop",
     },
   ],
   editableCSS: [
