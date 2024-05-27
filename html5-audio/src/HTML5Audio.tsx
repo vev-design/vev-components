@@ -176,7 +176,7 @@ registerVevComponent(HTML5Audio, {
   interactions: [
     { type: Interactions.PLAY, description: "Play" },
     { type: Interactions.PAUSE, description: "Pause" },
-    { type: Interactions.TOGGLE, description: "Toggle playback" },
+    { type: Interactions.TOGGLE, description: "Toggle play" },
     {
       type: Interactions.FADE_OUT,
       description: "Fade out",
