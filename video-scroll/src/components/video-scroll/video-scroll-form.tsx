@@ -22,22 +22,13 @@ export function VideoScrollForm({
   onChange,
 }: VideoScrollFormProps) {
   const ref = useRef<HTMLLabelElement>(null);
-  useDropZone(
-    ref,
-    (e) => {
-      const file = e.dataTransfer?.files?.[0];
-      setDragOver(false);
-      handleUpload(file);
-    },
-    () => setDragOver(true),
-    () => setDragOver(false)
-  );
+
   const [progress, setProgress] = useState<number>(0);
   const [unpacking, setUnpacking] = useState<boolean>(false);
-  const [dragOver, setDragOver] = useState<boolean>(false);
   const [frame, setFrame] = useState<string>();
   const [error, setError] = useState<string | null>();
   const [previewProgress, setPreviewProgress] = useState<number>(0);
+  const [isDownloadingVideo, setIsDownloadingVideo] = useState<boolean>(false);
 
   const handleUpload = async (file?: File) => {
     if (!file) return;
@@ -113,17 +104,19 @@ export function VideoScrollForm({
         </small>
       )}
       {!hasValue && !unpacking && (
-        <SilkeBox flex column>
-          <SilkeTextSmall>Upload video</SilkeTextSmall>
-          <SilkeUploadField
-            accept="video/*"
-            onSelectFiles={(files) => {
-              console.log(files);
-              handleUpload(files[0]);
-            }}
-            style={{ opacity: 0, position: "absolute" }}
+          <SilkeButton size="s" loading={isDownloadingVideo} label="Select video" onClick={() => {
+            context.actions.videoLibraryOpen(async (projectFile: any) => {
+              setIsDownloadingVideo(true);
+              let response = await fetch(projectFile.sources[0].url);
+              let data = await response.blob();
+              let metadata = {
+                type: 'video/mp4'
+              };
+              handleUpload(new File([data], "video.mp4", metadata));
+              setIsDownloadingVideo(false);
+            });
+          }}
           />
-        </SilkeBox>
       )}
     </SilkeBox>
   );
