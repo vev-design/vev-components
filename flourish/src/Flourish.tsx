@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './Flourish.module.css';
-import { registerVevComponent, useScrollTop, useSize, useViewport } from '@vev/react';
+import { registerVevComponent, useScrollTop, useSize, useViewport, View, useVevEvent } from '@vev/react';
+import { InteractionTypes } from './event-types';
 
 type Props = {
   formUrl: string;
@@ -13,12 +14,11 @@ type Props = {
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
-const DEFAULT_SCROLLYTELLING_URL = 'https://flo.uri.sh/story/468238/embed';
 const DEFAULT_URL = 'https://flo.uri.sh/story/1767962/embed';
 
-function getElementPosition(widgetKey: string, widgetDistance: number, scrollTop: number) {
+function getElementTopPosition(widgetKey: string) {
   const el = document.getElementById(widgetKey);
-  return el ? el.getBoundingClientRect().top - (widgetDistance || 0) + scrollTop : undefined;
+  return el.offsetTop;
 }
 
 const Flourish = ({
@@ -31,39 +31,33 @@ const Flourish = ({
   widgetDistance,
   hostRef,
 }: Props) => {
-  const [_, setTop] = useState<number>(0);
+  const [offsetTop, setTop] = useState<number>(0);
   const [url, setUrl] = useState<string>(formUrl);
-  const [offset, setOffset] = useState<number>(0);
   const { height: hostHeight } = useSize(hostRef);
   const scrollTop = useScrollTop();
   const { scrollHeight, height: viewportHeight } = useViewport();
   const [slideChangeDistance, setSlideChangeDistance] = useState<number>(0);
   const [slide, setSlide] = useState<number>(0);
+  const globalOffsetTop = View.rootNodeOffsetTop;
 
-  useEffect(() => {
-    let parent = hostRef.current as HTMLElement;
-    let top = 0;
-    while (parent) {
-      top += parent.offsetTop;
-      parent = parent.parentElement;
+  useVevEvent(InteractionTypes.NEXT_SLIDE, () => {
+    if(slide != numberOfSlides-1) {
+      setSlide(slide+1);
     }
-    setOffset(top);
-  }, [hostRef]);
+  });
+  useVevEvent(InteractionTypes.PREVIOUS_SLIDE, () => {
+    if(slide != 0) {
+      setSlide(slide-1);
+    }
+  });
+  useVevEvent(InteractionTypes.SET_SLIDE, (args) => {
+    setSlide(args.set_slide-1);
+  });
 
   // Strip hash if scrollytelling
   useEffect(() => {
-    if (scrollytelling) {
-      let newUrl: string;
-      if (scrollytelling && formUrl === DEFAULT_URL) {
-        newUrl = DEFAULT_SCROLLYTELLING_URL;
-      }
-
-      const urlObj = new URL(newUrl);
-      setUrl(`${urlObj.origin}${urlObj.pathname}`);
-    } else {
-      setUrl(formUrl);
-    }
-  }, [formUrl, scrollytelling]);
+    setUrl(formUrl);
+  }, [formUrl]);
 
   // Set top offset
   useEffect(() => {
@@ -73,13 +67,12 @@ const Flourish = ({
   // Set slide change distance
   useEffect(() => {
     if (type === 'bottom') {
-      setSlideChangeDistance((scrollHeight - viewportHeight - offset) / numberOfSlides);
+      setSlideChangeDistance((scrollHeight - viewportHeight - globalOffsetTop) / numberOfSlides);
     } else if (type === 'distance') {
       setSlideChangeDistance(distance);
     } else if (type === 'element') {
-      const distanceFromWidget = widgetDistance + hostHeight;
-      const elementPosition = getElementPosition(widgetKey, distanceFromWidget, scrollTop);
-      setSlideChangeDistance((elementPosition - offset) / numberOfSlides);
+      const elementPosition = getElementTopPosition(widgetKey);
+      setSlideChangeDistance((elementPosition-offsetTop)/numberOfSlides);
     }
   }, [
     scrollHeight,
@@ -90,18 +83,18 @@ const Flourish = ({
     widgetKey,
     widgetDistance,
     scrollTop,
-    offset,
+    globalOffsetTop,
     hostHeight,
   ]);
 
   // Set slide
   useEffect(() => {
-    if (scrollTop === 0) {
-      setSlide(0);
-    } else {
-      setSlide(Math.floor(Math.max(scrollTop - offset, 0) / slideChangeDistance) - 1);
+    if(scrollytelling) {
+      let slide = Math.floor(Math.max(scrollTop - globalOffsetTop, 0) / slideChangeDistance);
+      if(type === 'element') slide -= 1;
+      setSlide(slide);
     }
-  }, [offset, scrollTop, slideChangeDistance]);
+  }, [globalOffsetTop, scrollTop, slideChangeDistance]);
 
   // Update url with slide
   useEffect(() => {
@@ -202,6 +195,23 @@ registerVevComponent(Flourish, {
       title: 'Florish frame',
       selector: styles.container,
       properties: ['background', 'margin', 'border', 'border-radius', 'filter'],
+    },
+  ],
+  interactions: [
+    {
+      type: InteractionTypes.NEXT_SLIDE,
+      description: "Next slide",
+    },
+    {
+      type: InteractionTypes.PREVIOUS_SLIDE,
+      description: "Previous slide",
+    },
+    {
+      type: InteractionTypes.SET_SLIDE,
+      description: "Set slide",
+      args: [
+        { name: "set_slide", title: "Slide number", type: "number" },
+      ],
     },
   ],
   type: 'both',
