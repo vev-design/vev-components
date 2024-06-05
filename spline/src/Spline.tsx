@@ -8,12 +8,22 @@ type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
-const scriptAlreadyExists = () =>
-  document.querySelector('script#spline-viewer') !== null
-
 const Spline = ({
-                  sceneUrl = "https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode",
+  sceneUrl = "https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode",
 }: Props) => {
+  if (sceneUrl.includes("my.spline.design")) {
+    return (
+      <iframe
+        className={styles.wrapper}
+        src={sceneUrl}
+        frameBorder="0"
+        marginHeight="0"
+        marginWidth="0"
+      >
+        Loading form…
+      </iframe>
+    );
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -28,7 +38,7 @@ registerVevComponent(Spline, {
     linkText: "Add URL",
     description: " to your Spline scene",
     checkProperty: "sceneUrl",
-    action: "OPEN_PROPERTIES"
+    action: "OPEN_PROPERTIES",
   },
   description:
     "Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.",
@@ -38,7 +48,7 @@ registerVevComponent(Spline, {
       title: "Spline Scene URL",
       type: "string",
       options: {
-        type: 'text',
+        type: "text",
         multiline: true,
       },
     },
