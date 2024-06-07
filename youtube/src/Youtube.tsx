@@ -15,6 +15,9 @@ type Props = {
 
 declare global {
   const YT: any;
+  interface Window {
+    onYouTubeIframeAPIReady: () => void;
+  }
 }
 
 function youTubeParseUrl(url = ''): string {
@@ -86,7 +89,7 @@ const Youtube = ({ videoId, settings }: Props) => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (playerRef.current) {
+      if (playerRef.current && playerRef.current.getCurrentTime) {
         const currentTime = Math.floor(playerRef.current.getCurrentTime());
 
         if (currentTime !== currentTimeRef.current) {
@@ -116,14 +119,7 @@ const Youtube = ({ videoId, settings }: Props) => {
       document.body.appendChild(tag);
     }
 
-    const interval = setInterval(() => {
-      if (typeof YT !== 'undefined' && mounted && YT.loaded) {
-        onYouTubeIframeAPIReady();
-        clearInterval(interval);
-      }
-    }, 100);
-
-    function onYouTubeIframeAPIReady() {
+    window.onYouTubeIframeAPIReady = () => {
       playerRef.current = new YT.Player(ref.current, {
         events: {
           onReady: onPlayerReady,
