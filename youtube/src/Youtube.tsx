@@ -107,8 +107,6 @@ const Youtube = ({ videoId, settings }: Props) => {
   }, [dispatch]);
 
   useEffect(() => {
-    let mounted = true;
-
     const iframe = ref.current;
     if (!iframe) return;
 
@@ -144,11 +142,6 @@ const Youtube = ({ videoId, settings }: Props) => {
           break;
       }
     }
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
   }, []);
 
   useEffect(() => {
