@@ -1,0 +1,183 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly"
+  },
+  "parser": "@typescript-eslint/parser",
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"]
+    },
+    {
+      "files": ["*.mdx"],
+      "extends": ["plugin:mdx/overrides", "plugin:mdx/recommended"]
+    },
+    {
+      "files": ["*.stories.tsx"],
+      "rules": {
+        // Sometimes it is convenient to export with a leading underscore, to avoid shadowing the
+        // imported component but still have the story named the same.
+        "@typescript-eslint/naming-convention": ["off"]
+      }
+    },
+    {
+      "files": ["cypress/integration/**/*.spec.ts"],
+      "rules": {
+        "@typescript-eslint/triple-slash-reference": "off"
+      }
+    }
+  ],
+  "parserOptions": {
+    // "project": ["./tsconfig.json"],
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "plugins": [
+    "react",
+    "@typescript-eslint",
+    "prettier"
+  ],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "rules": {
+    "prettier/prettier": [
+      "error",
+      {
+        "printWidth": 100,
+        "trailingComma": "all",
+        "singleQuote": true,
+        "endOfLine": "auto"
+      }
+    ],
+    // ..only in JSX, no single quotes there
+    "jsx-quotes": "error",
+    "@typescript-eslint/ban-ts-ignore": "off",
+    "space-in-parens": "warn",
+    "array-bracket-spacing": "warn",
+    "comma-spacing": "error",
+    "camelcase": "warn",
+    "eqeqeq": "error",
+    "no-var": "error",
+    "no-dupe-class-members": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/interface-name-prefix": "off",
+    // "@typescript-eslint/naming-convention": [
+    //   "warn",
+    //   {
+    //     "selector": "default",
+    //     "format": ["camelCase","PascalCase"]
+    //   },
+    //   {
+    //     "selector": "variable",
+    //     "format": ["camelCase", "UPPER_CASE"],
+    //     "types": ["boolean", "string", "number", "array"]
+    //   },
+    //   {
+    //     "selector": "variable",
+    //     "format": ["PascalCase", "camelCase"],
+    //     "types": ["function"]
+    //   },
+    //   {
+    //     "selector": "parameter",
+    //     "format": ["camelCase"],
+    //     "leadingUnderscore": "allow"
+    //   },
+    //   {
+    //     "selector": "typeLike",
+    //     "format": ["PascalCase"]
+    //   },
+    //   {
+    //     "selector": "function",
+    //     "format": ["PascalCase", "camelCase"]
+    //   }
+    // ],
+    // "max-depth": [
+    //   "error",
+    //   5
+    // ],
+    "react/no-deprecated": "warn",
+    "react/prop-types": "off",
+    "react/no-unescaped-entities": "off",
+    "object-shorthand": "warn",
+    "no-array-constructor": "error",
+    "prefer-destructuring": "warn",
+    "prefer-rest-params": "warn",
+    // Don't reassign arguments
+    "no-param-reassign": "off",
+    "@typescript-eslint/no-use-before-define": "off",
+    "space-before-blocks": "error",
+    "prefer-arrow-callback": "warn",
+    "no-duplicate-imports": "warn",
+    // obj.id instead of obj['id']
+    "dot-notation": "error",
+    "no-multi-assign": "warn",
+    "no-unneeded-ternary": "error",
+    "brace-style": "error",
+    "no-else-return": "warn",
+    "linebreak-style": ["error", "unix"],
+    "padding-line-between-statements": [
+      "error",
+      {
+        // Blank lines after import
+        "blankLine": "always",
+        "prev": "import",
+        "next": "*"
+      },
+      {
+        // Whatever between imports
+        "blankLine": "any",
+        "prev": "import",
+        "next": "import"
+      },
+      {
+        // Always before class, function
+        "blankLine": "always",
+        "prev": "*",
+        "next": [
+          "class",
+          "function"
+        ]
+      }
+    ],
+    "space-infix-ops": "error",
+    "template-curly-spacing": "error",
+    "no-whitespace-before-property": "warn",
+    "spaced-comment": ["warn", "always", {
+      "markers": ["/"] // Allow for triple slash for tsd reference
+    }],
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
+    "padded-blocks": [
+      "error",
+      "never"
+    ],
+    "arrow-spacing": "warn",
+    "comma-style": "warn",
+    "eol-last": "error"
+  }
+}
