@@ -1,6 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './Flourish.module.css';
-import { registerVevComponent, useScrollTop, useSize, useViewport, View, useVevEvent } from '@vev/react';
+import {
+  registerVevComponent,
+  useScrollTop,
+  useSize,
+  useViewport,
+  View,
+  useVevEvent,
+  ueVisible,
+} from '@vev/react';
 import { InteractionTypes } from './event-types';
 
 type Props = {
@@ -38,20 +46,30 @@ const Flourish = ({
   const { scrollHeight, height: viewportHeight } = useViewport();
   const [slideChangeDistance, setSlideChangeDistance] = useState<number>(0);
   const [slide, setSlide] = useState<number>(0);
+  const frameRef = useRef<HTMLIFrameElement>();
   const globalOffsetTop = View.rootNodeOffsetTop;
 
+  const isVisible = ueVisible(hostRef);
+
+  useEffect(() => {
+    if (frameRef.current) {
+      frameRef.current.src = frameRef.current.src;
+    }
+  }, [isVisible]);
+
   useVevEvent(InteractionTypes.NEXT_SLIDE, () => {
-    if(slide != numberOfSlides-1) {
-      setSlide(slide+1);
+    if (slide !== numberOfSlides - 1) {
+      setSlide(slide + 1);
     }
   });
+
   useVevEvent(InteractionTypes.PREVIOUS_SLIDE, () => {
-    if(slide != 0) {
-      setSlide(slide-1);
+    if (slide !== 0) {
+      setSlide(slide - 1);
     }
   });
   useVevEvent(InteractionTypes.SET_SLIDE, (args) => {
-    setSlide(args.set_slide-1);
+    setSlide(args.set_slide - 1);
   });
 
   // Strip hash if scrollytelling
@@ -72,7 +90,7 @@ const Flourish = ({
       setSlideChangeDistance(distance);
     } else if (type === 'element') {
       const elementPosition = getElementTopPosition(widgetKey);
-      setSlideChangeDistance((elementPosition-offsetTop)/numberOfSlides);
+      setSlideChangeDistance((elementPosition - offsetTop) / numberOfSlides);
     }
   }, [
     scrollHeight,
@@ -89,9 +107,9 @@ const Flourish = ({
 
   // Set slide
   useEffect(() => {
-    if(scrollytelling) {
+    if (scrollytelling) {
       let slide = Math.floor(Math.max(scrollTop - globalOffsetTop, 0) / slideChangeDistance);
-      if(type === 'element') slide -= 1;
+      if (type === 'element') slide -= 1;
       setSlide(slide);
     }
   }, [globalOffsetTop, scrollTop, slideChangeDistance]);
@@ -105,6 +123,7 @@ const Flourish = ({
   return (
     <div className={`flourish fill ${styles.container}`}>
       <iframe
+        ref={frameRef}
         className={styles.frame}
         src={url}
         sandbox="allow-scripts allow-popups"
@@ -117,10 +136,10 @@ const Flourish = ({
 registerVevComponent(Flourish, {
   name: 'Flourish',
   emptyState: {
-    linkText: "Add URL",
-    description: " to your Flourish component",
-    checkProperty: "formUrl",
-    action: "OPEN_PROPERTIES"
+    linkText: 'Add URL',
+    description: ' to your Flourish component',
+    checkProperty: 'formUrl',
+    action: 'OPEN_PROPERTIES',
   },
   props: [
     {
@@ -130,7 +149,7 @@ registerVevComponent(Flourish, {
       initialValue: 'https://flo.uri.sh/story/1767962/embed',
       options: {
         multiline: true,
-      }
+      },
     },
     {
       title: 'Scrollytelling',
@@ -200,18 +219,16 @@ registerVevComponent(Flourish, {
   interactions: [
     {
       type: InteractionTypes.NEXT_SLIDE,
-      description: "Next slide",
+      description: 'Next slide',
     },
     {
       type: InteractionTypes.PREVIOUS_SLIDE,
-      description: "Previous slide",
+      description: 'Previous slide',
     },
     {
       type: InteractionTypes.SET_SLIDE,
-      description: "Set slide",
-      args: [
-        { name: "set_slide", title: "Slide number", type: "number" },
-      ],
+      description: 'Set slide',
+      args: [{ name: 'set_slide', title: 'Slide number', type: 'number' }],
     },
   ],
   type: 'both',
