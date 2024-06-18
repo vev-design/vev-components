@@ -17,8 +17,17 @@
   position: absolute;
   width: 100%;
   left: 0;
+  pointer-events: none;
 
-  > vev {
+  * {
     pointer-events: none;
+  }
+}
+
+.slide.active * {
+  pointer-events: all;
+
+  * {
+    pointer-events: all;
   }
 }
