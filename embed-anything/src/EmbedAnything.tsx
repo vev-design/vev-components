@@ -1,20 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
-import { registerVevComponent, useEditorState } from '@vev/react';
+import { registerVevComponent, useEditorState, useVevEvent , useVisible} from '@vev/react';
 
 type Props = {
   html: string;
   encapsulate: boolean;
+  renderOnVisible: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
-function EmbedAnything({ html, encapsulate = false, hostRef }: Props) {
+function EmbedAnything({ html, encapsulate = false, hostRef, renderOnVisible = false }: Props) {
   if (encapsulate) return <EmbedIframe html={html} />;
-  return <EmbedScript html={html} hostRef={hostRef} />;
+  return <EmbedScript html={html} renderOnVisible={renderOnVisible} hostRef={hostRef} />;
 }
 
 function EmbedIframe({ html }: { html: string }) {
-  const iframeRef = useRef(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeHeight, setIframeHeight] = useState('auto');
 
   useEffect(() => {
@@ -83,13 +84,14 @@ function EmbedIframe({ html }: { html: string }) {
   );
 }
 
-function EmbedScript({ html, hostRef }: Pick<Props, 'hostRef' | 'html'>) {
+function EmbedScript({ html, hostRef, renderOnVisible }: Pick<Props, 'hostRef' | 'html' | 'renderOnVisible'>) {
   const { disabled } = useEditorState();
   const [loaded, setLoaded] = useState<boolean>(false);
+  const visible = useVisible(hostRef);
 
   useEffect(() => {
-    setLoaded(true);
-  }, []);
+    if (!renderOnVisible || visible) setLoaded(true);
+  }, [visible, renderOnVisible]);
 
   useEffect(() => {
     if (disabled || !loaded) return;
@@ -162,6 +164,16 @@ registerVevComponent(EmbedAnything, {
       description: 'Contain the embed code within its own browser instance',
       initialValue: false,
     },
+    {
+      title: 'Render on visible',
+      name: 'renderOnVisible',
+      type: 'boolean',
+      intialValue: false,
+      description: 'Do not render the embed code until the component is visible',
+      hidden: (context) => {
+        return context.value.encapsulate;
+      },
+    }
   ],
   editableCSS: [
     {
