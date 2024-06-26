@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
-import { registerVevComponent, useEditorState, useVevEvent , useVisible} from '@vev/react';
+import { registerVevComponent, useEditorState , useVisible} from '@vev/react';
 
 type Props = {
   html: string;
@@ -32,11 +32,11 @@ function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStati
 
   if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />
   if (encapsulate) return <EmbedIframe html={html} />;
-  return <EmbedScript html={html} renderOnVisible={renderOnVisible} hostRef={hostRef} allowScroll={allowScroll} />;
+  return <EmbedScript html={html} hostRef={hostRef} allowScroll={allowScroll} renderOnVisible={renderOnVisible} />;
 }
 
 function EmbedIframe({ html }: { html: string }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeRef = useRef(null);
   const [iframeHeight, setIframeHeight] = useState('auto');
 
   useEffect(() => {
@@ -180,7 +180,7 @@ registerVevComponent(EmbedAnything, {
       intialValue: false,
       description: 'Do not render the embed code until the component is visible',
       hidden: (context) => {
-        return context.value.encapsulate;
+        return context.value.encapsulate || context.value.static;
       },
     },
     {
