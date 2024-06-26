@@ -1,12 +1,11 @@
 {
-  "name": "instagram",
+  "name": "typeform",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
     "login": "vev login",
     "init": "vev init",
-    "start": "vev start",
-    "deploy": "vev deploy"
+    "start": "vev start"
   },
   "license": "MIT",
   "devDependencies": {

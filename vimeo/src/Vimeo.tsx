@@ -271,14 +271,14 @@ registerVevComponent(Vimeo, {
         },
         { title: "Mute", name: "mute", type: "boolean", initialValue: false },
         {
-          title: "Controls",
+          title: "Hide controls",
           name: "disableControls",
           type: "boolean",
           initialValue: false,
         },
         { title: "Loop", name: "loop", type: "boolean", initialValue: false },
         {
-          title: "Background",
+          title: "Use as background",
           name: "background",
           type: "boolean",
           initialValue: false,

@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -13,21 +13,22 @@ declare global {
 function getWorker() {
   const workerCode = () => {
     self.addEventListener('message', async (e) => {
-      const { images, screenWidth } = e.data as {
+      const { images, screenWidth, parentLocation } = e.data as {
         images: string[];
         screenWidth: number;
+        parentLocation: string;
       };
 
       self.loadImage = async (url: string) => {
-        const isLocalAsset = !/^(https?)?:\/\//.test(url);
+        const isRelativeAsset = !/^(https?)?:\/\//.test(url);
         try {
-          const fetchUrl = isLocalAsset
-            ? self.location.origin + (!url.startsWith('/') ? `/${url}` : url)
+          const fetchUrl = isRelativeAsset
+            ? parentLocation + (!url.startsWith('/') ? `/${url}` : url)
             : url;
           const response = await fetch(fetchUrl);
           const fileBlob = await response.blob();
           // fileBlob.type says the MIME-type is png, but it is image/webp
-          if (fileBlob.type === 'image/png' || isLocalAsset) return URL.createObjectURL(fileBlob);
+          if (fileBlob.type.startsWith('image/') || isRelativeAsset) return URL.createObjectURL(fileBlob);
         } catch (e) {
           return null;
         }
@@ -111,7 +112,7 @@ export function useVideoImageWorker(images: string[]) {
       imageElements[index] = await resolveImage(url);
     });
 
-    worker.postMessage({ images, screenWidth: window.innerWidth });
+    worker.postMessage({ images, screenWidth: window.innerWidth, parentLocation: `${self.location.origin}${self.location.pathname}` });
 
     return () => worker.terminate();
   }, [images]);

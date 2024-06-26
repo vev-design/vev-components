@@ -131,11 +131,10 @@ export const Slide = ({
         }}
       >
         {currentSlides?.map((child: string, i: number) => {
-          const key = `${child || "key"}-${i}`;
           return (
             <div
               className={styles.slide}
-              key={key}
+              key={child}
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,
                 width: "100%",

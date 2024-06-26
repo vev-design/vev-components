@@ -1,12 +1,11 @@
 {
-  "name": "instagram",
+  "name": "IFrame",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
     "login": "vev login",
     "init": "vev init",
-    "start": "vev start",
-    "deploy": "vev deploy"
+    "start": "vev start"
   },
   "license": "MIT",
   "devDependencies": {
@@ -15,7 +14,7 @@
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
-    "@vev/react": "^0.1.8",
+    "@vev/react": "latest",
     "react": "^18.2.0"
   }
 }

@@ -1,18 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   registerVevComponent,
   useDispatchVevEvent,
   useVevEvent,
 } from "@vev/react";
 import { colorify, getColors } from "lottie-colorify";
-import { File, LottieColor, LottieColorReplacement } from "./types";
+import { File, LottieColorReplacement } from "./types";
 import defaultAnimation from "./constants/defaultAnimation";
 import ColorPicker from "./components/ColorPicker";
 import {
-  DotLottiePlayer,
   Controls,
-  PlayerEvents,
   DotLottieCommonPlayer,
+  DotLottiePlayer,
+  PlayerEvents,
 } from "@dotlottie/react-player";
 import "@dotlottie/react-player/dist/index.css";
 
@@ -113,7 +113,7 @@ const Lottie = ({
     };
 
     isJSON && fetchJson();
-  }, [colorsChanged]);
+  }, [colorsChanged, file]);
 
   return (
     <DotLottiePlayer
@@ -149,19 +149,19 @@ registerVevComponent(Lottie, {
   events: [
     {
       type: Events.PLAY,
-      description: "Playing",
+      description: "On play",
     },
     {
       type: Events.PAUSE,
-      description: "Paused",
+      description: "On pause",
     },
     {
       type: Events.LOOP_COMPLETED,
-      description: "Loop completed",
+      description: "On loop end",
     },
     {
       type: Events.COMPLETE,
-      description: "Completed",
+      description: "On end",
     },
   ],
   interactions: [

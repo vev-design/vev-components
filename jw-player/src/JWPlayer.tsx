@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import styles from './JWPlayer.module.css';
 import { registerVevComponent, Tracking } from '@vev/react';
+import { SilkeNotification } from '@vev/silke';
 
 type Props = {
   embedUrl: string;
@@ -222,6 +223,17 @@ registerVevComponent(JWPlayer, {
       },
       initialValue: 'uniform',
     },
+    {
+      name: "address",
+      type: "string",
+      component: (props) => {
+        return <SilkeNotification
+          dark
+          kind="information"
+          subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
+        />
+      }
+    }
   ],
   type: 'both',
 });

@@ -119,7 +119,7 @@ export const Slideshow = (props: Props) => {
   useVevEvent(Events.PREV, handlePrevSlide);
   useVevEvent(Events.SET, (args: { slide: number }) => {
     setState({
-      index: Math.max(0, Number(args?.slide) - 1),
+      index: Math.max(0, Number(args?.slide || 0) - 1),
       length: numberOfSlides || 0,
     });
   });
@@ -140,12 +140,12 @@ export const Slideshow = (props: Props) => {
 
   return (
     <div className={styles.wrapper}>
-      {slides[state?.index] && (
+      {(slides[state?.index] || slides[0]) && (
         <Comp
           {...props}
           slides={slides}
           speed={editor?.disabled ? 1 : props.speed}
-          index={state?.index}
+          index={isNaN(state?.index) ? 0 : state?.index}
           editMode={editor.disabled}
           action={state?.action}
         />

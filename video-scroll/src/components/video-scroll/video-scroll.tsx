@@ -50,7 +50,6 @@ export function VideoScroll({
   const currentFrameRef = useRef<number>(0);
   const desiredProgressRef = useRef<number>(0);
   const zoom = useZoom();
-
   const preloadedImagesRef = useVideoImageWorker(images);
 
   useEffect(() => {

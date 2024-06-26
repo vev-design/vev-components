@@ -11,7 +11,7 @@ import {
 import styles from "./Zoom.module.css";
 
 export const Zoom = ({
-  index,
+  index = 0,
   speed = 0.1, // Have to be 0.1 to trigger onTransitionEnd
   slides,
   direction,
@@ -104,15 +104,15 @@ export const Zoom = ({
     >
       {currentSlides?.map((child: string, i: number) => {
         // If only two slides, and index to prevent duplicate keys
-        const key = slides.length <= 2 ? child + i : child;
         return (
           <div
-            className={styles.slide}
-            key={key}
+            className={[styles.slide, i === move ? styles.active : ""].join(
+              " "
+            )}
+            key={child}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
               opacity: i === move ? 1 : 0,
-              pointerEvents: i === move ? "auto" : "none",
               zIndex: scaleFactor === 100 ? (i === move ? "auto" : -1) : "auto",
               transform:
                 i === move || i === move - 1
