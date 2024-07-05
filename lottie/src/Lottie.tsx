@@ -90,14 +90,19 @@ const Lottie = ({
           const result = await response.json();
           const lottieColors = getColors(result);
 
-          const colorOverrides = lottieColors.map(
-            (lc: string | { oldColor: string }) => {
-              const match = colors?.find(
-                (c) => String(c.oldColor) === String(lc)
-              );
-              return match ? match.newColor : lc;
-            }
-          );
+          const colorOverrides = lottieColors
+            .map(
+              (lc: string | { oldColor: string }) => {
+                const match = colors?.find(
+                  (c) => String(c.oldColor) === String(lc)
+                );
+
+                return match ? match.newColor : lc;
+              }
+            )
+            // remove alpha values
+            .map(([r, g, b]: number[]) => [r, g, b]);
+
 
           if (colorOverrides.length && isJSON) {
             const jsonWithColor = colorify(colorOverrides, result);
