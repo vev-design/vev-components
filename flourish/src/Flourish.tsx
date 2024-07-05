@@ -125,7 +125,7 @@ const Flourish = ({
       <iframe
         ref={frameRef}
         className={styles.frame}
-        src={url}
+        src={isVisible ? url : undefined}
         sandbox="allow-scripts allow-popups"
         frameBorder="0"
       />
