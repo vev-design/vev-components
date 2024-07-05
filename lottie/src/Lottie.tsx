@@ -118,7 +118,7 @@ const Lottie = ({
     };
 
     isJSON && fetchJson();
-  }, [colorsChanged, file]);
+  }, [isJSON, colorsChanged, file]);
 
   return (
     <DotLottiePlayer
