@@ -51,7 +51,8 @@ export function useViewAnimation(
   ref: RefObject<HTMLElement>,
   keyframes: Keyframe[] | PropertyIndexedKeyframes,
   timeline?: ViewTimeline,
-  disable?: boolean
+  disable?: boolean,
+  options?: KeyframeAnimationOptions
 ) {
   useEffect(() => {
     const el = ref.current;
@@ -72,13 +73,14 @@ export function useViewAnimation(
     const animation = el.animate(keyframes, {
       fill: "both",
       timeline,
-      duration: "auto",
       easing: "linear",
+      ...options,
+      duration: "auto",
       rangeStart: isLessThanViewport ? enterCrossing : exitCrossing,
       rangeEnd: isLessThanViewport ? exitCrossing : enterCrossing,
     });
     return () => {
       animation.cancel();
     };
-  }, [timeline, JSON.stringify(keyframes), disable]);
+  }, [timeline, JSON.stringify(keyframes), disable, JSON.stringify(options)]);
 }

@@ -2,6 +2,7 @@ import {
   SilkeBox,
   SilkeButton,
   SilkeCssNumberField,
+  SilkeModal,
   SilkeOverflowMenu,
   SilkeSelectField,
   SilkeTitle,

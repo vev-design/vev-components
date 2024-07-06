@@ -119,7 +119,7 @@ registerVevComponent(AnimationCSS, {
   name: "Animate CSS",
   props: [
     {
-      type: "array",
+      type: "string",
       name: "animations",
       component: AnimationForm,
     },

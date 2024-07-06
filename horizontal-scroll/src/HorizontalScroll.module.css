@@ -11,7 +11,7 @@
   height: 100%;
   display: flex;
   /** Flex direction column to make scroll links work */
-  flex-direction: column;
+  flex-direction: row;
   overflow: clip;
   width: calc(var(--slide-count) * 100vw);
 }
@@ -25,12 +25,12 @@
 .edit-slides .content {
   grid-area: 1/1;
   position: static;
-  margin: 0 0 0 calc(100vw * var(--index));
+  /*margin: 0 0 0 calc(100vw * var(--index));*/
 }
-.edit-slides .content:not(.selected) {
+/* .edit-slides .content:not(.selected) {
   opacity: 0.5;
   filter: blur(4px);
-}
+} */
 
 .content {
   position: sticky;
