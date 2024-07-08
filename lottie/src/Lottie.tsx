@@ -138,6 +138,7 @@ const Lottie = ({
 
   return (
     <DotLottiePlayer
+      key={`id-${scroll}-${autoplay}`}
       src={isJSON ? json : path}
       ref={lottieRef}
       autoplay={scroll ? false : autoplay}
