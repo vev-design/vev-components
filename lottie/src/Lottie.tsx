@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useScrollTop,
+  useVevEvent,
+  useViewport,
+} from '@vev/react';
 import { colorify, getColors } from 'lottie-colorify';
 import { File, LottieColorReplacement } from './types';
 import defaultAnimation from './constants/defaultAnimation';
@@ -23,6 +29,9 @@ type Props = {
   speed: number;
   colors: LottieColorReplacement[];
   hideControls: boolean;
+  scroll: boolean;
+  scrollOffsetStart: number;
+  scrollOffsetStop: number;
 };
 
 const Lottie = ({
@@ -32,14 +41,34 @@ const Lottie = ({
   colors,
   autoplay = true,
   hideControls = false,
+  scroll = false,
+  scrollOffsetStart = 0,
+  scrollOffsetStop = 0,
 }: Props) => {
   const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
   const isJSON = (file?.url && file?.type === 'application/json') || !file?.url;
   const [json, setJson] = useState({});
+  const { scrollHeight, height: viewportHeight } = useViewport();
 
   const path = (file && file.url) || defaultAnimation;
   const colorsChanged = JSON.stringify(colors);
+
+  const scrollTop = useScrollTop();
+
+  useEffect(() => {
+    if (scroll) {
+      if (lottieRef.current) {
+        const { totalFrames } = lottieRef.current;
+        const progress =
+          (scrollTop - scrollOffsetStart) /
+          (scrollHeight - scrollOffsetStart - viewportHeight - scrollOffsetStop);
+        if (progress >= 0 && progress <= 1) {
+          lottieRef.current.goToAndStop(Math.min(totalFrames * progress, totalFrames * 0.99), true);
+        }
+      }
+    }
+  }, [scroll, scrollOffsetStart, scrollOffsetStop, scrollTop]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
@@ -111,8 +140,8 @@ const Lottie = ({
     <DotLottiePlayer
       src={isJSON ? json : path}
       ref={lottieRef}
-      autoplay={autoplay}
-      loop={loop}
+      autoplay={scroll ? false : autoplay}
+      loop={scroll ? false : loop}
       speed={speed}
       className={styles.wrapper}
       onEvent={(event: PlayerEvents) => {
@@ -187,16 +216,45 @@ registerVevComponent(Lottie, {
       description: 'Only .lottie or JSON files are supported',
     },
     {
+      name: 'scroll',
+      title: 'Progress by scroll',
+      type: 'boolean',
+      initialValue: false,
+    },
+    {
+      name: 'scrollOffsetStart',
+      title: 'Scroll offset start',
+      description: 'Number of pixels from the top before the scroll animation starts',
+      type: 'number',
+      options: {
+        format: 'px',
+      },
+      hidden: (context) => !context?.value?.scroll,
+    },
+    {
+      name: 'scrollOffsetStop',
+      title: 'Scroll offset stop',
+      description:
+        'Number of pixels from the bottom of the screen before the scroll animation stops',
+      type: 'number',
+      options: {
+        format: 'px',
+      },
+      hidden: (context) => !context?.value?.scroll,
+    },
+    {
       name: 'autoplay',
       title: 'Autoplay',
       type: 'boolean',
       initialValue: true,
+      hidden: (context) => context?.value?.scroll === true,
     },
     {
       name: 'loop',
       title: 'Loop',
       type: 'boolean',
       initialValue: true,
+      hidden: (context) => context?.value?.scroll === true,
     },
     {
       name: 'hideControls',
@@ -215,7 +273,7 @@ registerVevComponent(Lottie, {
         max: 4,
         format: 'x',
       },
-      hidden: (context) => context?.value?.trigger === 'scroll',
+      hidden: (context) => context?.value?.scroll === true,
     },
     {
       name: 'colors',
