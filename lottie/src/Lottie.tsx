@@ -32,6 +32,8 @@ type Props = {
   scroll: boolean;
   scrollOffsetStart: number;
   scrollOffsetStop: number;
+  scrollType: 'enterView' | 'widget' | 'offset';
+  scrollWidget: string;
 };
 
 const Lottie = ({
@@ -44,13 +46,15 @@ const Lottie = ({
   scroll = false,
   scrollOffsetStart = 0,
   scrollOffsetStop = 0,
+  scrollType = 'enterView',
+  scrollWidget,
+  hostRef,
 }: Props) => {
   const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
   const isJSON = (file?.url && file?.type === 'application/json') || !file?.url;
   const [json, setJson] = useState<null | Record<string, unknown>>(null);
   const { scrollHeight, height: viewportHeight } = useViewport();
-
   const path = (file && file.url) || defaultAnimation;
   const colorsChanged = JSON.stringify(colors);
 
@@ -59,10 +63,21 @@ const Lottie = ({
   useEffect(() => {
     if (scroll) {
       if (lottieRef.current) {
+        let progress = 0;
         const { totalFrames } = lottieRef.current;
-        const progress =
-          (scrollTop - scrollOffsetStart) /
-          (scrollHeight - scrollOffsetStart - viewportHeight - scrollOffsetStop);
+        if (scrollType === 'offset') {
+          progress =
+            (scrollTop - scrollOffsetStart) /
+            (scrollHeight - scrollOffsetStart - viewportHeight - scrollOffsetStop);
+        } else if (scrollType === 'enterView') {
+          const offsetTop = hostRef.current?.offsetTop || 0;
+          progress = (scrollTop - offsetTop + viewportHeight) / viewportHeight;
+        } else if (scrollType === 'widget') {
+          const element = document.getElementById(scrollWidget);
+          const offsetTop = element?.offsetTop || 0;
+          progress = (scrollTop - offsetTop + viewportHeight) / viewportHeight;
+        }
+
         if (progress >= 0 && progress <= 1) {
           lottieRef.current.goToAndStop(Math.min(totalFrames * progress, totalFrames * 0.99), true);
         }
@@ -223,6 +238,29 @@ registerVevComponent(Lottie, {
       initialValue: false,
     },
     {
+      name: 'scrollType',
+      type: 'select',
+      options: {
+        display: 'dropdown',
+        items: [
+          { label: 'Start when entering view', value: 'enterView' },
+          { label: 'Relative to widget', value: 'widget' },
+          { label: 'Offset', value: 'offset' },
+        ],
+      },
+      initialValue: 'enterView',
+      hidden: (context) => !context?.value?.scroll,
+    },
+    {
+      name: 'scrollWidget',
+      title: 'Element',
+      description: 'Animation starts when element enters view',
+      type: 'widgetSelect',
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'widget';
+      },
+    },
+    {
       name: 'scrollOffsetStart',
       title: 'Scroll offset start',
       description: 'Number of pixels from the top before the scroll animation starts',
@@ -230,7 +268,9 @@ registerVevComponent(Lottie, {
       options: {
         format: 'px',
       },
-      hidden: (context) => !context?.value?.scroll,
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'offset';
+      },
     },
     {
       name: 'scrollOffsetStop',
@@ -241,7 +281,9 @@ registerVevComponent(Lottie, {
       options: {
         format: 'px',
       },
-      hidden: (context) => !context?.value?.scroll,
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'offset';
+      },
     },
     {
       name: 'autoplay',
