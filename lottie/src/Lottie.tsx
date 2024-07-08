@@ -48,7 +48,7 @@ const Lottie = ({
   const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
   const isJSON = (file?.url && file?.type === 'application/json') || !file?.url;
-  const [json, setJson] = useState({});
+  const [json, setJson] = useState<null | Record<string, unknown>>(null);
   const { scrollHeight, height: viewportHeight } = useViewport();
 
   const path = (file && file.url) || defaultAnimation;
@@ -133,13 +133,13 @@ const Lottie = ({
       }
     };
 
-    isJSON && fetchJson();
+    colorsChanged && isJSON && fetchJson();
   }, [colorsChanged, file]);
 
   return (
     <DotLottiePlayer
       key={`id-${scroll}-${autoplay}`}
-      src={isJSON ? json : path}
+      src={isJSON && json ? json : path}
       ref={lottieRef}
       autoplay={scroll ? false : autoplay}
       loop={scroll ? false : loop}
