@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
-import { registerVevComponent, useEditorState } from '@vev/react';
+import { registerVevComponent, useEditorState , useVisible} from '@vev/react';
 
 type Props = {
   html: string;
   encapsulate: boolean;
+  renderOnVisible: boolean;
   isStatic: boolean;
   allowScroll: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
@@ -14,7 +15,7 @@ function StaticHTML({ html, allowScroll }) {
   return <div className="fill" style={{ overflow: allowScroll ? "auto" : "hidden" }} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
-function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStatic = false, hostRef }: Props) {
+function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStatic = false, renderOnVisible=false, hostRef} : Props) {
   const { disabled } = useEditorState();
 
   if (disabled) {
@@ -31,7 +32,7 @@ function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStati
 
   if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />
   if (encapsulate) return <EmbedIframe html={html} />;
-  return <EmbedScript html={html} hostRef={hostRef} allowScroll={allowScroll} />;
+  return <EmbedScript html={html} hostRef={hostRef} allowScroll={allowScroll} renderOnVisible={renderOnVisible} />;
 }
 
 function EmbedIframe({ html }: { html: string }) {
@@ -104,12 +105,13 @@ function EmbedIframe({ html }: { html: string }) {
   );
 }
 
-function EmbedScript({ html, hostRef, allowScroll }: Pick<Props, 'hostRef' | 'html' | 'allowScroll'>) {
+function EmbedScript({ html, hostRef, allowScroll, renderOnVisible }: Pick<Props, 'hostRef' | 'html' | 'allowScroll' | 'renderOnVisible'>) {
   const [loaded, setLoaded] = useState<boolean>(false);
+  const visible = useVisible(hostRef);
 
   useEffect(() => {
-    setLoaded(true);
-  }, []);
+    if (!renderOnVisible || visible) setLoaded(true);
+  }, [visible, renderOnVisible]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -170,6 +172,16 @@ registerVevComponent(EmbedAnything, {
       type: 'boolean',
       description: 'Contain the embed code within its own browser instance',
       initialValue: false,
+    },
+    {
+      title: 'Render on visible',
+      name: 'renderOnVisible',
+      type: 'boolean',
+      intialValue: false,
+      description: 'Do not render the embed code until the component is visible',
+      hidden: (context) => {
+        return context.value.encapsulate || context.value.static;
+      },
     },
     {
       title: 'Static HTML',

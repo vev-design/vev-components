@@ -7,7 +7,7 @@ import {
   useViewport,
   View,
   useVevEvent,
-  ueVisible,
+  useVisible,
 } from '@vev/react';
 import { InteractionTypes } from './event-types';
 
@@ -49,7 +49,7 @@ const Flourish = ({
   const frameRef = useRef<HTMLIFrameElement>();
   const globalOffsetTop = View.rootNodeOffsetTop;
 
-  const isVisible = ueVisible(hostRef);
+  const isVisible = useVisible(hostRef);
 
   useEffect(() => {
     if (frameRef.current) {
@@ -125,7 +125,7 @@ const Flourish = ({
       <iframe
         ref={frameRef}
         className={styles.frame}
-        src={url}
+        src={isVisible ? url : undefined}
         sandbox="allow-scripts allow-popups"
         frameBorder="0"
       />
