@@ -138,6 +138,7 @@ registerVevComponent(HTML5Audio, {
       name: 'audioUrl',
       title: 'Audio file',
       type: 'upload',
+      maxSize: 75000,
       hidden: (context) => {
         return !!context.value.audioUrlLink;
       },
