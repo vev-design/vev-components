@@ -244,7 +244,7 @@ registerVevComponent(Lottie, {
         display: 'dropdown',
         items: [
           { label: 'Start when entering view', value: 'enterView' },
-          { label: 'Relative to widget', value: 'widget' },
+          { label: 'Relative to element', value: 'widget' },
           { label: 'Offset', value: 'offset' },
         ],
       },
