@@ -123,6 +123,7 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
             <SilkeBox flex column>
               <SilkeUploadField
                 accept="video/*"
+                maxSize={819200}
                 onSelectFiles={(files) => {
                   console.log(files);
                   handleUpload(files[0]);
