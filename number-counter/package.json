@@ -13,14 +13,11 @@
   "devDependencies": {
     "vitest": "^0.34.6",
     "@types/react": "latest",
-    "@types/numeral": "^2.0.4",
-    "prettier": "2.7.0",
     "typescript-plugin-css-modules": "^3.4.0"
   },
   "dependencies": {
-    "numeral": "^2.0.6",
-    "@vev/react": "^0.0.4",
-    "@vev/silke": "^1.0.18",
+    "@vev/react": "^0.1.8",
+    "@vev/silke": "^1.0.24",
     "react": "^18.2.0"
   }
 }
