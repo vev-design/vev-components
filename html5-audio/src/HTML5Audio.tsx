@@ -31,6 +31,10 @@ const HTML5Audio = (props: Props) => {
   const dispatch = useDispatchVevEvent();
   const intervalRef = useRef<number>();
 
+  useEffect(() => {
+    audioRef.current.pause();
+  }, [disabled]);
+
   useVevEvent(Interactions.PLAY, () => {
     if (audioRef.current) {
       audioRef.current.play();
@@ -109,6 +113,12 @@ const HTML5Audio = (props: Props) => {
       audioRef.current.onended = () => {
         dispatch(Events.COMPLETE);
       };
+      audioRef.current.ontimeupdate = () => {
+        dispatch(Events.CURRENT_TIME, {
+          currentTime: audioRef.current.currentTime,
+          percentage: (audioRef.current.currentTime / audioRef.current.duration) * 100,
+        });
+      };
     }
   }, [dispatch]);
 
@@ -169,6 +179,7 @@ registerVevComponent(HTML5Audio, {
     { type: Events.PLAY, description: 'On play' },
     { type: Events.PAUSE, description: 'On pause' },
     { type: Events.COMPLETE, description: 'On end' },
+    { type: Events.CURRENT_TIME, description: 'On current time update' },
   ],
   interactions: [
     { type: Interactions.PLAY, description: 'Play' },
