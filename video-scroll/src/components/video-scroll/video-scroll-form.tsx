@@ -1,4 +1,3 @@
-import { SchemaContextModel } from '@vev/react';
 import React, { useRef, useState } from 'react';
 import { useDropZone } from '../../hooks/use-drop-zone';
 import { unpackFrames } from '../../video-unpack';
@@ -11,6 +10,7 @@ import {
   SilkeTabs,
 } from '@vev/silke';
 import styles from './video-scroll-form.module.scss';
+import { SchemaContextModel } from '@vev/utils';
 
 type VideoScrollFormProps = {
   context: SchemaContextModel;
@@ -140,7 +140,7 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
                 loading={isDownloadingVideo}
                 label="Select video"
                 onClick={() => {
-                  context.actions.videoLibraryOpen(async (projectFile: any) => {
+                  context.actions?.videoLibraryOpen(async (projectFile: any) => {
                     setIsDownloadingVideo(true);
                     const response = await fetch(projectFile.sources[0].url);
                     const data = await response.blob();
