@@ -29,6 +29,9 @@ function getElementTopPosition(widgetKey: string) {
   return el.offsetTop;
 }
 
+const storyReg = /story\/(.*)(?=\/)/i;
+const vizReg = /visualisation\/(.*)(?=\/)/i;
+
 const Flourish = ({
   formUrl = DEFAULT_URL,
   scrollytelling = false,
@@ -50,6 +53,9 @@ const Flourish = ({
   const globalOffsetTop = View.rootNodeOffsetTop;
 
   const isVisible = useVisible(hostRef);
+
+  const isStory = formUrl?.indexOf('story') > -1;
+  const idMatch = formUrl?.match(isStory ? storyReg : vizReg);
 
   useEffect(() => {
     if (frameRef.current) {
@@ -120,12 +126,16 @@ const Flourish = ({
     setUrl(`${urlObj.origin}${urlObj.pathname}#slide-${slide}`);
   }, [slide, url]);
 
+  const id = idMatch ? idMatch[1] : formUrl || '3165417';
+  let src = `https://flo.uri.sh/${isStory ? 'story' : 'visualisation'}/${id}/embed`;
+  if (scrollytelling && isStory) src += `#slide-${slide}`;
+
   return (
     <div className={`flourish fill ${styles.container}`}>
       <iframe
         ref={frameRef}
         className={styles.frame}
-        src={isVisible ? url : undefined}
+        src={isVisible ? src : undefined}
         sandbox="allow-scripts allow-popups"
         frameBorder="0"
       />
