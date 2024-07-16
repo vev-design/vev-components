@@ -61,7 +61,7 @@ const Youtube = ({ videoId, settings }: Props) => {
   const dispatch = useDispatchVevEvent();
 
   function onPlayerStateChange(event) {
-    if (!YT) return;
+    if (typeof YT === 'undefined') return;
     switch (event.data) {
       case YT.PlayerState.PLAYING:
         dispatch(YoutubeEvent.onPlay);
@@ -76,6 +76,7 @@ const Youtube = ({ videoId, settings }: Props) => {
   }
 
   function getPlayer() {
+    if (typeof YT === 'undefined') return;
     if (playerRef.current === null) {
       playerRef.current = new YT.Player(ref.current, {
         events: {
@@ -90,7 +91,7 @@ const Youtube = ({ videoId, settings }: Props) => {
   useVevEvent(YoutubeInteraction.play, () => getPlayer()?.playVideo());
   useVevEvent(YoutubeInteraction.togglePlay, () => {
     const player = getPlayer();
-    if (player) {
+    if (player && YT) {
       switch (player.getPlayerState()) {
         case YT.PlayerState.PLAYING:
           player.pauseVideo();
