@@ -58,6 +58,16 @@ const Flourish = ({
   const idMatch = formUrl?.match(isStory ? storyReg : vizReg);
 
   useEffect(() => {
+    // We have to use iframe embed to control slides
+    if (!scrollytelling) {
+      const script = document.createElement('script');
+      script.src = 'https://public.flourish.studio/resources/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  useEffect(() => {
     if (frameRef.current) {
       frameRef.current.src = frameRef.current.src;
     }
@@ -132,13 +142,20 @@ const Flourish = ({
 
   return (
     <div className={`flourish fill ${styles.container}`}>
-      <iframe
-        ref={frameRef}
-        className={styles.frame}
-        src={isVisible ? src : undefined}
-        sandbox="allow-scripts allow-popups"
-        frameBorder="0"
-      />
+      {scrollytelling ? (
+        <iframe
+          ref={frameRef}
+          className={styles.frame}
+          src={isVisible ? src : undefined}
+          sandbox="allow-scripts allow-popups"
+          frameBorder="0"
+        />
+      ) : (
+        <div
+          className="flourish-embed flourish-chart"
+          data-src={isStory ? `story/${id}` : `visualisation/${id}`}
+        />
+      )}
     </div>
   );
 };
