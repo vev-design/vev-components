@@ -11,6 +11,12 @@ import {
 } from '@vev/react';
 import { InteractionTypes } from './event-types';
 
+declare global {
+  interface Window {
+    FlourishLoaded: boolean;
+  }
+}
+
 type Props = {
   formUrl: string;
   scrollytelling: boolean;
@@ -60,12 +66,15 @@ const Flourish = ({
   useEffect(() => {
     // We have to use iframe embed to control slides
     if (!scrollytelling) {
+      window.FlourishLoaded = false;
+      document.getElementById('vev-flourish')?.remove();
       const script = document.createElement('script');
+      script.id = 'vev-flourish';
       script.src = 'https://public.flourish.studio/resources/embed.js';
       script.async = true;
       document.body.appendChild(script);
     }
-  }, []);
+  }, [scrollytelling]);
 
   useEffect(() => {
     if (frameRef.current) {
