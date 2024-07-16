@@ -1,7 +1,7 @@
 import { SilkeBox, SilkeButton, SilkeCssNumberField } from "@vev/silke";
 import React from "react";
 import { KeyframeFieldProps } from "./utils";
-import { FIELD_WIDTH } from "../animation-form";
+import { FIELD_WIDTH } from "../animation";
 
 function isMissingSuffix(value: string) {
   return /\d+$/.test(value);

@@ -1,5 +1,5 @@
 import React from "react";
-import { FIELD_WIDTH } from "../animation-form";
+import { FIELD_WIDTH } from "../animation";
 import { KeyframeFieldProps, toPercentString } from "./utils";
 import { SilkeBox, SilkeButton, SilkeCssNumberField } from "@vev/silke";
 

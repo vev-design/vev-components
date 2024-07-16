@@ -1,0 +1,50 @@
+:host {
+  contain: paint;
+}
+.wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  overflow: clip;
+}
+
+.wrapper.horizontal {
+  flex-direction: row;
+  width: calc(var(--slide-count) * 100%);
+}
+
+.wrapper.horizontal.reverse {
+  flex-direction: row-reverse;
+}
+.wrapper.stack {
+  flex-direction: column;
+}
+
+.wrapper.reveal {
+  display: grid;
+}
+.reveal .content {
+  margin: 0;
+  grid-area: 1/1;
+}
+
+.wrapper.edit-slides {
+  display: grid;
+}
+.edit-slides .content {
+  grid-area: 1/1;
+  position: static;
+  margin: 0 0;
+}
+
+.content {
+  position: sticky;
+  top: 0;
+  height: 100%;
+  max-height: 100vh;
+  max-width: 100vw;
+  min-width: calc(100% / var(--slide-count));
+  width: 100%;
+  overflow: hidden;
+}
