@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./Vimeo.module.css";
 import {
   registerVevComponent,
@@ -58,10 +58,10 @@ function LazyLoad({ hostRef, children }) {
 }
 
 const VimeoUrl = (props) => {
-  const { fullUrl } = Object.entries(props.value).length
-    ? props.value
-    : props.schema.initialValue;
   const [error, setError] = useState<string | null>(null);
+  const fullUrl = useMemo(() => {
+    return props?.value?.fullUrl || props?.schema?.initialValue?.fullUrl;
+  }, [props]);
 
   useEffect(() => {
     try {
@@ -96,7 +96,7 @@ const VimeoUrl = (props) => {
         <SilkeTextField
           label="Video URL"
           size="xs"
-          value={props.value.fullUrl}
+          value={props.value?.fullUrl}
           onChange={(value) => {
             props.onChange({ fullUrl: value, videoId: props.value.videoId });
           }}
