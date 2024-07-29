@@ -12,6 +12,7 @@ type Audio = {
 
 type Props = {
   audioUrl?: Audio;
+  audioUrlLink?: Audio;
   settings: {
     showControls: boolean;
     autoplay: boolean;
@@ -21,13 +22,13 @@ type Props = {
 
 const HTML5Audio = (props: Props) => {
   const audioRef = useRef<HTMLAudioElement>();
-  const { audioUrl, settings } = props;
+  const { audioUrl, audioUrlLink, settings } = props;
   const showControls = settings?.showControls || true;
   const loop = settings?.loop || false;
   const autoplay = settings?.autoplay || false;
   const { disabled } = useEditorState();
   const shouldAutoPlay = !disabled && autoplay;
-  const actualUrl = audioUrl ? audioUrl.url : '';
+  const actualUrl = audioUrlLink ? audioUrlLink : audioUrl ? audioUrl.url : '';
   const dispatch = useDispatchVevEvent();
   const intervalRef = useRef<number>();
 
@@ -131,8 +132,8 @@ const HTML5Audio = (props: Props) => {
         controls={showControls}
         style={{ width: '100%', height: '100%' }}
         loop={loop}
+        src={actualUrl}
       >
-        <source src={actualUrl} type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
     </div>
@@ -145,8 +146,16 @@ registerVevComponent(HTML5Audio, {
     'Embed a HTML5 audio player directly to your canvas.\n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
   props: [
     {
+      name: 'audioUrlLink',
+      title: 'Audio file URL',
+      type: 'string',
+      hidden: (context) => {
+        return !!context.value.audioUrl;
+      },
+    },
+    {
       name: 'audioUrl',
-      title: 'Audio file',
+      title: 'Audio file upload',
       accept: 'audio/*',
       type: 'upload',
       maxSize: 75000,
