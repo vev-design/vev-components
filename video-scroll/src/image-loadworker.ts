@@ -28,7 +28,8 @@ function getWorker() {
           const response = await fetch(fetchUrl);
           const fileBlob = await response.blob();
           // fileBlob.type says the MIME-type is png, but it is image/webp
-          if (fileBlob.type.startsWith('image/') || isRelativeAsset) return URL.createObjectURL(fileBlob);
+          if (fileBlob.type.startsWith('image/') || isRelativeAsset)
+            return URL.createObjectURL(fileBlob);
         } catch (e) {
           return null;
         }
@@ -112,7 +113,11 @@ export function useVideoImageWorker(images: string[]) {
       imageElements[index] = await resolveImage(url);
     });
 
-    worker.postMessage({ images, screenWidth: window.innerWidth, parentLocation: `${self.location.origin}${self.location.pathname}` });
+    worker.postMessage({
+      images,
+      screenWidth: window.innerWidth,
+      parentLocation: `${self.location.origin}${self.location.pathname}`,
+    });
 
     return () => worker.terminate();
   }, [images]);

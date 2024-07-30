@@ -41,7 +41,7 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
 
   const handleUpload = async (file?: File) => {
     if (!file) return;
-    if (file.size > 1024 * 1024 * 512) return setError('To big file, max size is 512MB');
+    if (file.size > 1024 * 1024 * 850) return setError('To big file, max size is 512MB');
 
     const uploadFile = context.actions?.uploadFile;
     if (!uploadFile) return;

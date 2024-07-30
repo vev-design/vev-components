@@ -159,8 +159,8 @@ export function VideoScroll({
       let desiredFrame = Math.round(desiredProgress * (duration - 1) || 0);
 
       if (loopCount && loopCount > 1) {
-        desiredFrame *= loopCount;
         if (loopAlternate) {
+          desiredFrame *= loopCount;
           const loop = Math.floor(desiredFrame / duration);
           if (loop % 2 === 1) {
             desiredFrame = duration - (desiredFrame % duration) - 1;
@@ -168,7 +168,7 @@ export function VideoScroll({
             desiredFrame = desiredFrame % duration;
           }
         } else {
-          desiredFrame = desiredFrame % duration;
+          desiredFrame = Math.floor(((desiredProgress * loopCount) % 1) * (duration - 1));
         }
       }
 
