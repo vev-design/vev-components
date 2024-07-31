@@ -6,9 +6,9 @@ import { Object3dContext } from '../context/object-3d-context';
 import { useHotspots } from '../hooks/use-hotspots';
 import { isHotspotVisible } from '../util/is-hotspot-visible';
 import { useHotspotListener } from '../hooks/use-hotspot-listener';
-import { useAnimationFrame } from '../hooks/use-animation-frame';
 import TWEEN from '@tweenjs/tween.js';
 import styles from '../object-3d.module.css';
+import { useAnimationFrame } from '../hooks/use-animation-frame';
 
 export const Object3dViewer = ({ className }: { className?: string }) => {
   const { modelUrl, disabled, schemaOpen, posterUrl } = useContext(Object3dContext);
@@ -42,7 +42,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
 
   const model = useModel(modelUrl, setModelLoadingPercentage);
 
-  const { scene, camera, renderer, labelRenderer, controls, mixer } = useSceneSetup(
+  const { scene, camera, renderer, labelRenderer, controls, mixer, currentModel } = useSceneSetup(
     canvasRef,
     labelRef,
     model,
@@ -57,15 +57,17 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
   // Used for rendering hotspots
   const hotspotsRef = useHotspots(scene, camera, controls);
 
-  useAnimationFrame(({ delta }) => {
+  useAnimationFrame(({ delta, frameCount }) => {
     if (controls && renderer && labelRenderer && hotspotsRef.current && mixer) {
+      if (frameCount % 100 === 0) {
+        hotspotsRef.current.forEach((hotspot) => {
+          isHotspotVisible(hotspot, camera, currentModel);
+        });
+      }
+
       controls.update();
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
-
-      hotspotsRef.current.forEach((hotspot) => {
-        isHotspotVisible(hotspot, camera, scene);
-      });
 
       if (mixer) {
         mixer.update(delta);
@@ -82,7 +84,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
       labelRenderer.render(scene, camera);
 
       hotspotsRef.current.forEach((hotspot) => {
-        isHotspotVisible(hotspot, camera, scene);
+        isHotspotVisible(hotspot, camera, currentModel);
       });
     }
   }, [camera, controls, hotspotsRef, labelRenderer, renderer, scene]);
