@@ -4,7 +4,7 @@ import { Camera, Group, Raycaster } from 'three';
 const raycaster = new Raycaster();
 let resultArr = [];
 
-export async function isHotspotVisible(hotspot: CanvasHotspot, camera: Camera, scene: Group) {
+export function isHotspotVisible(hotspot: CanvasHotspot, camera: Camera, scene: Group) {
   resultArr = [];
   const hotspotPos = hotspot.hotspot.position;
   const direction = hotspotPos.clone().sub(camera.position);

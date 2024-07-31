@@ -9,6 +9,7 @@ import { useHotspotListener } from '../hooks/use-hotspot-listener';
 import TWEEN from '@tweenjs/tween.js';
 import styles from '../object-3d.module.css';
 import { useAnimationFrame } from '../hooks/use-animation-frame';
+import { useInterval } from '@vev/react';
 
 export const Object3dViewer = ({ className }: { className?: string }) => {
   const { modelUrl, disabled, schemaOpen, posterUrl } = useContext(Object3dContext);
@@ -56,15 +57,20 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
 
   // Used for rendering hotspots
   const hotspotsRef = useHotspots(scene, camera, controls);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      hotspotsRef.current.forEach((hotspot) => {
+        isHotspotVisible(hotspot, camera, currentModel);
+      });
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [camera, currentModel, hotspotsRef]);
 
   useAnimationFrame(({ delta, frameCount }) => {
     if (controls && renderer && labelRenderer && hotspotsRef.current && mixer) {
-      if (frameCount % 100 === 0) {
-        hotspotsRef.current.forEach((hotspot) => {
-          isHotspotVisible(hotspot, camera, currentModel);
-        });
-      }
-
       controls.update();
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
