@@ -1,19 +1,58 @@
 import { registerVevComponent, useEditorState } from "@vev/react";
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { useViewAnimation, useViewTimeline } from "../../hooks";
-import { RevealSlide } from "./RevealSlide";
 import styles from "./ScrollingSlide.module.css";
-import { SimpleSlide } from "./SimpleSlide";
+import { ScrollingSlideTypeField } from "./fields/ScrollingSlideTypeField";
+import { useSlideEditMode } from "./hooks/use-slide-edit-mode";
+import {
+  BaseSlide,
+  BaseSlideProps,
+  CustomSlide,
+  FadeSlide,
+  MaskSlide,
+  RevealSlide,
+  StackSlide,
+} from "./slide";
+
+export type SlideType =
+  | "fade"
+  | "reveal"
+  | "scroll"
+  | "stack"
+  | "mask"
+  | "custom";
 
 type Props = {
   children: string[];
   hostRef: React.RefObject<HTMLDivElement>;
-  type: "horizontal" | "horizontal-reverse" | "stack" | "reveal";
+  type: SlideType;
   settings?: { [key: string]: any };
 };
 
+type Layout = "row" | "column" | "grid";
+const SLIDE_LAYOUT: Record<SlideType, Layout> = {
+  scroll: "row",
+  stack: "grid",
+  fade: "grid",
+  reveal: "grid",
+  mask: "grid",
+  custom: "grid",
+};
+
+const SLIDE_COMPONENT: Record<
+  SlideType,
+  React.ComponentType<BaseSlideProps>
+> = {
+  scroll: BaseSlide,
+  stack: StackSlide,
+  fade: FadeSlide,
+  reveal: RevealSlide,
+  mask: MaskSlide,
+  custom: CustomSlide,
+};
+
 const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
-  if (!type) type = "horizontal";
+  if (!type) type = "scroll";
   const ref = useRef<HTMLDivElement>(null);
   const { disabled, activeContentChild, ...rest } = useEditorState();
   const timeline = useViewTimeline(ref);
@@ -26,43 +65,21 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
       translate: ["0 0", `${-100 + 100 / children.length}% 0`],
     },
     timeline,
-    !!showSlideKey || !(!type || type.includes("horizontal")),
+    !!showSlideKey || type !== "scroll",
     {
       direction: settings?.reverse ? "reverse" : undefined,
       easing: settings?.easing,
     }
   );
 
-  useLayoutEffect(() => {
-    const el = hostRef.current;
-    if (el && showSlideKey && disabled) {
-      const ogHeight = el.clientHeight;
-      // No need to pin position if content is smaller than viewport
-      if (ogHeight < window.innerHeight) return;
+  useSlideEditMode(hostRef, disabled, showSlideKey);
 
-      const originalOffsetTop = el.getBoundingClientRect().top + window.scrollY;
-      const update = () => {
-        el.style.marginTop = window.scrollY - originalOffsetTop + "px";
-        // hack to force editor to update frame
-        el.style.height = `${ogHeight + Math.random()}px`;
-      };
-      window.addEventListener("scroll", update);
-      update();
-      return () => {
-        window.removeEventListener("scroll", update);
-        el.style.removeProperty("height");
-        el.style.removeProperty("margin-top");
-      };
-    }
-  }, [showSlideKey, disabled]);
-
-  let cl = `${styles.wrapper}`;
+  const layout = SLIDE_LAYOUT[type] || "row";
+  let cl = `${styles.wrapper} ${styles[layout]}`;
   if (showSlideKey) cl += " " + styles.editSlides;
-  if (type) cl += " " + styles[type];
-  if (type === "horizontal" && settings?.reverse) cl += " " + styles.reverse;
+  if (type === "scroll" && settings?.reverse) cl += " " + styles.reverse;
 
-  const Comp = type === "reveal" ? RevealSlide : SimpleSlide;
-  console.log("IM HERE 123");
+  const Comp = SLIDE_COMPONENT[type] || BaseSlide;
   return (
     <div
       ref={ref}
@@ -100,64 +117,63 @@ registerVevComponent(ScrollingSlide, {
     {
       type: "select",
       name: "type",
-      initialValue: "horizontal",
+      initialValue: "scroll",
+      component: ScrollingSlideTypeField,
       options: {
         display: "dropdown",
         items: [
-          { value: "horizontal", label: "Horizontal scroll" },
-          { value: "stack", label: "Stack" },
-          { value: "reveal", label: "Reveal" },
+          {
+            label: "Scroll",
+            value: "scroll",
+          },
+          {
+            label: "Fade",
+            value: "fade",
+          },
+          {
+            label: "Reveal",
+            value: "reveal",
+          },
+          {
+            label: "Stack",
+            value: "stack",
+          },
+          {
+            label: "Mask",
+            value: "mask",
+          },
+          {
+            label: "Scale",
+            value: "scale",
+          },
         ],
       },
     },
     {
       type: "object",
       name: "settings",
-      hidden: (context) => {
-        return context.value?.type === "stack";
-      },
+
       fields: [
         {
           type: "boolean",
           name: "reverse",
-          hidden: (context) => {
-            return context.value?.type !== "horizontal";
-          },
         },
         {
-          type: "select",
-          name: "effect",
-          initialValue: "fade",
-          hidden: (context) => {
-            return context.value?.type !== "reveal";
-          },
+          type: "number",
+          title: "Offset start",
+          name: "offsetStart",
+          initialValue: 0,
           options: {
-            display: "dropdown",
-
-            items: [
-              { value: "fade", label: "Fade" },
-              {
-                value: "vertical-reveal",
-                label: "Vertical reveal",
-              },
-              {
-                value: "horizontal-reveal",
-                label: "Horizontal reveal",
-              },
-              {
-                value: "circle",
-                label: "Circle",
-              },
-            ],
+            format: "%",
+            min: 0,
+            max: 1,
+            scale: 100,
           },
         },
         {
           type: "select",
           name: "easing",
           initialValue: "linear",
-          hidden: (context) => {
-            return context.value?.type !== "horizontal";
-          },
           options: {
             display: "autocomplete",
             items: [
@@ -276,6 +292,137 @@ registerVevComponent(ScrollingSlide, {
               },
             ],
           },
+        },
+        {
+          type: "number",
+          name: "scale",
+          title: "Scale Factor",
+          hidden: (context) => context.value?.type !== "fade",
+          options: {
+            format: "%",
+            scale: 100,
+          },
+        },
+        {
+          type: "select",
+          name: "maskShape",
+          initialValue:
+            "circle(var(--slide-offset) at var(--mask-x) var(--mask-y))",
+          hidden: (context) => context.value?.type !== "mask",
+          options: {
+            items: [
+              {
+                label: "Circle",
+                value:
+                  "circle(calc(var(--slide-offset) * 150%) at calc(var(--mask-x) * 100%) calc(var(--mask-y) * 100%))",
+              },
+              {
+                label: "Rectangle",
+                value:
+                  "inset(calc(var(--mask-y) * (1 - var(--slide-offset)) * 100% ) calc((1 - var(--mask-x)) * (1 - var(--slide-offset)) * 100% ) calc((1 - var(--mask-y)) * (1 - var(--slide-offset)) * 100% ) calc(var(--mask-x) * (1 - var(--slide-offset)) * 100% ))",
+              },
+              {
+                label: "Diamond",
+                value:
+                  "polygon(50% calc(var(--mask-y) * (1 - var(--slide-offset)) * 100%), calc(var(--mask-x) * ( var(--slide-offset)) * 100%) 50%, 50% calc(var(--mask-y) * (var(--slide-offset)) * 100%), calc(var(--mask-x) * (1 - var(--slide-offset)) * 100%) 50%)",
+              },
+            ],
+          },
+        },
+        {
+          type: "number",
+          name: "maskX",
+          title: "Mask Origin X",
+          initialValue: 0.5,
+          hidden: (context) => context.value?.type !== "mask",
+          options: {
+            format: "%",
+            min: 0,
+            max: 1,
+            scale: 100,
+          },
+        },
+        {
+          type: "number",
+          name: "maskY",
+          title: "Mask Origin Y",
+          initialValue: 0.5,
+          hidden: (context) => context.value?.type !== "mask",
+          options: {
+            format: "%",
+            min: 0,
+            max: 1,
+            scale: 100,
+          },
+        },
+        {
+          type: "select",
+          name: "stackDirection",
+          initialValue: "vertical",
+          hidden: (context) => context.value?.type !== "stack",
+          title: "Direction",
+          options: {
+            items: [
+              {
+                label: "Vertical",
+                value: "vertical",
+              },
+              {
+                label: "Horizontal",
+                value: "horizontal",
+              },
+            ],
+          },
+        },
+        {
+          type: "select",
+          name: "revealDirection",
+          hidden: (context) => context.value?.type !== "reveal",
+          title: "Direction",
+          initialValue:
+            "polygon(0 0, calc( 100% * var(--slide-offset)) 0, calc( 100% * var(--slide-offset)) 100%, 0% 100%)",
+          options: {
+            items: [
+              {
+                label: "From left",
+                value:
+                  "polygon(0 0, calc( 100% * var(--slide-offset)) 0, calc( 100% * var(--slide-offset)) 100%, 0% 100%)",
+              },
+              {
+                label: "From top",
+                value:
+                  "polygon(0 0, 100% 0, 100% calc(var(--slide-offset) * 100%), 0% calc(var(--slide-offset) * 100%))",
+              },
+              {
+                label: "From top left",
+                value:
+                  "polygon(-100% -100%, calc((25% + 100% * var(--slide-offset) / 2) * 4) -100%, -100% calc((25% + 100% * var(--slide-offset) / 2) * 4))",
+              },
+              {
+                label: "From top right",
+                value:
+                  "polygon(100% -100%, 100% calc((25% + 100% * var(--slide-offset) / 2) * 4), -100% calc((25% + 100% * var(--slide-offset) / 2) * 4))",
+              },
+            ],
+          },
+        },
+        {
+          type: "array",
+          name: "keyframes",
+          title: "Custom Keyframes",
+          hidden: (context) => context.value?.type !== "custom",
+          initialValue: [{ style: "opacity:0;" }, { style: "opacity:1;" }],
+          of: [
+            {
+              name: "style",
+              title: "CSS Styles",
+              type: "string",
+              options: {
+                type: "text",
+                multiline: true,
+              },
+            },
+          ],
         },
       ],
     },

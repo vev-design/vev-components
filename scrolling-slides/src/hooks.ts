@@ -1,4 +1,4 @@
-import { s } from "@vev/react";
+import { s, useViewport } from "@vev/react";
 import { MutableRefObject, RefObject, useEffect, useState } from "react";
 type ViewTimelineOptions = {
   axis: "block" | "inline";
@@ -52,35 +52,60 @@ export function useViewAnimation(
   keyframes: Keyframe[] | PropertyIndexedKeyframes,
   timeline?: ViewTimeline,
   disable?: boolean,
-  options?: KeyframeAnimationOptions
+  options?: KeyframeAnimationOptions,
+  offsetStart: number = 0,
+  offsetEnd: number = 1
 ) {
+  const { scrollHeight, height: windowHeight } = useViewport();
   useEffect(() => {
     const el = ref.current;
     if (disable || !timeline || !el || !el.parentElement) return;
 
-    const isLessThanViewport =
-      el.parentElement.clientHeight < window.innerHeight;
+    const { top, bottom, height } = el.parentElement.getBoundingClientRect();
+    const rootOffset = top + window.scrollY;
+    const isLessThanViewport = height < windowHeight;
 
-    const enterCrossing = {
-      rangeName: "entry-crossing",
-      offset: CSS.percent(100),
-    };
+    if (isLessThanViewport && rootOffset < windowHeight) {
+      // console.log(offsetStart, el);
+      offsetStart += 1 - (rootOffset + height) / windowHeight;
+    }
 
-    const exitCrossing = {
-      rangeName: "exit-crossing",
-      offset: CSS.percent(0),
-    };
+    const scrollBottomTop = scrollHeight - windowHeight;
+
+    if (isLessThanViewport && rootOffset > scrollBottomTop) {
+      const endOffset = (rootOffset - scrollBottomTop) / windowHeight;
+      offsetStart -= endOffset;
+      offsetEnd -= endOffset;
+    }
+
     const animation = el.animate(keyframes, {
       fill: "both",
       timeline,
       easing: "linear",
       ...options,
       duration: "auto",
-      rangeStart: isLessThanViewport ? enterCrossing : exitCrossing,
-      rangeEnd: isLessThanViewport ? exitCrossing : enterCrossing,
+      rangeStart: {
+        rangeName: "contain",
+        offset: CSS.percent(offsetStart * 100),
+      },
+      rangeEnd: {
+        rangeName: "contain",
+        offset: CSS.percent(offsetEnd * 100),
+      },
+      // rangeStart: isLessThanViewport ? enterCrossing : exitCrossing,
+      // rangeEnd: isLessThanViewport ? exitCrossing : enterCrossing,
     });
     return () => {
       animation.cancel();
     };
-  }, [timeline, JSON.stringify(keyframes), disable, JSON.stringify(options)]);
+  }, [
+    timeline,
+    JSON.stringify(keyframes),
+    disable,
+    JSON.stringify(options),
+    offsetStart,
+    offsetEnd,
+    windowHeight,
+    scrollHeight,
+  ]);
 }

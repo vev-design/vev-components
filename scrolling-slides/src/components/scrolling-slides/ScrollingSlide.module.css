@@ -1,3 +1,27 @@
+@property --slide-offset {
+  syntax: "<number>";
+  initial-value: 1;
+  inherits: false;
+}
+
+@property --mask-x {
+  syntax: "<number>";
+  initial-value: 0.5;
+  inherits: false;
+}
+
+@property --mask-y {
+  syntax: "<number>";
+  initial-value: 0.5;
+  inherits: false;
+}
+
+@property --slide-scale {
+  syntax: "<number>";
+  initial-value: 0.5;
+  inherits: false;
+}
+
 :host {
   contain: paint;
 }
@@ -9,22 +33,22 @@
   overflow: clip;
 }
 
-.wrapper.horizontal {
+.wrapper.row {
   flex-direction: row;
   width: calc(var(--slide-count) * 100%);
 }
 
-.wrapper.horizontal.reverse {
+.wrapper.reverse {
   flex-direction: row-reverse;
 }
-.wrapper.stack {
+.wrapper.column {
   flex-direction: column;
 }
 
-.wrapper.reveal {
+.wrapper.grid {
   display: grid;
 }
-.reveal .content {
+.grid .content {
   margin: 0;
   grid-area: 1/1;
 }
