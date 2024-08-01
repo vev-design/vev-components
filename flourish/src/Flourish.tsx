@@ -1,6 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './Flourish.module.css';
-import { registerVevComponent, useScrollTop, useSize, useViewport } from '@vev/react';
+import {
+  registerVevComponent,
+  useScrollTop,
+  useSize,
+  useViewport,
+  View,
+  useVevEvent,
+  useVisible,
+} from '@vev/react';
+import { InteractionTypes } from './event-types';
+
+declare global {
+  interface Window {
+    FlourishLoaded: boolean;
+  }
+}
 
 type Props = {
   formUrl: string;
@@ -13,13 +28,15 @@ type Props = {
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
-const DEFAULT_SCROLLYTELLING_URL = 'https://flo.uri.sh/story/468238/embed';
 const DEFAULT_URL = 'https://flo.uri.sh/story/1767962/embed';
 
-function getElementPosition(widgetKey: string, widgetDistance: number, scrollTop: number) {
+function getElementTopPosition(widgetKey: string) {
   const el = document.getElementById(widgetKey);
-  return el ? el.getBoundingClientRect().top - (widgetDistance || 0) + scrollTop : undefined;
+  return el.offsetTop;
 }
+
+const storyReg = /story\/(.*)(?=\/)/i;
+const vizReg = /visualisation\/(.*)(?=\/)/i;
 
 const Flourish = ({
   formUrl = DEFAULT_URL,
@@ -31,39 +48,59 @@ const Flourish = ({
   widgetDistance,
   hostRef,
 }: Props) => {
-  const [_, setTop] = useState<number>(0);
+  const [offsetTop, setTop] = useState<number>(0);
   const [url, setUrl] = useState<string>(formUrl);
-  const [offset, setOffset] = useState<number>(0);
   const { height: hostHeight } = useSize(hostRef);
   const scrollTop = useScrollTop();
   const { scrollHeight, height: viewportHeight } = useViewport();
   const [slideChangeDistance, setSlideChangeDistance] = useState<number>(0);
   const [slide, setSlide] = useState<number>(0);
+  const frameRef = useRef<HTMLIFrameElement>();
+  const globalOffsetTop = View.rootNodeOffsetTop;
+
+  const isVisible = useVisible(hostRef);
+
+  const isStory = formUrl?.indexOf('story') > -1;
+  const idMatch = formUrl?.match(isStory ? storyReg : vizReg);
 
   useEffect(() => {
-    let parent = hostRef.current as HTMLElement;
-    let top = 0;
-    while (parent) {
-      top += parent.offsetTop;
-      parent = parent.parentElement;
+    // We have to use iframe embed to control slides
+    if (!scrollytelling) {
+      window.FlourishLoaded = false;
+      document.getElementById('vev-flourish')?.remove();
+      const script = document.createElement('script');
+      script.id = 'vev-flourish';
+      script.src = 'https://public.flourish.studio/resources/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
     }
-    setOffset(top);
-  }, [hostRef]);
+  }, [scrollytelling]);
+
+  useEffect(() => {
+    if (frameRef.current) {
+      frameRef.current.src = frameRef.current.src;
+    }
+  }, [isVisible]);
+
+  useVevEvent(InteractionTypes.NEXT_SLIDE, () => {
+    if (slide !== numberOfSlides - 1) {
+      setSlide(slide + 1);
+    }
+  });
+
+  useVevEvent(InteractionTypes.PREVIOUS_SLIDE, () => {
+    if (slide !== 0) {
+      setSlide(slide - 1);
+    }
+  });
+  useVevEvent(InteractionTypes.SET_SLIDE, (args) => {
+    setSlide(args.set_slide - 1);
+  });
 
   // Strip hash if scrollytelling
   useEffect(() => {
-    if (scrollytelling) {
-      let newUrl: string;
-      if (scrollytelling && formUrl === DEFAULT_URL) {
-        newUrl = DEFAULT_SCROLLYTELLING_URL;
-      }
-
-      const urlObj = new URL(newUrl);
-      setUrl(`${urlObj.origin}${urlObj.pathname}`);
-    } else {
-      setUrl(formUrl);
-    }
-  }, [formUrl, scrollytelling]);
+    setUrl(formUrl);
+  }, [formUrl]);
 
   // Set top offset
   useEffect(() => {
@@ -73,13 +110,12 @@ const Flourish = ({
   // Set slide change distance
   useEffect(() => {
     if (type === 'bottom') {
-      setSlideChangeDistance((scrollHeight - viewportHeight - offset) / numberOfSlides);
+      setSlideChangeDistance((scrollHeight - viewportHeight - globalOffsetTop) / numberOfSlides);
     } else if (type === 'distance') {
       setSlideChangeDistance(distance);
     } else if (type === 'element') {
-      const distanceFromWidget = widgetDistance + hostHeight;
-      const elementPosition = getElementPosition(widgetKey, distanceFromWidget, scrollTop);
-      setSlideChangeDistance((elementPosition - offset) / numberOfSlides);
+      const elementPosition = getElementTopPosition(widgetKey);
+      setSlideChangeDistance((elementPosition - offsetTop) / numberOfSlides);
     }
   }, [
     scrollHeight,
@@ -90,18 +126,18 @@ const Flourish = ({
     widgetKey,
     widgetDistance,
     scrollTop,
-    offset,
+    globalOffsetTop,
     hostHeight,
   ]);
 
   // Set slide
   useEffect(() => {
-    if (scrollTop === 0) {
-      setSlide(0);
-    } else {
-      setSlide(Math.floor(Math.max(scrollTop - offset, 0) / slideChangeDistance) - 1);
+    if (scrollytelling) {
+      let slide = Math.floor(Math.max(scrollTop - globalOffsetTop, 0) / slideChangeDistance);
+      if (type === 'element') slide -= 1;
+      setSlide(slide);
     }
-  }, [offset, scrollTop, slideChangeDistance]);
+  }, [globalOffsetTop, scrollTop, slideChangeDistance]);
 
   // Update url with slide
   useEffect(() => {
@@ -109,14 +145,26 @@ const Flourish = ({
     setUrl(`${urlObj.origin}${urlObj.pathname}#slide-${slide}`);
   }, [slide, url]);
 
+  const id = idMatch ? idMatch[1] : formUrl || '3165417';
+  let src = `https://flo.uri.sh/${isStory ? 'story' : 'visualisation'}/${id}/embed`;
+  if (scrollytelling && isStory) src += `#slide-${slide}`;
+
   return (
     <div className={`flourish fill ${styles.container}`}>
-      <iframe
-        className={styles.frame}
-        src={url}
-        sandbox="allow-scripts allow-popups"
-        frameBorder="0"
-      />
+      {scrollytelling ? (
+        <iframe
+          ref={frameRef}
+          className={styles.frame}
+          src={isVisible ? src : undefined}
+          sandbox="allow-scripts allow-popups"
+          frameBorder="0"
+        />
+      ) : (
+        <div
+          className="flourish-embed flourish-chart"
+          data-src={isStory ? `story/${id}` : `visualisation/${id}`}
+        />
+      )}
     </div>
   );
 };
@@ -124,10 +172,10 @@ const Flourish = ({
 registerVevComponent(Flourish, {
   name: 'Flourish',
   emptyState: {
-    linkText: "Add URL",
-    description: " to your Flourish component",
-    checkProperty: "formUrl",
-    action: "OPEN_PROPERTIES"
+    linkText: 'Add URL',
+    description: ' to your Flourish component',
+    checkProperty: 'formUrl',
+    action: 'OPEN_PROPERTIES',
   },
   props: [
     {
@@ -137,7 +185,7 @@ registerVevComponent(Flourish, {
       initialValue: 'https://flo.uri.sh/story/1767962/embed',
       options: {
         multiline: true,
-      }
+      },
     },
     {
       title: 'Scrollytelling',
@@ -202,6 +250,21 @@ registerVevComponent(Flourish, {
       title: 'Florish frame',
       selector: styles.container,
       properties: ['background', 'margin', 'border', 'border-radius', 'filter'],
+    },
+  ],
+  interactions: [
+    {
+      type: InteractionTypes.NEXT_SLIDE,
+      description: 'Next slide',
+    },
+    {
+      type: InteractionTypes.PREVIOUS_SLIDE,
+      description: 'Previous slide',
+    },
+    {
+      type: InteractionTypes.SET_SLIDE,
+      description: 'Set slide',
+      args: [{ name: 'set_slide', title: 'Slide number', type: 'number' }],
     },
   ],
   type: 'both',

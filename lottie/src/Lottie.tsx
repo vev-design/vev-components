@@ -1,85 +1,101 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
-  useHover,
-  useModel,
   useScrollTop,
   useVevEvent,
-  useVisible,
+  useViewport,
 } from '@vev/react';
-import LottieWeb, { AnimationConfigWithData, AnimationItem } from 'lottie-web';
 import { colorify, getColors } from 'lottie-colorify';
-import { File, LottieColor, LottieColorReplacement } from './types';
-import defaultSettings from './constants/defaultSettings';
+import { File, LottieColorReplacement } from './types';
 import defaultAnimation from './constants/defaultAnimation';
 import ColorPicker from './components/ColorPicker';
+import {
+  Controls,
+  DotLottieCommonPlayer,
+  DotLottiePlayer,
+  PlayerEvents,
+} from '@dotlottie/react-player';
+import '@dotlottie/react-player/dist/index.css';
 
 import styles from './Lottie.module.css';
-import SpeedSlider from './components/SpeedSlider';
 import { Events, Interactions } from './events';
 
 type Props = {
   file: File;
-  trigger: 'visible' | 'hover' | 'click' | 'scroll' | 'never';
   hostRef: React.RefObject<HTMLDivElement>;
+  autoplay: boolean;
   loop: boolean;
-  delay: number;
   speed: number;
   colors: LottieColorReplacement[];
-  offsetStart?: number;
-  offsetStop?: number;
+  hideControls: boolean;
+  scroll: boolean;
+  scrollOffsetStart: number;
+  scrollOffsetStop: number;
+  scrollType: 'enterView' | 'widget' | 'offset';
+  scrollWidget: string;
 };
 
 const Lottie = ({
   file,
-  trigger,
-  hostRef,
   loop = true,
-  delay = 0,
   speed = 1,
   colors,
-  offsetStart = 0,
-  offsetStop = 0,
+  autoplay = true,
+  hideControls = false,
+  scroll = false,
+  scrollOffsetStart = 0,
+  scrollOffsetStop = 0,
+  scrollType = 'enterView',
+  scrollWidget,
+  hostRef,
 }: Props) => {
-  const model = useModel();
-  const lottieRef = useRef<AnimationItem | null>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const isVisible = useVisible(canvasRef);
-  const scrollTop = useScrollTop(true);
+  const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
-
-  const [json, setJson] = useState();
-  const [lottieColors, setLottieColors] = useState<LottieColor[]>([]);
-  const [isHovering, bindHover] = useHover();
-
+  const isJSON = (file?.url && file?.type === 'application/json') || !file?.url;
+  const [json, setJson] = useState<null | Record<string, unknown>>(null);
+  const { scrollHeight, height: viewportHeight } = useViewport();
   const path = (file && file.url) || defaultAnimation;
-  const autoplay = trigger === 'visible' && isVisible;
-  const colorsChanged = JSON.stringify({ lottieColors, colors });
+  const colorsChanged = JSON.stringify(colors);
 
-  const colorOverrides = useMemo(() => {
-    return lottieColors.map((lc) => {
-      const match = colors?.find((c) => String(c.oldColor) === String(lc));
-      return match ? match.newColor : lc;
-    });
-  }, [colorsChanged]);
+  const scrollTop = useScrollTop();
+
+  useEffect(() => {
+    if (scroll) {
+      if (lottieRef.current) {
+        let progress = 0;
+        const { totalFrames } = lottieRef.current;
+        if (scrollType === 'offset') {
+          progress =
+            (scrollTop - scrollOffsetStart) /
+            (scrollHeight - scrollOffsetStart - viewportHeight - scrollOffsetStop);
+        } else if (scrollType === 'enterView') {
+          const offsetTop = hostRef.current?.offsetTop || 0;
+          progress = (scrollTop - offsetTop + viewportHeight) / viewportHeight;
+        } else if (scrollType === 'widget') {
+          const element = document.getElementById(scrollWidget);
+          const offsetTop = element?.offsetTop || 0;
+          progress = (scrollTop - offsetTop + viewportHeight) / viewportHeight;
+        }
+
+        if (progress >= 0 && progress <= 1) {
+          lottieRef.current.goToAndStop(Math.min(totalFrames * progress, totalFrames * 0.99), true);
+        }
+      }
+    }
+  }, [scroll, scrollOffsetStart, scrollOffsetStop, scrollTop]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
       lottieRef.current.setDirection(1);
-      setTimeout(() => {
-        lottieRef.current?.play();
-      }, delay);
+      lottieRef.current?.play();
     }
   });
 
   useVevEvent(Interactions.PLAY_REVERSE, () => {
     if (lottieRef.current) {
       lottieRef.current.setDirection(-1);
-      console.log(lottieRef.current.setDirection, lottieRef.current.play);
-      setTimeout(() => {
-        lottieRef.current?.play();
-      }, delay);
+      lottieRef.current?.play();
     }
   });
 
@@ -91,10 +107,8 @@ const Lottie = ({
 
   useVevEvent(Interactions.TOGGLE, () => {
     if (lottieRef.current) {
-      if (lottieRef.current.isPaused) {
-        setTimeout(() => {
-          lottieRef.current?.play();
-        }, delay);
+      if (lottieRef.current.currentState === 'paused') {
+        lottieRef.current?.play();
       } else {
         lottieRef.current?.pause();
       }
@@ -103,7 +117,7 @@ const Lottie = ({
 
   useVevEvent(Interactions.RESET_ANIMATION, () => {
     if (lottieRef.current) {
-      lottieRef.current?.goToAndPlay(0);
+      lottieRef.current?.goToAndStop(0);
     }
   });
 
@@ -114,124 +128,53 @@ const Lottie = ({
         const response = await fetch(path);
         if (response.ok) {
           const result = await response.json();
-          setJson(result);
+          const lottieColors = getColors(result);
 
-          const colors = getColors(result);
-          setLottieColors(colors);
+          const colorOverrides = lottieColors.map((lc: string | { oldColor: string }) => {
+            const match = colors?.find((c) => String(c.oldColor) === String(lc));
+            return match ? match.newColor : lc;
+          });
+
+          if (colorOverrides.length && isJSON) {
+            const jsonWithColor = colorify(colorOverrides, result);
+            setJson(jsonWithColor);
+          } else {
+            setJson(json);
+          }
         }
       } catch (e) {
-        setJson(undefined);
+        console.log('error', e);
+        setJson({});
       }
     };
 
-    fetchJson();
-  }, [path]);
-
-  // Initial setup
-  useEffect(() => {
-    const settings: AnimationConfigWithData = {
-      ...defaultSettings,
-      animationData: colorOverrides && json && colorify(colorOverrides, json),
-      container: canvasRef.current,
-      autoplay: false,
-      loop,
-    };
-
-    lottieRef.current = LottieWeb.loadAnimation(settings);
-    if (speed !== 1) lottieRef.current.setSpeed(speed);
-
-    if (autoplay) {
-      setTimeout(() => {
-        lottieRef.current?.play();
-      }, delay);
-    }
-
-    // @ts-expect-error - works
-    lottieRef.current.addEventListener('_pause', () => {
-      dispatchVevEvent(Events.PAUSE);
-    });
-
-    lottieRef.current.addEventListener('loopComplete', () => {
-      dispatchVevEvent(Events.LOOP_COMPLETED);
-    });
-
-    lottieRef.current.addEventListener('complete', () => {
-      dispatchVevEvent(Events.COMPLETE);
-    });
-
-    return () => {
-      if (lottieRef.current) {
-        lottieRef.current.destroy();
-      }
-    };
-  }, [json, colorOverrides, loop, autoplay]);
-
-  // Listen for speed changes
-  useEffect(() => {
-    if (!lottieRef.current) return;
-
-    lottieRef.current.setSpeed(speed);
-  }, [speed]);
-
-  // Hover trigger
-  useEffect(() => {
-    if (!lottieRef.current || trigger !== 'hover') return;
-
-    if (isHovering) {
-      setTimeout(() => {
-        lottieRef.current?.play();
-      }, delay);
-    } else {
-      lottieRef.current.pause();
-    }
-  }, [isVisible, isHovering, lottieRef]);
-
-  // Scroll trigger
-  useEffect(() => {
-    if (!lottieRef.current || !canvasRef.current || !hostRef.current || trigger !== 'scroll')
-      return;
-
-    if (lottieRef.current.totalFrames) {
-      let percent = scrollTop;
-      if (!hostRef.current.classList.contains('__f') && isVisible) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        percent =
-          (rect.top + offsetStart + rect.height) / (window.innerHeight + rect.height + offsetStop);
-      } else {
-        percent = 1 - scrollTop;
-      }
-      lottieRef.current.goToAndStop(
-        (lottieRef.current.totalFrames / lottieRef.current.frameRate) * 1000 * (1 - percent),
-      );
-    }
-  }, [scrollTop]);
-
-  // Click listener
-  const onClick = () => {
-    if (!lottieRef.current) return;
-
-    if (trigger === 'click') {
-      console.log('lottieRef.current', lottieRef.current);
-      if (lottieRef.current.isPaused) {
-        setTimeout(() => {
-          lottieRef.current?.play();
-        }, delay);
-      } else {
-        lottieRef.current[lottieRef.current.isPaused ? 'play' : 'pause']();
-      }
-    }
-  };
+    colorsChanged && isJSON && fetchJson();
+  }, [colorsChanged, file]);
 
   return (
-    <>
-      <div
-        data-lottie-id={model.key}
-        className={styles.wrapper}
-        ref={canvasRef}
-        onClick={onClick}
-        {...bindHover}
-      />
-    </>
+    <DotLottiePlayer
+      key={`id-${scroll}-${autoplay}`}
+      src={isJSON && json ? json : path}
+      ref={lottieRef}
+      autoplay={scroll ? false : autoplay}
+      loop={scroll ? false : loop}
+      speed={speed}
+      className={styles.wrapper}
+      onEvent={(event: PlayerEvents) => {
+        const events = {
+          [PlayerEvents.Play]: Events.PLAY,
+          [PlayerEvents.Pause]: Events.PAUSE,
+          [PlayerEvents.Complete]: Events.COMPLETE,
+          [PlayerEvents.LoopComplete]: Events.LOOP_COMPLETED,
+        };
+
+        if (Object.keys(events).includes(event)) {
+          dispatchVevEvent(events[event as keyof typeof events]);
+        }
+      }}
+    >
+      {!hideControls && <Controls />}
+    </DotLottiePlayer>
   );
 };
 
@@ -243,19 +186,19 @@ registerVevComponent(Lottie, {
   events: [
     {
       type: Events.PLAY,
-      description: 'Playing',
+      description: 'On play',
     },
     {
       type: Events.PAUSE,
-      description: 'Paused',
+      description: 'On pause',
     },
     {
       type: Events.LOOP_COMPLETED,
-      description: 'Loop completed',
+      description: 'On loop end',
     },
     {
       type: Events.COMPLETE,
-      description: 'Completed',
+      description: 'On end',
     },
   ],
   interactions: [
@@ -285,69 +228,95 @@ registerVevComponent(Lottie, {
       name: 'file',
       title: 'Lottie file',
       type: 'upload',
-      accept: 'application/json',
-      description: 'JSON file exported from After Effects or downloaded from lottiefiles.com',
+      accept: '.lottie,.json',
+      description: 'Only .lottie or JSON files are supported',
     },
     {
-      name: 'trigger',
-      title: 'Trigger',
+      name: 'scroll',
+      title: 'Progress by scroll',
+      type: 'boolean',
+      initialValue: false,
+    },
+    {
+      name: 'scrollType',
       type: 'select',
-      initialValue: 'visible',
       options: {
-        display: 'radio',
+        display: 'dropdown',
         items: [
-          { label: 'Play when visible', value: 'visible' },
-          { label: 'Play on hover', value: 'hover' },
-          { label: 'Play on click', value: 'click' },
-          { label: 'Play on scroll', value: 'scroll' },
-          { label: 'No trigger', value: 'never' },
+          { label: 'Start when entering view', value: 'enterView' },
+          { label: 'Relative to element', value: 'widget' },
+          { label: 'Offset', value: 'offset' },
         ],
+      },
+      initialValue: 'enterView',
+      hidden: (context) => !context?.value?.scroll,
+    },
+    {
+      name: 'scrollWidget',
+      title: 'Element',
+      description: 'Animation starts when element enters view',
+      type: 'widgetSelect',
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'widget';
       },
     },
     {
-      name: 'offsetStart',
+      name: 'scrollOffsetStart',
+      title: 'Scroll offset start',
+      description: 'Number of pixels from the top before the scroll animation starts',
       type: 'number',
-      title: 'Offset top',
-      description:
-        'If you want the animation to start before it is in view, add a pixel value for this offset.',
-      initialValue: 0,
-      hidden: (context) => context?.value?.trigger !== 'scroll',
+      options: {
+        format: 'px',
+      },
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'offset';
+      },
     },
     {
-      name: 'offsetStop',
-      type: 'number',
-      title: 'Offset bottom',
+      name: 'scrollOffsetStop',
+      title: 'Scroll offset stop',
       description:
-        'If you want the animation to end before it leaves the view, add a pixel value for this offset.',
-      initialValue: 0,
-      hidden: (context) => context?.value?.trigger !== 'scroll',
+        'Number of pixels from the bottom of the screen before the scroll animation stops',
+      type: 'number',
+      options: {
+        format: 'px',
+      },
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'offset';
+      },
+    },
+    {
+      name: 'autoplay',
+      title: 'Autoplay',
+      type: 'boolean',
+      initialValue: true,
+      hidden: (context) => context?.value?.scroll === true,
     },
     {
       name: 'loop',
       title: 'Loop',
       type: 'boolean',
       initialValue: true,
-      hidden: (context) => context?.value?.trigger === 'scroll',
+      hidden: (context) => context?.value?.scroll === true,
     },
     {
-      name: 'delay',
-      title: 'Delay start (ms)',
-      type: 'number',
-      initialValue: 0,
-      hidden: (context) => context?.value?.trigger === 'scroll',
+      name: 'hideControls',
+      title: 'Hide controls',
+      type: 'boolean',
+      initialValue: true,
     },
     {
       name: 'speed',
-      title: 'Speed',
+      title: 'Playback speed',
       type: 'number',
       initialValue: 1,
-      // options: {
-      //   display: 'slider',
-      //   min: -2,
-      //   max: 2,
-      // },
-      component: SpeedSlider,
-      hidden: (context) => context?.value?.trigger === 'scroll',
+      options: {
+        display: 'slider',
+        min: -2,
+        max: 4,
+        format: 'x',
+      },
+      hidden: (context) => context?.value?.scroll === true,
     },
     {
       name: 'colors',
@@ -355,6 +324,11 @@ registerVevComponent(Lottie, {
       type: 'array',
       of: 'string',
       component: ColorPicker,
+      hidden(context) {
+        const isDotLottie =
+          context?.value?.file && context?.value?.file?.type !== 'application/json';
+        return isDotLottie;
+      },
     },
   ],
   editableCSS: [

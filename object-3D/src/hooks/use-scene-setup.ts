@@ -213,5 +213,6 @@ export function useSceneSetup(
     controls,
     mixer,
     labelRenderer,
+    currentModel,
   };
 }

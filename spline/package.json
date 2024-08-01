@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@splinetool/react-spline": "^2.2.6",
-    "@splinetool/runtime": "^1.0.17",
+    "@splinetool/runtime": "^1.4.0",
     "@vev/react": "latest",
     "react": "^18.2.0"
   }

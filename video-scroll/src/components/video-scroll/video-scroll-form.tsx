@@ -1,8 +1,16 @@
-import { SchemaContextModel } from '@vev/react';
 import React, { useRef, useState } from 'react';
 import { useDropZone } from '../../hooks/use-drop-zone';
 import { unpackFrames } from '../../video-unpack';
+import {
+  SilkeBox,
+  SilkeButton,
+  SilkeUploadField,
+  SilkeTextSmall,
+  SilkeTab,
+  SilkeTabs,
+} from '@vev/silke';
 import styles from './video-scroll-form.module.scss';
+import { SchemaContextModel } from '@vev/utils';
 
 type VideoScrollFormProps = {
   context: SchemaContextModel;
@@ -28,10 +36,12 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
   const [frame, setFrame] = useState<string>();
   const [error, setError] = useState<string | null>();
   const [previewProgress, setPreviewProgress] = useState<number>(0);
+  const [isDownloadingVideo, setIsDownloadingVideo] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('library');
 
   const handleUpload = async (file?: File) => {
     if (!file) return;
-    if (file.size > 1024 * 1024 * 512) return setError('To big file, max size is 512MB');
+    if (file.size > 1024 * 1024 * 850) return setError('To big file, max size is 512MB');
 
     const uploadFile = context.actions?.uploadFile;
     if (!uploadFile) return;
@@ -51,76 +61,101 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
     setUnpacking(false);
   };
 
-  const hasValue = value && value.length > 0;
+  const hasValue = value && value?.length > 0;
   return (
-    <label
-      ref={ref}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        borderRadius: '8px',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 8,
-        border: '1px solid var(--color-neutral-low-soft)',
-      }}
-      className={styles.label + (!unpacking && dragOver ? ' ' + styles.dragOver : '')}
-    >
+    <SilkeBox ref={ref} flex column>
       {unpacking ? (
-        <>
+        <SilkeBox column gap="s">
+          <img
+            style={{
+              height: 120,
+              objectFit: 'cover',
+              borderRadius: 4,
+            }}
+            src={frame}
+            alt="Unpack preview"
+          />
+          <SilkeTextSmall style={{ margin: 0 }}>
+            Unpacking frames {Math.round(progress * 100)}%
+          </SilkeTextSmall>
+        </SilkeBox>
+      ) : hasValue ? (
+        <SilkeBox gap="s" column>
           <img
             style={{
               height: 120,
               objectFit: 'cover',
               borderRadius: 8,
             }}
-            src={frame}
+            src={value[Math.floor(previewProgress * (value?.length - 1))]}
             alt="Unpack preview"
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const progress = (e.pageX - rect.left) / rect.width;
+              setPreviewProgress(Math.max(0, Math.min(1, progress)));
+            }}
           />
-          <h5 style={{ margin: 0 }}>Unpacking frames {Math.round(progress * 100)}%</h5>
-        </>
-      ) : (
-        <>
-          {hasValue && (
-            <img
-              style={{
-                height: 120,
-                objectFit: 'cover',
-                borderRadius: 8,
-              }}
-              src={value[Math.floor(previewProgress * (value.length - 1))]}
-              alt="Unpack preview"
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const progress = (e.pageX - rect.left) / rect.width;
-                setPreviewProgress(Math.max(0, Math.min(1, progress)));
-              }}
-            />
-          )}
-          <h5 style={{ margin: 0 }}>
-            {hasValue ? `Unpacked video with ${value.length} frames` : 'Drop video files here'}
-          </h5>
-          {error ? (
-            <small
-              style={{ color: 'var(--color-feedback-warning-spark)' }}
-              className={styles.error}
-            >
-              {error}
-            </small>
-          ) : (
-            <small style={{ color: '--color-neutral-high-soft' }}>
-              {hasValue ? 'Drop or click to browse for new video' : '(Click to browse)'}
-            </small>
-          )}
-          <input
-            type="file"
-            accept="video/*"
-            onChange={(e) => handleUpload(e.currentTarget.files?.[0])}
-            style={{ opacity: 0, position: 'absolute' }}
-          />
-        </>
+          <SilkeButton onClick={() => onChange(null)} label="Remove video" kind="danger" size="s" />
+        </SilkeBox>
+      ) : null}
+      {error && (
+        <small style={{ color: 'var(--color-feedback-warning-spark)' }} className={styles.error}>
+          {error}
+        </small>
       )}
-    </label>
+      {!hasValue && !unpacking && (
+        <SilkeBox column>
+          <SilkeBox vPad="s">
+            <SilkeTabs size="s">
+              <SilkeTab
+                label={'Library'}
+                active={activeTab === 'library'}
+                onClick={() => setActiveTab('library')}
+              />
+              <SilkeTab
+                label={'Upload'}
+                active={activeTab === 'upload'}
+                onClick={() => setActiveTab('upload')}
+              />
+            </SilkeTabs>
+          </SilkeBox>
+          {activeTab === 'upload' && (
+            <SilkeBox flex column>
+              <SilkeUploadField
+                accept="video/*"
+                maxSize={819200}
+                onSelectFiles={(files) => {
+                  console.log(files);
+                  handleUpload(files[0]);
+                }}
+                style={{ opacity: 0, position: 'absolute' }}
+              />
+            </SilkeBox>
+          )}
+          {activeTab === 'library' && (
+            <SilkeBox flex column>
+              <SilkeTextSmall>Select from library</SilkeTextSmall>
+              <SilkeButton
+                size="s"
+                loading={isDownloadingVideo}
+                label="Select video"
+                onClick={() => {
+                  context.actions?.videoLibraryOpen(async (projectFile: any) => {
+                    setIsDownloadingVideo(true);
+                    const response = await fetch(projectFile.sources[0].url);
+                    const data = await response.blob();
+                    const metadata = {
+                      type: 'video/mp4',
+                    };
+                    handleUpload(new File([data], 'video.mp4', metadata));
+                    setIsDownloadingVideo(false);
+                  });
+                }}
+              />
+            </SilkeBox>
+          )}
+        </SilkeBox>
+      )}
+    </SilkeBox>
   );
 }

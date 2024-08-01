@@ -24,6 +24,8 @@ type Props = {
     delay: number;
     easing: 'none' | 'easein' | 'easeout';
     loop: boolean;
+    autostart: boolean;
+    once: boolean;
   };
   format: {
     separator: string;
@@ -45,7 +47,14 @@ const NumberCounter = ({
     postfix: '',
     localeFormat: false,
   },
-  animation = { animationLength: 5, delay: 800, easing: 'none', loop: false },
+  animation = {
+    animationLength: 5,
+    delay: 800,
+    easing: 'none',
+    loop: false,
+    autostart: true,
+    once: false,
+  },
   format = {
     separator: ',',
     decimalSeparator: '.',
@@ -62,7 +71,7 @@ const NumberCounter = ({
     localeFormat = false,
   } = settings;
 
-  const { animationLength, delay, easing, loop } = animation;
+  const { animationLength, delay, easing, loop, autostart, once } = animation;
   const { separator, decimalSeparator, precision: initPrecision } = format;
 
   const actualDelay = 1000 * delay;
@@ -72,11 +81,13 @@ const NumberCounter = ({
 
   const [count, setCount] = useState<number>(start);
   const [hasStarted, setHasStarted] = useState(false);
+  const [finished, setFinished] = useState(false);
   const isVisible = useVisible(hostRef);
   const { disabled, schemaOpen } = useEditorState();
   const [startedTimestamp, setStartedTimestamp] = useState<number>(0);
   const dispatchVevEvent = useDispatchVevEvent();
-  const actualSchemaOpen = !disabled || schemaOpen;
+
+  const actualSchemaOpen = disabled && schemaOpen;
 
   function resetCounter() {
     setStartedTimestamp(0);
@@ -135,9 +146,11 @@ const NumberCounter = ({
             setCount(end);
             dispatchVevEvent(Events.COMPLETE);
             setHasStarted(false);
+            setFinished(true);
           } else {
             resetCounter();
             dispatchVevEvent(Events.COMPLETE);
+            setHasStarted(true);
           }
           return;
         }
@@ -157,18 +170,24 @@ const NumberCounter = ({
   );
 
   useEffect(() => {
+    if (once && finished) return;
     if (!isVisible) {
       resetCounter();
     } else {
       resetCounter();
-      setTimeout(() => {
-        setHasStarted(true);
-      }, actualDelay);
+      if (!disabled) {
+        setTimeout(() => {
+          if (autostart) {
+            setHasStarted(true);
+          }
+        }, actualDelay);
+      }
     }
-  }, [isVisible]);
+  }, [isVisible, disabled]);
 
   useEffect(() => {
     if (disabled && !actualSchemaOpen) {
+      setFinished(false);
       resetCounter();
       return;
     }
@@ -179,12 +198,26 @@ const NumberCounter = ({
     if (actualSchemaOpen) {
       resetCounter();
       setTimeout(() => {
-        setHasStarted(true);
+        if (autostart || actualSchemaOpen) {
+          setHasStarted(true);
+        }
       }, actualDelay);
     } else {
       resetCounter();
     }
-  }, [start, end, precision, actualDelay, easing, disabled, animationLength, actualDelay, actualSchemaOpen]);
+  }, [
+    start,
+    end,
+    precision,
+    actualDelay,
+    easing,
+    disabled,
+    animationLength,
+    actualDelay,
+    actualSchemaOpen,
+    loop,
+    once,
+  ]);
 
   return (
     <div className={styles.wrapper}>
@@ -274,7 +307,7 @@ registerVevComponent(NumberCounter, {
           initialValue: 5,
           options: {
             format: 's',
-          }
+          },
         },
         {
           title: 'Delay animation start',
@@ -283,7 +316,7 @@ registerVevComponent(NumberCounter, {
           initialValue: 5,
           options: {
             format: 'ms',
-          }
+          },
         },
         {
           title: 'Easing',
@@ -303,7 +336,21 @@ registerVevComponent(NumberCounter, {
           title: 'Loop',
           name: 'loop',
           type: 'boolean',
+          description: 'When counter is done, it starts again immediately',
           initialValue: false,
+        },
+        {
+          title: 'Run once',
+          name: 'once',
+          type: 'boolean',
+          description: 'Will only run once, even if it goes out of view',
+          initialValue: false,
+        },
+        {
+          title: 'Auto start',
+          name: 'autostart',
+          type: 'boolean',
+          initialValue: true,
         },
       ],
     },
@@ -354,11 +401,11 @@ registerVevComponent(NumberCounter, {
     },
     {
       type: Interactions.RESET,
-      description: 'Reset',
+      description: 'Reset and continue',
     },
     {
       type: Interactions.STOP_AND_RESET,
-      description: 'Stop and reset',
+      description: 'Reset and stop',
     },
   ],
   editableCSS: [

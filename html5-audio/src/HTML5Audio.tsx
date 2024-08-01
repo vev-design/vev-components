@@ -12,6 +12,7 @@ type Audio = {
 
 type Props = {
   audioUrl?: Audio;
+  audioUrlLink?: Audio;
   settings: {
     showControls: boolean;
     autoplay: boolean;
@@ -21,14 +22,19 @@ type Props = {
 
 const HTML5Audio = (props: Props) => {
   const audioRef = useRef<HTMLAudioElement>();
-  const { audioUrl, settings } = props;
+  const { audioUrl, audioUrlLink, settings } = props;
   const showControls = settings?.showControls || true;
   const loop = settings?.loop || false;
   const autoplay = settings?.autoplay || false;
   const { disabled } = useEditorState();
   const shouldAutoPlay = !disabled && autoplay;
-  const actualUrl = audioUrl ? audioUrl.url : '';
+  const actualUrl = audioUrlLink ? audioUrlLink : audioUrl ? audioUrl.url : '';
   const dispatch = useDispatchVevEvent();
+  const intervalRef = useRef<number>();
+
+  useEffect(() => {
+    audioRef.current.pause();
+  }, [disabled]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (audioRef.current) {
@@ -52,6 +58,51 @@ const HTML5Audio = (props: Props) => {
     }
   });
 
+  useVevEvent(Interactions.FADE_OUT, (args: { duration: number }) => {
+    if (audioRef.current && !disabled) {
+      // Fade out the audio over the given duration in 100 intervals
+      const durationMs = (args?.duration || 1) * 1000;
+      const intervalTime = durationMs / 100;
+
+      const endVolume = 0;
+      const step = audioRef.current.volume / 100;
+
+      intervalRef.current = setInterval(() => {
+        if (audioRef.current.volume > endVolume) {
+          const newVolume = Math.max(audioRef.current.volume - step, 0);
+          audioRef.current.volume = newVolume;
+        } else {
+          clearInterval(intervalRef.current);
+          audioRef.current.pause();
+        }
+      }, intervalTime);
+    }
+  });
+
+  useVevEvent(Interactions.FADE_IN, (args: { duration: number }) => {
+    if (audioRef.current && !disabled) {
+      // Fade in the audio over the given duration in 100 intervals
+      const durationMs = (args?.duration || 1) * 1000;
+      const intervalTime = durationMs / 100;
+
+      const endVolume = 1;
+      const step = 1 / 100;
+
+      // Set initial volume and play
+      audioRef.current.volume = 0;
+      audioRef.current.play();
+
+      intervalRef.current = setInterval(() => {
+        if (audioRef.current.volume < endVolume) {
+          const newVolume = Math.min(audioRef.current.volume + step, 1);
+          audioRef.current.volume = newVolume;
+        } else {
+          clearInterval(intervalRef.current);
+        }
+      }, intervalTime);
+    }
+  });
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.onplay = () => {
@@ -62,6 +113,12 @@ const HTML5Audio = (props: Props) => {
       };
       audioRef.current.onended = () => {
         dispatch(Events.COMPLETE);
+      };
+      audioRef.current.ontimeupdate = () => {
+        dispatch(Events.CURRENT_TIME, {
+          currentTime: audioRef.current.currentTime,
+          percentage: (audioRef.current.currentTime / audioRef.current.duration) * 100,
+        });
       };
     }
   }, [dispatch]);
@@ -75,8 +132,8 @@ const HTML5Audio = (props: Props) => {
         controls={showControls}
         style={{ width: '100%', height: '100%' }}
         loop={loop}
+        src={actualUrl}
       >
-        <source src={actualUrl} type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
     </div>
@@ -89,9 +146,19 @@ registerVevComponent(HTML5Audio, {
     'Embed a HTML5 audio player directly to your canvas.\n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
   props: [
     {
+      name: 'audioUrlLink',
+      title: 'Audio file URL',
+      type: 'string',
+      hidden: (context) => {
+        return !!context.value.audioUrl;
+      },
+    },
+    {
       name: 'audioUrl',
-      title: 'Audio file',
+      title: 'Audio file upload',
+      accept: 'audio/*',
       type: 'upload',
+      maxSize: 75000,
       hidden: (context) => {
         return !!context.value.audioUrlLink;
       },
@@ -120,12 +187,35 @@ registerVevComponent(HTML5Audio, {
   events: [
     { type: Events.PLAY, description: 'On play' },
     { type: Events.PAUSE, description: 'On pause' },
-    { type: Events.COMPLETE, description: 'On complete' },
+    { type: Events.COMPLETE, description: 'On end' },
+    { type: Events.CURRENT_TIME, description: 'On current time update' },
   ],
   interactions: [
     { type: Interactions.PLAY, description: 'Play' },
     { type: Interactions.PAUSE, description: 'Pause' },
-    { type: Interactions.TOGGLE, description: 'Toggle playback' },
+    { type: Interactions.TOGGLE, description: 'Toggle play' },
+    {
+      type: Interactions.FADE_OUT,
+      description: 'Fade out',
+      args: [
+        {
+          name: 'duration',
+          description: 'Duration of fade in seconds',
+          type: 'number',
+        },
+      ],
+    },
+    {
+      type: Interactions.FADE_IN,
+      description: 'Fade in',
+      args: [
+        {
+          name: 'duration',
+          description: 'Duration of fade in seconds',
+          type: 'number',
+        },
+      ],
+    },
   ],
   type: 'standard',
 });

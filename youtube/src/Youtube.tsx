@@ -15,6 +15,9 @@ type Props = {
 
 declare global {
   const YT: any;
+  interface Window {
+    onYouTubeIframeAPIReady: () => void;
+  }
 }
 
 function youTubeParseUrl(url = ''): string {
@@ -53,14 +56,42 @@ const Youtube = ({ videoId, settings }: Props) => {
 
   const { disabled } = useEditorState();
   const ref = useRef<HTMLIFrameElement>(null);
-  const playerRef = useRef<any>(-1);
+  const playerRef = useRef<any>(null);
   const currentTimeRef = useRef<number>();
   const dispatch = useDispatchVevEvent();
 
-  useVevEvent(YoutubeInteraction.play, () => playerRef.current?.playVideo());
+  function onPlayerStateChange(event) {
+    if (typeof YT === 'undefined') return;
+    switch (event.data) {
+      case YT.PlayerState.PLAYING:
+        dispatch(YoutubeEvent.onPlay);
+        break;
+      case YT.PlayerState.PAUSED:
+        dispatch(YoutubeEvent.onPause);
+        break;
+      case YT.PlayerState.ENDED:
+        dispatch(YoutubeEvent.onEnd);
+        break;
+    }
+  }
+
+  function getPlayer() {
+    if (typeof YT === 'undefined') return;
+    if (playerRef.current === null) {
+      playerRef.current = new YT.Player(ref.current, {
+        events: {
+          onStateChange: onPlayerStateChange,
+        },
+      });
+    }
+
+    return playerRef.current;
+  }
+
+  useVevEvent(YoutubeInteraction.play, () => getPlayer()?.playVideo());
   useVevEvent(YoutubeInteraction.togglePlay, () => {
-    const player = playerRef.current;
-    if (player) {
+    const player = getPlayer();
+    if (player && YT) {
       switch (player.getPlayerState()) {
         case YT.PlayerState.PLAYING:
           player.pauseVideo();
@@ -75,18 +106,18 @@ const Youtube = ({ videoId, settings }: Props) => {
       }
     }
   });
-  useVevEvent(YoutubeInteraction.restart, () => playerRef.current?.seekTo());
-  useVevEvent(YoutubeInteraction.pause, () => playerRef.current?.pauseVideo());
+  useVevEvent(YoutubeInteraction.restart, () => getPlayer()?.seekTo());
+  useVevEvent(YoutubeInteraction.pause, () => getPlayer()?.pauseVideo());
 
-  useVevEvent(YoutubeInteraction.mute, () => playerRef.current?.mute());
-  useVevEvent(YoutubeInteraction.unMute, () => playerRef.current?.unMute());
+  useVevEvent(YoutubeInteraction.mute, () => getPlayer()?.mute());
+  useVevEvent(YoutubeInteraction.unMute, () => getPlayer()?.unMute());
   useVevEvent(YoutubeInteraction.toggleSound, () =>
-    playerRef.current?.isMuted() ? playerRef.current?.unMute() : playerRef.current?.mute(),
+    getPlayer()?.isMuted() ? getPlayer()?.unMute() : getPlayer()?.mute(),
   );
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (playerRef.current) {
+      if (playerRef.current && playerRef.current.getCurrentTime) {
         const currentTime = Math.floor(playerRef.current.getCurrentTime());
 
         if (currentTime !== currentTimeRef.current) {
@@ -104,8 +135,6 @@ const Youtube = ({ videoId, settings }: Props) => {
   }, [dispatch]);
 
   useEffect(() => {
-    let mounted = true;
-
     const iframe = ref.current;
     if (!iframe) return;
 
@@ -116,47 +145,19 @@ const Youtube = ({ videoId, settings }: Props) => {
       document.body.appendChild(tag);
     }
 
-    const interval = setInterval(() => {
-      if (typeof YT !== 'undefined' && mounted && YT.loaded) {
-        onYouTubeIframeAPIReady();
-        clearInterval(interval);
+    window.onYouTubeIframeAPIReady = () => {
+      if (!playerRef.current && YT) {
+        playerRef.current = new YT.Player(ref.current, {
+          events: {
+            onStateChange: onPlayerStateChange,
+          },
+        });
       }
-    }, 100);
-
-    function onYouTubeIframeAPIReady() {
-      playerRef.current = new YT.Player(ref.current, {
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange,
-        },
-      });
-    }
-
-    function onPlayerReady(event) {}
-
-    function onPlayerStateChange(event) {
-      console.log('event', event);
-      switch (event.data) {
-        case YT.PlayerState.PLAYING:
-          dispatch(YoutubeEvent.onPlay);
-          break;
-        case YT.PlayerState.PAUSED:
-          dispatch(YoutubeEvent.onPause);
-          break;
-        case YT.PlayerState.ENDED:
-          dispatch(YoutubeEvent.onEnd);
-          break;
-      }
-    }
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
     };
   }, []);
 
   useEffect(() => {
-    const player = playerRef.current;
+    const player = getPlayer();
     if (!player) return;
     if (!player.pauseVideo) return;
     if (disabled) player.pauseVideo();
@@ -215,7 +216,7 @@ registerVevComponent(Youtube, {
       type: 'string',
       options: {
         multiline: true,
-      }
+      },
     },
     {
       title: 'Settings',

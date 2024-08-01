@@ -7,9 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family:
-    Open Sans,
-    sans-serif;
+  font-family: Lato, Arial, sans-serif;
   transition: all 0.5s ease;
   opacity: 1;
   color: white;
@@ -63,8 +61,7 @@
 .hotspotListItem {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
 }
 
 .viewer {

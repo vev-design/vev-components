@@ -2,12 +2,16 @@
   "name": "video-scroll",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
+  "devDependencies": {
     "@types/node": "^16.11.36",
     "@types/offscreencanvas": "^2019.6.4",
     "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.4",
-    "@vev/react": "^0.0.1-alpha.13",
+    "@types/react-dom": "^18.0.4"
+  },
+  "dependencies": {
+    "@vev/react": "^0.1.11",
+    "@vev/utils": "^1.2.7",
+    "@vev/silke": "^1.0.27",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
     "react-icons": "^4.8.0",

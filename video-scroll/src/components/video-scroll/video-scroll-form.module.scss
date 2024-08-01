@@ -1,33 +1,23 @@
 .label {
-  display: flex;
-  flex-direction: column;
-  height: 200px;
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-  border-radius: 16px;
-  border: 1px dashed var(--color-neutral-high-soft);
-  color: white;
-  gap: 8px;
+  outline: 0;
+  margin: 0;
+  padding: 0;
 
   &:focus-within {
     border-color: white;
     color: white;
   }
 
-  &.dragOver {
-    border-color: var(--color-brand-primary-soft);
-    color: var(--color-brand-primary-soft);
-  }
   img {
-    width: 200px;
-    height: 120px;
+    width: 100%;
+    height: 200px;
     object-fit: cover;
     border-radius: 8px;
   }
 
   h5 {
     margin: 0;
+    font-weight: 400;
   }
 
   small {

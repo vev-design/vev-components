@@ -15,9 +15,7 @@ import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
-import SpeedSlider from './SpeedSlider';
-import { SilkeBox } from '@vev/silke';
-import ReverseButton from './components/reverse-button';
+import { SilkeBox, SilkeDivider } from '@vev/silke';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -167,6 +165,12 @@ registerVevComponent(Object3d, {
       maxSize: 75000,
     },
     {
+      name: 'poster',
+      title: 'Poster image',
+      type: 'upload',
+      accept: 'image/*',
+    },
+    {
       name: 'hotspots_camera',
       type: 'object',
       fields: [
@@ -184,34 +188,30 @@ registerVevComponent(Object3d, {
         const hotspots = context.value?.hotspots || [];
 
         return (
-          <SilkeBox gap="s" flex>
-            <HotspotEditorForm
-              context={context}
-              onChange={(hotspots) => {
-                context.onChange({
-                  initialCamera,
-                  hotspots,
-                });
-              }}
-            />
-            <CameraEditor
-              context={context}
-              onChange={(camera) => {
-                context.onChange({
-                  hotspots,
-                  initialCamera: camera,
-                });
-              }}
-            />
-          </SilkeBox>
+          <>
+            <SilkeBox gap="s" flex style={{ padding: '18px 0 10px' }}>
+              <HotspotEditorForm
+                context={context}
+                onChange={(hotspots) => {
+                  context.onChange({
+                    initialCamera,
+                    hotspots,
+                  });
+                }}
+              />
+              <CameraEditor
+                context={context}
+                onChange={(camera) => {
+                  context.onChange({
+                    hotspots,
+                    initialCamera: camera,
+                  });
+                }}
+              />
+            </SilkeBox>
+          </>
         );
       },
-    },
-    {
-      name: 'poster',
-      title: 'Poster image',
-      type: 'upload',
-      accept: 'image/*',
     },
     {
       name: 'settings',
@@ -282,31 +282,27 @@ registerVevComponent(Object3d, {
           title: 'Rotation speed',
           type: 'number',
           initialValue: 2,
-          component: SpeedSlider,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 20,
+          },
           hidden: (context) => context?.value?.animationSettings?.rotate !== true,
         },
         {
           name: 'reverseSpeed',
-          title: 'Reverse',
+          title: 'Loop alternate direction',
           type: 'boolean',
           initialValue: false,
-          component: ReverseButton,
           hidden: (context) => context?.value?.animationSettings?.rotate !== true,
         },
       ],
     },
   ],
-  editableCSS: [
-    {
-      selector: styles.hotspot,
-      properties: ['background', 'color'],
-      title: 'Hotspot',
-    },
-  ],
   events: [
     {
       type: EventTypes.HOTSPOT_CLICKED,
-      description: 'Hotspot clicked',
+      description: 'On hotspot click',
       args: [
         {
           name: EventTypes.HOTSPOT_CLICKED,
@@ -321,6 +317,13 @@ registerVevComponent(Object3d, {
       type: InteractionTypes.SELECT_HOTSPOT,
       description: 'Focus hotspot',
       args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
+    },
+  ],
+  editableCSS: [
+    {
+      selector: styles.hotspot,
+      properties: ['background', 'color', 'font', 'font-family', 'font-size'],
+      title: 'Hotspot',
     },
   ],
   type: 'both',
