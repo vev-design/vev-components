@@ -11,6 +11,7 @@ import {
   useVevEvent,
   useEditorState,
   useGlobalState,
+  useDispatchVevEvent,
 } from "@vev/react";
 import { shuffleArray } from "./utils";
 import DirectionField from "./DirectionField";
@@ -50,15 +51,20 @@ export type Props = {
   slidesToLoad: number;
 };
 
-enum Events {
+enum Interactions {
   NEXT = "NEXT",
   PREV = "PREV",
   SET = "SET",
 }
 
+enum Events {
+  SLIDE_CHANGED = "SLIDE_CHANGED",
+}
+
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
+  const dispatch = useDispatchVevEvent();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
@@ -80,6 +86,14 @@ export const Slideshow = (props: Props) => {
     });
     prevIndex.current = children.indexOf(editor.activeContentChild);
   }, [editor.activeContentChild, editor.disabled]);
+
+  useEffect(() => {
+    if (state?.index !== undefined) {
+      dispatch(Events.SLIDE_CHANGED, {
+        currentSlide: state?.index + 1,
+      });
+    }
+  }, [state?.index]);
 
   useEffect(() => {
     if (random && !editor.disabled) {
@@ -115,9 +129,9 @@ export const Slideshow = (props: Props) => {
     onPrev: handlePrevSlide,
   });
 
-  useVevEvent(Events.NEXT, handleNextSlide);
-  useVevEvent(Events.PREV, handlePrevSlide);
-  useVevEvent(Events.SET, (args: { slide: number }) => {
+  useVevEvent(Interactions.NEXT, handleNextSlide);
+  useVevEvent(Interactions.PREV, handlePrevSlide);
+  useVevEvent(Interactions.SET, (args: { slide: number }) => {
     setState({
       index: Math.max(0, Number(args?.slide || 0) - 1),
       length: numberOfSlides || 0,
@@ -267,17 +281,20 @@ registerVevComponent(Slideshow, {
       },
     },
   ],
+  events: [
+    { type: Events.SLIDE_CHANGED, description: "Slide was changed" },
+  ],
   interactions: [
     {
-      type: Events.NEXT,
+      type: Interactions.NEXT,
       description: "Go to next slide",
     },
     {
-      type: Events.PREV,
+      type: Interactions.PREV,
       description: "Go to previous slide",
     },
     {
-      type: Events.SET,
+      type: Interactions.SET,
       description: "Go to specific slide",
       args: [
         {
