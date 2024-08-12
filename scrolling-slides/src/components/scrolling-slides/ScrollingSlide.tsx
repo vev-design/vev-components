@@ -51,6 +51,10 @@ const SLIDE_COMPONENT: Record<
   custom: CustomSlide,
 };
 
+function isSafariBrowser() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
 const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   if (!type) type = "scroll";
   const ref = useRef<HTMLDivElement>(null);
@@ -90,6 +94,9 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
         } as any
       }
     >
+      {type === "scroll" && isSafariBrowser() && (
+        <style>{`.${styles.content} > vev > .__wc > vev{will-change:transform;}`}</style>
+      )}
       {children.map(
         (childKey, index) =>
           (!activeContentChild || showSlideKey === childKey) && (
@@ -320,11 +327,6 @@ registerVevComponent(ScrollingSlide, {
                 label: "Rectangle",
                 value:
                   "inset(calc(var(--mask-y) * (1 - var(--slide-offset)) * 100% ) calc((1 - var(--mask-x)) * (1 - var(--slide-offset)) * 100% ) calc((1 - var(--mask-y)) * (1 - var(--slide-offset)) * 100% ) calc(var(--mask-x) * (1 - var(--slide-offset)) * 100% ))",
-              },
-              {
-                label: "Diamond",
-                value:
-                  "polygon(50% calc(var(--mask-y) * (1 - var(--slide-offset)) * 100%), calc(var(--mask-x) * ( var(--slide-offset)) * 100%) 50%, 50% calc(var(--mask-y) * (var(--slide-offset)) * 100%), calc(var(--mask-x) * (1 - var(--slide-offset)) * 100%) 50%)",
               },
             ],
           },

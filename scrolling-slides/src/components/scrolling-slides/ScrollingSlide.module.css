@@ -70,5 +70,4 @@
   max-width: 100vw;
   min-width: calc(100% / var(--slide-count));
   width: 100%;
-  overflow: hidden;
 }
