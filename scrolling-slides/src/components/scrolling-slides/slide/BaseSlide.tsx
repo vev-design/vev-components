@@ -11,6 +11,7 @@ export type BaseSlideProps = {
   timeline?: ViewTimeline;
   settings?: { [key: string]: any };
   disabled?: boolean;
+  transitionOut?: boolean;
   style?: React.CSSProperties;
 };
 export const BaseSlide = React.forwardRef(

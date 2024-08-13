@@ -108,6 +108,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
               timeline={timeline}
               selected={showSlideKey === childKey}
               settings={settings}
+              transitionOut={settings?.transitionOut}
               disabled={disabled}
             />
           )
@@ -164,6 +165,11 @@ registerVevComponent(ScrollingSlide, {
         {
           type: "boolean",
           name: "reverse",
+        },
+        {
+          type: "boolean",
+          hidden: (context) => context.value?.type === "scroll",
+          name: "transitionOut",
         },
         {
           type: "number",
@@ -314,7 +320,7 @@ registerVevComponent(ScrollingSlide, {
           type: "select",
           name: "maskShape",
           initialValue:
-            "circle(var(--slide-offset) at var(--mask-x) var(--mask-y))",
+            "circle(calc(var(--slide-offset) * 150%) at calc(var(--mask-x) * 100%) calc(var(--mask-y) * 100%))",
           hidden: (context) => context.value?.type !== "mask",
           options: {
             items: [

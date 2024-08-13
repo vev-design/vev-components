@@ -17,6 +17,7 @@ export function AnimatedSlide({
   disabled,
   keyframes,
   style,
+  transitionOut,
 }: AnimatedSlideProps) {
   const ref = useRef<HTMLDivElement>(null);
   let cl = styles.content;
@@ -32,6 +33,15 @@ export function AnimatedSlide({
 
     fromOffset = index / transitionCount;
     toOffset = (index + 1) / transitionCount;
+  }
+
+  if (transitionOut) {
+    disableAnimation = false;
+    if (index === 0) {
+      keyframes = keyframes.slice().reverse();
+    } else if (index < transitionCount) {
+      keyframes = [...keyframes, ...keyframes.slice().reverse()];
+    }
   }
 
   if (settings?.offsetStart) {
