@@ -42,6 +42,8 @@ export function AnimatedSlide({
     } else if (index < transitionCount) {
       keyframes = [...keyframes, ...keyframes.slice().reverse()];
     }
+    toOffset = (index + 1) / transitionCount;
+    console.log("toOffset", toOffset, keyframes);
   }
 
   if (settings?.offsetStart) {
