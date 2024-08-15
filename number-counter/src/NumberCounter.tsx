@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
@@ -6,10 +6,10 @@ import {
   useFrame,
   useVevEvent,
   useVisible,
-} from "@vev/react";
-import styles from "./NumberCounter.module.css";
-import { Events, Interactions } from "./events";
-import { easeIn, easeOut, easingNone, normalize, round } from "./math-utils";
+} from '@vev/react';
+import styles from './NumberCounter.module.css';
+import { Events, Interactions } from './events';
+import { easeIn, easeOut, easingNone, normalize, round } from './math-utils';
 
 type Props = {
   settings: {
@@ -22,9 +22,10 @@ type Props = {
   animation: {
     animationLength: number;
     delay: number;
-    easing: "none" | "easein" | "easeout";
+    easing: 'none' | 'easein' | 'easeout';
     loop: boolean;
     autostart: boolean;
+    once: boolean;
   };
   format: {
     separator: string;
@@ -42,20 +43,21 @@ const NumberCounter = ({
   settings = {
     start: 1,
     end: 100,
-    prefix: "",
-    postfix: "",
+    prefix: '',
+    postfix: '',
     localeFormat: false,
   },
   animation = {
     animationLength: 5,
     delay: 800,
-    easing: "none",
+    easing: 'none',
     loop: false,
     autostart: true,
+    once: false,
   },
   format = {
-    separator: ",",
-    decimalSeparator: ".",
+    separator: ',',
+    decimalSeparator: '.',
     precision: 0,
   },
   hostRef,
@@ -64,12 +66,12 @@ const NumberCounter = ({
   const {
     end: initEnd,
     start: initStart,
-    prefix = "",
-    postfix = "",
+    prefix = '',
+    postfix = '',
     localeFormat = false,
   } = settings;
 
-  const { animationLength, delay, easing, loop, autostart } = animation;
+  const { animationLength, delay, easing, loop, autostart, once } = animation;
   const { separator, decimalSeparator, precision: initPrecision } = format;
 
   const actualDelay = 1000 * delay;
@@ -79,6 +81,7 @@ const NumberCounter = ({
 
   const [count, setCount] = useState<number>(start);
   const [hasStarted, setHasStarted] = useState(false);
+  const [finished, setFinished] = useState(false);
   const isVisible = useVisible(hostRef);
   const { disabled, schemaOpen } = useEditorState();
   const [startedTimestamp, setStartedTimestamp] = useState<number>(0);
@@ -126,13 +129,13 @@ const NumberCounter = ({
         let animationProgress: number;
 
         switch (easing) {
-          case "none":
+          case 'none':
             animationProgress = easingNone(normalizedDelta);
             break;
-          case "easein":
+          case 'easein':
             animationProgress = easeIn(normalizedDelta);
             break;
-          case "easeout":
+          case 'easeout':
             animationProgress = easeOut(normalizedDelta);
             break;
         }
@@ -143,9 +146,11 @@ const NumberCounter = ({
             setCount(end);
             dispatchVevEvent(Events.COMPLETE);
             setHasStarted(false);
+            setFinished(true);
           } else {
             resetCounter();
             dispatchVevEvent(Events.COMPLETE);
+            setHasStarted(true);
           }
           return;
         }
@@ -161,24 +166,28 @@ const NumberCounter = ({
         }
       }
     },
-    [hasStarted, startedTimestamp]
+    [hasStarted, startedTimestamp],
   );
 
   useEffect(() => {
+    if (once && finished) return;
     if (!isVisible) {
       resetCounter();
     } else {
       resetCounter();
-      setTimeout(() => {
-        if (autostart) {
-          setHasStarted(true);
-        }
-      }, actualDelay);
+      if (!disabled) {
+        setTimeout(() => {
+          if (autostart) {
+            setHasStarted(true);
+          }
+        }, actualDelay);
+      }
     }
-  }, [isVisible]);
+  }, [isVisible, disabled]);
 
   useEffect(() => {
     if (disabled && !actualSchemaOpen) {
+      setFinished(false);
       resetCounter();
       return;
     }
@@ -206,19 +215,15 @@ const NumberCounter = ({
     animationLength,
     actualDelay,
     actualSchemaOpen,
+    loop,
+    once,
   ]);
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.counter}>
         {prefix +
-          styleNumber(
-            count,
-            separator,
-            decimalSeparator,
-            precision,
-            localeFormat
-          ) +
+          styleNumber(count, separator, decimalSeparator, precision, localeFormat) +
           postfix}
       </div>
     </div>
@@ -230,7 +235,7 @@ function styleNumber(
   separator: string,
   decimalSeparator: string,
   precision: number,
-  localeFormat: boolean
+  localeFormat: boolean,
 ) {
   if (localeFormat) {
     return new Intl.NumberFormat(navigator.language, {
@@ -240,27 +245,23 @@ function styleNumber(
   }
 
   const toFixed = x.toFixed(precision);
-  const parts = toFixed.split(".");
+  const parts = toFixed.split('.');
   if (parts.length === 1) {
     return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
   }
 
-  return (
-    parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator) +
-    decimalSeparator +
-    parts[1]
-  );
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator) + decimalSeparator + parts[1];
 }
 
 registerVevComponent(NumberCounter, {
-  name: "Number Counter",
+  name: 'Number Counter',
   description:
-    "Begins at the specified start number and counts by the specified step until the end number is reached. Increments up or down depending on start and end values provided.",
+    'Begins at the specified start number and counts by the specified step until the end number is reached. Increments up or down depending on start and end values provided.',
   props: [
     {
-      name: "settings",
-      title: "Settings",
-      type: "object",
+      name: 'settings',
+      title: 'Settings',
+      type: 'object',
       initialValue: {
         start: 1,
         end: 100,
@@ -268,109 +269,117 @@ registerVevComponent(NumberCounter, {
         runWhenVisible: false,
       },
       fields: [
-        { title: "Start", name: "start", type: "number", initialValue: 1 },
-        { title: "End", name: "end", type: "number", initialValue: 100 },
+        { title: 'Start', name: 'start', type: 'number', initialValue: 1 },
+        { title: 'End', name: 'end', type: 'number', initialValue: 100 },
         {
-          title: "Prefix",
-          description: "Shows at the start of the component",
-          name: "prefix",
-          type: "string",
-          initialValue: "",
+          title: 'Prefix',
+          description: 'Shows at the start of the component',
+          name: 'prefix',
+          type: 'string',
+          initialValue: '',
         },
         {
-          title: "Postfix",
-          description: "Shows at the end of the component",
-          name: "postfix",
-          type: "string",
-          initialValue: "",
+          title: 'Postfix',
+          description: 'Shows at the end of the component',
+          name: 'postfix',
+          type: 'string',
+          initialValue: '',
         },
         {
-          title: "Location",
-          description: "Determine formatting based on user location",
-          name: "localeFormat",
-          type: "boolean",
+          title: 'Location',
+          description: 'Determine formatting based on user location',
+          name: 'localeFormat',
+          type: 'boolean',
           initialValue: false,
         },
       ],
     },
     {
-      title: "Animation",
-      name: "animation",
-      type: "object",
+      title: 'Animation',
+      name: 'animation',
+      type: 'object',
       initialValue: { increment: 2, delay: 800, stepSize: 1 },
       fields: [
         {
-          title: "Duration",
-          name: "animationLength",
-          type: "number",
+          title: 'Duration',
+          name: 'animationLength',
+          type: 'number',
           initialValue: 5,
           options: {
-            format: "s",
+            format: 's',
           },
         },
         {
-          title: "Delay animation start",
-          name: "delay",
-          type: "number",
+          title: 'Delay animation start',
+          name: 'delay',
+          type: 'number',
           initialValue: 5,
           options: {
-            format: "ms",
+            format: 'ms',
           },
         },
         {
-          title: "Easing",
-          name: "easing",
-          type: "select",
-          initialValue: "none",
+          title: 'Easing',
+          name: 'easing',
+          type: 'select',
+          initialValue: 'none',
           options: {
-            display: "dropdown",
+            display: 'dropdown',
             items: [
-              { label: "None", value: "none" },
-              { label: "Ease in", value: "easein" },
-              { label: "Ease out", value: "easeout" },
+              { label: 'None', value: 'none' },
+              { label: 'Ease in', value: 'easein' },
+              { label: 'Ease out', value: 'easeout' },
             ],
           },
         },
         {
-          title: "Loop",
-          name: "loop",
-          type: "boolean",
+          title: 'Loop',
+          name: 'loop',
+          type: 'boolean',
+          description: 'When counter is done, it starts again immediately',
           initialValue: false,
         },
         {
-          title: "Auto start",
-          name: "autostart",
-          type: "boolean",
+          title: 'Run once',
+          name: 'once',
+          type: 'boolean',
+          description: 'Will only run once, even if it goes out of view',
+          initialValue: false,
+        },
+        {
+          title: 'Auto start',
+          name: 'autostart',
+          type: 'boolean',
           initialValue: true,
         },
       ],
     },
     {
-      name: "format",
-      title: "Formatting",
-      type: "object",
-      initialValue: { localeFormat: false, separator: "," },
+      name: 'format',
+      title: 'Formatting',
+      type: 'object',
+      initialValue: { localeFormat: false, separator: ',' },
       hidden: (context) => {
         return context.value?.settings?.localeFormat === true;
       },
       fields: [
         {
-          title: "Decimal precision",
-          name: "precision",
-          type: "number",
+          title: 'Decimal precision',
+          name: 'precision',
+          type: 'number',
           initialValue: 0,
         },
         {
-          title: "Digit separator (thousands)",
-          name: "separator",
-          type: "string",
-          initialValue: ",",
+          title: 'Digit separator (thousands)',
+          name: 'separator',
+          type: 'string',
+          initialValue: ',',
         },
         {
-          title: "Digit separator (decimal)",
-          name: "decimalSeparator",
-          type: "string",
-          initialValue: ".",
+          title: 'Digit separator (decimal)',
+          name: 'decimalSeparator',
+          type: 'string',
+          initialValue: '.',
         },
       ],
     },
@@ -378,51 +387,51 @@ registerVevComponent(NumberCounter, {
   events: [
     {
       type: Events.COMPLETE,
-      description: "On end",
+      description: 'On end',
     },
   ],
   interactions: [
     {
       type: Interactions.START,
-      description: "Start",
+      description: 'Start',
     },
     {
       type: Interactions.STOP,
-      description: "Stop",
+      description: 'Stop',
     },
     {
       type: Interactions.RESET,
-      description: "Reset and continue",
+      description: 'Reset and continue',
     },
     {
       type: Interactions.STOP_AND_RESET,
-      description: "Reset and stop",
+      description: 'Reset and stop',
     },
   ],
   editableCSS: [
     {
-      title: "Number",
+      title: 'Number',
       selector: styles.counter,
       properties: [
-        "font-family",
-        "font-size",
-        "font-style",
-        "letter-spacing",
-        "word-spacing",
-        "font-weight",
-        "color",
-        "text-align",
-        "text-decoration",
-        "line-height",
+        'font-family',
+        'font-size',
+        'font-style',
+        'letter-spacing',
+        'word-spacing',
+        'font-weight',
+        'color',
+        'text-align',
+        'text-decoration',
+        'line-height',
       ],
     },
     {
-      title: "Margin and padding",
+      title: 'Margin and padding',
       selector: styles.wrapper,
-      properties: ["margin", "padding"],
+      properties: ['margin', 'padding'],
     },
   ],
-  type: "standard",
+  type: 'standard',
 });
 
 export default NumberCounter;

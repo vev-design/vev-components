@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@dotlottie/react-player": "^1.6.19",
-    "@vev/react": "^0.0.4",
-    "@vev/silke": "^1.0.15",
+    "@vev/react": "^0.1.8",
+    "@vev/silke": "^1.0.24",
     "lottie-colorify": "^0.8.0",
     "react": "^18.2.0"
   }

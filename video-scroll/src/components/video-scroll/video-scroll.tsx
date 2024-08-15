@@ -5,6 +5,7 @@ import { DEFAULT_IMAGES } from './video-scroll-default';
 import styles from './video-scroll.module.scss';
 
 type VideoScrollProps = {
+  hostRef: React.RefObject<HTMLDivElement>;
   images?: string[];
   offsetVideoStart?: number;
   offsetVideoEnd?: number;
@@ -42,9 +43,9 @@ export function VideoScroll({
   offsetVideoEnd = 0,
   loopCount,
   loopAlternate,
+  hostRef,
 }: VideoScrollProps) {
   if (!images) images = DEFAULT_IMAGES;
-  const wrapperRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentFrameRef = useRef<number>(0);
@@ -66,9 +67,9 @@ export function VideoScroll({
       desiredProgressRef.current = clamp(progress, 0, 1);
     };
     const calculateContainer = () => {
-      const wrapperEl = wrapperRef.current;
+      const wrapperEl = hostRef.current;
       if (!wrapperEl) return;
-      const rect = wrapperRef.current.getBoundingClientRect();
+      const rect = hostRef.current.getBoundingClientRect();
       const scrollTop = (document.scrollingElement?.scrollTop || window.scrollY) * zoom;
       const pinStartPos = scrollTop + rect.top;
       const pinDistance = Math.max(rect.height - window.innerHeight, 0);
@@ -159,8 +160,8 @@ export function VideoScroll({
       let desiredFrame = Math.round(desiredProgress * (duration - 1) || 0);
 
       if (loopCount && loopCount > 1) {
-        desiredFrame *= loopCount;
         if (loopAlternate) {
+          desiredFrame *= loopCount;
           const loop = Math.floor(desiredFrame / duration);
           if (loop % 2 === 1) {
             desiredFrame = duration - (desiredFrame % duration) - 1;
@@ -168,7 +169,7 @@ export function VideoScroll({
             desiredFrame = desiredFrame % duration;
           }
         } else {
-          desiredFrame = desiredFrame % duration;
+          desiredFrame = Math.floor(((desiredProgress * loopCount) % 1) * (duration - 1));
         }
       }
 
@@ -202,7 +203,7 @@ export function VideoScroll({
   });
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper}>
+    <div className={styles.wrapper}>
       <div ref={imageRef} className={styles.imageHolder}>
         <canvas ref={canvasRef} width={1440} height={900} />
       </div>

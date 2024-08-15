@@ -20,7 +20,7 @@ const waitForPlaythrough = async (videoElement: HTMLVideoElement) => {
   });
 };
 
-const MAX_FRAMES = 620;
+const MAX_FRAMES = 1000;
 const FRAMES_PR_SECOND = 12;
 const PLAYBACK_RATE = 1;
 
@@ -55,8 +55,6 @@ export const unpackFrames = async (
   const { duration } = videoElement;
   const imageCount = Math.floor(Math.min(duration * FRAMES_PR_SECOND, MAX_FRAMES));
   const snapshotInterval = Math.floor((duration * 1000) / imageCount); // in milliseconds
-
-  console.log(`Unpacking frames:${imageCount} Snapshot interval:${snapshotInterval}`);
   const offscreenCanvasElement = new OffscreenCanvas(width, height);
 
   const context = offscreenCanvasElement.getContext('2d');
@@ -67,16 +65,20 @@ export const unpackFrames = async (
   const imageUploadPromises: Promise<FileUpload>[] = [];
 
   videoElement.play();
-  // Play video for 200ms to increase change of not black frame
+  // Play video for 200ms to decrease chance of black frame
   let frameIndex = 0;
   let imageDoneCount = 0;
-  console.log(imageCount, videoElement.duration);
-  while ((frameIndex + 1) * snapshotInterval < duration * 1000) {
+  let lastSnapshotTime = 0;
+  while (lastSnapshotTime < duration) {
     await sleep(10);
 
     const time = videoElement.currentTime;
 
-    if (time * 1000 > frameIndex * snapshotInterval) {
+    if (time * 1000 > frameIndex * snapshotInterval || videoElement.currentTime === duration) {
+      // pause videoElement here to get snapshots
+      videoElement.pause();
+      lastSnapshotTime = videoElement.currentTime;
+
       console.log(
         `Progress: ${Math.round(
           (frameIndex / imageCount) * 100,
@@ -85,11 +87,9 @@ export const unpackFrames = async (
         }`,
       );
       frameIndex++;
-      // pause videoElement here to get snapshots
-      videoElement.pause();
-      // const progress = videoElement.currentTime / videoElement.duration;
 
       const base64Snapshot = await createScreenshot(videoElement, context, width, height);
+      // push into the list
       imageUploadPromises.push(
         uploadFile(base64Snapshot, `frame-${frameIndex}.webp`).then((file) => {
           imageDoneCount++;
@@ -98,10 +98,10 @@ export const unpackFrames = async (
         }),
       );
 
-      // push into the list
       videoElement.play();
     }
   }
+
   const images = await Promise.all(imageUploadPromises);
   return images.map((image) => image.dynamicUrl || image.url);
 };

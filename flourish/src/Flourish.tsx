@@ -7,9 +7,15 @@ import {
   useViewport,
   View,
   useVevEvent,
-  ueVisible,
+  useVisible,
 } from '@vev/react';
 import { InteractionTypes } from './event-types';
+
+declare global {
+  interface Window {
+    FlourishLoaded: boolean;
+  }
+}
 
 type Props = {
   formUrl: string;
@@ -28,6 +34,9 @@ function getElementTopPosition(widgetKey: string) {
   const el = document.getElementById(widgetKey);
   return el.offsetTop;
 }
+
+const storyReg = /story\/(.*)(?=\/)/i;
+const vizReg = /visualisation\/(.*)(?=\/)/i;
 
 const Flourish = ({
   formUrl = DEFAULT_URL,
@@ -49,7 +58,23 @@ const Flourish = ({
   const frameRef = useRef<HTMLIFrameElement>();
   const globalOffsetTop = View.rootNodeOffsetTop;
 
-  const isVisible = ueVisible(hostRef);
+  const isVisible = useVisible(hostRef);
+
+  const isStory = formUrl?.indexOf('story') > -1;
+  const idMatch = formUrl?.match(isStory ? storyReg : vizReg);
+
+  useEffect(() => {
+    // We have to use iframe embed to control slides
+    if (!scrollytelling) {
+      window.FlourishLoaded = false;
+      document.getElementById('vev-flourish')?.remove();
+      const script = document.createElement('script');
+      script.id = 'vev-flourish';
+      script.src = 'https://public.flourish.studio/resources/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [scrollytelling]);
 
   useEffect(() => {
     if (frameRef.current) {
@@ -120,15 +145,26 @@ const Flourish = ({
     setUrl(`${urlObj.origin}${urlObj.pathname}#slide-${slide}`);
   }, [slide, url]);
 
+  const id = idMatch ? idMatch[1] : formUrl || '3165417';
+  let src = `https://flo.uri.sh/${isStory ? 'story' : 'visualisation'}/${id}/embed`;
+  if (scrollytelling && isStory) src += `#slide-${slide}`;
+
   return (
     <div className={`flourish fill ${styles.container}`}>
-      <iframe
-        ref={frameRef}
-        className={styles.frame}
-        src={url}
-        sandbox="allow-scripts allow-popups"
-        frameBorder="0"
-      />
+      {scrollytelling ? (
+        <iframe
+          ref={frameRef}
+          className={styles.frame}
+          src={isVisible ? src : undefined}
+          sandbox="allow-scripts allow-popups"
+          frameBorder="0"
+        />
+      ) : (
+        <div
+          className="flourish-embed flourish-chart"
+          data-src={isStory ? `story/${id}` : `visualisation/${id}`}
+        />
+      )}
     </div>
   );
 };

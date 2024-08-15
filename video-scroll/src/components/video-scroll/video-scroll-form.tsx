@@ -1,4 +1,3 @@
-import { SchemaContextModel } from '@vev/react';
 import React, { useRef, useState } from 'react';
 import { useDropZone } from '../../hooks/use-drop-zone';
 import { unpackFrames } from '../../video-unpack';
@@ -11,6 +10,7 @@ import {
   SilkeTabs,
 } from '@vev/silke';
 import styles from './video-scroll-form.module.scss';
+import { SchemaContextModel } from '@vev/utils';
 
 type VideoScrollFormProps = {
   context: SchemaContextModel;
@@ -41,7 +41,7 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
 
   const handleUpload = async (file?: File) => {
     if (!file) return;
-    if (file.size > 1024 * 1024 * 512) return setError('To big file, max size is 512MB');
+    if (file.size > 1024 * 1024 * 850) return setError('To big file, max size is 512MB');
 
     const uploadFile = context.actions?.uploadFile;
     if (!uploadFile) return;
@@ -123,6 +123,7 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
             <SilkeBox flex column>
               <SilkeUploadField
                 accept="video/*"
+                maxSize={819200}
                 onSelectFiles={(files) => {
                   console.log(files);
                   handleUpload(files[0]);
@@ -139,7 +140,7 @@ export function VideoScrollForm({ context, value, onChange }: VideoScrollFormPro
                 loading={isDownloadingVideo}
                 label="Select video"
                 onClick={() => {
-                  context.actions.videoLibraryOpen(async (projectFile: any) => {
+                  context.actions?.videoLibraryOpen(async (projectFile: any) => {
                     setIsDownloadingVideo(true);
                     const response = await fetch(projectFile.sources[0].url);
                     const data = await response.blob();
