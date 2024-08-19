@@ -14,13 +14,14 @@ declare global {
 const isSupported = () => CSS.supports("animation-timeline: --works");
 
 export function useViewTimeline(
-  sourceRef: RefObject<HTMLElement>
+  sourceRef: RefObject<HTMLElement>,
+  disabled?: boolean
 ): ViewTimeline | undefined {
   const [supported, setSupported] = useState(isSupported);
   const [timeline, setTimeline] = useState<any>();
+  const el = sourceRef.current;
   useEffect(() => {
-    const el = sourceRef.current;
-    if (!el) return;
+    if (!el || disabled) return;
     // Polyfill for Safari
     if (!supported) {
       let cancel = false;
@@ -42,7 +43,7 @@ export function useViewTimeline(
         })
       );
     }
-  }, [supported, sourceRef]);
+  }, [supported, el, disabled]);
 
   return timeline;
 }

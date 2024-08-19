@@ -35,15 +35,15 @@ export function AnimatedSlide({
     toOffset = (index + 1) / transitionCount;
   }
 
-  if (transitionOut) {
+  if (transitionOut && index < transitionCount) {
     disableAnimation = false;
+    toOffset = (index + 1) / transitionCount;
     if (index === 0) {
+      fromOffset = fromOffset + (toOffset - fromOffset) / 2;
       keyframes = keyframes.slice().reverse();
     } else if (index < transitionCount) {
       keyframes = [...keyframes, ...keyframes.slice().reverse()];
     }
-    toOffset = (index + 1) / transitionCount;
-    console.log("toOffset", toOffset, keyframes);
   }
 
   if (settings?.offsetStart) {

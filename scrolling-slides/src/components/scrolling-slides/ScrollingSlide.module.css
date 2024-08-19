@@ -32,6 +32,11 @@
   flex-direction: row;
   overflow: clip;
 }
+@supports not (overflow: clip) {
+  .wrapper {
+    clip-path: inset(0 0 0 0);
+  }
+}
 
 .wrapper.row {
   flex-direction: row;

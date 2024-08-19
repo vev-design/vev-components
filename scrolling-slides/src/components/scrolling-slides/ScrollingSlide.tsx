@@ -1,4 +1,4 @@
-import { registerVevComponent, useEditorState } from "@vev/react";
+import { registerVevComponent, useEditorState, useVisible } from "@vev/react";
 import React, { useRef } from "react";
 import { useViewAnimation, useViewTimeline } from "../../hooks";
 import styles from "./ScrollingSlide.module.css";
@@ -57,9 +57,12 @@ function isSafariBrowser() {
 
 const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   if (!type) type = "scroll";
+
+  const visible = useVisible(hostRef);
+
   const ref = useRef<HTMLDivElement>(null);
   const { disabled, activeContentChild, ...rest } = useEditorState();
-  const timeline = useViewTimeline(ref);
+  const timeline = useViewTimeline(ref, !visible);
   const showSlideKey: string | undefined = disabled
     ? activeContentChild
     : undefined;
@@ -69,7 +72,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
       translate: ["0 0", `${-100 + 100 / children.length}% 0`],
     },
     timeline,
-    !!showSlideKey || type !== "scroll",
+    !!showSlideKey || type !== "scroll" || !visible,
     {
       direction: settings?.reverse ? "reverse" : undefined,
       easing: settings?.easing,
@@ -84,6 +87,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   if (type === "scroll" && settings?.reverse) cl += " " + styles.reverse;
 
   const Comp = SLIDE_COMPONENT[type] || BaseSlide;
+
   return (
     <div
       ref={ref}
@@ -95,7 +99,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
       }
     >
       {type === "scroll" && isSafariBrowser() && (
-        <style>{`.${styles.content} > vev > .__wc > vev{will-change:transform;}`}</style>
+        <style>{`.${styles.content} > vev > .__wc vev{will-change:transform;}`}</style>
       )}
       {children.map(
         (childKey, index) =>
@@ -173,7 +177,7 @@ registerVevComponent(ScrollingSlide, {
         },
         {
           type: "number",
-          title: "Offset start",
+          title: "Overlap transitions",
           name: "offsetStart",
           initialValue: 0,
           options: {
