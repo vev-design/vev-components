@@ -55,7 +55,7 @@ const VariableText = ({ variableKey, type = 'div', html = false }: Props) => {
 
   return (
     <div className={styles.content}>
-      {React.createElement(type, props, html ? null : variable?.value)}
+      {React.createElement(type || 'div', props, html ? null : variable?.value)}
     </div>
   );
 };
