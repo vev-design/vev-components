@@ -7,7 +7,7 @@ export type Validation = {
   isNumber: boolean;
 };
 
-export const validate = (value: string, validate: Validation) => {
+export const validate = (value: string = "", validate: Validation) => {
   if (!value && validate.required) {
     return false;
   }
