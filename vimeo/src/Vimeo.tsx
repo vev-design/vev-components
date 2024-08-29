@@ -28,6 +28,7 @@ type Props = {
     disableControls: boolean;
     loop: boolean;
     background: boolean;
+    fill: boolean;
   };
   hostRef: React.RefObject<HTMLDivElement>;
 };
@@ -60,7 +61,7 @@ function LazyLoad({ hostRef, children }) {
 const VimeoUrl = (props) => {
   const [error, setError] = useState<string | null>(null);
   const fullUrl = useMemo(() => {
-    return props?.value?.fullUrl || props?.schema?.initialValue?.fullUrl;
+    return props?.value?.fullUrl || props?.schema?.initialValue?.fullUrl;
   }, [props]);
 
   useEffect(() => {
@@ -128,6 +129,7 @@ const Vimeo = ({
   const playerRef = useRef<Player>();
   const currentTime = useRef<number>(0);
   const dispatch = useDispatchVevEvent();
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
 
   const autoplay = settings.autoplay || false;
   const lazy = settings.lazy || false;
@@ -135,6 +137,7 @@ const Vimeo = ({
   const disableControls = settings.disableControls || false;
   const background = settings.background || false;
   const loop = settings.loop || false;
+  const fill = settings.fill || false;
 
   useVevEvent(Interaction.PLAY, async () => {
     await playerRef.current.play();
@@ -173,6 +176,14 @@ const Vimeo = ({
       if (iframeRef.current) {
         const iframe = document.querySelector("iframe");
         const player = new Player(iframe);
+
+        if (fill) {
+          Promise.all([player.getVideoWidth(), player.getVideoHeight()]).then(
+            ([width, height]) => {
+              setAspectRatio(width / height);
+            }
+          );
+        }
         playerRef.current = player;
 
         player.on("play", () => {
@@ -199,12 +210,26 @@ const Vimeo = ({
         });
       }
     } catch (e) {}
-  }, [iframeRef]);
+  }, [iframeRef, fill]);
+
+  let cl = styles.wrapper;
+  if (fill) cl += " " + styles.fill;
 
   const iframe = (
     <iframe
       ref={iframeRef}
       className={styles.frame}
+      style={
+        fill && aspectRatio
+          ? {
+              minWidth: "100%",
+              minHeight: "100%",
+              width: "auto",
+              height: "auto",
+              aspectRatio,
+            }
+          : null
+      }
       src={getVimeoUrl(
         videoInfo.videoId || defaultVideoId,
         autoplay,
@@ -222,10 +247,14 @@ const Vimeo = ({
       allowFullScreen
     />
   );
-  return lazy && !disabled ? (
-    <LazyLoad hostRef={hostRef}>{iframe}</LazyLoad>
-  ) : (
-    iframe
+  return (
+    <div className={cl}>
+      {lazy && !disabled ? (
+        <LazyLoad hostRef={hostRef}>{iframe}</LazyLoad>
+      ) : (
+        iframe
+      )}
+    </div>
   );
 };
 
@@ -280,6 +309,12 @@ registerVevComponent(Vimeo, {
         {
           title: "Use as background",
           name: "background",
+          type: "boolean",
+          initialValue: false,
+        },
+        {
+          title: "Fill container",
+          name: "fill",
           type: "boolean",
           initialValue: false,
         },
