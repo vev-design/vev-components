@@ -28,7 +28,7 @@ const SUPPORTED_TAGS = [
   'h4',
 ];
 
-const SUPPORTED_TAGS_STYLING = ['li'];
+const SUPPORTED_TAGS_STYLING = ['li', 'strong', 'b'];
 
 const TEXT_STYLE_PROPERTIES: { properties: CamelToSnake<keyof CSSProperties>[] } = {
   properties: [
