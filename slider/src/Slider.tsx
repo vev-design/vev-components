@@ -91,7 +91,11 @@ export const Slideshow = (props: Props) => {
   }, [random, editor.disabled, children]);
 
   const handleNextSlide = useCallback(() => {
-    if (!props.infinite && state?.index === numberOfSlides - 1) return;
+    if (
+      (!props.infinite && state?.index === numberOfSlides - 1) ||
+      slides.length <= 1
+    )
+      return;
     setIsTransitioning(true);
     setState({
       index: getNextSlideIndex(state?.index, slides),
@@ -101,7 +105,8 @@ export const Slideshow = (props: Props) => {
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
   const handlePrevSlide = useCallback(() => {
-    if (!props.infinite && state?.index === 0) return;
+    if ((!props.infinite && state?.index === 0) || slides.length <= 1) return;
+
     setIsTransitioning(true);
     setState({
       index: getPrevSlideIndex(state?.index, slides),
