@@ -35,7 +35,7 @@ function TextField(props: Props) {
   }, []);
 
   const handleValidate = useCallback(() => {
-    const valid = validate(value, props);
+    const valid = validate(value, { ...props, isNumber: type === "number" });
     if (!valid) {
       dispatch(Event.onInvalid);
     } else {
