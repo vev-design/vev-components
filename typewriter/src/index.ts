@@ -6,24 +6,31 @@ registerVevComponent(Typewriter, {
   name: "Typewriter",
   props: [
     {
+      name: "before",
+      type: "string",
+      title: "Static text before animation",
+      initialValue: "This is ",
+    },
+    {
       name: "words",
+      title: "Animated text items",
       type: "array",
       of: "string",
       initialValue: ["typewriter", "no-code", "Vev"],
     },
     {
-      name: "before",
-      type: "string",
-      initialValue: "This is ",
-    },
-    {
       name: "after",
+      title: "Static text after animation",
       type: "string",
     },
     {
       name: "timer",
+      title: "Transition speed",
       type: "number",
       initialValue: 20,
+      options: {
+        format: "ms",
+      },
     },
     {
       name: "loop",
@@ -34,6 +41,7 @@ registerVevComponent(Typewriter, {
   editableCSS: [
     {
       selector: styles.words,
+      title: "Paragraph",
       properties: [
         "font-size",
         "font-weight",

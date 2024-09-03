@@ -3,7 +3,3 @@
   font-weight: 600;
   color: darkslategray;
 }
-
-:empty:before {
-  content: "\200b";
-}
