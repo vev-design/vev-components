@@ -310,7 +310,7 @@ registerVevComponent(Slideshow, {
       type: "number",
       title: "Shrink slides before/after (%)",
       description:
-        "Shrink slides before/after the current slide progressively. 0% is no scaling.",
+        "Shrink slides before/after the current slide. 0% is no scaling.",
       initialValue: 0,
       hidden: (context) => context.value?.animation !== "slide",
     },

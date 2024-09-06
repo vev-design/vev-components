@@ -14,8 +14,9 @@ const tempId = () => "tmp-" + Math.random().toString(16).slice(2);
 
 const getSlideScale = (index: number, centerSlideIndex: number, scaleFactor: number, move: number) => {
   const distance = move === -200 ? Math.abs(centerSlideIndex - index + 1) : move === 0 ? Math.abs(centerSlideIndex - index - 1) : Math.abs(index - centerSlideIndex);
-  return `${1 - distance * (scaleFactor / 100)}`;
+  return distance === 0 ? "1" : `${1 - (scaleFactor / 100)}`;
 }
+
 
 export const Slide = ({
   index,
@@ -154,6 +155,7 @@ export const Slide = ({
             >
               {scaleBeforeAfter ? (
                 <div
+                  className={styles.slide}
                   style={{
                     scale: getSlideScale(i, centerSlideIndex, shrinkFactorBeforeAfter, move),
                     transition: `scale ${speed || 1}ms ${easing || "ease"}`,
