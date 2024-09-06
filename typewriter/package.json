@@ -1,17 +1,17 @@
 {
-  "name": "html5-audio",
+  "name": "typewriter",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
     "login": "vev login",
     "init": "vev init",
-    "start": "vev start",
-    "deploy": "vev deploy"
+    "start": "vev start"
   },
   "license": "MIT",
   "devDependencies": {
     "@types/react": "latest",
-    "typescript-plugin-css-modules": "^3.4.0"
+    "prettier": "2.7.0",
+    "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
     "@vev/react": "latest",

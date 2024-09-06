@@ -55,8 +55,6 @@ export const unpackFrames = async (
   const { duration } = videoElement;
   const imageCount = Math.floor(Math.min(duration * FRAMES_PR_SECOND, MAX_FRAMES));
   const snapshotInterval = Math.floor((duration * 1000) / imageCount); // in milliseconds
-
-  console.log(`Unpacking frames:${imageCount} Snapshot interval:${snapshotInterval}`);
   const offscreenCanvasElement = new OffscreenCanvas(width, height);
 
   const context = offscreenCanvasElement.getContext('2d');
@@ -70,15 +68,16 @@ export const unpackFrames = async (
   // Play video for 200ms to decrease chance of black frame
   let frameIndex = 0;
   let imageDoneCount = 0;
-  console.log(imageCount, videoElement.duration);
-  while ((frameIndex + 1) * snapshotInterval < duration * 1000) {
+  let lastSnapshotTime = 0;
+  while (lastSnapshotTime < duration) {
     await sleep(10);
 
     const time = videoElement.currentTime;
 
-    if (time * 1000 > frameIndex * snapshotInterval) {
+    if (time * 1000 > frameIndex * snapshotInterval || videoElement.currentTime === duration) {
       // pause videoElement here to get snapshots
       videoElement.pause();
+      lastSnapshotTime = videoElement.currentTime;
 
       console.log(
         `Progress: ${Math.round(
@@ -90,7 +89,6 @@ export const unpackFrames = async (
       frameIndex++;
 
       const base64Snapshot = await createScreenshot(videoElement, context, width, height);
-
       // push into the list
       imageUploadPromises.push(
         uploadFile(base64Snapshot, `frame-${frameIndex}.webp`).then((file) => {
@@ -103,6 +101,7 @@ export const unpackFrames = async (
       videoElement.play();
     }
   }
+
   const images = await Promise.all(imageUploadPromises);
   return images.map((image) => image.dynamicUrl || image.url);
 };
