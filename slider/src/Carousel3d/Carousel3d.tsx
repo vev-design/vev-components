@@ -38,6 +38,7 @@ export const Carousel3d = ({
   hostRef,
   index,
   speed,
+  easing,
   slides,
   gap = 30,
   perspective = 800,
@@ -94,7 +95,7 @@ export const Carousel3d = ({
     >
       <div
         style={{
-          transition: `rotate ${speed}ms linear`,
+          transition: `rotate ${speed}ms ${easing || "ease"}`,
           rotate: `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
           width,

@@ -38,6 +38,8 @@ export type Props = {
   infinite?: boolean;
   perspective?: number;
   scaleFactor?: number;
+  easing?: string;
+  shrinkFactorBeforeAfter?: number;
   direction:
     | "HORIZONTAL"
     | "HORIZONTAL_REVERSE"
@@ -230,6 +232,24 @@ registerVevComponent(Slideshow, {
       hidden: (context) => context.value?.animation === "none",
     },
     {
+      name: "easing",
+      type: "select",
+      initialValue: "ease",
+      options: {
+        display: "dropdown",
+        items: [
+          {
+            label: "Ease",
+            value: "ease",
+          },
+          {
+            label: "Linear",
+            value: "linear",
+          },
+        ],
+      },
+    },
+    {
       name: "direction",
       type: "string",
       component: DirectionField,
@@ -279,6 +299,15 @@ registerVevComponent(Slideshow, {
         min: 1,
         max: 5,
       },
+    },
+    {
+      name: "shrinkFactorBeforeAfter",
+      type: "number",
+      title: "Shrink slides before/after (%)",
+      description:
+        "Shrink slides before/after the current slide progressively. 0% is no scaling.",
+      initialValue: 0,
+      hidden: (context) => context.value?.animation !== "slide",
     },
   ],
   events: [

@@ -13,6 +13,7 @@ import styles from "./Zoom.module.css";
 export const Zoom = ({
   index = 0,
   speed = 0.1, // Have to be 0.1 to trigger onTransitionEnd
+  easing,
   slides,
   direction,
   scaleFactor = 300,
@@ -92,7 +93,7 @@ export const Zoom = ({
     <div
       className={styles.wrapper}
       style={{
-        transition: `transform ${transitionSpeed}ms linear`,
+        transition: `transform ${transitionSpeed}ms ${easing || "ease"}`,
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === "opacity") {
