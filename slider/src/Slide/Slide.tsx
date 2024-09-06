@@ -155,7 +155,7 @@ export const Slide = ({
             >
               {scaleBeforeAfter ? (
                 <div
-                  className={styles.slide}
+                  className={styles.inner}
                   style={{
                     scale: getSlideScale(i, centerSlideIndex, shrinkFactorBeforeAfter, move),
                     transition: `scale ${speed || 1}ms ${easing || "ease"}`,
