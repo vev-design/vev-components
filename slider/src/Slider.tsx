@@ -308,7 +308,12 @@ registerVevComponent(Slideshow, {
     {
       name: "shrinkFactorBeforeAfter",
       type: "number",
-      title: "Shrink slides before/after (%)",
+      title: "Scaling",
+      options: {
+        display: "slider",
+        min: 0,
+        max: 100,
+      },
       description:
         "Shrink slides before/after the current slide. 0% is no scaling.",
       initialValue: 0,
