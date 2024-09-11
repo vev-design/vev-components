@@ -9,16 +9,25 @@ import {
 } from "../utils";
 
 import styles from "./Slide.module.css";
+
 const tempId = () => "tmp-" + Math.random().toString(16).slice(2);
+
+const getSlideScale = (index: number, centerSlideIndex: number, scaleFactor: number, move: number) => {
+  const distance = move === -200 ? Math.abs(centerSlideIndex - index + 1) : move === 0 ? Math.abs(centerSlideIndex - index - 1) : Math.abs(index - centerSlideIndex);
+  return distance === 0 ? "1" : `${1 - (scaleFactor / 100)}`;
+}
+
 
 export const Slide = ({
   index,
   speed,
+  easing,
   slides,
   direction,
   infinite,
   action,
   slidesToLoad: slidesToLoadProp,
+  shrinkFactorBeforeAfter,
 }: Omit<Props, "children"> & {
   index: number;
 }) => {
@@ -35,6 +44,8 @@ export const Slide = ({
     : "X";
 
   const reverse = direction?.includes("REVERSE");
+  const scaleBeforeAfter = shrinkFactorBeforeAfter && shrinkFactorBeforeAfter > 0;
+  const centerSlideIndex = Math.floor(currentSlides.length / 2);
 
   const setSlides = useCallback(() => {
     const getIndexValue = (val: any, curr: number) =>
@@ -120,7 +131,7 @@ export const Slide = ({
         className={styles.wrapper}
         style={{
           transform: `translate${moveDirection}(${move}%)`,
-          transition: `transform ${transitionSpeed}ms linear`,
+          transition: `transform ${transitionSpeed}ms ${easing || "ease"}`,
         }}
         onTransitionEnd={(e) => {
           if (e.propertyName === "transform") {
@@ -138,11 +149,21 @@ export const Slide = ({
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,
                 width: "100%",
-                zIndex: i === 1 ? "1" : "0",
-                pointerEvents: i === 1 ? "auto" : "none",
+                zIndex: i === centerSlideIndex ? "1" : "0",
+                pointerEvents: i === centerSlideIndex ? "auto" : "none",
               }}
             >
-              {child && <WidgetNode id={child} />}
+              {scaleBeforeAfter ? (
+                <div
+                  className={styles.inner}
+                  style={{
+                    scale: getSlideScale(i, centerSlideIndex, shrinkFactorBeforeAfter, move),
+                    transition: `scale ${speed || 1}ms ${easing || "ease"}`,
+                  }}
+                >
+                  {child && <WidgetNode id={child} />}
+                </div>
+              ) : <WidgetNode id={child} />}
             </div>
           );
         })}

@@ -11,6 +11,7 @@ import {
   useVevEvent,
   useEditorState,
   useGlobalState,
+  useDispatchVevEvent,
 } from "@vev/react";
 import { shuffleArray } from "./utils";
 import DirectionField from "./DirectionField";
@@ -37,6 +38,8 @@ export type Props = {
   infinite?: boolean;
   perspective?: number;
   scaleFactor?: number;
+  easing?: string;
+  shrinkFactorBeforeAfter?: number;
   direction:
     | "HORIZONTAL"
     | "HORIZONTAL_REVERSE"
@@ -50,15 +53,20 @@ export type Props = {
   slidesToLoad: number;
 };
 
-enum Events {
+enum Interactions {
   NEXT = "NEXT",
   PREV = "PREV",
   SET = "SET",
 }
 
+enum Events {
+  SLIDE_CHANGED = "SLIDE_CHANGED",
+}
+
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
+  const dispatch = useDispatchVevEvent();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
@@ -80,6 +88,14 @@ export const Slideshow = (props: Props) => {
     });
     prevIndex.current = children.indexOf(editor.activeContentChild);
   }, [editor.activeContentChild, editor.disabled]);
+
+  useEffect(() => {
+    if (state?.index !== undefined) {
+      dispatch(Events.SLIDE_CHANGED, {
+        currentSlide: state?.index + 1,
+      });
+    }
+  }, [state?.index]);
 
   useEffect(() => {
     if (random && !editor.disabled) {
@@ -120,9 +136,9 @@ export const Slideshow = (props: Props) => {
     onPrev: handlePrevSlide,
   });
 
-  useVevEvent(Events.NEXT, handleNextSlide);
-  useVevEvent(Events.PREV, handlePrevSlide);
-  useVevEvent(Events.SET, (args: { slide: number }) => {
+  useVevEvent(Interactions.NEXT, handleNextSlide);
+  useVevEvent(Interactions.PREV, handlePrevSlide);
+  useVevEvent(Interactions.SET, (args: { slide: number }) => {
     setState({
       index: Math.max(0, Number(args?.slide || 0) - 1),
       length: numberOfSlides || 0,
@@ -221,6 +237,24 @@ registerVevComponent(Slideshow, {
       hidden: (context) => context.value?.animation === "none",
     },
     {
+      name: "easing",
+      type: "select",
+      initialValue: "ease",
+      options: {
+        display: "dropdown",
+        items: [
+          {
+            label: "Ease",
+            value: "ease",
+          },
+          {
+            label: "Linear",
+            value: "linear",
+          },
+        ],
+      },
+    },
+    {
       name: "direction",
       type: "string",
       component: DirectionField,
@@ -271,18 +305,30 @@ registerVevComponent(Slideshow, {
         max: 5,
       },
     },
+    {
+      name: "shrinkFactorBeforeAfter",
+      type: "number",
+      title: "Shrink slides before/after (%)",
+      description:
+        "Shrink slides before/after the current slide. 0% is no scaling.",
+      initialValue: 0,
+      hidden: (context) => context.value?.animation !== "slide",
+    },
+  ],
+  events: [
+    { type: Events.SLIDE_CHANGED, description: "Slide was changed" },
   ],
   interactions: [
     {
-      type: Events.NEXT,
+      type: Interactions.NEXT,
       description: "Go to next slide",
     },
     {
-      type: Events.PREV,
+      type: Interactions.PREV,
       description: "Go to previous slide",
     },
     {
-      type: Events.SET,
+      type: Interactions.SET,
       description: "Go to specific slide",
       args: [
         {
