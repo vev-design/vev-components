@@ -145,9 +145,7 @@ export const Slideshow = (props: Props) => {
     });
   });
 
-  if (!props?.children?.length) {
-    return <div className={styles.empty}>No slides</div>;
-  }
+  if (!props?.children?.length) return null;
 
   const render = {
     slide: Slide,
@@ -315,9 +313,7 @@ registerVevComponent(Slideshow, {
       hidden: (context) => context.value?.animation !== "slide",
     },
   ],
-  events: [
-    { type: Events.SLIDE_CHANGED, description: "Slide was changed" },
-  ],
+  events: [{ type: Events.SLIDE_CHANGED, description: "Slide was changed" }],
   interactions: [
     {
       type: Interactions.NEXT,
