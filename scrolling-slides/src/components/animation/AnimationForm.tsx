@@ -2,16 +2,15 @@ import {
   SilkeBox,
   SilkeButton,
   SilkeCssNumberField,
-  SilkeModal,
   SilkeOverflowMenu,
   SilkeSelectField,
   SilkeTitle,
   TextFieldContext,
-} from "@vev/silke";
-import React from "react";
-import { AnimationType, TimelineRange, VevAnimation } from "../../utils";
-import { AnimationRangeField } from "./AnimationRangeField";
-import { AnimationKeyFrames } from "./AnimationKeyFrames";
+} from '@vev/silke';
+import React from 'react';
+import { AnimationType, TimelineRange, VevAnimation } from '../../utils';
+import { AnimationRangeField } from './AnimationRangeField';
+import { AnimationKeyFrames } from './AnimationKeyFrames';
 
 type AnimationFormProps = {
   value: VevAnimation[];
@@ -41,9 +40,7 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
               animation={animation}
               onChange={(newAnimation) =>
                 onChange(
-                  value.map((oldAnimation, i) =>
-                    i === index ? newAnimation : oldAnimation
-                  )
+                  value.map((oldAnimation, i) => (i === index ? newAnimation : oldAnimation)),
                 )
               }
             />
@@ -57,41 +54,41 @@ export function AnimationForm({ value, onChange }: AnimationFormProps) {
             label="Add animation"
             items={[
               {
-                label: "Standard Animation",
+                label: 'Standard Animation',
                 onClick: () =>
                   onChange([
                     ...value,
                     {
                       type: AnimationType.visible,
                       keyframes: [
-                        { opacity: "0", translate: "0 20px" },
-                        { opacity: "1", translate: "0" },
+                        { opacity: '0', translate: '0 20px' },
+                        { opacity: '1', translate: '0' },
                       ],
                     },
                   ]),
               },
               {
-                label: "Scroll linked animation",
+                label: 'Scroll linked animation',
                 onClick: () =>
                   onChange([
                     ...value,
                     {
                       type: AnimationType.scroll,
                       keyframes: [
-                        { opacity: "0", translate: "0 20px" },
-                        { opacity: "1", translate: "0" },
+                        { opacity: '0', translate: '0 20px' },
+                        { opacity: '1', translate: '0' },
                       ],
                     },
                   ]),
               },
               {
-                label: "Hover animation",
+                label: 'Hover animation',
                 onClick: () =>
                   onChange([
                     ...value,
                     {
                       type: AnimationType.hover,
-                      keyframes: [{}, { scale: "1.2" }],
+                      keyframes: [{}, { scale: '1.2' }],
                     },
                   ]),
               },
@@ -111,14 +108,14 @@ function Animation({
   onChange: (animation: VevAnimation) => void;
 }) {
   const keyframes = animation.keyframes || [{}, {}];
-  const isScrollAnimation = animation.type === "scroll";
+  const isScrollAnimation = animation.type === 'scroll';
   return (
     <SilkeBox column gap="s">
       {!isScrollAnimation && (
         <SilkeCssNumberField
           label="Duration (s)"
           width={FIELD_WIDTH * 2 + 8}
-          value={animation.duration || "1s"}
+          value={animation.duration || '1s'}
           onChange={(duration) => onChange({ ...animation, duration })}
         />
       )}
@@ -126,7 +123,7 @@ function Animation({
         <SilkeCssNumberField
           label="Delay (ms)"
           width={FIELD_WIDTH * 2 + 8}
-          value={animation.delay || "0ms"}
+          value={animation.delay || '0ms'}
           onChange={(duration) => onChange({ ...animation, duration })}
         />
       )}
@@ -135,42 +132,34 @@ function Animation({
         <SilkeSelectField
           label="Easing"
           width={FIELD_WIDTH * 2 + 8}
-          value={animation.easing || "ease-out"}
+          value={animation.easing || 'ease-out'}
           items={[
-            { label: "Ease out", value: "ease-out" },
-            { label: "Ease in", value: "ease-in" },
-            { label: "Ease in out", value: "ease-in-out" },
+            { label: 'Ease out', value: 'ease-out' },
+            { label: 'Ease in', value: 'ease-in' },
+            { label: 'Ease in out', value: 'ease-in-out' },
             {
-              label: "Sinusoidal",
-              value: "cubic-bezier(0.445, 0.05, 0.55, 0.95)",
+              label: 'Sinusoidal',
+              value: 'cubic-bezier(0.445, 0.05, 0.55, 0.95)',
             },
-            { label: "Cubic", value: "cubic-bezier(0.645, 0.045, 0.355, 1)" },
-            { label: "Linear", value: "linear" },
+            { label: 'Cubic', value: 'cubic-bezier(0.645, 0.045, 0.355, 1)' },
+            { label: 'Linear', value: 'linear' },
           ]}
           onChange={(easing: string) => onChange({ ...animation, easing })}
         />
       )}
       <AnimationRangeField
-        value={animation.start || "entry-crossing"}
+        value={animation.start || 'entry-crossing'}
         valueOffset={animation.startOffset || 0}
         label="Start"
-        onChange={(start) =>
-          onChange({ ...animation, start: start as TimelineRange })
-        }
-        onOffsetChange={(startOffset) =>
-          onChange({ ...animation, startOffset })
-        }
+        onChange={(start) => onChange({ ...animation, start: start as TimelineRange })}
+        onOffsetChange={(startOffset) => onChange({ ...animation, startOffset })}
       />
       {isScrollAnimation && (
         <AnimationRangeField
-          value={animation.end || "exit-crossing"}
-          valueOffset={
-            animation.endOffset === undefined ? 1 : animation.endOffset
-          }
+          value={animation.end || 'exit-crossing'}
+          valueOffset={animation.endOffset === undefined ? 1 : animation.endOffset}
           label="End"
-          onChange={(end) =>
-            onChange({ ...animation, end: end as TimelineRange })
-          }
+          onChange={(end) => onChange({ ...animation, end: end as TimelineRange })}
           onOffsetChange={(endOffset) => onChange({ ...animation, endOffset })}
         />
       )}

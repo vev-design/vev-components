@@ -1,7 +1,7 @@
-import { SilkeBox, SilkeIcon, SilkeTextSmall } from "@vev/silke";
-import React, { KeyboardEvent } from "react";
-import styles from "./ScrollingSlideTypeField.module.css";
-import { SlideType } from "../ScrollingSlide";
+import { SilkeBox, SilkeIcon, SilkeTextSmall } from '@vev/silke';
+import React, { KeyboardEvent } from 'react';
+import styles from './ScrollingSlideTypeField.module.css';
+import { SlideType } from '../ScrollingSlide';
 
 type ScrollingSlideTypeFieldProps = {
   value: SlideType;
@@ -13,35 +13,32 @@ type SlideTypeItem = {
 };
 const SLIDE_TYPES: SlideTypeItem[] = [
   {
-    label: "Scroll",
-    value: "scroll",
+    label: 'Scroll',
+    value: 'scroll',
   },
   {
-    label: "Fade",
-    value: "fade",
+    label: 'Fade',
+    value: 'fade',
   },
   {
-    label: "Reveal",
-    value: "reveal",
+    label: 'Reveal',
+    value: 'reveal',
   },
   {
-    label: "Stack",
-    value: "stack",
+    label: 'Stack',
+    value: 'stack',
   },
   {
-    label: "Mask",
-    value: "mask",
+    label: 'Mask',
+    value: 'mask',
   },
   {
-    label: "Custom",
-    value: "custom",
+    label: 'Custom',
+    value: 'custom',
   },
 ];
 
-export function ScrollingSlideTypeField({
-  value,
-  onChange,
-}: ScrollingSlideTypeFieldProps) {
+export function ScrollingSlideTypeField({ value, onChange }: ScrollingSlideTypeFieldProps) {
   return (
     <SilkeBox gap="s" wrap>
       {SLIDE_TYPES.map((item) => (
@@ -66,8 +63,8 @@ type TileProps = {
 
 function Tile({ label, type, selected, onSelect }: TileProps) {
   let cl = styles.tile;
-  cl += " " + styles[type];
-  if (selected) cl += " " + styles.selected;
+  cl += ' ' + styles[type];
+  if (selected) cl += ' ' + styles.selected;
 
   return (
     <SilkeBox
@@ -78,7 +75,7 @@ function Tile({ label, type, selected, onSelect }: TileProps) {
       gap="xs"
       size="xl"
       onClick={() => onSelect(type)}
-      onKeyPress={(e: KeyboardEvent) => e.key === "Enter" && onSelect(type)}
+      onKeyPress={(e: KeyboardEvent) => e.key === 'Enter' && onSelect(type)}
     >
       <div className={styles.preview}>
         <div className={styles.slide}>

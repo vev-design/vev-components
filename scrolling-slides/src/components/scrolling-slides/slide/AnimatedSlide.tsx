@@ -1,7 +1,7 @@
-import React, { useMemo, useRef } from "react";
-import { useViewAnimation } from "../../../hooks";
-import styles from "../ScrollingSlide.module.css";
-import { BaseSlide, BaseSlideProps } from "./BaseSlide";
+import React, { useRef } from 'react';
+import { useViewAnimation } from '../../../hooks';
+import styles from '../ScrollingSlide.module.css';
+import { BaseSlide, BaseSlideProps } from './BaseSlide';
 
 type AnimatedSlideProps = BaseSlideProps & {
   keyframes: Keyframe[];
@@ -21,7 +21,7 @@ export function AnimatedSlide({
 }: AnimatedSlideProps) {
   const ref = useRef<HTMLDivElement>(null);
   let cl = styles.content;
-  if (selected) cl += " " + styles.selected;
+  if (selected) cl += ' ' + styles.selected;
   const transitionCount = slideCount - 1;
   let fromOffset = (index - 1) / transitionCount;
   let toOffset = index / transitionCount;
@@ -57,10 +57,10 @@ export function AnimatedSlide({
     timeline,
     selected || disableAnimation,
     {
-      easing: settings?.easing || "linear",
+      easing: settings?.easing || 'linear',
     },
     fromOffset,
-    toOffset
+    toOffset,
   );
   return (
     <BaseSlide

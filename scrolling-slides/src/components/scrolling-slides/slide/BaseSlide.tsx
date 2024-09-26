@@ -1,7 +1,7 @@
-import React, { ForwardedRef } from "react";
+import React, { ForwardedRef } from 'react';
 
-import styles from "../ScrollingSlide.module.css";
-import { WidgetNode } from "@vev/react";
+import styles from '../ScrollingSlide.module.css';
+import { WidgetNode } from '@vev/react';
 
 export type BaseSlideProps = {
   id: string;
@@ -17,10 +17,10 @@ export type BaseSlideProps = {
 export const BaseSlide = React.forwardRef(
   (
     { selected, id, index, settings, slideCount, style }: BaseSlideProps,
-    ref: ForwardedRef<HTMLDivElement>
+    ref: ForwardedRef<HTMLDivElement>,
   ) => {
     let cl = styles.content;
-    if (selected) cl += " " + styles.selected;
+    if (selected) cl += ' ' + styles.selected;
     return (
       <div
         className={cl}
@@ -35,5 +35,5 @@ export const BaseSlide = React.forwardRef(
         <WidgetNode id={id} />
       </div>
     );
-  }
+  },
 );

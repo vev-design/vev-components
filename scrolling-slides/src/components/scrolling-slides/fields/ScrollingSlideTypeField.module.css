@@ -1,144 +1,147 @@
 .tile {
-  background: transparent;
+    background: transparent;
 }
+
 .tile:hover .slide {
-  animation-iteration-count: infinite;
+    animation-iteration-count: infinite;
 }
 
 .tile.selected .preview {
-  border: 1px solid var(--color-neutral-60);
+    border: 1px solid var(--color-neutral-60);
 }
 
 .tile:not(.selected):focus-visible .preview {
-  border: 1px solid var(--color-neutral-40);
+    border: 1px solid var(--color-neutral-40);
 }
+
 .preview {
-  display: grid;
-  grid-template-columns: 1fr;
-  width: 48px;
-  height: 38px;
-  border-radius: 4px;
-  overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 48px;
+    height: 38px;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
 .slide {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  grid-area: 1/1;
-  width: 100%;
-  height: 100%;
-  margin: 0 0;
-  background: var(--color-neutral-20);
-  font-size: 24px;
-  animation-fill-mode: forwards;
-  animation-duration: 1s;
-  animation-direction: alternate-reverse;
-  animation-iteration-count: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-area: 1/1;
+    width: 100%;
+    height: 100%;
+    margin: 0 0;
+    background: var(--color-neutral-20);
+    font-size: 24px;
+    animation-fill-mode: forwards;
+    animation-duration: 1s;
+    animation-direction: alternate-reverse;
+    animation-iteration-count: 0;
 }
+
 .slide:last-child {
-  background: var(--color-neutral-30);
+    background: var(--color-neutral-30);
 }
 
 .fade .slide:last-child {
-  animation-name: fade;
-  opacity: 0;
+    animation-name: fade;
+    opacity: 0;
 }
 
 .reveal .slide:last-child {
-  animation-name: horizontalReveal;
-  clip-path: inset(0 100% 0 0);
+    animation-name: horizontalReveal;
+    clip-path: inset(0 100% 0 0);
 }
 
 .scroll .slide {
-  animation-name: scroll;
-  --offset: 0%;
+    animation-name: scroll;
+    --offset: 0%;
 }
 
 .scroll .slide:last-child {
-  --offset: 100%;
+    --offset: 100%;
 }
 
 .stack .slide:last-child {
-  animation-name: stack;
+    animation-name: stack;
 }
 
 .mask .slide:last-child {
-  animation-name: mask;
+    animation-name: mask;
 }
 
 .scale .slide:last-child {
-  animation-name: scale;
+    animation-name: scale;
 }
 
 .custom .slide:last-child {
-  animation-name: custom;
+    animation-name: custom;
 }
 
 @keyframes fade {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
 }
 
 @keyframes horizontalReveal {
-  0% {
-    clip-path: inset(0 100% 0 0);
-  }
-  100% {
-    clip-path: inset(0 0 0 0);
-  }
+    0% {
+        clip-path: inset(0 100% 0 0);
+    }
+    100% {
+        clip-path: inset(0 0 0 0);
+    }
 }
 
 @keyframes scroll {
-  0% {
-    transform: translateX(var(--offset));
-  }
-  100% {
-    transform: translateX(calc(var(--offset) - 100%));
-  }
+    0% {
+        transform: translateX(var(--offset));
+    }
+    100% {
+        transform: translateX(calc(var(--offset) - 100%));
+    }
 }
 
 @keyframes stack {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-100%);
-  }
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-100%);
+    }
 }
 
 @keyframes mask {
-  0% {
-    clip-path: circle(0% at 50% 50%);
-  }
-  100% {
-    clip-path: circle(100% at 50% 50%);
-  }
+    0% {
+        clip-path: circle(0% at 50% 50%);
+    }
+    100% {
+        clip-path: circle(100% at 50% 50%);
+    }
 }
 
 @keyframes scale {
-  0% {
-    opacity: 0;
-    transform: scale(1.5);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+    0% {
+        opacity: 0;
+        transform: scale(1.5);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes custom {
-  0% {
-    transform: rotate(0deg);
-    clip-path: polygon(0 0, 0% 0, 0% 0%, 0% 0%);
-  }
+    0% {
+        transform: rotate(0deg);
+        clip-path: polygon(0 0, 0% 0, 0% 0%, 0% 0%);
+    }
 
-  100% {
-    transform: rotate(360deg);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
-  }
+    100% {
+        transform: rotate(360deg);
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+    }
 }

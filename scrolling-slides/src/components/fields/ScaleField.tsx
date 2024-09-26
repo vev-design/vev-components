@@ -1,11 +1,11 @@
-import { SilkeBox, SilkeButton, SilkeCssNumberField } from "@vev/silke";
-import React from "react";
-import { FIELD_WIDTH } from "../animation";
-import { KeyframeFieldProps, toPercentString } from "./utils";
+import { SilkeBox, SilkeButton, SilkeCssNumberField } from '@vev/silke';
+import React from 'react';
+import { FIELD_WIDTH } from '../animation';
+import { KeyframeFieldProps, toPercentString } from './utils';
 
 export function ScaleField({ value, onChange }: KeyframeFieldProps) {
-  let [x, y] = value?.split(" ") || [];
-  if (!x) x = "1";
+  let [x, y] = value?.split(' ') || [];
+  if (!x) x = '1';
   const locked = !y;
   if (!y) y = x;
   return (
@@ -15,9 +15,7 @@ export function ScaleField({ value, onChange }: KeyframeFieldProps) {
         value={toPercentString(x)}
         width={FIELD_WIDTH - 16}
         onChange={(x) =>
-          locked
-            ? onChange(`${parseInt(x) / 100}`)
-            : onChange(`${parseInt(x) / 100} ${y}`)
+          locked ? onChange(`${parseInt(x) / 100}`) : onChange(`${parseInt(x) / 100} ${y}`)
         }
       />
       <SilkeButton
@@ -35,9 +33,7 @@ export function ScaleField({ value, onChange }: KeyframeFieldProps) {
         value={toPercentString(y)}
         width={FIELD_WIDTH - 16}
         onChange={(y) =>
-          locked
-            ? onChange(`${parseInt(y) / 100}`)
-            : onChange(`${x} ${parseInt(y) / 100}`)
+          locked ? onChange(`${parseInt(y) / 100}`) : onChange(`${x} ${parseInt(y) / 100}`)
         }
       />
       <SilkeButton
