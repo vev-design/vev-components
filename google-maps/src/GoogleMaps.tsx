@@ -84,7 +84,6 @@ const MapsAutoComplete = (props) => {
         setSearch(value);
       }}
       onSearch={setSearch}
-      value={search}
       items={predictions.map((prediction) => {
         return {
           value: prediction.description,
