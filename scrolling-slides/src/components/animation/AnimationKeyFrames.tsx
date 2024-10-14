@@ -1,12 +1,7 @@
-import {
-  SilkeBox,
-  SilkeButton,
-  SilkeCssNumberField,
-  SilkeTitle,
-} from "@vev/silke";
-import React, { useMemo, useState } from "react";
-import { AnimationKeyframe } from "../../utils";
-import { KeyFrame } from "./AnimationKeyFrame";
+import { SilkeBox, SilkeButton, SilkeCssNumberField, SilkeTitle } from '@vev/silke';
+import React, { useMemo, useState } from 'react';
+import { AnimationKeyframe } from '../../utils';
+import { KeyFrame } from './AnimationKeyFrame';
 
 function calculateFrameOffsets(frames: AnimationKeyframe[]): number[] {
   const res = frames.map((f) => f.offset);
@@ -18,7 +13,7 @@ function calculateFrameOffsets(frames: AnimationKeyframe[]): number[] {
   for (let i = 1; i < res.length; i++) {
     const offset = res[i];
     if (offset === undefined) {
-      let indexAfter = i + 1 + res.slice(i + 1).findIndex(Boolean);
+      const indexAfter = i + 1 + res.slice(i + 1).findIndex(Boolean);
       const len = indexAfter - indexBefore;
       const offsetBefore = res[indexBefore] as number;
       const offsetAfter = res[indexAfter] as number;
@@ -54,8 +49,8 @@ export function AnimationKeyFrames({
           <div
             style={{
               width: 1,
-              position: "absolute",
-              backgroundColor: "white",
+              position: 'absolute',
+              backgroundColor: 'white',
               top: 11,
               bottom: 13,
               right: 13,
@@ -66,11 +61,7 @@ export function AnimationKeyFrames({
               key={index}
               kind="ghost"
               size="s"
-              label={
-                <div style={{ width: 30 }}>
-                  {Math.round(offsets * 100) + "%"}
-                </div>
-              }
+              label={<div style={{ width: 30 }}>{Math.round(offsets * 100) + '%'}</div>}
               selected={selectedIndex === index}
               onClick={() => setSelectedIndex(index)}
               icon="dot"
@@ -96,17 +87,13 @@ export function AnimationKeyFrames({
           <SilkeCssNumberField
             width={50}
             min={selectedIndex === 0 ? 0 : prevOffset * 100 + 1}
-            max={
-              selectedIndex === frames.length - 1 ? 100 : nextOffset * 100 - 1
-            }
-            value={Math.round(selectedOffset * 100) + "%"}
+            max={selectedIndex === frames.length - 1 ? 100 : nextOffset * 100 - 1}
+            value={Math.round(selectedOffset * 100) + '%'}
             onChange={(offset) =>
               onChange(
                 frames.map((f, i) =>
-                  i === selectedIndex
-                    ? { ...f, offset: parseInt(offset) / 100 }
-                    : f
-                )
+                  i === selectedIndex ? { ...f, offset: parseInt(offset) / 100 } : f,
+                ),
               )
             }
           />
@@ -116,8 +103,7 @@ export function AnimationKeyFrames({
             icon="delete"
             disabled={frames.length === 2}
             onClick={() => {
-              if (selectedIndex === frames.length - 1)
-                setSelectedIndex(selectedIndex - 1);
+              if (selectedIndex === frames.length - 1) setSelectedIndex(selectedIndex - 1);
               onChange(frames.filter((f, i) => i !== selectedIndex));
             }}
           />

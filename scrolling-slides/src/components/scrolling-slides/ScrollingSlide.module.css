@@ -1,78 +1,83 @@
 @property --slide-offset {
-  syntax: "<number>";
-  initial-value: 1;
-  inherits: false;
+    syntax: "<number>";
+    initial-value: 1;
+    inherits: false;
 }
 
 @property --mask-x {
-  syntax: "<number>";
-  initial-value: 0.5;
-  inherits: false;
+    syntax: "<number>";
+    initial-value: 0.5;
+    inherits: false;
 }
 
 @property --mask-y {
-  syntax: "<number>";
-  initial-value: 0.5;
-  inherits: false;
+    syntax: "<number>";
+    initial-value: 0.5;
+    inherits: false;
 }
 
 @property --slide-scale {
-  syntax: "<number>";
-  initial-value: 0.5;
-  inherits: false;
+    syntax: "<number>";
+    initial-value: 0.5;
+    inherits: false;
 }
 
 :host {
-  contain: paint;
+    contain: paint;
 }
+
 .wrapper {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  overflow: clip;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    overflow: clip;
 }
+
 @supports not (overflow: clip) {
-  .wrapper {
-    clip-path: inset(0 0 0 0);
-  }
+    .wrapper {
+        clip-path: inset(0 0 0 0);
+    }
 }
 
 .wrapper.row {
-  flex-direction: row;
-  width: calc(var(--slide-count) * 100%);
+    flex-direction: row;
+    width: calc(var(--slide-count) * 100%);
 }
 
 .wrapper.reverse {
-  flex-direction: row-reverse;
+    flex-direction: row-reverse;
 }
+
 .wrapper.column {
-  flex-direction: column;
+    flex-direction: column;
 }
 
 .wrapper.grid {
-  display: grid;
+    display: grid;
 }
+
 .grid .content {
-  margin: 0;
-  grid-area: 1/1;
+    margin: 0;
+    grid-area: 1/1;
 }
 
 .wrapper.edit-slides {
-  display: grid;
+    display: grid;
 }
+
 .edit-slides .content {
-  grid-area: 1/1;
-  position: static;
-  margin: 0 0;
+    grid-area: 1/1;
+    position: static;
+    margin: 0 0;
 }
 
 .content {
-  position: sticky;
-  top: 0;
-  height: 100%;
-  max-height: 100vh;
-  max-width: 100vw;
-  min-width: calc(100% / var(--slide-count));
-  width: 100%;
+    position: sticky;
+    top: 0;
+    height: 100%;
+    max-height: 100vh;
+    max-width: 100vw;
+    min-width: calc(100% / var(--slide-count));
+    width: 100%;
 }

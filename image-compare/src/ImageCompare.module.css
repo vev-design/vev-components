@@ -1,0 +1,29 @@
+.wrapper {
+  height: 100%;
+  overflow: hidden;
+}
+
+.handle {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.handleBar {
+  height: 100%;
+  background: white;
+  width: 5px;
+}
+
+.iconWrapper {
+  padding: 10px;
+}
+
+.icon {
+  min-height: 100%;
+  cursor: ew-resize;
+  fill: white;
+  width: 15px;
+  height: 15px;
+}
+

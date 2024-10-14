@@ -1,1 +1,1 @@
-export * from "./AnimationForm";
+export * from './AnimationForm';

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useRef } from "react";
 import { useViewAnimation } from "../../../hooks";
 import styles from "../ScrollingSlide.module.css";
 import { BaseSlide, BaseSlideProps } from "./BaseSlide";
@@ -72,7 +72,7 @@ export function AnimatedSlide({
       timeline={timeline}
       settings={settings}
       disabled={disabled}
-      style={style}
+      style={{ ...style, ...(keyframes[0] as any) }}
     />
   );
 }

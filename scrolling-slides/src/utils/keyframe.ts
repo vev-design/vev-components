@@ -1,14 +1,10 @@
 export enum AnimationType {
-  scroll = "scroll",
-  visible = "visible",
-  hover = "hover",
+  scroll = 'scroll',
+  visible = 'visible',
+  hover = 'hover',
 }
 
-export type TimelineRange =
-  | "entry-crossing"
-  | "exit-crossing"
-  | "entry"
-  | "exit";
+export type TimelineRange = 'entry-crossing' | 'exit-crossing' | 'entry' | 'exit';
 
 export type AnimationKeyframe = {
   offset?: number;
@@ -34,9 +30,9 @@ export type VevAnimation = {
 
 export function createCSSKeyframe(keyframe: AnimationKeyframe): Keyframe {
   const result: Keyframe = {};
-  if (typeof keyframe.offset === "number") result.offset = keyframe.offset;
+  if (typeof keyframe.offset === 'number') result.offset = keyframe.offset;
   for (const key in keyframe) {
-    if (key === "offset") continue;
+    if (key === 'offset') continue;
     result[key] = keyframe[key as keyof AnimationKeyframe] as string;
   }
   return result;
@@ -44,13 +40,13 @@ export function createCSSKeyframe(keyframe: AnimationKeyframe): Keyframe {
 
 const willChangeAttr: Record<keyof AnimationKeyframe, string | false> = {
   offset: false,
-  translate: "translate",
-  opacity: "opacity",
-  clipPath: "clip-path",
-  rotate: "rotate",
-  scale: "scale",
-  color: "color",
-  backgroundColor: "background-color",
+  translate: 'translate',
+  opacity: 'opacity',
+  clipPath: 'clip-path',
+  rotate: 'rotate',
+  scale: 'scale',
+  color: 'color',
+  backgroundColor: 'background-color',
 };
 
 export function getWillChange(keyframes: AnimationKeyframe[]): string[] {
@@ -65,12 +61,13 @@ export function getWillChange(keyframes: AnimationKeyframe[]): string[] {
 }
 
 const OFFSET_RANGE = 0.5;
+
 export function listenForAnimationRange(
   el: HTMLElement,
   rangeName: string,
   offset: number,
   viewTimeline: ViewTimeline,
-  cb: () => void
+  cb: () => void,
 ) {
   if (offset === 1) offset -= OFFSET_RANGE;
   const animation = el.animate(
@@ -80,7 +77,7 @@ export function listenForAnimationRange(
       timeline: viewTimeline,
       rangeStart: `${rangeName} ${offset * 100}%`,
       rangeEnd: `${rangeName} ${(offset + OFFSET_RANGE) * 100}%`,
-    }
+    },
   );
 
   animation.onfinish = cb;
