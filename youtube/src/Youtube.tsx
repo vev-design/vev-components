@@ -146,7 +146,7 @@ const Youtube = ({ videoId, settings }: Props) => {
     }
 
     window.onYouTubeIframeAPIReady = () => {
-      if (!playerRef.current && YT) {
+      if (!playerRef.current && YT && ref.current) {
         playerRef.current = new YT.Player(ref.current, {
           events: {
             onStateChange: onPlayerStateChange,
