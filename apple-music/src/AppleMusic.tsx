@@ -47,7 +47,7 @@ registerVevComponent(AppleMusic, {
       initialValue: initialLink,
       options: {
         multiline: true,
-      }
+      },
     },
   ],
   icon: './apple-logo',

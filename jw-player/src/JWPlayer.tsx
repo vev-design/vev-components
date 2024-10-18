@@ -224,16 +224,18 @@ registerVevComponent(JWPlayer, {
       initialValue: 'uniform',
     },
     {
-      name: "address",
-      type: "string",
+      name: 'address',
+      type: 'string',
       component: (props) => {
-        return <SilkeNotification
-          dark
-          kind="information"
-          subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
-        />
-      }
-    }
+        return (
+          <SilkeNotification
+            dark
+            kind="information"
+            subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
+          />
+        );
+      },
+    },
   ],
   type: 'both',
 });

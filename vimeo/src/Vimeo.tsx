@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import styles from "./Vimeo.module.css";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import styles from './Vimeo.module.css';
 import {
   registerVevComponent,
   useEditorState,
   useVisible,
   useDispatchVevEvent,
   useVevEvent,
-} from "@vev/react";
-import { SilkeTextField, SilkeBox, SilkeTextSmall } from "@vev/silke";
+} from '@vev/react';
+import { SilkeTextField, SilkeBox, SilkeTextSmall } from '@vev/silke';
 
-import Player from "@vimeo/player";
-import { Events, Interaction } from "./interactions";
+import Player from '@vimeo/player';
+import { Events, Interaction } from './interactions';
 
-const defaultVideoUrl = "https://vimeo.com/571600783";
-const defaultVideoId = "571600783";
+const defaultVideoUrl = 'https://vimeo.com/571600783';
+const defaultVideoId = '571600783';
 
 type Props = {
   videoInfo: {
@@ -33,24 +33,16 @@ type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
-function getVimeoUrl(
-  videoId,
-  autoplay,
-  loop,
-  mute,
-  disableControls,
-  background,
-  disabled
-) {
-  const params = ["byline=1"];
+function getVimeoUrl(videoId, autoplay, loop, mute, disableControls, background, disabled) {
+  const params = ['byline=1'];
 
-  if (autoplay && !disabled) params.push("autoplay=1", "muted=1");
-  else if (mute) params.push("muted=1");
-  if (loop) params.push("loop=1");
-  if (disableControls) params.push("controls=0");
-  if (background) params.push("background=1");
+  if (autoplay && !disabled) params.push('autoplay=1', 'muted=1');
+  else if (mute) params.push('muted=1');
+  if (loop) params.push('loop=1');
+  if (disableControls) params.push('controls=0');
+  if (background) params.push('background=1');
 
-  return `https://player.vimeo.com/video/${videoId}?${params.join("&")}`;
+  return `https://player.vimeo.com/video/${videoId}?${params.join('&')}`;
 }
 
 function LazyLoad({ hostRef, children }) {
@@ -66,7 +58,7 @@ const VimeoUrl = (props) => {
 
   useEffect(() => {
     try {
-      fetch("https://vimeo.com/api/oembed.json?url=" + fullUrl).then((raw) => {
+      fetch('https://vimeo.com/api/oembed.json?url=' + fullUrl).then((raw) => {
         raw
           .json()
           .then((res) => {
@@ -79,11 +71,11 @@ const VimeoUrl = (props) => {
             }
           })
           .catch(() => {
-            setError("Invalid Vimeo URL");
+            setError('Invalid Vimeo URL');
           });
       });
     } catch (e) {
-      setError("Invalid Vimeo URL");
+      setError('Invalid Vimeo URL');
       props.onChange({
         fullUrl,
         videoId: defaultVideoId,
@@ -92,7 +84,7 @@ const VimeoUrl = (props) => {
   }, [fullUrl]);
 
   return (
-    <SilkeBox column gap="s" fill style={{ marginBottom: "16px" }}>
+    <SilkeBox column gap="s" fill style={{ marginBottom: '16px' }}>
       <SilkeBox>
         <SilkeTextField
           label="Video URL"
@@ -174,31 +166,29 @@ const Vimeo = ({
   useEffect(() => {
     try {
       if (iframeRef.current) {
-        const iframe = document.querySelector("iframe");
+        const iframe = document.querySelector('iframe');
         const player = new Player(iframe);
 
         if (fill) {
-          Promise.all([player.getVideoWidth(), player.getVideoHeight()]).then(
-            ([width, height]) => {
-              setAspectRatio(width / height);
-            }
-          );
+          Promise.all([player.getVideoWidth(), player.getVideoHeight()]).then(([width, height]) => {
+            setAspectRatio(width / height);
+          });
         }
         playerRef.current = player;
 
-        player.on("play", () => {
+        player.on('play', () => {
           dispatch(Events.ON_PLAY);
         });
 
-        player.on("pause", () => {
+        player.on('pause', () => {
           dispatch(Events.ON_PAUSE);
         });
 
-        player.on("ended", () => {
+        player.on('ended', () => {
           dispatch(Events.ON_END);
         });
 
-        player.on("timeupdate", (event) => {
+        player.on('timeupdate', (event) => {
           const currentSec = Math.floor(event.seconds);
 
           if (currentSec !== currentTime.current) {
@@ -213,7 +203,7 @@ const Vimeo = ({
   }, [iframeRef, fill]);
 
   let cl = styles.wrapper;
-  if (fill) cl += " " + styles.fill;
+  if (fill) cl += ' ' + styles.fill;
 
   const iframe = (
     <iframe
@@ -222,10 +212,10 @@ const Vimeo = ({
       style={
         fill && aspectRatio
           ? {
-              minWidth: "100%",
-              minHeight: "100%",
-              width: "auto",
-              height: "auto",
+              minWidth: '100%',
+              minHeight: '100%',
+              width: 'auto',
+              height: 'auto',
               aspectRatio,
             }
           : null
@@ -237,7 +227,7 @@ const Vimeo = ({
         mute,
         disableControls,
         background,
-        disabled
+        disabled,
       )}
       id={`vimeo-${videoInfo.videoId}`}
       width="100%"
@@ -249,30 +239,26 @@ const Vimeo = ({
   );
   return (
     <div className={cl}>
-      {lazy && !disabled ? (
-        <LazyLoad hostRef={hostRef}>{iframe}</LazyLoad>
-      ) : (
-        iframe
-      )}
+      {lazy && !disabled ? <LazyLoad hostRef={hostRef}>{iframe}</LazyLoad> : iframe}
     </div>
   );
 };
 
 registerVevComponent(Vimeo, {
-  name: "Vimeo",
+  name: 'Vimeo',
   props: [
     {
-      title: "Vimeo Link",
-      name: "videoInfo",
-      type: "object",
+      title: 'Vimeo Link',
+      name: 'videoInfo',
+      type: 'object',
       fields: [
         {
-          name: "fullUrl",
-          type: "string",
+          name: 'fullUrl',
+          type: 'string',
         },
         {
-          name: "videoId",
-          type: "string",
+          name: 'videoId',
+          type: 'string',
         },
       ],
       initialValue: {
@@ -282,40 +268,40 @@ registerVevComponent(Vimeo, {
       component: VimeoUrl,
     },
     {
-      title: "Settings",
-      name: "settings",
-      type: "object",
+      title: 'Settings',
+      name: 'settings',
+      type: 'object',
       fields: [
         {
-          title: "Autoplay",
-          name: "autoplay",
-          type: "boolean",
+          title: 'Autoplay',
+          name: 'autoplay',
+          type: 'boolean',
           initialValue: false,
         },
         {
-          title: "Lazy load",
-          name: "lazy",
-          type: "boolean",
+          title: 'Lazy load',
+          name: 'lazy',
+          type: 'boolean',
           initialValue: false,
         },
-        { title: "Mute", name: "mute", type: "boolean", initialValue: false },
+        { title: 'Mute', name: 'mute', type: 'boolean', initialValue: false },
         {
-          title: "Hide controls",
-          name: "disableControls",
-          type: "boolean",
+          title: 'Hide controls',
+          name: 'disableControls',
+          type: 'boolean',
           initialValue: false,
         },
-        { title: "Loop", name: "loop", type: "boolean", initialValue: false },
+        { title: 'Loop', name: 'loop', type: 'boolean', initialValue: false },
         {
-          title: "Use as background",
-          name: "background",
-          type: "boolean",
+          title: 'Use as background',
+          name: 'background',
+          type: 'boolean',
           initialValue: false,
         },
         {
-          title: "Fill container",
-          name: "fill",
-          type: "boolean",
+          title: 'Fill container',
+          name: 'fill',
+          type: 'boolean',
           initialValue: false,
         },
       ],
@@ -324,24 +310,24 @@ registerVevComponent(Vimeo, {
   events: [
     {
       type: Events.ON_PLAY,
-      description: "On play",
+      description: 'On play',
     },
     {
       type: Events.ON_PAUSE,
-      description: "On pause",
+      description: 'On pause',
     },
     {
       type: Events.ON_END,
-      description: "On end",
+      description: 'On end',
     },
     {
       type: Events.CURRENT_TIME,
-      description: "On play time",
+      description: 'On play time',
       args: [
         {
-          name: "currentTime",
-          description: "currentTime",
-          type: "number",
+          name: 'currentTime',
+          description: 'currentTime',
+          type: 'number',
         },
       ],
     },
@@ -350,40 +336,40 @@ registerVevComponent(Vimeo, {
   interactions: [
     {
       type: Interaction.PLAY,
-      description: "Play",
+      description: 'Play',
     },
     {
       type: Interaction.RESTART,
-      description: "Restart",
+      description: 'Restart',
     },
     {
       type: Interaction.TOGGLE_PLAY,
-      description: "Toggle play",
+      description: 'Toggle play',
     },
     {
       type: Interaction.PAUSE,
-      description: "Pause",
+      description: 'Pause',
     },
     {
       type: Interaction.MUTE,
-      description: "Mute",
+      description: 'Mute',
     },
     {
       type: Interaction.UNMUTE,
-      description: "Unmute",
+      description: 'Unmute',
     },
     {
       type: Interaction.TOGGLE_SOUND,
-      description: "Toggle sound",
+      description: 'Toggle sound',
     },
   ],
   editableCSS: [
     {
       selector: styles.frame,
-      properties: ["background", "border-radius", "border", "filter"],
+      properties: ['background', 'border-radius', 'border', 'filter'],
     },
   ],
-  type: "both",
+  type: 'both',
 });
 
 export default Vimeo;

@@ -46,7 +46,7 @@ registerVevComponent(Tidal, {
       initialValue: initialLink,
       options: {
         multiline: true,
-      }
+      },
     },
   ],
 });

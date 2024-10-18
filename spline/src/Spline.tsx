@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
-import styles from "./Spline.module.css";
-import { registerVevComponent } from "@vev/react";
+import React, { useEffect, useRef } from 'react';
+import styles from './Spline.module.css';
+import { registerVevComponent } from '@vev/react';
 import SplineViewer from '@splinetool/react-spline';
 
 type Props = {
@@ -9,9 +9,9 @@ type Props = {
 };
 
 const Spline = ({
-  sceneUrl = "https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode",
+  sceneUrl = 'https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode',
 }: Props) => {
-  if (sceneUrl.includes("my.spline.design")) {
+  if (sceneUrl.includes('my.spline.design')) {
     return (
       <iframe
         className={styles.wrapper}
@@ -33,34 +33,34 @@ const Spline = ({
 };
 
 registerVevComponent(Spline, {
-  name: "Spline",
+  name: 'Spline',
   emptyState: {
-    linkText: "Add URL",
-    description: " to your Spline scene",
-    checkProperty: "sceneUrl",
-    action: "OPEN_PROPERTIES",
+    linkText: 'Add URL',
+    description: ' to your Spline scene',
+    checkProperty: 'sceneUrl',
+    action: 'OPEN_PROPERTIES',
   },
   description:
-    "Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.",
+    'Embed interactive experiences made with Spline into your Vev project by copying the public URL in Spline and inserting it into the Spline element.',
   props: [
     {
-      name: "sceneUrl",
-      title: "Spline Scene URL",
-      type: "string",
+      name: 'sceneUrl',
+      title: 'Spline Scene URL',
+      type: 'string',
       options: {
-        type: "text",
+        type: 'text',
         multiline: true,
       },
     },
   ],
   editableCSS: [
     {
-      title: "Spline",
+      title: 'Spline',
       selector: styles.wrapper,
-      properties: ["background", "border-radius", "border", "filter"],
+      properties: ['background', 'border-radius', 'border', 'filter'],
     },
   ],
-  type: "both",
+  type: 'both',
 });
 
 export default Spline;
