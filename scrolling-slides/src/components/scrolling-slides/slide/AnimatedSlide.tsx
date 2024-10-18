@@ -72,7 +72,10 @@ export function AnimatedSlide({
       timeline={timeline}
       settings={settings}
       disabled={disabled}
-      style={{ ...style, ...(keyframes[0] as any) }}
+      style={{
+        ...style,
+        ...(!disabled && index !== 0 ? (keyframes[0] as any) : {}),
+      }}
     />
   );
 }
