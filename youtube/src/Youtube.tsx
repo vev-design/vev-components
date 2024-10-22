@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import styles from './Youtube.module.css';
 import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
+import getManager from './video-manager';
+import OnStateChangeEvent = YT.OnStateChangeEvent;
 
 type Props = {
   videoId: string;
@@ -11,14 +13,8 @@ type Props = {
     loop: boolean;
     lockAspectRatio: boolean;
   };
+  hostRef: React.RefObject<HTMLDivElement>;
 };
-
-declare global {
-  const YT: any;
-  interface Window {
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
 
 function youTubeParseUrl(url = ''): string {
   const regexp =
@@ -46,22 +42,46 @@ enum YoutubeEvent {
   currentTime = 'currentTime',
 }
 
-const Youtube = ({ videoId, settings }: Props) => {
+const Youtube = ({ videoId, settings, hostRef }: Props) => {
   // Default values
   const autoplay = settings?.autoplay;
   const hideControls = settings?.hideControls;
   const hideFullScreen = settings?.hideFullScreen;
   const loop = settings?.loop;
   const lockAspectRatio = settings?.lockAspectRatio;
+  const playerState = useRef<YT.PlayerState>(2);
+
+  // Add a random number to the ID in case the page contains the same video multiple times
+  const playerId = useRef(Math.floor(Math.random() * 2000));
 
   const { disabled } = useEditorState();
-  const ref = useRef<HTMLIFrameElement>(null);
-  const playerRef = useRef<any>(null);
   const currentTimeRef = useRef<number>();
   const dispatch = useDispatchVevEvent();
 
-  function onPlayerStateChange(event) {
+  const cleanVideoId = useMemo(() => {
+    return youTubeParseUrl(videoId);
+  }, [videoId]);
+
+  const managedId = `${cleanVideoId}_${playerId.current}`;
+
+  const onRefChange = useCallback(
+    (node: HTMLIFrameElement) => {
+      // iframe is mounted
+      if (node) {
+        const manager = getManager();
+        manager.registerPlayer({
+          videoId: managedId,
+          el: node,
+          onPlayerStateChange,
+        });
+      }
+    },
+    [managedId],
+  );
+
+  function onPlayerStateChange(event: OnStateChangeEvent) {
     if (typeof YT === 'undefined') return;
+    playerState.current = event.data;
     switch (event.data) {
       case YT.PlayerState.PLAYING:
         dispatch(YoutubeEvent.onPlay);
@@ -75,51 +95,57 @@ const Youtube = ({ videoId, settings }: Props) => {
     }
   }
 
-  function getPlayer() {
-    if (typeof YT === 'undefined') return;
-    if (playerRef.current === null) {
-      playerRef.current = new YT.Player(ref.current, {
-        events: {
-          onStateChange: onPlayerStateChange,
-        },
-      });
-    }
-
-    return playerRef.current;
+  async function getPlayer() {
+    return await getManager().getPlayer(managedId);
   }
 
-  useVevEvent(YoutubeInteraction.play, () => getPlayer()?.playVideo());
-  useVevEvent(YoutubeInteraction.togglePlay, () => {
-    const player = getPlayer();
-    if (player && YT) {
-      switch (player.getPlayerState()) {
-        case YT.PlayerState.PLAYING:
-          player.pauseVideo();
-          break;
-        case YT.PlayerState.PAUSED:
-          player.playVideo();
-          break;
-        case YT.PlayerState.ENDED:
-          player.seekTo(0);
-          player.playVideo();
-          break;
-      }
+  useVevEvent(YoutubeInteraction.play, async () => {
+    (await getPlayer())?.playVideo();
+  });
+  useVevEvent(YoutubeInteraction.togglePlay, async () => {
+    const player = await getPlayer();
+    switch (playerState.current) {
+      case YT.PlayerState.PLAYING:
+        player.pauseVideo();
+        break;
+      case YT.PlayerState.PAUSED:
+        player.playVideo();
+        break;
+      case YT.PlayerState.CUED:
+        player.playVideo();
+        break;
+      case YT.PlayerState.ENDED:
+        player.seekTo(0, false);
+        player.playVideo();
+        break;
     }
   });
-  useVevEvent(YoutubeInteraction.restart, () => getPlayer()?.seekTo());
-  useVevEvent(YoutubeInteraction.pause, () => getPlayer()?.pauseVideo());
+  useVevEvent(YoutubeInteraction.restart, async () => (await getPlayer())?.seekTo(0, true));
+  useVevEvent(YoutubeInteraction.pause, async () => (await getPlayer())?.pauseVideo());
 
-  useVevEvent(YoutubeInteraction.mute, () => getPlayer()?.mute());
-  useVevEvent(YoutubeInteraction.unMute, () => getPlayer()?.unMute());
-  useVevEvent(YoutubeInteraction.toggleSound, () =>
-    getPlayer()?.isMuted() ? getPlayer()?.unMute() : getPlayer()?.mute(),
-  );
+  useVevEvent(YoutubeInteraction.mute, async () => (await getPlayer())?.mute());
+  useVevEvent(YoutubeInteraction.unMute, async () => (await getPlayer())?.unMute());
+  useVevEvent(YoutubeInteraction.toggleSound, async () => {
+    const player = await getPlayer();
+    return player?.isMuted() ? player?.unMute() : player?.mute();
+  });
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (playerRef.current && playerRef.current.getCurrentTime) {
-        const currentTime = Math.floor(playerRef.current.getCurrentTime());
+    async function handlePreview() {
+      const player = await getPlayer();
+      if (!player) return;
+      if (!player.pauseVideo) return;
+      if (disabled) player.pauseVideo();
+      else if (autoplay) player.playVideo();
+    }
+    handlePreview();
+  }, [disabled]);
 
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const player = await getPlayer();
+      if (player && player.getCurrentTime) {
+        const currentTime = Math.floor(player.getCurrentTime());
         if (currentTime !== currentTimeRef.current) {
           currentTimeRef.current = currentTime;
           dispatch(YoutubeEvent.currentTime, {
@@ -127,42 +153,12 @@ const Youtube = ({ videoId, settings }: Props) => {
           });
         }
       }
-    }, 100);
+    }, 500);
 
     return () => {
       clearInterval(interval);
     };
   }, [dispatch]);
-
-  useEffect(() => {
-    const iframe = ref.current;
-    if (!iframe) return;
-
-    if (typeof YT === 'undefined') {
-      const tag = document.createElement('script');
-
-      tag.src = 'https://www.youtube.com/iframe_api';
-      document.body.appendChild(tag);
-    }
-
-    window.onYouTubeIframeAPIReady = () => {
-      if (!playerRef.current && YT && ref.current) {
-        playerRef.current = new YT.Player(ref.current, {
-          events: {
-            onStateChange: onPlayerStateChange,
-          },
-        });
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const player = getPlayer();
-    if (!player) return;
-    if (!player.pauseVideo) return;
-    if (disabled) player.pauseVideo();
-    else if (autoplay) player.playVideo();
-  }, [disabled]);
 
   let src = 'https://www.youtube.com/embed/';
 
@@ -174,17 +170,19 @@ const Youtube = ({ videoId, settings }: Props) => {
 
   if (hideFullScreen) src += '&fs=0';
 
-  if (loop) src += '&loop=1&playlist=' + youTubeParseUrl(videoId);
+  if (loop) src += '&loop=1&playlist=' + cleanVideoId;
 
   /** Need to enable js api */
   src += '&enablejsapi=1';
 
+  if (!videoId) return null;
   return (
     <div className={styles.wrapper}>
       <iframe
+        id={managedId}
         className={styles.frame}
         style={lockAspectRatio ? { aspectRatio: '16 / 9' } : { height: '100%' }}
-        ref={ref}
+        ref={onRefChange}
         src={src}
         frameBorder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
