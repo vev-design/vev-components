@@ -303,7 +303,19 @@ registerVevComponent(Slideshow, {
       hidden: (context) => context.value?.animation !== 'slide',
     },
   ],
-  events: [{ type: Events.SLIDE_CHANGED, description: 'Slide was changed' }],
+  events: [
+    {
+       type: Events.SLIDE_CHANGED, 
+       description: "Slide was changed", 
+       args: [
+        {
+          name: 'currentSlide',
+          description: 'Slide number',
+          type: 'number',
+        },
+      ], 
+    },
+  ],
   interactions: [
     {
       type: Interactions.NEXT,
