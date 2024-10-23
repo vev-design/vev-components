@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Youtube.module.css';
 import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
 import getManager from './video-manager';
 import OnStateChangeEvent = YT.OnStateChangeEvent;
+import YouTube from 'react-youtube';
+import Player = YT.Player;
 
 type Props = {
   videoId: string;
@@ -50,9 +52,7 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
   const loop = settings?.loop;
   const lockAspectRatio = settings?.lockAspectRatio;
   const playerState = useRef<YT.PlayerState>(2);
-
-  // Add a random number to the ID in case the page contains the same video multiple times
-  const playerId = useRef(Math.floor(Math.random() * 2000));
+  const [player, setPlayer] = useState<Player | null>(null);
 
   const { disabled } = useEditorState();
   const currentTimeRef = useRef<number>();
@@ -61,23 +61,6 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
   const cleanVideoId = useMemo(() => {
     return youTubeParseUrl(videoId);
   }, [videoId]);
-
-  const managedId = `${cleanVideoId}_${playerId.current}`;
-
-  const onRefChange = useCallback(
-    (node: HTMLIFrameElement) => {
-      // iframe is mounted
-      if (node) {
-        const manager = getManager();
-        manager.registerPlayer({
-          videoId: managedId,
-          el: node,
-          onPlayerStateChange,
-        });
-      }
-    },
-    [managedId],
-  );
 
   function onPlayerStateChange(event: OnStateChangeEvent) {
     if (typeof YT === 'undefined') return;
@@ -95,15 +78,15 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
     }
   }
 
-  async function getPlayer() {
-    return await getManager().getPlayer(managedId);
+  function getPlayer() {
+    return player;
   }
 
-  useVevEvent(YoutubeInteraction.play, async () => {
-    (await getPlayer())?.playVideo();
+  useVevEvent(YoutubeInteraction.play, () => {
+    getPlayer()?.playVideo();
   });
-  useVevEvent(YoutubeInteraction.togglePlay, async () => {
-    const player = await getPlayer();
+  useVevEvent(YoutubeInteraction.togglePlay, () => {
+    const player = getPlayer();
     switch (playerState.current) {
       case YT.PlayerState.PLAYING:
         player.pauseVideo();
@@ -120,13 +103,13 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
         break;
     }
   });
-  useVevEvent(YoutubeInteraction.restart, async () => (await getPlayer())?.seekTo(0, true));
-  useVevEvent(YoutubeInteraction.pause, async () => (await getPlayer())?.pauseVideo());
+  useVevEvent(YoutubeInteraction.restart, () => getPlayer()?.seekTo(0, true));
+  useVevEvent(YoutubeInteraction.pause, () => getPlayer()?.pauseVideo());
 
-  useVevEvent(YoutubeInteraction.mute, async () => (await getPlayer())?.mute());
-  useVevEvent(YoutubeInteraction.unMute, async () => (await getPlayer())?.unMute());
-  useVevEvent(YoutubeInteraction.toggleSound, async () => {
-    const player = await getPlayer();
+  useVevEvent(YoutubeInteraction.mute, () => getPlayer()?.mute());
+  useVevEvent(YoutubeInteraction.unMute, () => getPlayer()?.unMute());
+  useVevEvent(YoutubeInteraction.toggleSound, () => {
+    const player = getPlayer();
     return player?.isMuted() ? player?.unMute() : player?.mute();
   });
 
@@ -142,8 +125,8 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
   }, [disabled]);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const player = await getPlayer();
+    const interval = setInterval(() => {
+      const player = getPlayer();
       if (player && player.getCurrentTime) {
         const currentTime = Math.floor(player.getCurrentTime());
         if (currentTime !== currentTimeRef.current) {
@@ -160,33 +143,30 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
     };
   }, [dispatch]);
 
-  let src = 'https://www.youtube.com/embed/';
-
-  if (videoId) src += youTubeParseUrl(videoId) + '?';
-
-  if (!disabled && autoplay) src += '&autoplay=1&mute=1';
-
-  if (hideControls) src += '&controls=0';
-
-  if (hideFullScreen) src += '&fs=0';
-
-  if (loop) src += '&loop=1&playlist=' + cleanVideoId;
-
-  /** Need to enable js api */
-  src += '&enablejsapi=1';
-
   if (!videoId) return null;
+
   return (
-    <div className={styles.wrapper}>
-      <iframe
-        id={managedId}
+    <div
+      className={styles.wrapper}
+      style={lockAspectRatio ? { aspectRatio: '16 / 9' } : { height: '100%' }}
+    >
+      <YouTube
+        videoId={cleanVideoId}
         className={styles.frame}
-        style={lockAspectRatio ? { aspectRatio: '16 / 9' } : { height: '100%' }}
-        ref={onRefChange}
-        src={src}
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
+        iframeClassName={styles.frame}
+        onReady={(event) => {
+          setPlayer(event.target);
+        }}
+        opts={{
+          playerVars: {
+            enablejsapi: 1,
+            loop: loop ? 1 : 0,
+            controls: hideControls ? 0 : 1,
+            autoplay: !disabled && autoplay ? 1 : 0,
+            fs: hideFullScreen ? 0 : 1,
+          },
+        }}
+        onStateChange={onPlayerStateChange}
       />
     </div>
   );
