@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Youtube.module.css';
 import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
-import getManager from './video-manager';
-import OnStateChangeEvent = YT.OnStateChangeEvent;
 import YouTube from 'react-youtube';
+import OnStateChangeEvent = YT.OnStateChangeEvent;
 import Player = YT.Player;
 
 type Props = {
