@@ -10,6 +10,10 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": false,
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "types": [ "youtube" ],
     "plugins": [
       {
         "name": "typescript-plugin-css-modules"

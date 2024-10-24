@@ -78,7 +78,7 @@ registerVevComponent(Mailchimp, {
       type: 'string',
       options: {
         multiline: true,
-      }
+      },
     },
   ],
   editableCSS: [

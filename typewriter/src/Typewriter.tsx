@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import styles from "./Typewriter.module.css";
+import React, { useEffect, useRef, useState } from 'react';
+import styles from './Typewriter.module.css';
 
 type Props = {
   words: string[];
@@ -15,7 +15,7 @@ const Typewriter = ({ before, after, words, timer, loop }: Props) => {
   const [frame, setFrame] = useState(0);
   const [state, setState] = useState(WRITE);
   const [textViewLength, setTextViewLength] = useState(0);
-  const [textView, setTextView] = useState("");
+  const [textView, setTextView] = useState('');
   const [row, setRow] = useState(0);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ const Typewriter = ({ before, after, words, timer, loop }: Props) => {
   }, [update]);
 
   useEffect(() => {
-    let interval = setInterval(function () {
+    const interval = setInterval(() => {
       lastTime.current();
     }, timer);
     return () => {

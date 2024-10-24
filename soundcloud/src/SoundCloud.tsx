@@ -46,7 +46,7 @@ registerVevComponent(SoundCloud, {
       initialValue: initialLink,
       options: {
         multiline: true,
-      }
+      },
     },
     {
       name: 'classic',

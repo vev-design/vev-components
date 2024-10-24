@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import { WidgetNode, useSize } from "@vev/react";
-import { Props } from "../Slider";
-import { isGoingForward, isGoingBackward } from "../utils";
+import React, { useState, useEffect, useRef } from 'react';
+import { WidgetNode, useSize } from '@vev/react';
+import { Props } from '../Slider';
+import { isGoingForward, isGoingBackward } from '../utils';
 
-import styles from "./Carousel3d.module.css";
+import styles from './Carousel3d.module.css';
 
 const Slide3d = ({
   contentKey,
@@ -26,7 +26,7 @@ const Slide3d = ({
         rotate: `0 1 0 ${angle}rad`,
         translate: `${sin * radius}px 0 ${cos * radius - radius}px`,
         zIndex: active ? 1 : -1,
-        pointerEvents: active ? "all" : "none",
+        pointerEvents: active ? 'all' : 'none',
       }}
     >
       <WidgetNode id={contentKey} />
@@ -46,20 +46,18 @@ export const Carousel3d = ({
   direction,
   action,
   infinite,
-}: Omit<Props, "children"> & { index: number }) => {
+}: Omit<Props, 'children'> & { index: number }) => {
   const { width, height } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
   const angle = Math.PI * 2;
   const prevIndex = useRef(0);
 
-  const isReverse = direction?.includes("REVERSE");
+  const isReverse = direction?.includes('REVERSE');
   const selectSlide = 1 - index / slides.length;
   const angleStep = (Math.PI * 2) / slides.length;
   const circleRadius = Math.max(
     0.4,
-    slides.length <= 2
-      ? gap
-      : (width / 2 + gap) / Math.tan(Math.PI / slides.length)
+    slides.length <= 2 ? gap : (width / 2 + gap) / Math.tan(Math.PI / slides.length),
   );
 
   useEffect(() => {
@@ -68,9 +66,7 @@ export const Carousel3d = ({
     const moveLeft = () => setPercentage((percentage) => percentage - unit);
     const moveRight = () => setPercentage((percentage) => percentage + unit);
 
-    if (
-      isGoingForward(index, prevIndex.current, slides.length, infinite, action)
-    ) {
+    if (isGoingForward(index, prevIndex.current, slides.length, infinite, action)) {
       (isReverse ? moveRight : moveLeft)();
     }
     if (isGoingBackward(index, prevIndex.current, slides.length)) {
@@ -95,12 +91,12 @@ export const Carousel3d = ({
     >
       <div
         style={{
-          transition: `rotate ${speed}ms ${easing || "ease"}`,
+          transition: `rotate ${speed}ms ${easing || 'ease'}`,
           rotate: `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
           width,
           height,
-          transformStyle: "preserve-3d",
+          transformStyle: 'preserve-3d',
         }}
       >
         {slides?.map((child: string, i: number) => {
