@@ -79,7 +79,7 @@ registerVevComponent(Spotify, {
       initialValue: initialLink,
       options: {
         multiline: true,
-      }
+      },
     },
   ],
   interactions: [

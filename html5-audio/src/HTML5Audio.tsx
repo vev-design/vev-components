@@ -1,12 +1,7 @@
-import React, { useEffect, useRef } from "react";
-import styles from "./HTML5Audio.module.css";
-import {
-  registerVevComponent,
-  useDispatchVevEvent,
-  useEditorState,
-  useVevEvent,
-} from "@vev/react";
-import { Events, Interactions } from "./events";
+import React, { useEffect, useRef } from 'react';
+import styles from './HTML5Audio.module.css';
+import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
+import { Events, Interactions } from './events';
 
 type Audio = {
   name: string;
@@ -33,7 +28,7 @@ const HTML5Audio = (props: Props) => {
   const autoplay = settings?.autoplay || false;
   const { disabled } = useEditorState();
   const shouldAutoPlay = !disabled && autoplay;
-  const actualUrl = audioUrlLink ? audioUrlLink : audioUrl ? audioUrl.url : "";
+  const actualUrl = audioUrlLink ? audioUrlLink : audioUrl ? audioUrl.url : '';
   const dispatch = useDispatchVevEvent();
   const intervalRef = useRef<number>();
 
@@ -122,8 +117,7 @@ const HTML5Audio = (props: Props) => {
       audioRef.current.ontimeupdate = () => {
         dispatch(Events.CURRENT_TIME, {
           currentTime: audioRef.current.currentTime,
-          percentage:
-            (audioRef.current.currentTime / audioRef.current.duration) * 100,
+          percentage: (audioRef.current.currentTime / audioRef.current.duration) * 100,
         });
       };
     }
@@ -136,7 +130,7 @@ const HTML5Audio = (props: Props) => {
         autoPlay={shouldAutoPlay}
         preload="none"
         controls={showControls}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: '100%', height: '100%' }}
         loop={loop}
         src={actualUrl as string}
       >
@@ -147,83 +141,83 @@ const HTML5Audio = (props: Props) => {
 };
 
 registerVevComponent(HTML5Audio, {
-  name: "HTML5 Audio",
+  name: 'HTML5 Audio',
   description:
-    "Embed a HTML5 audio player directly to your canvas.\n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)",
+    'Embed a HTML5 audio player directly to your canvas.\n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
   props: [
     {
-      name: "audioUrlLink",
-      title: "Audio file URL",
-      type: "string",
+      name: 'audioUrlLink',
+      title: 'Audio file URL',
+      type: 'string',
       hidden: (context) => {
         return !!context.value.audioUrl;
       },
     },
     {
-      name: "audioUrl",
-      title: "Audio file upload",
-      accept: "audio/*",
-      type: "upload",
+      name: 'audioUrl',
+      title: 'Audio file upload',
+      accept: 'audio/*',
+      type: 'upload',
       maxSize: 75000,
       hidden: (context) => {
         return !!context.value.audioUrlLink;
       },
     },
     {
-      name: "settings",
-      title: "Settings",
-      type: "object",
+      name: 'settings',
+      title: 'Settings',
+      type: 'object',
       fields: [
         {
-          name: "showControls",
-          title: "Controls",
-          type: "boolean",
+          name: 'showControls',
+          title: 'Controls',
+          type: 'boolean',
           initialValue: true,
         },
         {
-          name: "autoplay",
-          title: "Auto play",
-          type: "boolean",
+          name: 'autoplay',
+          title: 'Auto play',
+          type: 'boolean',
           initialValue: false,
         },
-        { name: "loop", title: "Loop", type: "boolean", initialValue: false },
+        { name: 'loop', title: 'Loop', type: 'boolean', initialValue: false },
       ],
     },
   ],
   events: [
-    { type: Events.PLAY, description: "On play" },
-    { type: Events.PAUSE, description: "On pause" },
-    { type: Events.COMPLETE, description: "On end" },
-    { type: Events.CURRENT_TIME, description: "On current time update" },
+    { type: Events.PLAY, description: 'On play' },
+    { type: Events.PAUSE, description: 'On pause' },
+    { type: Events.COMPLETE, description: 'On end' },
+    { type: Events.CURRENT_TIME, description: 'On current time update' },
   ],
   interactions: [
-    { type: Interactions.PLAY, description: "Play" },
-    { type: Interactions.PAUSE, description: "Pause" },
-    { type: Interactions.TOGGLE, description: "Toggle play" },
+    { type: Interactions.PLAY, description: 'Play' },
+    { type: Interactions.PAUSE, description: 'Pause' },
+    { type: Interactions.TOGGLE, description: 'Toggle play' },
     {
       type: Interactions.FADE_OUT,
-      description: "Fade out",
+      description: 'Fade out',
       args: [
         {
-          name: "duration",
-          description: "Duration of fade in seconds",
-          type: "number",
+          name: 'duration',
+          description: 'Duration of fade in seconds',
+          type: 'number',
         },
       ],
     },
     {
       type: Interactions.FADE_IN,
-      description: "Fade in",
+      description: 'Fade in',
       args: [
         {
-          name: "duration",
-          description: "Duration of fade in seconds",
-          type: "number",
+          name: 'duration',
+          description: 'Duration of fade in seconds',
+          type: 'number',
         },
       ],
     },
   ],
-  type: "standard",
+  type: 'standard',
 });
 
 export default HTML5Audio;

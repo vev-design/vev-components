@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
-import { registerVevComponent, useEditorState , useVisible} from '@vev/react';
+import { registerVevComponent, useEditorState, useVisible } from '@vev/react';
 
 type Props = {
   html: string;
@@ -12,10 +12,23 @@ type Props = {
 };
 
 function StaticHTML({ html, allowScroll }) {
-  return <div className="fill" style={{ overflow: allowScroll ? "auto" : "hidden" }} dangerouslySetInnerHTML={{ __html: html }} />
+  return (
+    <div
+      className="fill"
+      style={{ overflow: allowScroll ? 'auto' : 'hidden' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
-function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStatic = false, renderOnVisible=false, hostRef} : Props) {
+function EmbedAnything({
+  html,
+  encapsulate = false,
+  allowScroll = false,
+  isStatic = false,
+  renderOnVisible = false,
+  hostRef,
+}: Props) {
   const { disabled } = useEditorState();
 
   if (disabled) {
@@ -30,9 +43,16 @@ function EmbedAnything({ html, encapsulate = false, allowScroll = false, isStati
     );
   }
 
-  if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />
+  if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />;
   if (encapsulate) return <EmbedIframe html={html} />;
-  return <EmbedScript html={html} hostRef={hostRef} allowScroll={allowScroll} renderOnVisible={renderOnVisible} />;
+  return (
+    <EmbedScript
+      html={html}
+      hostRef={hostRef}
+      allowScroll={allowScroll}
+      renderOnVisible={renderOnVisible}
+    />
+  );
 }
 
 function EmbedIframe({ html }: { html: string }) {
@@ -105,7 +125,12 @@ function EmbedIframe({ html }: { html: string }) {
   );
 }
 
-function EmbedScript({ html, hostRef, allowScroll, renderOnVisible }: Pick<Props, 'hostRef' | 'html' | 'allowScroll' | 'renderOnVisible'>) {
+function EmbedScript({
+  html,
+  hostRef,
+  allowScroll,
+  renderOnVisible,
+}: Pick<Props, 'hostRef' | 'html' | 'allowScroll' | 'renderOnVisible'>) {
   const [loaded, setLoaded] = useState<boolean>(false);
   const visible = useVisible(hostRef);
 
@@ -146,7 +171,13 @@ function EmbedScript({ html, hostRef, allowScroll, renderOnVisible }: Pick<Props
         </p>
       </div>
     );
-  return <div className={styles.wrapper} style={{ overflow: allowScroll ? "auto" : "hidden" }} dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div
+      className={styles.wrapper}
+      style={{ overflow: allowScroll ? 'auto' : 'hidden' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 registerVevComponent(EmbedAnything, {
@@ -164,7 +195,7 @@ registerVevComponent(EmbedAnything, {
       type: 'string',
       options: {
         multiline: true,
-      }
+      },
     },
     {
       title: 'Encapsulate',
