@@ -386,7 +386,6 @@ registerVevComponent(Object3d, {
           type: 'select',
           options: {
             items: async (context) => {
-              console.log('context', context);
               const animations = await getAnimations(context.value?.modelUrl?.url);
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
