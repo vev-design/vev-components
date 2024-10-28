@@ -7,7 +7,7 @@ import {
   useSize,
   useVevEvent,
 } from '@vev/react';
-import { Object3DContextProvider } from './context/object-3d-context';
+import { Object3DContextProps, Object3DContextProvider } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
 import { HotspotEditorForm } from './components/hotspot-editor-form';
@@ -15,7 +15,7 @@ import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
-import { SilkeBox, SilkeDivider } from '@vev/silke';
+import { SilkeBox } from '@vev/silke';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -40,6 +40,8 @@ export const NEAR = 0.1;
 export const FAR = 100;
 
 type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
+
+function noop() {}
 
 type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
@@ -82,7 +84,16 @@ const Object3d = ({
   const actualRotationSpeed = reverseSpeed ? rotationSpeed * -1 : rotationSpeed;
 
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
-  const clickHotspotCallback = useRef((args: any) => {});
+  const eventCallbacks = useRef<{
+    click_hotspot: (index: number) => void;
+    start_rotation: (speed: number) => void;
+    stop_rotation: () => void;
+  }>({
+    click_hotspot: noop,
+    start_rotation: noop,
+    stop_rotation: noop,
+  });
+
   const [initialCameraPosition, setInitialCameraPosition] =
     useState<SavedCameraPosition>(initialCamera);
   const { disabled, schemaOpen } = useEditorState();
@@ -111,7 +122,15 @@ const Object3d = ({
   }, [hotspots]);
 
   useVevEvent(InteractionTypes.SELECT_HOTSPOT, (args: any) => {
-    clickHotspotCallback.current(args.select_hotspot);
+    eventCallbacks.current.click_hotspot(args.select_hotspot);
+  });
+
+  useVevEvent(InteractionTypes.START_ROTATION, (args: any) => {
+    eventCallbacks.current.start_rotation(args.speed);
+  });
+
+  useVevEvent(InteractionTypes.STOP_ROTATION, () => {
+    eventCallbacks.current.stop_rotation();
   });
 
   return (
@@ -137,8 +156,16 @@ const Object3d = ({
           schemaOpen,
           posterUrl: poster ? poster.url : null,
           savedCameraPosition: initialCameraPosition,
-          setClickHotspotCallback: (cb) => {
-            clickHotspotCallback.current = cb;
+          eventCallbacks: {
+            click_hotspot: (cb) => {
+              eventCallbacks.current.click_hotspot = cb;
+            },
+            start_rotation: (cb) => {
+              eventCallbacks.current.start_rotation = cb;
+            },
+            stop_rotation: (cb) => {
+              eventCallbacks.current.stop_rotation = cb;
+            },
           },
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
@@ -317,6 +344,15 @@ registerVevComponent(Object3d, {
       type: InteractionTypes.SELECT_HOTSPOT,
       description: 'Focus hotspot',
       args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
+    },
+    {
+      type: InteractionTypes.START_ROTATION,
+      description: 'Start rotation',
+      args: [{ name: 'speed', title: 'Speed', type: 'number' }],
+    },
+    {
+      type: InteractionTypes.STOP_ROTATION,
+      description: 'Stop rotation',
     },
   ],
   editableCSS: [

@@ -38,6 +38,7 @@ export function useSceneSetup(
     savedCameraPosition,
     hotspots,
     rotationSpeed,
+    eventCallbacks,
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
@@ -50,6 +51,18 @@ export function useSceneSetup(
     new THREE.AnimationClip(NO_ANIMATION, 0, []),
   );
   const [currentModel, setCurrentModel] = useState<THREE.Group | null>(null);
+
+  useEffect(() => {
+    if (eventCallbacks) {
+      eventCallbacks.start_rotation((speed) => {
+        controls.autoRotateSpeed = speed;
+        controls.autoRotate = true;
+      });
+      eventCallbacks.stop_rotation(() => {
+        controls.autoRotate = false;
+      });
+    }
+  }, [eventCallbacks]);
 
   useEffect(() => {
     if (canvasRef && labelRef && !scene) {
@@ -72,6 +85,7 @@ export function useSceneSetup(
       // Camera
       const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
       camera.layers.enableAll();
+
       scene.add(camera);
       if (setContextCamera) {
         setContextCamera(camera);

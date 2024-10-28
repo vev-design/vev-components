@@ -4,4 +4,6 @@ export enum EventTypes {
 
 export enum InteractionTypes {
   SELECT_HOTSPOT = 'select_hotspot',
+  STOP_ROTATION = 'stop_rotation',
+  START_ROTATION = 'start_rotation',
 }

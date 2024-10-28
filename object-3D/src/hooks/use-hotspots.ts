@@ -49,13 +49,12 @@ function zoomHotspot(camera: Camera, storageHotspot: InternalHotspot, controls: 
 }
 
 export function useHotspots(scene: Scene | undefined, camera: Camera | undefined, controls: any) {
-  const { hotspots, editMode, hotspotClicked, setClickHotspotCallback } =
-    useContext(Object3dContext);
+  const { hotspots, editMode, hotspotClicked, eventCallbacks } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
 
   useEffect(() => {
-    if (setClickHotspotCallback) {
-      setClickHotspotCallback((index: number) => {
+    if (eventCallbacks) {
+      eventCallbacks.click_hotspot((index: number) => {
         const internalHotspot = hotspots.find((hotspot) => {
           return hotspot.index === index;
         });
@@ -65,7 +64,7 @@ export function useHotspots(scene: Scene | undefined, camera: Camera | undefined
         }
       });
     }
-  }, [setClickHotspotCallback]);
+  }, [eventCallbacks]);
 
   useEffect(() => {
     if (scene) {
