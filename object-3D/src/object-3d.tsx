@@ -89,11 +89,13 @@ const Object3d = ({
     start_rotation: (speed: number) => void;
     stop_rotation: () => void;
     reset_camera: () => void;
+    play_animation: (animation: string) => void;
   }>({
     click_hotspot: noop,
     start_rotation: noop,
     stop_rotation: noop,
     reset_camera: noop,
+    play_animation: noop,
   });
 
   const [initialCameraPosition, setInitialCameraPosition] =
@@ -139,6 +141,10 @@ const Object3d = ({
     eventCallbacks.current.reset_camera();
   });
 
+  useVevEvent(InteractionTypes.PLAY_ANIMATION, (args: any) => {
+    eventCallbacks.current.play_animation(args.animation);
+  });
+
   return (
     <div className={styles.wrapper}>
       <Object3DContextProvider
@@ -174,6 +180,9 @@ const Object3d = ({
             },
             reset_camera: (cb) => {
               eventCallbacks.current.reset_camera = cb;
+            },
+            play_animation: (cb) => {
+              eventCallbacks.current.play_animation = cb;
             },
           },
           hotspotClicked: (index: number) => {
@@ -366,6 +375,28 @@ registerVevComponent(Object3d, {
     {
       type: InteractionTypes.RESET_CAMERA,
       description: 'Reset camera',
+    },
+    {
+      type: InteractionTypes.PLAY_ANIMATION,
+      description: 'Play animation',
+      args: [
+        {
+          name: 'animation',
+          title: 'Animation',
+          type: 'select',
+          options: {
+            items: async (context) => {
+              console.log('context', context);
+              const animations = await getAnimations(context.value?.modelUrl?.url);
+              return [NO_ANIMATION, ...animations].map((animation) => {
+                return { label: animation, value: animation };
+              });
+            },
+            display: 'dropdown',
+          },
+          initialValue: 'No animation',
+        },
+      ],
     },
   ],
   editableCSS: [
