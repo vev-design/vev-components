@@ -31,6 +31,7 @@ export interface Object3DContextProps {
     click_hotspot: (cb: (index: number) => void) => void;
     start_rotation: (cb: (speed: number) => void) => void;
     stop_rotation: (cb: () => void) => void;
+    reset_camera: (cb: () => void) => void;
   };
   rotationSpeed: number;
 }

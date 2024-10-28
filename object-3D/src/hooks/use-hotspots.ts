@@ -6,6 +6,7 @@ import { Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
 import { InternalHotspot } from '../types';
 import TWEEN from '@tweenjs/tween.js';
+import { animateCameraSpherical } from '../util/animate-camera-spherical';
 
 export interface CanvasHotspot {
   element: HTMLDivElement;
@@ -16,36 +17,12 @@ export interface CanvasHotspot {
 
 function zoomHotspot(camera: Camera, storageHotspot: InternalHotspot, controls: any) {
   const from = camera.position.clone();
-  const camDistance = camera.position.length();
   const to = new Vector3(
     storageHotspot.position.x,
     storageHotspot.position.y,
     storageHotspot.position.z,
   );
-
-  // Convert the 'from' and 'to' positions to spherical coordinates
-  const fromSpherical = new Spherical().setFromVector3(from);
-  const toSpherical = new Spherical().setFromVector3(to);
-
-  new TWEEN.Tween({
-    radius: fromSpherical.radius,
-    phi: fromSpherical.phi,
-    theta: fromSpherical.theta,
-  })
-    .to(
-      {
-        radius: fromSpherical.radius, // This should remain constant
-        phi: toSpherical.phi,
-        theta: toSpherical.theta,
-      },
-      400,
-    )
-    .onUpdate(({ radius, phi, theta }) => {
-      const newPosition = new Vector3().setFromSpherical(new Spherical(radius, phi, theta));
-      camera.position.copy(newPosition);
-      controls.update();
-    })
-    .start();
+  animateCameraSpherical(from, to, camera, controls);
 }
 
 export function useHotspots(scene: Scene | undefined, camera: Camera | undefined, controls: any) {

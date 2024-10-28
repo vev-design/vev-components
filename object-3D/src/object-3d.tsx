@@ -88,10 +88,12 @@ const Object3d = ({
     click_hotspot: (index: number) => void;
     start_rotation: (speed: number) => void;
     stop_rotation: () => void;
+    reset_camera: () => void;
   }>({
     click_hotspot: noop,
     start_rotation: noop,
     stop_rotation: noop,
+    reset_camera: noop,
   });
 
   const [initialCameraPosition, setInitialCameraPosition] =
@@ -133,6 +135,10 @@ const Object3d = ({
     eventCallbacks.current.stop_rotation();
   });
 
+  useVevEvent(InteractionTypes.RESET_CAMERA, () => {
+    eventCallbacks.current.reset_camera();
+  });
+
   return (
     <div className={styles.wrapper}>
       <Object3DContextProvider
@@ -165,6 +171,9 @@ const Object3d = ({
             },
             stop_rotation: (cb) => {
               eventCallbacks.current.stop_rotation = cb;
+            },
+            reset_camera: (cb) => {
+              eventCallbacks.current.reset_camera = cb;
             },
           },
           hotspotClicked: (index: number) => {
@@ -353,6 +362,10 @@ registerVevComponent(Object3d, {
     {
       type: InteractionTypes.STOP_ROTATION,
       description: 'Stop rotation',
+    },
+    {
+      type: InteractionTypes.RESET_CAMERA,
+      description: 'Reset camera',
     },
   ],
   editableCSS: [

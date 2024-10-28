@@ -10,6 +10,8 @@ import { useContext, useEffect, useState } from 'react';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Object3dContext } from '../context/object-3d-context';
 import { NO_ANIMATION } from '../object-3d';
+import { Vector3 } from 'three';
+import { animateCameraSpherical } from '../util/animate-camera-spherical';
 
 /**
  * Sets up the scene with camera and controls.
@@ -55,11 +57,21 @@ export function useSceneSetup(
   useEffect(() => {
     if (eventCallbacks) {
       eventCallbacks.start_rotation((speed) => {
-        controls.autoRotateSpeed = speed;
+        if (speed) {
+          controls.autoRotateSpeed = speed;
+        } else {
+          controls.autoRotateSpeed = rotationSpeed;
+        }
+
         controls.autoRotate = true;
       });
       eventCallbacks.stop_rotation(() => {
         controls.autoRotate = false;
+      });
+      eventCallbacks.reset_camera(() => {
+        const from = camera.position.clone();
+        const to = new Vector3(1, 0, 1);
+        animateCameraSpherical(from, to, camera, controls);
       });
     }
   }, [eventCallbacks]);
