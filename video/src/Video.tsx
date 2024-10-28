@@ -1,54 +1,55 @@
 import React, { useEffect, useRef, VideoHTMLAttributes } from "react";
 import styles from "./Video.module.css";
-import {
-  registerVevComponent,
-  useVisible,
-  useHover,
-  useEditorState,
-} from "@vev/react";
+import { useVisible, useEditorState, registerVevComponent } from "@vev/react";
 import { getNameFromUrl, isIE, track } from "./utils";
 
 type Props = {
-  hostRef: React.RefObject<HTMLDivElement>;
-  video: any;
-  infiniteLoop: boolean;
-  loop: boolean;
+  video: {
+    key: string;
+    url: string;
+    thumbnail: string;
+    name: string;
+    sources: { url: string; format: string }[];
+  };
   mute: boolean;
-  loopAmount: number;
   controls: boolean;
   fill: boolean;
-  noTracking: boolean;
-  thumbnail: any;
+  thumbnail: {
+    url: string;
+  };
   preload: "auto" | "metadata" | "none";
 };
 
-const VideoComponent = ({
-  hostRef,
-  video,
-  loop,
-  infiniteLoop,
-  loopAmount,
-  mute,
-  controls,
-  fill,
-  noTracking,
-  thumbnail,
-  preload,
-}: Props) => {
+enum VideoInteraction {
+  play = "play",
+  restart = "restart",
+  togglePlay = "togglePlay",
+  pause = "pause",
+  mute = "mute",
+  unMute = "unMute",
+  toggleSound = "toggleSound",
+}
+
+enum VideoEvent {
+  onPlay = "onPlay",
+  onPause = "onPause",
+  onEnd = "onEnd",
+  currentTime = "currentTime",
+}
+
+const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
     current: 0,
     maxProgress: 0,
   });
-  const [isHovered, bindHover] = useHover();
-  const visible = useVisible(hostRef);
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
 
   let fifth = 1;
+
   useEffect(() => {
     const videoEl = videoRef.current;
-    if (noTracking || !videoEl || !video) return;
 
     const evs = ["play", "pause", "ended", "timeupdate"];
     const onEv = (e) => {
@@ -87,7 +88,7 @@ const VideoComponent = ({
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
     return () =>
       evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
-  }, [video, noTracking, visible]);
+  }, [video]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -97,16 +98,11 @@ const VideoComponent = ({
       loopedAmount.current = 1;
       videoEl.load();
       videoEl.pause();
-    } else if (videoEl.readyState >= 3) {
-      if (!visible) {
-        videoEl.pause();
-        loopedAmount.current = 1;
-      }
     }
-  }, [visible, disabled]);
+  }, [disabled]);
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
-  if (infiniteLoop && loop) attributes.loop = true;
+  // if (loop) attributes.loop = true;
   if (mute) attributes.muted = true;
   if (controls) attributes.controls = true;
   if (isIE()) attributes.className = "ie";
@@ -117,38 +113,19 @@ const VideoComponent = ({
     videoEl.style.objectFit = fill ? "cover" : "contain";
   }, [fill, videoRef.current]);
 
-  const handleLoop = () => {
-    if (loopedAmount.current < loopAmount) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play();
-      loopedAmount.current++;
-    }
-  };
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.addEventListener("ended", handleLoop);
-
-      return () => {
-        if (videoRef.current)
-          videoRef.current.removeEventListener("ended", handleLoop);
-      };
-    }
-  }, [videoRef.current, loopAmount]);
-
   return (
     <>
       {!video && (
-        <div className="fill row v-center h-center" style={{ color: "white" }}>
-          <h3>{"Double-click to select video"}</h3>
+        <div className={styles.empty}>
+          <h3>Double-click to select video</h3>
         </div>
       )}
       <video
-        {...bindHover}
         ref={videoRef}
         aria-label={video?.name || ""}
         playsInline
         disableRemotePlayback
+        className={styles.video}
         poster={
           thumbnail && thumbnail.url ? thumbnail.url : video && video.thumbnail
         }
@@ -164,9 +141,93 @@ const VideoComponent = ({
             ))}
         Your browser does not support this video
       </video>
-      <div className="overlay" />
     </>
   );
 };
 
-export default VideoComponent;
+registerVevComponent(Video, {
+  name: "Video",
+  type: "both",
+  props: [
+    { name: "video", type: "video" },
+    { name: "thumbnail", type: "image" },
+    { name: "controls", type: "boolean", initialValue: true },
+    { name: "fill", type: "boolean", initialValue: true },
+    {
+      name: "preload",
+      type: "select",
+      options: {
+        display: "dropdown",
+        items: ["auto", "metadata", "none"].map((v) => ({
+          value: v,
+          label: v,
+        })),
+      },
+      initialValue: "auto",
+    },
+  ],
+  editableCSS: [
+    {
+      selector: ":host",
+      properties: ["background", "border", "border-radius", "box-shadow"],
+    },
+  ],
+  events: [
+    {
+      type: VideoEvent.onPlay,
+      description: "On play",
+    },
+    {
+      type: VideoEvent.onPause,
+      description: "On pause",
+    },
+    {
+      type: VideoEvent.onEnd,
+      description: "On end",
+    },
+    {
+      type: VideoEvent.currentTime,
+      description: "On play time",
+      args: [
+        {
+          name: "currentTime",
+          description: "currentTime",
+          type: "number",
+        },
+      ],
+    },
+  ],
+
+  interactions: [
+    {
+      type: VideoInteraction.play,
+      description: "Play",
+    },
+    {
+      type: VideoInteraction.restart,
+      description: "Restart",
+    },
+    {
+      type: VideoInteraction.togglePlay,
+      description: "Toggle play",
+    },
+    {
+      type: VideoInteraction.pause,
+      description: "Pause",
+    },
+    {
+      type: VideoInteraction.mute,
+      description: "Mute",
+    },
+    {
+      type: VideoInteraction.unMute,
+      description: "Unmute",
+    },
+    {
+      type: VideoInteraction.toggleSound,
+      description: "Toggle sound",
+    },
+  ],
+});
+
+export default Video;
