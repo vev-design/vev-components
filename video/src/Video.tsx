@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, VideoHTMLAttributes } from "react";
 import styles from "./Video.module.css";
-import { useVisible, useEditorState, registerVevComponent } from "@vev/react";
+import { useEditorState, useVevEvent, useDispatchVevEvent } from "@vev/react";
 import { getNameFromUrl, isIE, track } from "./utils";
+import { VideoEvent, VideoInteraction } from ".";
 
 type Props = {
   video: {
@@ -20,23 +21,6 @@ type Props = {
   preload: "auto" | "metadata" | "none";
 };
 
-enum VideoInteraction {
-  play = "play",
-  restart = "restart",
-  togglePlay = "togglePlay",
-  pause = "pause",
-  mute = "mute",
-  unMute = "unMute",
-  toggleSound = "toggleSound",
-}
-
-enum VideoEvent {
-  onPlay = "onPlay",
-  onPause = "onPause",
-  onEnd = "onEnd",
-  currentTime = "currentTime",
-}
-
 const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
@@ -45,6 +29,41 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
   });
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
+
+  const dispatch = useDispatchVevEvent();
+
+  useVevEvent(VideoInteraction.play, () => {
+    videoRef.current.play();
+  });
+
+  useVevEvent(VideoInteraction.restart, () => {
+    videoRef.current.currentTime = 0;
+    videoRef.current.play();
+  });
+
+  useVevEvent(VideoInteraction.togglePlay, () => {
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+    } else {
+      videoRef.current.pause();
+    }
+  });
+
+  useVevEvent(VideoInteraction.pause, () => {
+    videoRef.current.pause();
+  });
+
+  useVevEvent(VideoInteraction.mute, () => {
+    videoRef.current.muted = true;
+  });
+
+  useVevEvent(VideoInteraction.unMute, () => {
+    videoRef.current.muted = false;
+  });
+
+  useVevEvent(VideoInteraction.toggleSound, () => {
+    videoRef.current.muted = !videoRef.current.muted;
+  });
 
   let fifth = 1;
 
@@ -71,17 +90,23 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
             track("Video Progress", label, stateRef.current.maxProgress);
           }
           if (videoEl.currentTime > (fifth * videoEl.duration) / 5) {
-            track(`Video Progress ${fifth * 20}`, label);
+            const progress = fifth * 20;
+            track(`Video Progress ${progress}`, label);
+            console.log("progress", progress);
+            dispatch(VideoEvent.currentTime, { currentTime: progress });
             fifth++;
           }
           stateRef.current.current = update.current;
           stateRef.current.maxProgress = update.maxProgress;
           break;
         case "play":
+          dispatch(VideoEvent.onPlay);
           return track("Play", label);
         case "pause":
+          dispatch(VideoEvent.onPause);
           return track("Pause", label, stateRef.current.current);
         case "ended":
+          dispatch(VideoEvent.onEnd);
           return track("Finished", label);
       }
     };
@@ -144,90 +169,5 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
     </>
   );
 };
-
-registerVevComponent(Video, {
-  name: "Video",
-  type: "both",
-  props: [
-    { name: "video", type: "video" },
-    { name: "thumbnail", type: "image" },
-    { name: "controls", type: "boolean", initialValue: true },
-    { name: "fill", type: "boolean", initialValue: true },
-    {
-      name: "preload",
-      type: "select",
-      options: {
-        display: "dropdown",
-        items: ["auto", "metadata", "none"].map((v) => ({
-          value: v,
-          label: v,
-        })),
-      },
-      initialValue: "auto",
-    },
-  ],
-  editableCSS: [
-    {
-      selector: ":host",
-      properties: ["background", "border", "border-radius", "box-shadow"],
-    },
-  ],
-  events: [
-    {
-      type: VideoEvent.onPlay,
-      description: "On play",
-    },
-    {
-      type: VideoEvent.onPause,
-      description: "On pause",
-    },
-    {
-      type: VideoEvent.onEnd,
-      description: "On end",
-    },
-    {
-      type: VideoEvent.currentTime,
-      description: "On play time",
-      args: [
-        {
-          name: "currentTime",
-          description: "currentTime",
-          type: "number",
-        },
-      ],
-    },
-  ],
-
-  interactions: [
-    {
-      type: VideoInteraction.play,
-      description: "Play",
-    },
-    {
-      type: VideoInteraction.restart,
-      description: "Restart",
-    },
-    {
-      type: VideoInteraction.togglePlay,
-      description: "Toggle play",
-    },
-    {
-      type: VideoInteraction.pause,
-      description: "Pause",
-    },
-    {
-      type: VideoInteraction.mute,
-      description: "Mute",
-    },
-    {
-      type: VideoInteraction.unMute,
-      description: "Unmute",
-    },
-    {
-      type: VideoInteraction.toggleSound,
-      description: "Toggle sound",
-    },
-  ],
-});
 
 export default Video;
