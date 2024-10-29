@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
-import styles from './Typewriter.module.css';
+import React, { useEffect, useRef, useState } from "react";
+import styles from "./Typewriter.module.css";
+import { useEditorState, useVevEvent } from "@vev/react";
+import { TypewriterInteraction } from "./index";
 
 type Props = {
   words: string[];
@@ -7,29 +9,68 @@ type Props = {
   after: string;
   timer: number;
   loop: boolean;
+  pauseOnStart: boolean;
 };
 
-const Typewriter = ({ before, after, words, timer, loop }: Props) => {
+const Typewriter = ({
+  before,
+  after,
+  words,
+  timer,
+  loop,
+  pauseOnStart,
+}: Props) => {
   const [WRITE, SHOW, ERASE, WAIT] = [0, 1, 2, 3];
   const lastTime = useRef(null);
   const [frame, setFrame] = useState(0);
   const [state, setState] = useState(WRITE);
   const [textViewLength, setTextViewLength] = useState(0);
-  const [textView, setTextView] = useState('');
+  const [textView, setTextView] = useState("");
   const [row, setRow] = useState(0);
+  const { disabled } = useEditorState();
+
+  useVevEvent(TypewriterInteraction.play, () => {
+    if (textViewLength > words[row].length) {
+      resetTypewriter();
+    }
+    setState(WRITE);
+  });
+
+  useVevEvent(TypewriterInteraction.pause, () => {
+    setState(WAIT);
+  });
+
+  useVevEvent(TypewriterInteraction.restart, () => {
+    resetTypewriter();
+    setState(WRITE);
+  });
+
+  const resetTypewriter = () => {
+    setFrame(0);
+    setTextViewLength(0);
+    setTextView("");
+    setRow(0);
+  };
 
   useEffect(() => {
     lastTime.current = update;
   }, [update]);
 
   useEffect(() => {
+    resetTypewriter();
+    if (pauseOnStart && !disabled) {
+      setState(WAIT);
+    } else {
+      setState(WRITE);
+    }
+
     const interval = setInterval(() => {
       lastTime.current();
     }, timer);
     return () => {
       clearInterval(interval);
     };
-  }, [timer]);
+  }, [timer, disabled, pauseOnStart]);
 
   function update() {
     const text = words[row];
@@ -57,12 +98,11 @@ const Typewriter = ({ before, after, words, timer, loop }: Props) => {
         return;
       }
     } else if (state === WAIT) {
-      setTextViewLength(0);
       if (frame === 1) {
         const calculatedRow = (row + 1) % words.length;
         setRow(calculatedRow);
       }
-      if (frame === 50) {
+      if (frame === 50 && loop) {
         resetAndNextState();
         return;
       }
