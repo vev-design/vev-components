@@ -1,36 +1,28 @@
-import React, {
-  useEffect,
-  RefObject,
-  useMemo,
-  useState,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useEffect, RefObject, useMemo, useState, useCallback, useRef } from 'react';
 import {
   registerVevComponent,
   useVevEvent,
   useEditorState,
   useGlobalState,
   useDispatchVevEvent,
-} from "@vev/react";
-import { shuffleArray } from "./utils";
-import DirectionField from "./DirectionField";
+} from '@vev/react';
+import { shuffleArray, getNextSlideIndex, getPrevSlideIndex } from './utils';
+import DirectionField from './DirectionField';
 
-import Slide from "./Slide";
-import Fade from "./Fade";
-import Zoom from "./Zoom";
-import Carousel from "./Carousel3d";
-import None from "./None";
+import Slide from './Slide';
+import Fade from './Fade';
+import Zoom from './Zoom';
+import Carousel from './Carousel3d';
+import None from './None';
 
-import { useTouch } from "./use-touch";
-import { getNextSlideIndex, getPrevSlideIndex } from "./utils";
+import { useTouch } from './use-touch';
 
-import styles from "./Slider.module.css";
+import styles from './Slider.module.css';
 
 export type Props = {
   hostRef: RefObject<any>;
   children: string[];
-  animation: "slide" | "zoom" | "fade" | "3d";
+  animation: 'slide' | 'zoom' | 'fade' | '3d';
   speed?: number;
   selectedIndex?: number;
   gap?: number;
@@ -40,27 +32,23 @@ export type Props = {
   scaleFactor?: number;
   easing?: string;
   shrinkFactorBeforeAfter?: number;
-  direction:
-    | "HORIZONTAL"
-    | "HORIZONTAL_REVERSE"
-    | "VERTICAL"
-    | "VERTICAL_REVERSE";
+  direction: 'HORIZONTAL' | 'HORIZONTAL_REVERSE' | 'VERTICAL' | 'VERTICAL_REVERSE';
 
   slides: string[];
   editMode?: boolean;
   index: number;
-  action: "NEXT" | "PREV";
+  action: 'NEXT' | 'PREV';
   slidesToLoad: number;
 };
 
 enum Interactions {
-  NEXT = "NEXT",
-  PREV = "PREV",
-  SET = "SET",
+  NEXT = 'NEXT',
+  PREV = 'PREV',
+  SET = 'SET',
 }
 
 enum Events {
-  SLIDE_CHANGED = "SLIDE_CHANGED",
+  SLIDE_CHANGED = 'SLIDE_CHANGED',
 }
 
 export const Slideshow = (props: Props) => {
@@ -81,8 +69,8 @@ export const Slideshow = (props: Props) => {
         editor.activeContentChild
           ? children.indexOf(editor.activeContentChild)
           : !editor.disabled
-          ? prevIndex.current || 0
-          : 0
+            ? prevIndex.current || 0
+            : 0,
       ),
       length: numberOfSlides || 0,
     });
@@ -107,16 +95,12 @@ export const Slideshow = (props: Props) => {
   }, [random, editor.disabled, children]);
 
   const handleNextSlide = useCallback(() => {
-    if (
-      (!props.infinite && state?.index === numberOfSlides - 1) ||
-      slides.length <= 1
-    )
-      return;
+    if ((!props.infinite && state?.index === numberOfSlides - 1) || slides.length <= 1) return;
     setIsTransitioning(true);
     setState({
       index: getNextSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
-      action: "NEXT",
+      action: 'NEXT',
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
@@ -127,7 +111,7 @@ export const Slideshow = (props: Props) => {
     setState({
       index: getPrevSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
-      action: "PREV",
+      action: 'PREV',
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
@@ -151,7 +135,7 @@ export const Slideshow = (props: Props) => {
     slide: Slide,
     fade: Fade,
     zoom: Zoom,
-    "3d": Carousel,
+    '3d': Carousel,
     none: None,
   };
 
@@ -174,14 +158,14 @@ export const Slideshow = (props: Props) => {
 };
 
 registerVevComponent(Slideshow, {
-  name: "Slider",
-  type: "standard",
-  icon: "https://cdn.vev.design/assets/slider.svg",
+  name: 'Slider',
+  type: 'standard',
+  icon: 'https://cdn.vev.design/assets/slider.svg',
   description:
-    "Add a dynamic slider to display diverse design elements, tailor animation, and add Interactions for custom navigation.",
+    'Add a dynamic slider to display diverse design elements, tailor animation, and add Interactions for custom navigation.',
   children: {
-    name: "Slide",
-    icon: "https://cdn.vev.design/visuals/slides.png",
+    name: 'Slide',
+    icon: 'https://cdn.vev.design/visuals/slides.png',
   },
   size: {
     width: 510,
@@ -189,114 +173,113 @@ registerVevComponent(Slideshow, {
   },
   editableCSS: [
     {
-      selector: ":host",
-      properties: ["box-shadow", "background", "border", "border-radius"],
+      selector: ':host',
+      properties: ['box-shadow', 'background', 'border', 'border-radius'],
     },
   ],
   props: [
     {
-      name: "animation",
-      type: "select",
-      initialValue: "slide",
+      name: 'animation',
+      type: 'select',
+      initialValue: 'slide',
       options: {
-        display: "dropdown",
+        display: 'dropdown',
         items: [
           {
-            label: "Slide",
-            value: "slide",
+            label: 'Slide',
+            value: 'slide',
           },
           {
-            label: "Zoom",
-            value: "zoom",
+            label: 'Zoom',
+            value: 'zoom',
           },
           {
-            label: "Fade",
-            value: "fade",
+            label: 'Fade',
+            value: 'fade',
           },
           {
-            label: "3D",
-            value: "3d",
+            label: '3D',
+            value: '3d',
           },
           {
-            label: "None",
-            value: "none",
+            label: 'None',
+            value: 'none',
           },
         ],
       },
     },
     {
-      name: "speed",
-      type: "number",
-      title: "Transition speed",
+      name: 'speed',
+      type: 'number',
+      title: 'Transition speed',
       initialValue: 200,
       options: {
-        format: "ms",
+        format: 'ms',
       } as any, // Need to update CLI
-      hidden: (context) => context.value?.animation === "none",
+      hidden: (context) => context.value?.animation === 'none',
     },
     {
-      name: "easing",
-      type: "select",
-      initialValue: "ease",
+      name: 'easing',
+      type: 'select',
+      initialValue: 'ease',
       options: {
-        display: "dropdown",
+        display: 'dropdown',
         items: [
           {
-            label: "Ease",
-            value: "ease",
+            label: 'Ease',
+            value: 'ease',
           },
           {
-            label: "Linear",
-            value: "linear",
+            label: 'Linear',
+            value: 'linear',
           },
         ],
       },
     },
     {
-      name: "direction",
-      type: "string",
+      name: 'direction',
+      type: 'string',
       component: DirectionField,
-      initialValue: "HORIZONTAL",
+      initialValue: 'HORIZONTAL',
     },
     {
-      name: "random",
-      title: "Randomize",
-      type: "boolean",
+      name: 'random',
+      title: 'Randomize',
+      type: 'boolean',
     },
     {
-      name: "infinite",
-      title: "Infinite",
-      type: "boolean",
+      name: 'infinite',
+      title: 'Infinite',
+      type: 'boolean',
       initialValue: true,
     },
     {
-      name: "gap",
-      type: "number",
-      title: "Gap (px)",
+      name: 'gap',
+      type: 'number',
+      title: 'Gap (px)',
       initialValue: 50,
-      hidden: (context) => context.value?.animation !== "3d",
+      hidden: (context) => context.value?.animation !== '3d',
     },
     {
-      name: "perspective",
-      type: "number",
-      title: "Perspective (px)",
+      name: 'perspective',
+      type: 'number',
+      title: 'Perspective (px)',
       initialValue: 800,
-      hidden: (context) => context.value?.animation !== "3d",
+      hidden: (context) => context.value?.animation !== '3d',
     },
     {
-      name: "scaleFactor",
-      type: "number",
-      title: "Scale (%)",
+      name: 'scaleFactor',
+      type: 'number',
+      title: 'Scale (%)',
       initialValue: 300,
-      hidden: (context) => context.value?.animation !== "zoom",
+      hidden: (context) => context.value?.animation !== 'zoom',
     },
     {
-      name: "slidesToLoad",
-      title: "Slides before/after",
-      description:
-        "Turn off clip content in the style tab to make the before/after slides visible",
-      type: "number",
-      hidden: (context) => context.value?.animation !== "slide",
+      name: 'slidesToLoad',
+      title: 'Slides before/after',
+      description: 'Turn off clip content in the style tab to make the before/after slides visible',
+      type: 'number',
+      hidden: (context) => context.value?.animation !== 'slide',
       initialValue: 1,
       options: {
         min: 1,
@@ -304,29 +287,28 @@ registerVevComponent(Slideshow, {
       },
     },
     {
-      name: "shrinkFactorBeforeAfter",
-      type: "number",
-      title: "Scaling",
+      name: 'shrinkFactorBeforeAfter',
+      type: 'number',
+      title: 'Scaling',
       options: {
-        display: "slider",
+        display: 'slider',
         min: 0,
         max: 100,
       },
-      description:
-        "Shrink slides before/after the current slide. 0% is no scaling.",
+      description: 'Shrink slides before/after the current slide. 0% is no scaling.',
       initialValue: 0,
-      hidden: (context) => context.value?.animation !== "slide",
+      hidden: (context) => context.value?.animation !== 'slide',
     },
   ],
   events: [
     {
       type: Events.SLIDE_CHANGED,
-      description: "Slide was changed",
+      description: 'Slide was changed',
       args: [
         {
-          name: "currentSlide",
-          description: "Slide number",
-          type: "number",
+          name: 'currentSlide',
+          description: 'Slide number',
+          type: 'number',
         },
       ],
     },
@@ -334,20 +316,20 @@ registerVevComponent(Slideshow, {
   interactions: [
     {
       type: Interactions.NEXT,
-      description: "Go to next slide",
+      description: 'Go to next slide',
     },
     {
       type: Interactions.PREV,
-      description: "Go to previous slide",
+      description: 'Go to previous slide',
     },
     {
       type: Interactions.SET,
-      description: "Go to specific slide",
+      description: 'Go to specific slide',
       args: [
         {
-          name: "slide",
-          description: "Set slide number",
-          type: "number",
+          name: 'slide',
+          description: 'Set slide number',
+          type: 'number',
         },
       ],
     },
