@@ -1,0 +1,19 @@
+{
+  "name": "vev-components",
+  "version": "1.0.0",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "lint": "eslint packages"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.12.2",
+    "@typescript-eslint/parser": "^8.12.2",
+    "eslint": "^8.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "prettier": "^3.3.3"
+  }
+}

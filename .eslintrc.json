@@ -22,10 +22,6 @@
       "files": ["*.ts", "*.tsx"]
     },
     {
-      "files": ["*.mdx"],
-      "extends": ["plugin:mdx/overrides", "plugin:mdx/recommended"]
-    },
-    {
       "files": ["*.stories.tsx"],
       "rules": {
         // Sometimes it is convenient to export with a leading underscore, to avoid shadowing the
@@ -41,18 +37,13 @@
     }
   ],
   "parserOptions": {
-    // "project": ["./tsconfig.json"],
     "ecmaFeatures": {
       "jsx": true
     },
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": [
-    "react",
-    "@typescript-eslint",
-    "prettier"
-  ],
+  "plugins": ["react", "prettier"],
   "settings": {
     "react": {
       "version": "detect"
@@ -80,44 +71,13 @@
     "no-dupe-class-members": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-empty-function": "off",
     "@typescript-eslint/interface-name-prefix": "off",
-    // "@typescript-eslint/naming-convention": [
-    //   "warn",
-    //   {
-    //     "selector": "default",
-    //     "format": ["camelCase","PascalCase"]
-    //   },
-    //   {
-    //     "selector": "variable",
-    //     "format": ["camelCase", "UPPER_CASE"],
-    //     "types": ["boolean", "string", "number", "array"]
-    //   },
-    //   {
-    //     "selector": "variable",
-    //     "format": ["PascalCase", "camelCase"],
-    //     "types": ["function"]
-    //   },
-    //   {
-    //     "selector": "parameter",
-    //     "format": ["camelCase"],
-    //     "leadingUnderscore": "allow"
-    //   },
-    //   {
-    //     "selector": "typeLike",
-    //     "format": ["PascalCase"]
-    //   },
-    //   {
-    //     "selector": "function",
-    //     "format": ["PascalCase", "camelCase"]
-    //   }
-    // ],
-    // "max-depth": [
-    //   "error",
-    //   5
-    // ],
     "react/no-deprecated": "warn",
     "react/prop-types": "off",
     "react/no-unescaped-entities": "off",
@@ -156,26 +116,21 @@
         // Always before class, function
         "blankLine": "always",
         "prev": "*",
-        "next": [
-          "class",
-          "function"
-        ]
+        "next": ["class", "function"]
       }
     ],
     "space-infix-ops": "error",
     "template-curly-spacing": "error",
     "no-whitespace-before-property": "warn",
-    "spaced-comment": ["warn", "always", {
-      "markers": ["/"] // Allow for triple slash for tsd reference
-    }],
-    "object-curly-spacing": [
+    "spaced-comment": [
       "warn",
-      "always"
+      "always",
+      {
+        "markers": ["/"] // Allow for triple slash for tsd reference
+      }
     ],
-    "padded-blocks": [
-      "error",
-      "never"
-    ],
+    "object-curly-spacing": ["warn", "always"],
+    "padded-blocks": ["error", "never"],
     "arrow-spacing": "warn",
     "comma-style": "warn",
     "eol-last": "error"
