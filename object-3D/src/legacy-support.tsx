@@ -2,46 +2,96 @@ import React from "react";
 import { registerVevComponent } from "@vev/react";
 import { config } from "./object-3d";
 import Object3D, { Props } from "./object-3d";
+import { VevManifest, VevProps } from "@vev/utils";
 
-const mapPropsToRegister = {
-  modelUrl: "modelURL",
-  hotspots: "hotspots_camera",
+type OldProps = {
+  hostRef: React.RefObject<HTMLDivElement>;
+  modelURL: {
+    name: string;
+    size: number;
+    type?: string;
+    url: string;
+  }
+  hotspots: {
+    position: {
+      x: number;
+      y: number;
+      z: number;
+    }
+    id: number;
+  }[],
+  posterURL: {
+    type: string;
+    url: string;
+  }
+  settings: Props["settings"];
+  animationSettings: Props["animationSettings"];
 };
 
-function reverseMap(obj) {
-  return Object.keys(obj).reduce((ret, key) => {
-    ret[obj[key]] = key;
-    return ret;
-  }, {});
-}
-
-const mapProps = (prop: any, Map: Record<string, string>) => {
-  const keys = Object.keys(prop);
-
-  for (const key of keys) {
-    if (Map[key]) {
-      prop[Map[key]] = prop[key];
+const mapOldProps = (props: OldProps): Props => {
+  return {
+    ...props,
+    modelUrl: {
+      url: props.modelURL.url,
+    },
+    poster: {
+      url: props.posterURL.url,
+    },
+    hotspots_camera: {
+      hotspots: props.hotspots.map((hotspot) => ({
+        position: {
+          x: hotspot.position.x,
+          y: hotspot.position.y,
+          z: hotspot.position.z,
+        },
+        index: hotspot.id,
+      })),
     }
   }
-
-  return prop;
 };
 
-const LegacySupportObject3 = (props: Props) => {
-  return <Object3D {...mapProps(props, reverseMap(mapPropsToRegister))} />;
+const LegacySupportObject3 = (props: OldProps) => {
+  return <Object3D
+    {...mapOldProps(props)}
+  />;
 };
 
-const mapConfigProps = (props: any[]) => {
-  return props.map((prop) => mapProps(prop, mapPropsToRegister));
+
+const convertToLegacySchema = (props: VevManifest['props']): VevProps[] => {
+  console.log('props', props)
+  return props.map(prop => {
+    if (prop.name === "modelUrl") {
+      console.log('convert', prop);
+      return {
+        ...prop,
+        name: "modelURL",
+      }
+    }
+
+    if (prop.name === "posterUrl") {
+      return {
+        ...prop,
+        name: "posterURL",
+      }
+    }
+
+    if (prop.name === "hotspots_camera") {
+      return {
+        ...prop,
+        name: "hotspots",
+      }
+    }
+    return prop;
+  });
 };
 
-console.log("props", mapConfigProps(config.props));
+console.log('COVERTED', convertToLegacySchema(config.props));
 
 registerVevComponent(LegacySupportObject3, {
   ...config,
   name: "Object3D",
   overrideKey: "threeModel",
-  props: mapConfigProps(config.props),
+  props: convertToLegacySchema(config.props)
 });
 
 export default LegacySupportObject3;

@@ -47,7 +47,7 @@ export const FAR = 100;
 
 type LightingOptions = "hdri1" | "hdri2" | "hdri3" | "hdri4" | "hdri5";
 
-function noop() {}
+function noop() { }
 
 export type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
@@ -56,7 +56,7 @@ export type Props = {
   poster: { url: string };
   hotspots_camera?: {
     hotspots: StorageHotspot[];
-    initialCamera: SavedCameraPosition;
+    initialCamera?: SavedCameraPosition;
   };
   animationSettings: {
     animation?: string;
@@ -208,6 +208,36 @@ const Object3d = ({
   );
 };
 
+const HotspotComponent = ({ context }) => {
+  const initialCamera = context.value?.initialCamera;
+  const hotspots = context.value?.hotspots || [];
+
+  return (
+    <>
+      <SilkeBox gap="s" flex style={{ padding: "18px 0 10px" }}>
+        <HotspotEditorForm
+          context={context}
+          onChange={(hotspots) => {
+            context.onChange({
+              initialCamera,
+              hotspots,
+            });
+          }}
+        />
+        <CameraEditor
+          context={context}
+          onChange={(camera) => {
+            context.onChange({
+              hotspots,
+              initialCamera: camera,
+            });
+          }}
+        />
+      </SilkeBox>
+    </>
+  );
+};
+
 export const config: VevManifest = {
   name: "Object3D",
   props: [
@@ -238,35 +268,7 @@ export const config: VevManifest = {
           type: "string",
         },
       ],
-      component: (context) => {
-        const initialCamera = context.value?.initialCamera;
-        const hotspots = context.value?.hotspots || [];
-
-        return (
-          <>
-            <SilkeBox gap="s" flex style={{ padding: "18px 0 10px" }}>
-              <HotspotEditorForm
-                context={context}
-                onChange={(hotspots) => {
-                  context.onChange({
-                    initialCamera,
-                    hotspots,
-                  });
-                }}
-              />
-              <CameraEditor
-                context={context}
-                onChange={(camera) => {
-                  context.onChange({
-                    hotspots,
-                    initialCamera: camera,
-                  });
-                }}
-              />
-            </SilkeBox>
-          </>
-        );
-      },
+      component: HotspotComponent,
     },
     {
       name: "settings",
