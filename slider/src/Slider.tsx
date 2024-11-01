@@ -33,12 +33,12 @@ export type Props = {
   easing?: string;
   shrinkFactorBeforeAfter?: number;
   direction: 'HORIZONTAL' | 'HORIZONTAL_REVERSE' | 'VERTICAL' | 'VERTICAL_REVERSE';
-
   slides: string[];
   editMode?: boolean;
   index: number;
   action: 'NEXT' | 'PREV';
   slidesToLoad: number;
+  disableSwipe?: boolean;
 };
 
 enum Interactions {
@@ -115,10 +115,14 @@ export const Slideshow = (props: Props) => {
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
-  useTouch(hostRef, {
-    onNext: handleNextSlide,
-    onPrev: handlePrevSlide,
-  });
+  useTouch(
+    hostRef,
+    {
+      onNext: handleNextSlide,
+      onPrev: handlePrevSlide,
+    },
+    props.disableSwipe,
+  );
 
   useVevEvent(Interactions.NEXT, handleNextSlide);
   useVevEvent(Interactions.PREV, handlePrevSlide);
@@ -298,6 +302,11 @@ registerVevComponent(Slideshow, {
       description: 'Shrink slides before/after the current slide. 0% is no scaling.',
       initialValue: 0,
       hidden: (context) => context.value?.animation !== 'slide',
+    },
+    {
+      name: 'disableSwipe',
+      type: 'boolean',
+      description: 'The slider have a default swipe to change slide on mobile that can be disabled',
     },
   ],
   events: [
