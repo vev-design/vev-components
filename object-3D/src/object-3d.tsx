@@ -1,53 +1,50 @@
-import React, { useEffect, useRef, useState } from "react";
-import styles from "./object-3d.module.css";
+import React, { useEffect, useRef, useState } from 'react';
+import styles from './object-3d.module.css';
 import {
   registerVevComponent,
   useDispatchVevEvent,
   useEditorState,
   useSize,
   useVevEvent,
-} from "@vev/react";
-import {
-  Object3DContextProps,
-  Object3DContextProvider,
-} from "./context/object-3d-context";
-import { Object3dViewer } from "./components/object-3d-viewer";
-import { getAnimations } from "./util/get-animations";
-import { HotspotEditorForm } from "./components/hotspot-editor-form";
-import { Vector3 } from "three";
-import { CameraEditor } from "./components/camera-editor";
-import { InternalHotspot, SavedCameraPosition, StorageHotspot } from "./types";
-import { EventTypes, InteractionTypes } from "./event-types";
-import { SilkeBox } from "@vev/silke";
-import { VevManifest } from "@vev/utils";
+} from '@vev/react';
+import { Object3DContextProps, Object3DContextProvider } from './context/object-3d-context';
+import { Object3dViewer } from './components/object-3d-viewer';
+import { getAnimations } from './util/get-animations';
+import { HotspotEditorForm } from './components/hotspot-editor-form';
+import { Vector3 } from 'three';
+import { CameraEditor } from './components/camera-editor';
+import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
+import { EventTypes, InteractionTypes } from './event-types';
+import { SilkeBox } from '@vev/silke';
+import { VevManifest } from '@vev/utils';
 
 export const defaultModel = {
-  url: "https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb",
+  url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
 };
 
 export const LIGHTING = {
   hdri1:
-    "https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/c_W6ves3U_abandoned_factory_canteen_01_1k.hdr.hdr",
+    'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/c_W6ves3U_abandoned_factory_canteen_01_1k.hdr.hdr',
   hdri2:
-    "https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/3s2njpyp9_studio_small_06_1k.hdr.hdr",
+    'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/3s2njpyp9_studio_small_06_1k.hdr.hdr',
   hdri3:
-    "https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/HDR_Free_City_Night_Lights_Env.hdr",
-  hdri4:
-    "https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/HDR_041_Path_Env.hdr",
-  hdri5:
-    "https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/sunset_jhbcentral_1k.hdr",
+    'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/HDR_Free_City_Night_Lights_Env.hdr',
+  hdri4: 'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/HDR_041_Path_Env.hdr',
+  hdri5: 'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/sunset_jhbcentral_1k.hdr',
 };
 
-export const NO_ANIMATION = "No animation";
+export const NO_ANIMATION = 'No animation';
 
 export const FOV = 45;
 export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
 export const FAR = 100;
 
-type LightingOptions = "hdri1" | "hdri2" | "hdri3" | "hdri4" | "hdri5";
+type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
 
-function noop() { }
+function noop() {
+  return;
+}
 
 export type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
@@ -78,7 +75,7 @@ const Object3d = ({
 
   // Initial values
   const initialCamera = hotspots_camera?.initialCamera;
-  const lighting = settings?.lighting || "hdri1";
+  const lighting = settings?.lighting || 'hdri1';
   const controls = settings?.controls || false;
   const zoom = settings?.zoom || false;
   const hotspots = hotspots_camera?.hotspots;
@@ -86,14 +83,10 @@ const Object3d = ({
   const rotate = animationSettings?.rotate;
   const reverseSpeed = animationSettings?.reverseSpeed;
   const rotationSpeed =
-    animationSettings?.rotationSpeed !== undefined
-      ? animationSettings?.rotationSpeed
-      : 2;
+    animationSettings?.rotationSpeed !== undefined ? animationSettings?.rotationSpeed : 2;
   const actualRotationSpeed = reverseSpeed ? rotationSpeed * -1 : rotationSpeed;
 
-  const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>(
-    []
-  );
+  const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
   const eventCallbacks = useRef<{
     click_hotspot: (index: number) => void;
     start_rotation: (speed: number) => void;
@@ -127,10 +120,10 @@ const Object3d = ({
             position: new Vector3(
               storageHotspot.position.x,
               storageHotspot.position.y,
-              storageHotspot.position.z
+              storageHotspot.position.z,
             ),
           };
-        })
+        }),
       );
     }
   }, [hotspots]);
@@ -208,13 +201,13 @@ const Object3d = ({
   );
 };
 
-const HotspotComponent = ({ context }) => {
+export const HotspotComponent = (context) => {
   const initialCamera = context.value?.initialCamera;
   const hotspots = context.value?.hotspots || [];
 
   return (
     <>
-      <SilkeBox gap="s" flex style={{ padding: "18px 0 10px" }}>
+      <SilkeBox gap="s" flex style={{ padding: '18px 0 10px' }}>
         <HotspotEditorForm
           context={context}
           onChange={(hotspots) => {
@@ -239,123 +232,119 @@ const HotspotComponent = ({ context }) => {
 };
 
 export const config: VevManifest = {
-  name: "Object3D",
+  name: 'Object3D',
   props: [
     {
-      name: "modelUrl",
-      title: "3D File",
-      description: "Only .glb, max 75MB.",
-      type: "upload",
-      accept: ".glb,.gltf",
+      name: 'modelUrl',
+      title: '3D File',
+      description: 'Only .glb, max 75MB.',
+      type: 'upload',
+      accept: '.glb,.gltf',
       maxSize: 75000,
     },
     {
-      name: "poster",
-      title: "Poster image",
-      type: "upload",
-      accept: "image/*",
+      name: 'poster',
+      title: 'Poster image',
+      type: 'upload',
+      accept: 'image/*',
     },
     {
-      name: "hotspots_camera",
-      type: "object",
+      name: 'hotspots_camera',
+      type: 'object',
       fields: [
         {
-          name: "hotspots",
-          type: "string",
+          name: 'hotspots',
+          type: 'string',
         },
         {
-          name: "initialCamera",
-          type: "string",
+          name: 'initialCamera',
+          type: 'string',
         },
       ],
       component: HotspotComponent,
     },
     {
-      name: "settings",
-      title: "Settings",
-      type: "object",
+      name: 'settings',
+      title: 'Settings',
+      type: 'object',
       fields: [
         {
-          name: "lighting",
-          title: "Lighting",
-          description: "Choose a lighting preset",
-          type: "select",
+          name: 'lighting',
+          title: 'Lighting',
+          description: 'Choose a lighting preset',
+          type: 'select',
           options: {
             items: [
-              { label: "Indoor", value: "hdri1" },
-              { label: "Studio lights", value: "hdri2" },
-              { label: "Streetlights, dark", value: "hdri3" },
-              { label: "Natural lights", value: "hdri4" },
-              { label: "Dim", value: "hdri5" },
+              { label: 'Indoor', value: 'hdri1' },
+              { label: 'Studio lights', value: 'hdri2' },
+              { label: 'Streetlights, dark', value: 'hdri3' },
+              { label: 'Natural lights', value: 'hdri4' },
+              { label: 'Dim', value: 'hdri5' },
             ],
-            display: "dropdown",
+            display: 'dropdown',
           },
-          initialValue: "hdri1",
+          initialValue: 'hdri1',
         },
         {
-          name: "controls",
-          title: "Drag",
-          description: "Allow user to interact with model",
-          type: "boolean",
+          name: 'controls',
+          title: 'Drag',
+          description: 'Allow user to interact with model',
+          type: 'boolean',
           initialValue: false,
         },
         {
-          name: "zoom",
-          title: "Zoom",
-          description: "Allow user to zoom model",
-          type: "boolean",
+          name: 'zoom',
+          title: 'Zoom',
+          description: 'Allow user to zoom model',
+          type: 'boolean',
           initialValue: false,
         },
       ],
     },
     {
-      name: "animationSettings",
-      title: "Animation",
-      type: "object",
+      name: 'animationSettings',
+      title: 'Animation',
+      type: 'object',
       fields: [
         {
-          name: "animation",
-          title: "Animation",
-          type: "select",
+          name: 'animation',
+          title: 'Animation',
+          type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(
-                context.value?.modelUrl?.url
-              );
+              const animations = await getAnimations(context.value?.modelUrl?.url);
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });
             },
-            display: "dropdown",
+            display: 'dropdown',
           },
-          initialValue: "No animation",
+          initialValue: 'No animation',
         },
         {
-          name: "rotate",
-          title: "Rotate",
-          type: "boolean",
+          name: 'rotate',
+          title: 'Rotate',
+          type: 'boolean',
           initialValue: true,
         },
         {
-          name: "rotationSpeed",
-          title: "Rotation speed",
-          type: "number",
+          name: 'rotationSpeed',
+          title: 'Rotation speed',
+          type: 'number',
           initialValue: 2,
           options: {
-            display: "slider",
+            display: 'slider',
             min: 0,
             max: 20,
           },
-          hidden: (context) =>
-            context?.value?.animationSettings?.rotate !== true,
+          hidden: (context) => context?.value?.animationSettings?.rotate !== true,
         },
         {
-          name: "reverseSpeed",
-          title: "Loop alternate direction",
-          type: "boolean",
+          name: 'reverseSpeed',
+          title: 'Loop alternate direction',
+          type: 'boolean',
           initialValue: false,
-          hidden: (context) =>
-            context?.value?.animationSettings?.rotate !== true,
+          hidden: (context) => context?.value?.animationSettings?.rotate !== true,
         },
       ],
     },
@@ -363,12 +352,12 @@ export const config: VevManifest = {
   events: [
     {
       type: EventTypes.HOTSPOT_CLICKED,
-      description: "On hotspot click",
+      description: 'On hotspot click',
       args: [
         {
           name: EventTypes.HOTSPOT_CLICKED,
-          description: "Hotspot number clicked",
-          type: "number",
+          description: 'Hotspot number clicked',
+          type: 'number',
         },
       ],
     },
@@ -376,44 +365,40 @@ export const config: VevManifest = {
   interactions: [
     {
       type: InteractionTypes.SELECT_HOTSPOT,
-      description: "Focus hotspot",
-      args: [
-        { name: "select_hotspot", title: "Hotspot number", type: "number" },
-      ],
+      description: 'Focus hotspot',
+      args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
     },
     {
       type: InteractionTypes.START_ROTATION,
-      description: "Start rotation",
-      args: [{ name: "speed", title: "Speed", type: "number" }],
+      description: 'Start rotation',
+      args: [{ name: 'speed', title: 'Speed', type: 'number' }],
     },
     {
       type: InteractionTypes.STOP_ROTATION,
-      description: "Stop rotation",
+      description: 'Stop rotation',
     },
     {
       type: InteractionTypes.RESET_CAMERA,
-      description: "Reset camera",
+      description: 'Reset camera',
     },
     {
       type: InteractionTypes.PLAY_ANIMATION,
-      description: "Play animation",
+      description: 'Play animation',
       args: [
         {
-          name: "animation",
-          title: "Animation",
-          type: "select",
+          name: 'animation',
+          title: 'Animation',
+          type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(
-                context.value?.modelUrl?.url
-              );
+              const animations = await getAnimations(context.value?.modelUrl?.url);
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });
             },
-            display: "dropdown",
+            display: 'dropdown',
           },
-          initialValue: "No animation",
+          initialValue: 'No animation',
         },
       ],
     },
@@ -421,11 +406,11 @@ export const config: VevManifest = {
   editableCSS: [
     {
       selector: styles.hotspot,
-      properties: ["background", "color", "font", "font-family", "font-size"],
-      title: "Hotspot",
+      properties: ['background', 'color', 'font', 'font-family', 'font-size'],
+      title: 'Hotspot',
     },
   ],
-  type: "both",
+  type: 'both',
 };
 
 registerVevComponent(Object3d, config);
