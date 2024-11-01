@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
-import styles from "./Typewriter.module.css";
-import { useEditorState, useVevEvent } from "@vev/react";
-import { TypewriterInteraction } from "./index";
+import React, { useEffect, useRef, useState } from 'react';
+import styles from './Typewriter.module.css';
+import { useEditorState, useVevEvent } from '@vev/react';
+import { TypewriterInteraction } from './index';
 
 type Props = {
   words: string[];
@@ -12,20 +12,13 @@ type Props = {
   pauseOnStart: boolean;
 };
 
-const Typewriter = ({
-  before,
-  after,
-  words,
-  timer,
-  loop,
-  pauseOnStart,
-}: Props) => {
+const Typewriter = ({ before, after, words, timer, loop, pauseOnStart }: Props) => {
   const [WRITE, SHOW, ERASE, WAIT] = [0, 1, 2, 3];
   const lastTime = useRef(null);
   const [frame, setFrame] = useState(0);
   const [state, setState] = useState(WRITE);
   const [textViewLength, setTextViewLength] = useState(0);
-  const [textView, setTextView] = useState("");
+  const [textView, setTextView] = useState('');
   const [row, setRow] = useState(0);
   const { disabled } = useEditorState();
 
@@ -48,7 +41,7 @@ const Typewriter = ({
   const resetTypewriter = () => {
     setFrame(0);
     setTextViewLength(0);
-    setTextView("");
+    setTextView('');
     setRow(0);
   };
 
