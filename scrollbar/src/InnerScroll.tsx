@@ -1,5 +1,5 @@
-import React from "react";
-import { registerVevComponent } from "@vev/react";
+import React from 'react';
+import { registerVevComponent } from '@vev/react';
 
 type Props = {
   className: string;
@@ -8,16 +8,16 @@ type Props = {
 
 const InnerScroll = ({ className, children }: Props) => {
   return (
-    <div className={className} style={{ overflow: "auto" }}>
+    <div className={className} style={{ overflow: 'auto' }}>
       {children}
     </div>
   );
 };
 
 registerVevComponent(InnerScroll, {
-  name: "Scrollbar",
-  description: "A scrollable container",
-  type: "action",
+  name: 'Scrollbar',
+  description: 'A scrollable container',
+  type: 'action',
 });
 
 export default InnerScroll;

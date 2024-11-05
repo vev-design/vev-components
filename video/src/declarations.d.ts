@@ -1,7 +1,7 @@
-declare module '*.scss';
-declare module '*.css';
+declare module "*.scss";
+declare module "*.css";
 
-declare module '*?worker' {
+declare module "*?worker" {
   class VevWorker extends Worker {
     constructor();
   }
