@@ -1,0 +1,8 @@
+.jw-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+.jw-wrapper .jwplayer.jw-flag-aspect-mode {
+  height: 100% !important;
+}
