@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, VideoHTMLAttributes } from 'react';
 import styles from './Video.module.css';
 import { useEditorState, useVevEvent, useDispatchVevEvent } from '@vev/react';
-import { getNameFromUrl, isIE, track } from './utils';
+import { getNameFromUrl, isIE, createTracker } from './utils';
 import { VideoEvent, VideoInteraction } from '.';
 
 type Props = {
@@ -13,15 +13,26 @@ type Props = {
     sources: { url: string; format: string }[];
   };
   mute: boolean;
+  loop: boolean;
   controls: boolean;
   fill: boolean;
+  disableTracking: boolean;
   thumbnail: {
     url: string;
   };
   preload: 'auto' | 'metadata' | 'none';
 };
 
-const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
+const Video = ({
+  video,
+  mute,
+  controls,
+  fill,
+  thumbnail,
+  preload,
+  loop,
+  disableTracking,
+}: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
     current: 0,
@@ -31,6 +42,7 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
   const loopedAmount = useRef(1);
 
   const dispatch = useDispatchVevEvent();
+  const track = createTracker(disableTracking);
 
   useVevEvent(VideoInteraction.play, () => {
     videoRef.current.play();
@@ -105,13 +117,17 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
           dispatch(VideoEvent.onPause);
           return track('Pause', label, stateRef.current.current);
         case 'ended':
+          if (loop) {
+            videoEl.currentTime = 0;
+            videoEl.play();
+          }
           dispatch(VideoEvent.onEnd);
           return track('Finished', label);
       }
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
     return () => evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
-  }, [video]);
+  }, [video, loop]);
 
   useEffect(() => {
     const videoEl = videoRef.current;

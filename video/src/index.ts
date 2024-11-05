@@ -26,7 +26,9 @@ registerVevComponent(Video, {
     { name: 'thumbnail', type: 'image' },
     { name: 'mute', type: 'boolean' },
     { name: 'controls', type: 'boolean' },
+    { name: 'loop', type: 'boolean' },
     { name: 'fill', type: 'boolean', initialValue: true },
+    { name: 'disableTracking', type: 'boolean' },
     {
       name: 'preload',
       type: 'select',

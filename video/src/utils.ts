@@ -1,7 +1,10 @@
 import { Tracking } from '@vev/react';
 
-export function track(action: string, label?: string, value?: any, nonInteractive?: boolean) {
-  Tracking.send('video', 'HTML5 Video', action, label, value, nonInteractive);
+export function createTracker(disable?: boolean) {
+  if (disable) return;
+  return (action: string, label?: string, value?: any, nonInteractive?: boolean) => {
+    Tracking.send('video', 'HTML5 Video', action, label, value, nonInteractive);
+  };
 }
 
 export function getNameFromUrl(url: string): string {
