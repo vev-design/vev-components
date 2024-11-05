@@ -16,6 +16,7 @@ import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
 import { SilkeBox } from '@vev/silke';
+import { VevManifest } from '@vev/utils';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -41,16 +42,18 @@ export const FAR = 100;
 
 type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
 
-function noop() {}
+function noop() {
+  return;
+}
 
-type Props = {
+export type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
   settings: { lighting: LightingOptions; controls: boolean; zoom: boolean };
   poster: { url: string };
   hotspots_camera?: {
     hotspots: StorageHotspot[];
-    initialCamera: SavedCameraPosition;
+    initialCamera?: SavedCameraPosition;
   };
   animationSettings: {
     animation?: string;
@@ -198,7 +201,37 @@ const Object3d = ({
   );
 };
 
-registerVevComponent(Object3d, {
+export const HotspotComponent = (context) => {
+  const initialCamera = context.value?.initialCamera;
+  const hotspots = context.value?.hotspots || [];
+
+  return (
+    <>
+      <SilkeBox gap="s" flex style={{ padding: '18px 0 10px' }}>
+        <HotspotEditorForm
+          context={context}
+          onChange={(hotspots) => {
+            context.onChange({
+              initialCamera,
+              hotspots,
+            });
+          }}
+        />
+        <CameraEditor
+          context={context}
+          onChange={(camera) => {
+            context.onChange({
+              hotspots,
+              initialCamera: camera,
+            });
+          }}
+        />
+      </SilkeBox>
+    </>
+  );
+};
+
+export const config: VevManifest = {
   name: 'Object3D',
   props: [
     {
@@ -228,35 +261,7 @@ registerVevComponent(Object3d, {
           type: 'string',
         },
       ],
-      component: (context) => {
-        const initialCamera = context.value?.initialCamera;
-        const hotspots = context.value?.hotspots || [];
-
-        return (
-          <>
-            <SilkeBox gap="s" flex style={{ padding: '18px 0 10px' }}>
-              <HotspotEditorForm
-                context={context}
-                onChange={(hotspots) => {
-                  context.onChange({
-                    initialCamera,
-                    hotspots,
-                  });
-                }}
-              />
-              <CameraEditor
-                context={context}
-                onChange={(camera) => {
-                  context.onChange({
-                    hotspots,
-                    initialCamera: camera,
-                  });
-                }}
-              />
-            </SilkeBox>
-          </>
-        );
-      },
+      component: HotspotComponent,
     },
     {
       name: 'settings',
@@ -406,6 +411,8 @@ registerVevComponent(Object3d, {
     },
   ],
   type: 'both',
-});
+};
+
+registerVevComponent(Object3d, config);
 
 export default Object3d;
