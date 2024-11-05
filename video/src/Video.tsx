@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, VideoHTMLAttributes } from "react";
-import styles from "./Video.module.css";
-import { useEditorState, useVevEvent, useDispatchVevEvent } from "@vev/react";
-import { getNameFromUrl, isIE, track } from "./utils";
-import { VideoEvent, VideoInteraction } from ".";
+import React, { useEffect, useRef, VideoHTMLAttributes } from 'react';
+import styles from './Video.module.css';
+import { useEditorState, useVevEvent, useDispatchVevEvent } from '@vev/react';
+import { getNameFromUrl, isIE, track } from './utils';
+import { VideoEvent, VideoInteraction } from '.';
 
 type Props = {
   video: {
@@ -18,7 +18,7 @@ type Props = {
   thumbnail: {
     url: string;
   };
-  preload: "auto" | "metadata" | "none";
+  preload: 'auto' | 'metadata' | 'none';
 };
 
 const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
@@ -70,49 +70,47 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
   useEffect(() => {
     const videoEl = videoRef.current;
 
-    const evs = ["play", "pause", "ended", "timeupdate"];
+    const evs = ['play', 'pause', 'ended', 'timeupdate'];
     const onEv = (e) => {
       const videoEl: HTMLVideoElement = videoRef.current;
       if (!videoEl) return;
 
-      const label = video?.name || getNameFromUrl(video.sources[0].url) || "";
-      switch (e.type) {
-        case "timeupdate":
-          const current = Math.round(
-            (100 * videoEl.currentTime) / videoEl.duration
-          );
-          const update = {
-            current,
-            maxProgress: Math.max(current, stateRef.current.maxProgress),
-          };
+      const label = video?.name || getNameFromUrl(video.sources[0].url) || '';
+      const current = Math.round((100 * videoEl.currentTime) / videoEl.duration);
 
+      const update = {
+        current,
+        maxProgress: Math.max(current, stateRef.current.maxProgress),
+      };
+
+      switch (e.type) {
+        case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
-            track("Video Progress", label, stateRef.current.maxProgress);
+            track('Video Progress', label, stateRef.current.maxProgress);
           }
           if (videoEl.currentTime > (fifth * videoEl.duration) / 5) {
             const progress = fifth * 20;
             track(`Video Progress ${progress}`, label);
-            console.log("progress", progress);
+            console.log('progress', progress);
             dispatch(VideoEvent.currentTime, { currentTime: progress });
             fifth++;
           }
           stateRef.current.current = update.current;
           stateRef.current.maxProgress = update.maxProgress;
           break;
-        case "play":
+        case 'play':
           dispatch(VideoEvent.onPlay);
-          return track("Play", label);
-        case "pause":
+          return track('Play', label);
+        case 'pause':
           dispatch(VideoEvent.onPause);
-          return track("Pause", label, stateRef.current.current);
-        case "ended":
+          return track('Pause', label, stateRef.current.current);
+        case 'ended':
           dispatch(VideoEvent.onEnd);
-          return track("Finished", label);
+          return track('Finished', label);
       }
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
-    return () =>
-      evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
+    return () => evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
   }, [video]);
 
   useEffect(() => {
@@ -130,12 +128,12 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
   // if (loop) attributes.loop = true;
   if (mute) attributes.muted = true;
   if (controls) attributes.controls = true;
-  if (isIE()) attributes.className = "ie";
+  if (isIE()) attributes.className = 'ie';
 
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl) return;
-    videoEl.style.objectFit = fill ? "cover" : "contain";
+    videoEl.style.objectFit = fill ? 'cover' : 'contain';
   }, [fill, videoRef.current]);
 
   return (
@@ -147,23 +145,19 @@ const Video = ({ video, mute, controls, fill, thumbnail, preload }: Props) => {
       )}
       <video
         ref={videoRef}
-        aria-label={video?.name || ""}
+        aria-label={video?.name || ''}
         playsInline
         disableRemotePlayback
         className={styles.video}
-        poster={
-          thumbnail && thumbnail.url ? thumbnail.url : video && video.thumbnail
-        }
+        poster={thumbnail && thumbnail.url ? thumbnail.url : video && video.thumbnail}
         preload={preload}
         {...attributes}
       >
         {video &&
           video.sources &&
           video.sources
-            .sort((v) => (v.format === "video/webm" ? -1 : 1))
-            .map((v) => (
-              <source key={v.url} src={v.url} type={v.format || "video/mp4"} />
-            ))}
+            .sort((v) => (v.format === 'video/webm' ? -1 : 1))
+            .map((v) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
         Your browser does not support this video
       </video>
     </>

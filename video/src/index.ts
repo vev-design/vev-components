@@ -1,72 +1,72 @@
-import { registerVevComponent } from "@vev/react";
-import Video from "./Video";
+import { registerVevComponent } from '@vev/react';
+import Video from './Video';
 
 export enum VideoInteraction {
-  play = "play",
-  restart = "restart",
-  togglePlay = "togglePlay",
-  pause = "pause",
-  mute = "mute",
-  unMute = "unMute",
-  toggleSound = "toggleSound",
+  play = 'play',
+  restart = 'restart',
+  togglePlay = 'togglePlay',
+  pause = 'pause',
+  mute = 'mute',
+  unMute = 'unMute',
+  toggleSound = 'toggleSound',
 }
 
 export enum VideoEvent {
-  onPlay = "onPlay",
-  onPause = "onPause",
-  onEnd = "onEnd",
-  currentTime = "currentTime",
+  onPlay = 'onPlay',
+  onPause = 'onPause',
+  onEnd = 'onEnd',
+  currentTime = 'currentTime',
 }
 
 registerVevComponent(Video, {
-  name: "Video",
-  type: "both",
+  name: 'Video',
+  type: 'both',
   props: [
-    { name: "video", type: "video" },
-    { name: "thumbnail", type: "image" },
-    { name: "mute", type: "boolean" },
-    { name: "controls", type: "boolean" },
-    { name: "fill", type: "boolean", initialValue: true },
+    { name: 'video', type: 'video' },
+    { name: 'thumbnail', type: 'image' },
+    { name: 'mute', type: 'boolean' },
+    { name: 'controls', type: 'boolean' },
+    { name: 'fill', type: 'boolean', initialValue: true },
     {
-      name: "preload",
-      type: "select",
+      name: 'preload',
+      type: 'select',
       options: {
-        display: "dropdown",
-        items: ["auto", "metadata", "none"].map((v) => ({
+        display: 'dropdown',
+        items: ['auto', 'metadata', 'none'].map((v) => ({
           value: v,
           label: v,
         })),
       },
-      initialValue: "auto",
+      initialValue: 'auto',
     },
   ],
   editableCSS: [
     {
-      selector: ":host",
-      properties: ["background", "border", "border-radius", "box-shadow"],
+      selector: ':host',
+      properties: ['background', 'border', 'border-radius', 'box-shadow'],
     },
   ],
   events: [
     {
       type: VideoEvent.onPlay,
-      description: "On play",
+      description: 'On play',
     },
     {
       type: VideoEvent.onPause,
-      description: "On pause",
+      description: 'On pause',
     },
     {
       type: VideoEvent.onEnd,
-      description: "On end",
+      description: 'On end',
     },
     {
       type: VideoEvent.currentTime,
-      description: "On play time",
+      description: 'On play time',
       args: [
         {
-          name: "currentTime",
-          description: "currentTime",
-          type: "number",
+          name: 'currentTime',
+          description: 'currentTime',
+          type: 'number',
         },
       ],
     },
@@ -75,31 +75,31 @@ registerVevComponent(Video, {
   interactions: [
     {
       type: VideoInteraction.play,
-      description: "Play",
+      description: 'Play',
     },
     {
       type: VideoInteraction.restart,
-      description: "Restart",
+      description: 'Restart',
     },
     {
       type: VideoInteraction.togglePlay,
-      description: "Toggle play",
+      description: 'Toggle play',
     },
     {
       type: VideoInteraction.pause,
-      description: "Pause",
+      description: 'Pause',
     },
     {
       type: VideoInteraction.mute,
-      description: "Mute",
+      description: 'Mute',
     },
     {
       type: VideoInteraction.unMute,
-      description: "Unmute",
+      description: 'Unmute',
     },
     {
       type: VideoInteraction.toggleSound,
-      description: "Toggle sound",
+      description: 'Toggle sound',
     },
   ],
 });
