@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Youtube.module.css';
-import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useEditorState,
+  useVevEvent,
+  useTracking,
+} from '@vev/react';
 import YouTube from 'react-youtube';
 import OnStateChangeEvent = YT.OnStateChangeEvent;
 import Player = YT.Player;
@@ -56,6 +62,7 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
   const { disabled } = useEditorState();
   const currentTimeRef = useRef<number>();
   const dispatch = useDispatchVevEvent();
+  const dispatchTrackingEvent = useTracking();
 
   const cleanVideoId = useMemo(() => {
     return youTubeParseUrl(videoId);
@@ -66,12 +73,15 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
     playerState.current = event.data;
     switch (event.data) {
       case YT.PlayerState.PLAYING:
+        dispatchTrackingEvent('VEV_VIDEO_PLAY', { videoUrl: videoId, videoName: cleanVideoId });
         dispatch(YoutubeEvent.onPlay);
         break;
       case YT.PlayerState.PAUSED:
+        dispatchTrackingEvent('VEV_VIDEO_STOP', { videoUrl: videoId, videoName: cleanVideoId });
         dispatch(YoutubeEvent.onPause);
         break;
       case YT.PlayerState.ENDED:
+        dispatchTrackingEvent('VEV_VIDEO_STOP', { videoUrl: videoId, videoName: cleanVideoId });
         dispatch(YoutubeEvent.onEnd);
         break;
     }
@@ -125,13 +135,17 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const player = getPlayer();
       if (player && player.getCurrentTime) {
-        const currentTime = Math.floor(player.getCurrentTime());
+        const currentTime = Math.floor(player?.getCurrentTime());
         if (currentTime !== currentTimeRef.current) {
           currentTimeRef.current = currentTime;
           dispatch(YoutubeEvent.currentTime, {
             currentTime,
+          });
+          dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
+            videoUrl: videoId,
+            videoName: cleanVideoId,
+            progress: currentTime,
           });
         }
       }
@@ -140,7 +154,7 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
     return () => {
       clearInterval(interval);
     };
-  }, [dispatch]);
+  }, [dispatch, player, videoId]);
 
   if (!videoId) return null;
 
@@ -193,6 +207,7 @@ registerVevComponent(Youtube, {
       type: 'string',
       options: {
         multiline: true,
+        type: 'url',
       },
     },
     {

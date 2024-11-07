@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, VideoHTMLAttributes } from 'react';
 import styles from './Video.module.css';
-import { useEditorState, useVevEvent, useDispatchVevEvent } from '@vev/react';
+import { useEditorState, useVevEvent, useDispatchVevEvent, useTracking } from '@vev/react';
 import { getNameFromUrl, isIE, createTracker } from './utils';
 import { VideoEvent, VideoInteraction } from '.';
 
@@ -43,6 +43,7 @@ const Video = ({
 
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
+  const dispatchTrackingEvent = useTracking(disableTracking);
 
   useVevEvent(VideoInteraction.play, () => {
     videoRef.current.play();
@@ -94,16 +95,20 @@ const Video = ({
         current,
         maxProgress: Math.max(current, stateRef.current.maxProgress),
       };
-
       switch (e.type) {
         case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
+            console.log('VEV_VIDEO_PROGRESS', current);
+            dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
+              videoUrl: video.url,
+              videoName: video.name,
+              progress: current,
+            });
             track('Video Progress', label, stateRef.current.maxProgress);
           }
           if (videoEl.currentTime > (fifth * videoEl.duration) / 5) {
             const progress = fifth * 20;
             track(`Video Progress ${progress}`, label);
-            console.log('progress', progress);
             dispatch(VideoEvent.currentTime, { currentTime: progress });
             fifth++;
           }
@@ -111,12 +116,21 @@ const Video = ({
           stateRef.current.maxProgress = update.maxProgress;
           break;
         case 'play':
+          dispatchTrackingEvent('VEV_VIDEO_PLAY', { videoUrl: video.url, videoName: video.name });
           dispatch(VideoEvent.onPlay);
           return track('Play', label);
         case 'pause':
+          dispatchTrackingEvent('VEV_VIDEO_STOP', {
+            videoUrl: video.url,
+            videoName: video.name,
+          });
           dispatch(VideoEvent.onPause);
           return track('Pause', label, stateRef.current.current);
         case 'ended':
+          dispatchTrackingEvent('VEV_VIDEO_STOP', {
+            videoUrl: video.url,
+            videoName: video.name,
+          });
           if (loop) {
             videoEl.currentTime = 0;
             videoEl.play();
@@ -127,7 +141,7 @@ const Video = ({
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
     return () => evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
-  }, [video, loop]);
+  }, [video, loop, track]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
