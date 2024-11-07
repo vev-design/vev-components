@@ -98,7 +98,6 @@ const Video = ({
       switch (e.type) {
         case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
-            console.log('VEV_VIDEO_PROGRESS', current);
             dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
               videoUrl: video.url,
               videoName: video.name,
