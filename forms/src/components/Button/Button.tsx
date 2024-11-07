@@ -113,6 +113,7 @@ const validateForm = (formState: any, formModels: FormModel[]) => {
 
 function Button({ ...props }: Props) {
   const [submitting, setSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formState, setFormState] = useState({});
   const dispatch = useDispatchVevEvent();
   const [store] = useGlobalStateRef();
@@ -173,10 +174,13 @@ function Button({ ...props }: Props) {
     }
 
     dispatch(Event.FORM_SUBMITTED);
+    setIsSubmitted(true);
     setSubmitting(false);
   }, []);
 
   useVevEvent(Interaction.UPDATE_FORM, (e: any) => {
+    setIsSubmitted(false);
+
     console.log('-> updated', e, formState);
     if (!e) return;
     dispatch(Event.FORM_VALID);
@@ -206,8 +210,12 @@ function Button({ ...props }: Props) {
     })[state];
 
   return (
-    <button disabled={submitting} onClick={() => handleSubmit(formState)} className={styles.button}>
-      {messages(submitting ? 'loading' : 'default')}
+    <button
+      disabled={submitting || isSubmitted}
+      onClick={() => handleSubmit(formState)}
+      className={styles.button}
+    >
+      {messages(submitting ? 'loading' : isSubmitted ? 'success' : 'default')}
     </button>
   );
 }
