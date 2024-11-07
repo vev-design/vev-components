@@ -23,7 +23,6 @@ registerVevComponent(Video, {
   type: 'both',
   props: [
     { name: 'video', type: 'video' },
-    { name: 'thumbnail', type: 'image' },
     { name: 'mute', type: 'boolean' },
     { name: 'controls', type: 'boolean' },
     { name: 'loop', type: 'boolean' },
@@ -41,6 +40,7 @@ registerVevComponent(Video, {
       },
       initialValue: 'auto',
     },
+    { name: 'thumbnail', type: 'image' },
   ],
   editableCSS: [
     {

@@ -153,7 +153,7 @@ const Video = ({
   }, [fill, videoRef.current]);
 
   return (
-    <>
+    <div className={styles.wrapper}>
       {!video && (
         <div className={styles.empty}>
           <h3>Double-click to select video</h3>
@@ -176,7 +176,7 @@ const Video = ({
             .map((v) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
         Your browser does not support this video
       </video>
-    </>
+    </div>
   );
 };
 
