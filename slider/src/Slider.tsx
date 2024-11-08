@@ -6,7 +6,7 @@ import {
   useGlobalState,
   useDispatchVevEvent,
 } from '@vev/react';
-import { shuffleArray } from './utils';
+import { shuffleArray, getNextSlideIndex, getPrevSlideIndex } from './utils';
 import DirectionField from './DirectionField';
 
 import Slide from './Slide';
@@ -16,7 +16,6 @@ import Carousel from './Carousel3d';
 import None from './None';
 
 import { useTouch } from './use-touch';
-import { getNextSlideIndex, getPrevSlideIndex } from './utils';
 
 import styles from './Slider.module.css';
 
@@ -34,12 +33,12 @@ export type Props = {
   easing?: string;
   shrinkFactorBeforeAfter?: number;
   direction: 'HORIZONTAL' | 'HORIZONTAL_REVERSE' | 'VERTICAL' | 'VERTICAL_REVERSE';
-
   slides: string[];
   editMode?: boolean;
   index: number;
   action: 'NEXT' | 'PREV';
   slidesToLoad: number;
+  disableSwipe?: boolean;
 };
 
 enum Interactions {
@@ -70,8 +69,8 @@ export const Slideshow = (props: Props) => {
         editor.activeContentChild
           ? children.indexOf(editor.activeContentChild)
           : !editor.disabled
-          ? prevIndex.current || 0
-          : 0,
+            ? prevIndex.current || 0
+            : 0,
       ),
       length: numberOfSlides || 0,
     });
@@ -116,10 +115,14 @@ export const Slideshow = (props: Props) => {
     });
   }, [state?.index, slides, numberOfSlides, isTransitioning]);
 
-  useTouch(hostRef, {
-    onNext: handleNextSlide,
-    onPrev: handlePrevSlide,
-  });
+  useTouch(
+    hostRef,
+    {
+      onNext: handleNextSlide,
+      onPrev: handlePrevSlide,
+    },
+    props.disableSwipe,
+  );
 
   useVevEvent(Interactions.NEXT, handleNextSlide);
   useVevEvent(Interactions.PREV, handlePrevSlide);
@@ -130,9 +133,7 @@ export const Slideshow = (props: Props) => {
     });
   });
 
-  if (!props?.children?.length) {
-    return <div className={styles.empty}>No slides</div>;
-  }
+  if (!props?.children?.length) return null;
 
   const render = {
     slide: Slide,
@@ -302,18 +303,23 @@ registerVevComponent(Slideshow, {
       initialValue: 0,
       hidden: (context) => context.value?.animation !== 'slide',
     },
+    {
+      name: 'disableSwipe',
+      type: 'boolean',
+      description: 'The slider have a default swipe to change slide on mobile that can be disabled',
+    },
   ],
   events: [
     {
-       type: Events.SLIDE_CHANGED, 
-       description: "Slide was changed", 
-       args: [
+      type: Events.SLIDE_CHANGED,
+      description: 'Slide was changed',
+      args: [
         {
           name: 'currentSlide',
           description: 'Slide number',
           type: 'number',
         },
-      ], 
+      ],
     },
   ],
   interactions: [

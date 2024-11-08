@@ -2,10 +2,11 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import styles from './ImageCompare.module.css';
 import { registerVevComponent, Image } from '@vev/react';
 import { ReactCompareSlider, ReactCompareSliderImage } from 'react-compare-slider';
+import { ObjectFitEditor } from './object-fit-editor';
 
-const DEFAULT_LEFT_IMAGE =
+export const DEFAULT_LEFT_IMAGE =
   'https://cdn.vev.design/cdn-cgi/image/f=auto,q=82,w=1280/private/sSh27nYTPBc9oijoH3onf2eolMH2/image/7XbxPUdRtgw';
-const DEFAULT_RIGHT_IMAGE =
+export const DEFAULT_RIGHT_IMAGE =
   'https://cdn.vev.design/cdn-cgi/image/f=auto,q=82,w=1280/private/an2K3NyIunQ4E5tG3LwwGhVDbi23/image/trees-moss-forest-sunlight-sunrays-3294681';
 
 const DEFAULT_ICON_LEFT: IconProp = {
@@ -28,8 +29,8 @@ const DEFAULT_ICON_RIGHT: IconProp = {
   ],
 };
 
-type ImageProp = { url: string };
-type IconProp = { path: [number, number, string]; key: string; name: string };
+export type ImageProp = { key: string; url: string; xPercent: number; yPercent: number };
+export type IconProp = { path: [number, number, string]; key: string; name: string };
 
 type Props = {
   left?: ImageProp;
@@ -128,8 +129,26 @@ const ImageCompare = ({
           />
         }
         style={{ height: '100%' }}
-        itemOne={<ReactCompareSliderImage src={actualLeft} />}
-        itemTwo={<ReactCompareSliderImage src={actualRight} />}
+        itemOne={
+          <img
+            className={styles.image}
+            src={actualLeft}
+            style={{
+              objectPosition: `${(left?.xPercent || 0.5) * 100}% ${(left?.yPercent || 0.5) * 100}%`,
+            }}
+          />
+        }
+        itemTwo={
+          <img
+            className={styles.image}
+            src={actualRight}
+            style={{
+              objectPosition: `${(right?.xPercent || 0.5) * 100}% ${
+                (right?.yPercent || 0.5) * 100
+              }%`,
+            }}
+          />
+        }
       />
     </div>
   );
@@ -142,11 +161,35 @@ registerVevComponent(ImageCompare, {
       name: 'left',
       title: 'Left Image',
       type: 'image',
+      component: (props) => {
+        const value = props.value as ImageProp;
+        return (
+          <ObjectFitEditor
+            name="left"
+            title="Left image"
+            value={value || { url: DEFAULT_LEFT_IMAGE, xPercent: 0.5, yPercent: 0.5, key: '' }}
+            onChange={props.onChange}
+            context={props.context}
+          />
+        );
+      },
     },
     {
       name: 'right',
       title: 'Right Image',
       type: 'image',
+      component: (props) => {
+        const value = props.value as ImageProp;
+        return (
+          <ObjectFitEditor
+            name="left"
+            title="Left image"
+            value={value || { url: DEFAULT_RIGHT_IMAGE, xPercent: 0.5, yPercent: 0.5, key: '' }}
+            onChange={props.onChange}
+            context={props.context}
+          />
+        );
+      },
     },
     {
       name: 'handles',

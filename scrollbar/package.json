@@ -1,5 +1,5 @@
 {
-  "name": "jw-player",
+  "name": "scroll-addon",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
@@ -14,8 +14,7 @@
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
-    "@vev/react": "^0.2.0",
-    "@vev/silke": "latest",
+    "@vev/react": "latest",
     "react": "^18.2.0"
   }
 }

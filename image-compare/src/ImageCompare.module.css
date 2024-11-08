@@ -1,29 +1,39 @@
 .wrapper {
-  height: 100%;
-  overflow: hidden;
+    height: 100%;
+    overflow: hidden;
 }
 
 .handle {
-  height: 100%;
-  display: flex;
-  flex-direction: row;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
 }
 
 .handleBar {
-  height: 100%;
-  background: white;
-  width: 5px;
+    height: 100%;
+    background: white;
+    width: 5px;
 }
 
 .iconWrapper {
-  padding: 10px;
+    padding: 10px;
 }
 
 .icon {
-  min-height: 100%;
-  cursor: ew-resize;
-  fill: white;
-  width: 15px;
-  height: 15px;
+    min-height: 100%;
+    cursor: ew-resize;
+    fill: white;
+    width: 15px;
+    height: 15px;
+}
+
+.image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    object-fit: cover;
+    object-position: center center;
 }
 

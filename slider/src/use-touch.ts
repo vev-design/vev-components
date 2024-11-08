@@ -1,14 +1,19 @@
 import { useEffect, RefObject, useState } from 'react';
 
 const getX = (e) => e.touches[0].clientX;
-const SWIPE_THRESHOLD = 25;
+const SWIPE_THRESHOLD = 50;
 
-export function useTouch(ref: RefObject<HTMLElement>, cb) {
+type TouchCallback = {
+  onNext: () => void;
+  onPrev: () => void;
+};
+
+export function useTouch(ref: RefObject<HTMLElement>, cb: TouchCallback, disableSwipe = false) {
   const [dragging, setDragging] = useState(false);
   const [x, setX] = useState(0);
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current || disableSwipe) return;
 
     const handleTouchStart = (e) => {
       setDragging(true);
