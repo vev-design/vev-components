@@ -13,6 +13,7 @@ type Props = {
     sources: { url: string; format: string }[];
   };
   mute: boolean;
+  autoplay: boolean;
   loop: boolean;
   controls: boolean;
   fill: boolean;
@@ -32,6 +33,7 @@ const Video = ({
   preload,
   loop,
   disableTracking,
+  autoplay = false,
 }: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
@@ -40,12 +42,14 @@ const Video = ({
   });
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
+  const videoStarted = useRef(false);
 
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
   const dispatchTrackingEvent = useTracking(disableTracking);
 
   useVevEvent(VideoInteraction.play, () => {
+    console.log('play');
     videoRef.current.play();
   });
 
@@ -146,18 +150,24 @@ const Video = ({
     const videoEl = videoRef.current;
     if (!videoEl) return;
 
+    if (autoplay && !disabled) {
+      videoEl.muted = true;
+      videoEl.play();
+    }
+
     if (disabled) {
       loopedAmount.current = 1;
       videoEl.load();
       videoEl.pause();
     }
-  }, [disabled]);
+  }, [disabled, autoplay]);
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
   if (mute) attributes.muted = true;
   if (controls) attributes.controls = true;
   if (isIE()) attributes.className = 'ie';
+  if (autoplay) attributes.autoPlay = true;
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -173,6 +183,7 @@ const Video = ({
         </div>
       )}
       <video
+        autoPlay={autoplay}
         ref={videoRef}
         aria-label={video?.name || ''}
         playsInline
