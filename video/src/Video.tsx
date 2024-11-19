@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, VideoHTMLAttributes } from 'react';
 import styles from './Video.module.css';
-import { useEditorState, useVevEvent, useDispatchVevEvent } from '@vev/react';
+import { useEditorState, useVevEvent, useDispatchVevEvent, useTracking } from '@vev/react';
 import { getNameFromUrl, isIE, createTracker } from './utils';
 import { VideoEvent, VideoInteraction } from '.';
 
@@ -13,6 +13,7 @@ type Props = {
     sources: { url: string; format: string }[];
   };
   mute: boolean;
+  autoplay: boolean;
   loop: boolean;
   controls: boolean;
   fill: boolean;
@@ -32,6 +33,7 @@ const Video = ({
   preload,
   loop,
   disableTracking,
+  autoplay = false,
 }: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
@@ -40,11 +42,14 @@ const Video = ({
   });
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
+  const videoStarted = useRef(false);
 
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
+  const dispatchTrackingEvent = useTracking(disableTracking);
 
   useVevEvent(VideoInteraction.play, () => {
+    console.log('play');
     videoRef.current.play();
   });
 
@@ -94,16 +99,19 @@ const Video = ({
         current,
         maxProgress: Math.max(current, stateRef.current.maxProgress),
       };
-
       switch (e.type) {
         case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
+            dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
+              videoUrl: video.url,
+              videoName: video.name,
+              progress: current,
+            });
             track('Video Progress', label, stateRef.current.maxProgress);
           }
           if (videoEl.currentTime > (fifth * videoEl.duration) / 5) {
             const progress = fifth * 20;
             track(`Video Progress ${progress}`, label);
-            console.log('progress', progress);
             dispatch(VideoEvent.currentTime, { currentTime: progress });
             fifth++;
           }
@@ -111,12 +119,21 @@ const Video = ({
           stateRef.current.maxProgress = update.maxProgress;
           break;
         case 'play':
+          dispatchTrackingEvent('VEV_VIDEO_PLAY', { videoUrl: video.url, videoName: video.name });
           dispatch(VideoEvent.onPlay);
           return track('Play', label);
         case 'pause':
+          dispatchTrackingEvent('VEV_VIDEO_STOP', {
+            videoUrl: video.url,
+            videoName: video.name,
+          });
           dispatch(VideoEvent.onPause);
           return track('Pause', label, stateRef.current.current);
         case 'ended':
+          dispatchTrackingEvent('VEV_VIDEO_STOP', {
+            videoUrl: video.url,
+            videoName: video.name,
+          });
           if (loop) {
             videoEl.currentTime = 0;
             videoEl.play();
@@ -127,24 +144,30 @@ const Video = ({
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
     return () => evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
-  }, [video, loop]);
+  }, [video, loop, track]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl) return;
+
+    if (autoplay && !disabled) {
+      videoEl.muted = true;
+      videoEl.play();
+    }
 
     if (disabled) {
       loopedAmount.current = 1;
       videoEl.load();
       videoEl.pause();
     }
-  }, [disabled]);
+  }, [disabled, autoplay]);
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
   if (mute) attributes.muted = true;
   if (controls) attributes.controls = true;
   if (isIE()) attributes.className = 'ie';
+  if (autoplay) attributes.autoPlay = true;
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -160,6 +183,7 @@ const Video = ({
         </div>
       )}
       <video
+        autoPlay={autoplay}
         ref={videoRef}
         aria-label={video?.name || ''}
         playsInline
