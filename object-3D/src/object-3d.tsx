@@ -7,7 +7,7 @@ import {
   useSize,
   useVevEvent,
 } from '@vev/react';
-import { Object3DContextProvider } from './context/object-3d-context';
+import { Object3DContextProps, Object3DContextProvider } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
 import { HotspotEditorForm } from './components/hotspot-editor-form';
@@ -15,7 +15,8 @@ import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
-import { SilkeBox, SilkeDivider } from '@vev/silke';
+import { SilkeBox } from '@vev/silke';
+import { VevManifest } from '@vev/utils';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -41,14 +42,18 @@ export const FAR = 100;
 
 type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
 
-type Props = {
+function noop() {
+  return;
+}
+
+export type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
   settings: { lighting: LightingOptions; controls: boolean; zoom: boolean };
   poster: { url: string };
   hotspots_camera?: {
     hotspots: StorageHotspot[];
-    initialCamera: SavedCameraPosition;
+    initialCamera?: SavedCameraPosition;
   };
   animationSettings: {
     animation?: string;
@@ -82,7 +87,20 @@ const Object3d = ({
   const actualRotationSpeed = reverseSpeed ? rotationSpeed * -1 : rotationSpeed;
 
   const [internalHotspots, setInternalHotspots] = useState<InternalHotspot[]>([]);
-  const clickHotspotCallback = useRef((args: any) => {});
+  const eventCallbacks = useRef<{
+    click_hotspot: (index: number) => void;
+    start_rotation: (speed: number) => void;
+    stop_rotation: () => void;
+    reset_camera: () => void;
+    play_animation: (animation: string) => void;
+  }>({
+    click_hotspot: noop,
+    start_rotation: noop,
+    stop_rotation: noop,
+    reset_camera: noop,
+    play_animation: noop,
+  });
+
   const [initialCameraPosition, setInitialCameraPosition] =
     useState<SavedCameraPosition>(initialCamera);
   const { disabled, schemaOpen } = useEditorState();
@@ -111,7 +129,23 @@ const Object3d = ({
   }, [hotspots]);
 
   useVevEvent(InteractionTypes.SELECT_HOTSPOT, (args: any) => {
-    clickHotspotCallback.current(args.select_hotspot);
+    eventCallbacks.current.click_hotspot(args.select_hotspot);
+  });
+
+  useVevEvent(InteractionTypes.START_ROTATION, (args: any) => {
+    eventCallbacks.current.start_rotation(args.speed);
+  });
+
+  useVevEvent(InteractionTypes.STOP_ROTATION, () => {
+    eventCallbacks.current.stop_rotation();
+  });
+
+  useVevEvent(InteractionTypes.RESET_CAMERA, () => {
+    eventCallbacks.current.reset_camera();
+  });
+
+  useVevEvent(InteractionTypes.PLAY_ANIMATION, (args: any) => {
+    eventCallbacks.current.play_animation(args.animation);
   });
 
   return (
@@ -137,8 +171,22 @@ const Object3d = ({
           schemaOpen,
           posterUrl: poster ? poster.url : null,
           savedCameraPosition: initialCameraPosition,
-          setClickHotspotCallback: (cb) => {
-            clickHotspotCallback.current = cb;
+          eventCallbacks: {
+            click_hotspot: (cb) => {
+              eventCallbacks.current.click_hotspot = cb;
+            },
+            start_rotation: (cb) => {
+              eventCallbacks.current.start_rotation = cb;
+            },
+            stop_rotation: (cb) => {
+              eventCallbacks.current.stop_rotation = cb;
+            },
+            reset_camera: (cb) => {
+              eventCallbacks.current.reset_camera = cb;
+            },
+            play_animation: (cb) => {
+              eventCallbacks.current.play_animation = cb;
+            },
           },
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
@@ -153,7 +201,37 @@ const Object3d = ({
   );
 };
 
-registerVevComponent(Object3d, {
+export const HotspotComponent = (context) => {
+  const initialCamera = context.value?.initialCamera;
+  const hotspots = context.value?.hotspots || [];
+
+  return (
+    <>
+      <SilkeBox gap="s" flex style={{ padding: '18px 0 10px' }}>
+        <HotspotEditorForm
+          context={context}
+          onChange={(hotspots) => {
+            context.onChange({
+              initialCamera,
+              hotspots,
+            });
+          }}
+        />
+        <CameraEditor
+          context={context}
+          onChange={(camera) => {
+            context.onChange({
+              hotspots,
+              initialCamera: camera,
+            });
+          }}
+        />
+      </SilkeBox>
+    </>
+  );
+};
+
+export const config: VevManifest = {
   name: 'Object3D',
   props: [
     {
@@ -183,35 +261,7 @@ registerVevComponent(Object3d, {
           type: 'string',
         },
       ],
-      component: (context) => {
-        const initialCamera = context.value?.initialCamera;
-        const hotspots = context.value?.hotspots || [];
-
-        return (
-          <>
-            <SilkeBox gap="s" flex style={{ padding: '18px 0 10px' }}>
-              <HotspotEditorForm
-                context={context}
-                onChange={(hotspots) => {
-                  context.onChange({
-                    initialCamera,
-                    hotspots,
-                  });
-                }}
-              />
-              <CameraEditor
-                context={context}
-                onChange={(camera) => {
-                  context.onChange({
-                    hotspots,
-                    initialCamera: camera,
-                  });
-                }}
-              />
-            </SilkeBox>
-          </>
-        );
-      },
+      component: HotspotComponent,
     },
     {
       name: 'settings',
@@ -318,6 +368,40 @@ registerVevComponent(Object3d, {
       description: 'Focus hotspot',
       args: [{ name: 'select_hotspot', title: 'Hotspot number', type: 'number' }],
     },
+    {
+      type: InteractionTypes.START_ROTATION,
+      description: 'Start rotation',
+      args: [{ name: 'speed', title: 'Speed', type: 'number' }],
+    },
+    {
+      type: InteractionTypes.STOP_ROTATION,
+      description: 'Stop rotation',
+    },
+    {
+      type: InteractionTypes.RESET_CAMERA,
+      description: 'Reset camera',
+    },
+    {
+      type: InteractionTypes.PLAY_ANIMATION,
+      description: 'Play animation',
+      args: [
+        {
+          name: 'animation',
+          title: 'Animation',
+          type: 'select',
+          options: {
+            items: async (context) => {
+              const animations = await getAnimations(context.value?.modelUrl?.url);
+              return [NO_ANIMATION, ...animations].map((animation) => {
+                return { label: animation, value: animation };
+              });
+            },
+            display: 'dropdown',
+          },
+          initialValue: 'No animation',
+        },
+      ],
+    },
   ],
   editableCSS: [
     {
@@ -327,6 +411,8 @@ registerVevComponent(Object3d, {
     },
   ],
   type: 'both',
-});
+};
+
+registerVevComponent(Object3d, config);
 
 export default Object3d;

@@ -2,6 +2,12 @@ import { registerVevComponent } from "@vev/react";
 import Typewriter from "./Typewriter";
 import styles from "./Typewriter.module.css";
 
+export enum TypewriterInteraction {
+  play = "play",
+  restart = "restart",
+  pause = "pause",
+}
+
 registerVevComponent(Typewriter, {
   name: "Typewriter",
   props: [
@@ -33,6 +39,12 @@ registerVevComponent(Typewriter, {
       },
     },
     {
+      name: "pauseOnStart",
+      title: "Pause on start",
+      type: "boolean",
+      initialValue: false,
+    },
+    {
       name: "loop",
       type: "boolean",
       initialValue: true,
@@ -61,6 +73,20 @@ registerVevComponent(Typewriter, {
   icon: "https://cdn.vev.design/private/5YlQ6CapVRbr7RUqaPTH7gT1clH2/rm-typewriter-svg",
   description:
     "Alternate through a list of custom phrases in a type-writer like fashion.",
+  interactions: [
+    {
+      type: TypewriterInteraction.play,
+      description: "Start typewriter",
+    },
+    {
+      type: TypewriterInteraction.restart,
+      description: "Restart typewriter",
+    },
+    {
+      type: TypewriterInteraction.pause,
+      description: "Pause typewriter",
+    },
+  ],
 });
 
 export default Typewriter;

@@ -91,7 +91,7 @@ registerVevComponent(GoogleForms, {
       type: 'string',
       options: {
         multiline: true,
-      }
+      },
     },
   ],
   emptyState: {

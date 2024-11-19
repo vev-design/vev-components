@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { InlineWidget } from "react-calendly";
-import styles from "./Calendly.module.css";
-import { registerVevComponent } from "@vev/react";
-import { Utm } from "react-calendly/typings/calendly";
+import React, { useEffect, useState } from 'react';
+import { InlineWidget } from 'react-calendly';
+import styles from './Calendly.module.css';
+import { registerVevComponent } from '@vev/react';
+import { Utm } from 'react-calendly/typings/calendly';
 
 type Props = {
   calendlyUrl: string | null;
@@ -26,12 +26,12 @@ const Calendly = ({
       const url = new URL(window.location.toString());
       const params = new URLSearchParams(url.search);
       setUtm({
-        utmSource: params.get("utm_source"),
-        utmCampaign: params.get("utm_campaign"),
-        utmContent: params.get("utm_content"),
-        utmTerm: params.get("utm_term"),
-        utmMedium: params.get("utm_medium"),
-        salesforce_uuid: params.get("salesforce_uuid"),
+        utmSource: params.get('utm_source'),
+        utmCampaign: params.get('utm_campaign'),
+        utmContent: params.get('utm_content'),
+        utmTerm: params.get('utm_term'),
+        utmMedium: params.get('utm_medium'),
+        salesforce_uuid: params.get('salesforce_uuid'),
       });
     }
   }, [calendlyUrl]);
@@ -51,7 +51,7 @@ const Calendly = ({
   return (
     <div className={styles.wrapper}>
       <InlineWidget
-        styles={{ height: "100%" }}
+        styles={{ height: '100%' }}
         url={calendlyUrl}
         utm={utm}
         pageSettings={{
@@ -65,38 +65,38 @@ const Calendly = ({
 };
 
 registerVevComponent(Calendly, {
-  name: "Calendly",
+  name: 'Calendly',
   props: [
     {
-      title: "Calendly URL",
-      name: "calendlyUrl",
-      type: "string",
+      title: 'Calendly URL',
+      name: 'calendlyUrl',
+      type: 'string',
       initialValue: null,
       options: {
         multiline: true,
       },
     },
     {
-      title: "Hide event type details",
-      name: "hideEventTypeDetails",
-      type: "boolean",
+      title: 'Hide event type details',
+      name: 'hideEventTypeDetails',
+      type: 'boolean',
       initialValue: false,
     },
     {
-      title: "Hide landing page details",
-      name: "hideLandingPageDetails",
-      type: "boolean",
+      title: 'Hide landing page details',
+      name: 'hideLandingPageDetails',
+      type: 'boolean',
       initialValue: false,
     },
     {
-      title: "Hide cookie banner",
-      name: "hideGdprBanner",
-      type: "boolean",
+      title: 'Hide cookie banner',
+      name: 'hideGdprBanner',
+      type: 'boolean',
       initialValue: false,
     },
   ],
   editableCSS: [],
-  description: "Embed Calendly",
+  description: 'Embed Calendly',
 });
 
 export default Calendly;

@@ -1,34 +1,34 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   registerVevComponent,
   useVevEvent,
   useDispatchVevEvent,
   useModel,
   useGlobalStateRef,
-} from "@vev/react";
-import { InteractionMap } from "@vev/utils";
-import formIcon from "../../assets/form-icon.svg";
-import styles from "./Button.module.css";
+} from '@vev/react';
+import { InteractionMap } from '@vev/utils';
+import formIcon from '../../assets/form-icon.svg';
+import styles from './Button.module.css';
 
-import GoogleSheetConnect from "../../submit/GoogleSheetConnect";
-import ZapierConnect from "../../submit/ZapierConnect";
-import { validate, Validation } from "../../utils/validate";
+import GoogleSheetConnect from '../../submit/GoogleSheetConnect';
+import ZapierConnect from '../../submit/ZapierConnect';
+import { validate, Validation } from '../../utils/validate';
 
 type Props = {
   submitButton: string;
   successMessage: string;
   errorMessage?: string;
-  type: "reset" | "submit";
+  type: 'reset' | 'submit';
   submit: SubmitType;
 };
 
 export type SubmitType = {
-  submitType: "zapier" | "googleSheet" | "httpRequest";
+  submitType: 'zapier' | 'googleSheet' | 'httpRequest';
   googleSheetUrl?: string;
   zapierFormUrl?: string;
   webHookUrl?: string;
   httpRequest?: {
-    method: "GET" | "POST";
+    method: 'GET' | 'POST';
     url: string;
     newTab?: boolean;
     queryParams?: boolean;
@@ -48,29 +48,28 @@ export type SubmitType = {
 };
 
 enum Interaction {
-  UPDATE_FORM = "UPDATE_FORM",
+  UPDATE_FORM = 'UPDATE_FORM',
 }
 
 enum Event {
-  FORM_SUBMITTED = "FORM_SUBMITTED",
-  FORM_INVALID = "FORM_INVALID",
-  FORM_VALID = "FORM_VALID",
+  FORM_SUBMITTED = 'FORM_SUBMITTED',
+  FORM_INVALID = 'FORM_INVALID',
+  FORM_VALID = 'FORM_VALID',
 }
 
 /* const SUBMIT_URL =
   "https://us-central1-vev-development.cloudfunctions.net/publicApiHttps/form-submission"; */
 
-const SUBMIT_URL =
-  "https://us-central1-vev-prod.cloudfunctions.net/publicApiHttps/form-submission";
+const SUBMIT_URL = 'https://us-central1-vev-prod.cloudfunctions.net/publicApiHttps/form-submission';
 
 const serialize = function (obj) {
   const str = [];
   for (const p in obj)
     if (obj.hasOwnProperty(p)) {
-      str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]));
     }
 
-  return str.length ? `?${str.join("&")}` : "";
+  return str.length ? `?${str.join('&')}` : '';
 };
 
 type FormModel = {
@@ -84,15 +83,13 @@ type FormModel = {
 const getFormModels = (
   modelKey: string,
   interactions: InteractionMap,
-  models: any[] = []
+  models: any[] = [],
 ): FormModel[] => {
   console.log(modelKey, interactions, models);
   const usedInteractions = Object.values(interactions?.trigger?.widget || {})
     .reduce((res = [], cur = []) => [...res, ...cur], [])
     .filter((interaction) => interaction.event?.contentKey === modelKey);
-  const triggerKeys = usedInteractions.map(
-    (interaction) => interaction.trigger?.contentKey
-  );
+  const triggerKeys = usedInteractions.map((interaction) => interaction.trigger?.contentKey);
   return models.filter((model) => triggerKeys?.includes(model.key));
 };
 
@@ -104,58 +101,54 @@ const validateForm = (formState: any, formModels: FormModel[]) => {
     if (!value && isRequired) {
       errors.push({
         key: model.content.name,
-        message: "Required",
+        message: 'Required',
       });
     }
 
     const valid = validate(value, model?.content);
-    if (!valid) errors.push({ key: model.content.name, message: "Invalid" });
+    if (!valid) errors.push({ key: model.content.name, message: 'Invalid' });
   }
   return errors;
 };
 
 function Button({ ...props }: Props) {
   const [submitting, setSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formState, setFormState] = useState({});
   const dispatch = useDispatchVevEvent();
   const [store] = useGlobalStateRef();
   const model = useModel();
 
-  const { submitButton, successMessage, type = "submit" } = props;
+  const { submitButton, successMessage, type = 'submit' } = props;
 
   const handleSubmit = useCallback(async (formState: any) => {
-    console.log("** submit", formState);
+    console.log('** submit', formState);
     setSubmitting(true);
 
     const formModels = getFormModels(
       model.key,
       store?.current?.interactions,
-      store?.current?.models
+      store?.current?.models,
     );
     const errors = validateForm(formState, formModels);
 
     if (errors?.length) {
-      console.log("have errors", errors);
+      console.log('have errors', errors);
       dispatch(Event.FORM_INVALID, { errors });
       setSubmitting(false);
       return;
-    } else {
-      dispatch(Event.FORM_VALID);
     }
+    dispatch(Event.FORM_VALID);
 
-    const isLinkSubmission = (submit: Props["submit"]) =>
-      submit.submitType === "httpRequest" && submit.httpRequest?.newTab;
+    const isLinkSubmission = (submit: Props['submit']) =>
+      submit.submitType === 'httpRequest' && submit.httpRequest?.newTab;
 
     if (isLinkSubmission(props.submit)) {
-      const defaultValues = (
-        props.submit.httpRequest?.defaultData || []
-      ).reduce(
+      const defaultValues = (props.submit.httpRequest?.defaultData || []).reduce(
         (res, curr) => ({ ...res, [curr.data.key]: curr.data.value }),
-        {}
+        {},
       );
-      const url =
-        props.submit.httpRequest +
-        serialize({ ...defaultValues, ...formState });
+      const url = props.submit.httpRequest + serialize({ ...defaultValues, ...formState });
       return window.open(url);
     }
 
@@ -168,37 +161,40 @@ function Button({ ...props }: Props) {
 
     try {
       await fetch(SUBMIT_URL, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify(body),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
     } catch (e) {
-      console.error("Error submitting form", e);
+      console.error('Error submitting form', e);
       setSubmitting(false);
       return;
     }
 
     dispatch(Event.FORM_SUBMITTED);
+    setIsSubmitted(true);
     setSubmitting(false);
   }, []);
 
   useVevEvent(Interaction.UPDATE_FORM, (e: any) => {
-    console.log("-> updated", e, formState);
+    setIsSubmitted(false);
+
+    console.log('-> updated', e, formState);
     if (!e) return;
     dispatch(Event.FORM_VALID);
 
     let { value } = e;
 
-    if (["add", "remove"].includes(e.type)) {
+    if (['add', 'remove'].includes(e.type)) {
       const prev = formState[e.name] || [];
 
-      if (e.type === "add") {
+      if (e.type === 'add') {
         value = [...prev, e.value];
       }
 
-      if (e.type === "remove") {
+      if (e.type === 'remove') {
         value = prev.filter((i) => i !== value);
       }
     }
@@ -211,199 +207,198 @@ function Button({ ...props }: Props) {
       loading: <Loader />,
       success: successMessage,
       default: submitButton,
-    }[state]);
+    })[state];
 
   return (
     <button
-      disabled={submitting}
+      disabled={submitting || isSubmitted}
       onClick={() => handleSubmit(formState)}
       className={styles.button}
     >
-      {messages(submitting ? "loading" : "default")}
+      {messages(submitting ? 'loading' : isSubmitted ? 'success' : 'default')}
     </button>
   );
 }
 
 registerVevComponent(Button, {
-  name: "Form button",
-  categories: ["Form"],
+  name: 'Form button',
+  categories: ['Form'],
   icon: formIcon,
   editableCSS: [
     {
       selector: styles.button,
-      title: "Base",
+      title: 'Base',
       properties: [
-        "background",
-        "color",
-        "border-radius",
-        "box-shadow",
-        "padding",
-        "font-family",
-        "font-size",
-        "text-align",
+        'background',
+        'color',
+        'border-radius',
+        'box-shadow',
+        'padding',
+        'font-family',
+        'font-size',
+        'text-align',
       ],
     },
     {
-      selector: styles.button + ":hover",
-      title: "Hover",
-      properties: ["background", "color", "box-shadow"],
+      selector: styles.button + ':hover',
+      title: 'Hover',
+      properties: ['background', 'color', 'box-shadow'],
     },
   ],
   props: [
     {
-      name: "submitButton",
-      title: "Submit button",
-      type: "string",
-      initialValue: "Submit",
+      name: 'submitButton',
+      title: 'Submit button',
+      type: 'string',
+      initialValue: 'Submit',
     },
     {
-      name: "type",
-      type: "select",
-      initialValue: "submit",
+      name: 'type',
+      type: 'select',
+      initialValue: 'submit',
       options: {
         items: [
           {
-            value: "submit",
-            label: "Submit",
+            value: 'submit',
+            label: 'Submit',
           },
           {
-            value: "reset",
-            label: "Reset",
+            value: 'reset',
+            label: 'Reset',
           },
         ],
       },
     },
     {
-      name: "successMessage",
-      title: "Success message",
-      type: "string",
-      initialValue: "Thank you",
+      name: 'successMessage',
+      title: 'Success message',
+      type: 'string',
+      initialValue: 'Thank you',
       hidden: (context) => {
-        return context.value.type !== "submit";
+        return context.value.type !== 'submit';
       },
     },
     {
-      type: "object",
-      name: "submit",
-      title: "Destination configuration",
+      type: 'object',
+      name: 'submit',
+      title: 'Destination configuration',
       fields: [
         {
-          type: "select",
-          name: "submitType",
-          title: "Destination",
-          initialValue: "httpRequest",
+          type: 'select',
+          name: 'submitType',
+          title: 'Destination',
+          initialValue: 'httpRequest',
           options: {
-            display: "dropdown",
+            display: 'dropdown',
             items: [
               {
-                label: "Zapier",
-                value: "zapier",
+                label: 'Zapier',
+                value: 'zapier',
               },
               {
-                label: "Google Sheet",
-                value: "googleSheet",
+                label: 'Google Sheet',
+                value: 'googleSheet',
               },
               {
-                label: "HTTP Request",
-                value: "httpRequest",
+                label: 'HTTP Request',
+                value: 'httpRequest',
               },
             ],
           },
         },
         {
-          type: "object",
-          name: "httpRequest",
-          title: "HTML request",
-          description: "Send data to a custom URL",
+          type: 'object',
+          name: 'httpRequest',
+          title: 'HTML request',
+          description: 'Send data to a custom URL',
           hidden({ value }) {
-            return value?.submit.submitType !== "httpRequest";
+            return value?.submit.submitType !== 'httpRequest';
           },
           fields: [
             {
-              type: "select",
-              name: "method",
-              initialValue: "POST",
+              type: 'select',
+              name: 'method',
+              initialValue: 'POST',
               options: {
                 multiselect: false,
-                display: "dropdown",
+                display: 'dropdown',
                 items: [
                   {
-                    label: "GET",
-                    value: "GET",
+                    label: 'GET',
+                    value: 'GET',
                   },
                   {
-                    label: "POST",
-                    value: "POST",
+                    label: 'POST',
+                    value: 'POST',
                   },
                 ],
               },
             },
             {
-              type: "string",
-              name: "url",
-              initialValue: "https://example.com",
+              type: 'string',
+              name: 'url',
+              initialValue: 'https://example.com',
               options: {
-                type: "text",
+                type: 'text',
                 multiline: true,
               },
             },
             {
-              type: "boolean",
-              name: "newTab",
-              title: "Open as link",
+              type: 'boolean',
+              name: 'newTab',
+              title: 'Open as link',
               hidden({ value }) {
-                return value?.submit?.htmlRequest?.method !== "GET";
+                return value?.submit?.htmlRequest?.method !== 'GET';
               },
             },
             {
-              type: "boolean",
-              name: "queryParams",
-              title: "Query params",
-              description:
-                "Send data as query params, if not it will be sent as JSON in body",
+              type: 'boolean',
+              name: 'queryParams',
+              title: 'Query params',
+              description: 'Send data as query params, if not it will be sent as JSON in body',
               initialValue: false,
             },
             {
-              name: "defaultData",
-              title: "Default data",
-              type: "array",
+              name: 'defaultData',
+              title: 'Default data',
+              type: 'array',
               of: [
                 {
-                  type: "object",
-                  name: "data",
+                  type: 'object',
+                  name: 'data',
                   fields: [
                     {
-                      type: "string",
-                      name: "key",
-                      title: "Key",
+                      type: 'string',
+                      name: 'key',
+                      title: 'Key',
                     },
                     {
-                      type: "string",
-                      name: "value",
-                      title: "Value",
+                      type: 'string',
+                      name: 'value',
+                      title: 'Value',
                     },
                   ],
                 },
               ],
             },
             {
-              name: "defaultHeaders",
-              title: "Headers",
-              type: "array",
+              name: 'defaultHeaders',
+              title: 'Headers',
+              type: 'array',
               of: [
                 {
-                  type: "object",
-                  name: "defaultValue",
+                  type: 'object',
+                  name: 'defaultValue',
                   fields: [
                     {
-                      type: "string",
-                      name: "name",
-                      title: "Key",
+                      type: 'string',
+                      name: 'name',
+                      title: 'Key',
                     },
                     {
-                      type: "string",
-                      name: "value",
-                      title: "Value",
+                      type: 'string',
+                      name: 'value',
+                      title: 'Value',
                     },
                   ],
                 },
@@ -412,26 +407,26 @@ registerVevComponent(Button, {
           ],
         },
         {
-          type: "string",
-          name: "zapierFormName",
+          type: 'string',
+          name: 'zapierFormName',
           hidden({ value }) {
-            return value?.submit.submitType !== "zapier";
+            return value?.submit.submitType !== 'zapier';
           },
         },
         {
-          type: "string",
-          name: "zapierFormUrl",
+          type: 'string',
+          name: 'zapierFormUrl',
           component: ZapierConnect,
           hidden({ value }) {
-            return value?.submit.submitType !== "zapier";
+            return value?.submit.submitType !== 'zapier';
           },
         },
         {
-          type: "string",
-          name: "googleSheetUrl",
+          type: 'string',
+          name: 'googleSheetUrl',
           component: GoogleSheetConnect,
           hidden({ value }) {
-            return value?.submit.submitType !== "googleSheet";
+            return value?.submit.submitType !== 'googleSheet';
           },
         },
       ],
@@ -444,32 +439,27 @@ registerVevComponent(Button, {
   events: [
     {
       type: Event.FORM_SUBMITTED,
-      description: "On submitted form",
+      description: 'On submitted form',
     },
     {
       type: Event.FORM_INVALID,
-      description: "On invalid form",
+      description: 'On invalid form',
     },
     {
       type: Event.FORM_VALID,
-      description: "Form valid",
+      description: 'Form valid',
     },
   ],
   interactions: [
     {
       type: Interaction.UPDATE_FORM,
-      description: "Update form",
+      description: 'Update form',
     },
   ],
 });
 
 const Loader = () => (
-  <svg
-    role="status"
-    viewBox="0 0 100 101"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg role="status" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
       fill="#E5E7EB"

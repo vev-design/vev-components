@@ -6,10 +6,13 @@ import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 // @ts-expect-error - no types
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Object3dContext } from '../context/object-3d-context';
 import { NO_ANIMATION } from '../object-3d';
+import { Vector3 } from 'three';
+import { animateCameraSpherical } from '../util/animate-camera-spherical';
+import { mix } from 'three/examples/jsm/nodes/shadernode/ShaderNodeBaseElements';
 
 /**
  * Sets up the scene with camera and controls.
@@ -38,18 +41,63 @@ export function useSceneSetup(
     savedCameraPosition,
     hotspots,
     rotationSpeed,
+    eventCallbacks,
   } = useContext(Object3dContext);
 
   const [scene, setScene] = useState<THREE.Scene>(null);
   const [camera, setCamera] = useState<THREE.PerspectiveCamera>(null);
   const [renderer, setRenderer] = useState<THREE.WebGLRenderer>(null);
   const [controls, setControls] = useState<any>(null);
-  const [mixer, setMixer] = useState<THREE.AnimationMixer>(null);
+  const mixer = useRef<THREE.AnimationMixer>();
   const [labelRenderer, setLabelRenderer] = useState<CSS2DRenderer>(null);
-  const [currentClip, setCurrentClip] = useState<THREE.AnimationClip>(
-    new THREE.AnimationClip(NO_ANIMATION, 0, []),
-  );
+  const currentClip = useRef<THREE.AnimationClip>(new THREE.AnimationClip(NO_ANIMATION, 0, []));
+
   const [currentModel, setCurrentModel] = useState<THREE.Group | null>(null);
+
+  function playAnimation(animation: string) {
+    {
+      if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
+
+      if (currentClip.current.name !== animation) {
+        mixer.current.clipAction(currentClip.current).stop();
+        mixer.current.uncacheClip(currentClip.current);
+      }
+
+      model.animations.forEach((clip) => {
+        if (animation === clip.name) {
+          console.log('setclip');
+          console.log('clip', clip);
+          console.log('mixer.current', mixer.current);
+          mixer.current.clipAction(clip).play();
+        }
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (eventCallbacks) {
+      eventCallbacks.start_rotation((speed) => {
+        if (speed) {
+          controls.autoRotateSpeed = speed;
+        } else {
+          controls.autoRotateSpeed = rotationSpeed;
+        }
+
+        controls.autoRotate = true;
+      });
+      eventCallbacks.stop_rotation(() => {
+        controls.autoRotate = false;
+      });
+      eventCallbacks.reset_camera(() => {
+        const from = camera.position.clone();
+        const to = new Vector3(1, 0, 1);
+        animateCameraSpherical(from, to, camera, controls);
+      });
+      eventCallbacks.play_animation((animation: string) => {
+        playAnimation(animation);
+      });
+    }
+  }, [model, eventCallbacks, controls, rotationSpeed, camera, scene, currentClip]);
 
   useEffect(() => {
     if (canvasRef && labelRef && !scene) {
@@ -72,6 +120,7 @@ export function useSceneSetup(
       // Camera
       const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
       camera.layers.enableAll();
+
       scene.add(camera);
       if (setContextCamera) {
         setContextCamera(camera);
@@ -172,21 +221,7 @@ export function useSceneSetup(
   // Set up animations
   useEffect(() => {
     if (scene && model && model.animations) {
-      const mixer = new THREE.AnimationMixer(scene);
-
-      if (currentClip.name !== animation) {
-        mixer.clipAction(currentClip).stop();
-        mixer.uncacheClip(currentClip);
-      }
-
-      model.animations.forEach((clip) => {
-        if (animation === clip.name) {
-          mixer.clipAction(clip).play();
-          setCurrentClip(clip);
-        }
-      });
-
-      setMixer(mixer);
+      playAnimation(animation);
     }
   }, [animation, currentClip, model, scene]);
 
@@ -211,7 +246,7 @@ export function useSceneSetup(
     camera,
     renderer,
     controls,
-    mixer,
+    mixer: mixer.current,
     labelRenderer,
     currentModel,
   };

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import styles from './JWPlayer.module.css';
 import { registerVevComponent, Tracking } from '@vev/react';
 import { SilkeNotification } from '@vev/silke';
+import './global.css';
 
 type Props = {
   embedUrl: string;
@@ -109,7 +109,6 @@ const JWPlayer = ({
       const { key } = jwDefaults;
 
       const jwConfig = {
-        aspectratio: '16:9',
         autostart: autoplay ? 'viewable' : false,
         cast: {
           appid: '00000000',
@@ -118,7 +117,6 @@ const JWPlayer = ({
         displaydescription: displayDescription,
         displaytitle: displayTitle,
         flashplayer: '//ssl.p.jwpcdn.com/player/v/8.8.4/jwplayer.flash.swf',
-        height: 360,
         key,
         mute: true,
         ph: 3,
@@ -155,7 +153,7 @@ const JWPlayer = ({
   if (!embedUrl) {
     return <div className="fill placeholder">Please add an embedURL</div>;
   }
-  return <div className={styles.wrapper} ref={videoRef} dangerouslySetInnerHTML={{ __html: '' }} />;
+  return <div className="jw-wrapper" ref={videoRef} dangerouslySetInnerHTML={{ __html: '' }} />;
 };
 
 registerVevComponent(JWPlayer, {
@@ -224,16 +222,18 @@ registerVevComponent(JWPlayer, {
       initialValue: 'uniform',
     },
     {
-      name: "address",
-      type: "string",
+      name: 'address',
+      type: 'string',
       component: (props) => {
-        return <SilkeNotification
-          dark
-          kind="information"
-          subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
-        />
-      }
-    }
+        return (
+          <SilkeNotification
+            dark
+            kind="information"
+            subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
+          />
+        );
+      },
+    },
   ],
   type: 'both',
 });

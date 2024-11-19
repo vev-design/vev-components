@@ -55,6 +55,7 @@ export function useViewAnimation(
   offsetStart = 0,
   offsetEnd = 1,
 ) {
+  console.log('keyframes', keyframes);
   const { scrollHeight, height: windowHeight } = useViewport();
   useEffect(() => {
     const el = ref.current;
@@ -76,7 +77,9 @@ export function useViewAnimation(
       offsetStart -= endOffset;
       offsetEnd -= endOffset;
     }
-
+    console.log('timeline', timeline);
+    console.log('options', options);
+    console.log('offsetStart', offsetStart);
     const animation = el.animate(keyframes, {
       fill: 'both',
       timeline,

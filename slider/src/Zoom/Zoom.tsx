@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useId } from "react";
-import { WidgetNode } from "@vev/react";
-import { Props } from "../Slider";
-import {
-  isGoingForward,
-  isGoingBackward,
-  getNextSlideIndex,
-  getPrevSlideIndex,
-} from "../utils";
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
+import { WidgetNode } from '@vev/react';
+import { Props } from '../Slider';
+import { isGoingForward, isGoingBackward, getNextSlideIndex, getPrevSlideIndex } from '../utils';
 
-import styles from "./Zoom.module.css";
+import styles from './Zoom.module.css';
 
 export const Zoom = ({
   index = 0,
@@ -19,11 +14,11 @@ export const Zoom = ({
   scaleFactor = 300,
   action,
   infinite,
-}: Omit<Props, "children"> & {
+}: Omit<Props, 'children'> & {
   index: number;
   preview?: boolean;
 }) => {
-  const reverse = !direction?.includes("REVERSE");
+  const reverse = !direction?.includes('REVERSE');
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(1);
   const prevIndex = useRef(index);
@@ -39,25 +34,16 @@ export const Zoom = ({
 
   const setSlides = useCallback(() => {
     setCurrentSlides(
-      reverse
-        ? [nextSlide, currentSlide, prevSlide]
-        : [prevSlide, currentSlide, nextSlide]
+      reverse ? [nextSlide, currentSlide, prevSlide] : [prevSlide, currentSlide, nextSlide],
     );
   }, [nextSlide, currentSlide, prevSlide]);
 
   useEffect(() => {
-    const isJumping =
-      prevIndex.current - index > 1 || index - prevIndex.current > 1;
+    const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
     if (
       isJumping &&
-      !isGoingForward(
-        index,
-        prevIndex.current,
-        slides.length,
-        infinite,
-        action
-      ) &&
+      !isGoingForward(index, prevIndex.current, slides.length, infinite, action) &&
       !isGoingForward(prevIndex.current, index, slides.length, infinite, action)
     ) {
       prevIndex.current = index;
@@ -66,9 +52,7 @@ export const Zoom = ({
       setSlides();
     }
 
-    if (
-      isGoingForward(index, prevIndex.current, slides.length, infinite, action)
-    ) {
+    if (isGoingForward(index, prevIndex.current, slides.length, infinite, action)) {
       prevIndex.current = index;
       setTransitionSpeed(speed);
       reverse ? setMove(0) : setMove(2);
@@ -93,10 +77,10 @@ export const Zoom = ({
     <div
       className={styles.wrapper}
       style={{
-        transition: `transform ${transitionSpeed}ms ${easing || "ease"}`,
+        transition: `transform ${transitionSpeed}ms ${easing || 'ease'}`,
       }}
       onTransitionEnd={(e) => {
-        if (e.propertyName === "opacity") {
+        if (e.propertyName === 'opacity') {
           setTransitionSpeed(1);
           setSlides();
           setMove(1);
@@ -107,18 +91,13 @@ export const Zoom = ({
         // If only two slides, and index to prevent duplicate keys
         return (
           <div
-            className={[styles.slide, i === move ? styles.active : ""].join(
-              " "
-            )}
+            className={[styles.slide, i === move ? styles.active : ''].join(' ')}
             key={child}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
               opacity: i === move ? 1 : 0,
-              zIndex: scaleFactor === 100 ? (i === move ? "auto" : -1) : "auto",
-              transform:
-                i === move || i === move - 1
-                  ? "scale(1)"
-                  : `scale(${scaleFactor}%)`,
+              zIndex: scaleFactor === 100 ? (i === move ? 'auto' : -1) : 'auto',
+              transform: i === move || i === move - 1 ? 'scale(1)' : `scale(${scaleFactor}%)`,
             }}
           >
             {child && <WidgetNode id={child} />}
