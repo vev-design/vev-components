@@ -1,5 +1,6 @@
 import { registerVevComponent } from '@vev/react';
 import Video from './Video';
+import styles from './Video.module.css';
 
 export enum VideoInteraction {
   play = 'play',
@@ -45,7 +46,7 @@ registerVevComponent(Video, {
   ],
   editableCSS: [
     {
-      selector: ':host',
+      selector: styles.wrapper,
       properties: ['background', 'border', 'border-radius', 'box-shadow'],
     },
   ],
