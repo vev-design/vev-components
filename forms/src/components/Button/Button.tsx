@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   registerVevComponent,
-  useVevEvent,
   useDispatchVevEvent,
-  useModel,
   useGlobalStateRef,
+  useModel,
+  useVevEvent,
 } from '@vev/react';
-import { InteractionMap } from '@vev/utils';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Button.module.css';
 
@@ -82,15 +81,24 @@ type FormModel = {
 
 const getFormModels = (
   modelKey: string,
-  interactions: InteractionMap,
+  interactions: Record<string, any>,
   models: any[] = [],
 ): FormModel[] => {
-  console.log(modelKey, interactions, models);
-  const usedInteractions = Object.values(interactions?.trigger?.widget || {})
-    .reduce((res = [], cur = []) => [...res, ...cur], [])
-    .filter((interaction) => interaction.event?.contentKey === modelKey);
-  const triggerKeys = usedInteractions.map((interaction) => interaction.trigger?.contentKey);
-  return models.filter((model) => triggerKeys?.includes(model.key));
+  const modelKeys = Object.entries(interactions?.event)
+    .map(([key, value]: [string, any[]]) => {
+      // Find events that updates the form
+      const updatesForm = !!value.find((interaction) => {
+        return interaction.type === 'UPDATE_FORM' && interaction.node === modelKey;
+      });
+
+      // Extract model key from event
+      if (updatesForm) {
+        return key.split('.')[0];
+      }
+    })
+    .filter(Boolean);
+
+  return models.filter((model) => modelKeys?.includes(model.key));
 };
 
 const validateForm = (formState: any, formModels: FormModel[]) => {
@@ -130,6 +138,7 @@ function Button({ ...props }: Props) {
       store?.current?.interactions,
       store?.current?.models,
     );
+
     const errors = validateForm(formState, formModels);
 
     if (errors?.length) {
