@@ -48,33 +48,43 @@ export function useSceneSetup(
   const [controls, setControls] = useState<any>(null);
   const mixer = useRef<THREE.AnimationMixer>();
   const [labelRenderer, setLabelRenderer] = useState<CSS2DRenderer>(null);
+  const prevClip = useRef<THREE.AnimationClip>();
   const currentClip = useRef<THREE.AnimationClip>();
-
+  const isPlayingAnimation = useRef(false);
   const [currentModel, setCurrentModel] = useState<THREE.Group | null>(null);
 
   function playAnimation(animation: string, loop = true, repetitions?: number) {
-    console.log('currentClip.current', currentClip.current);
-    console.log('animation', animation);
-    console.log('loop', loop);
-    console.log('repetitions', repetitions);
-    {
-      if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
+    if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
 
-      const clip = model.animations.find((clip) => clip.name === animation);
-      if (!currentClip.current) {
-        const animationAction = mixer.current.clipAction(clip);
-        animationAction.play();
-        currentClip.current = clip;
-      } else {
-        const newAnimation = mixer.current.clipAction(clip);
-        if (!loop) {
-          newAnimation.setLoop(THREE.LoopRepeat, repetitions);
-        }
-        console.log('newAnimation', newAnimation);
-        const currentAction = mixer.current.existingAction(currentClip.current);
-        currentAction.weight = 1;
-        currentAction.crossFadeTo(newAnimation, 1, false);
-        currentClip.current = clip;
+    const newClip = model.animations.find((clip) => clip.name === animation);
+    if (!newClip) return;
+    if (!currentClip.current) {
+      const animationAction = mixer.current.clipAction(newClip);
+      animationAction.play();
+      currentClip.current = newClip;
+    } else {
+      prevClip.current = currentClip.current;
+      const newAnimation = mixer.current.clipAction(newClip);
+      if (!loop) {
+        newAnimation.setLoop(THREE.LoopRepeat, repetitions);
+        newAnimation.clampWhenFinished = true;
+      }
+
+      const currentAction = mixer.current.existingAction(currentClip.current);
+      newAnimation.reset();
+      newAnimation.play();
+      currentAction.crossFadeTo(newAnimation, 0.5, false);
+      currentClip.current = newClip;
+
+      if (!loop) {
+        mixer.current.addEventListener('finished', () => {
+          const currentAction = mixer.current.existingAction(currentClip.current);
+          const oldAnimation = mixer.current.existingAction(prevClip.current);
+          oldAnimation.reset();
+          currentAction.crossFadeTo(oldAnimation, 0.5, false);
+          currentClip.current = prevClip.current;
+          isPlayingAnimation.current = false;
+        });
       }
     }
   }
