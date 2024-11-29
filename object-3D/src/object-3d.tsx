@@ -92,7 +92,7 @@ const Object3d = ({
     start_rotation: (speed: number) => void;
     stop_rotation: () => void;
     reset_camera: () => void;
-    play_animation: (animation: string) => void;
+    play_animation: (animation: string, loop: boolean, repetitions: number) => void;
   }>({
     click_hotspot: noop,
     start_rotation: noop,
@@ -145,7 +145,7 @@ const Object3d = ({
   });
 
   useVevEvent(InteractionTypes.PLAY_ANIMATION, (args: any) => {
-    eventCallbacks.current.play_animation(args.animation);
+    eventCallbacks.current.play_animation(args.animation, args.loop, args.repetitions);
   });
 
   return (
@@ -399,6 +399,18 @@ export const config: VevManifest = {
             display: 'dropdown',
           },
           initialValue: 'No animation',
+        },
+        {
+          name: 'loop',
+          title: 'Loop',
+          type: 'boolean',
+          initialValue: true,
+        },
+        {
+          name: 'repetitions',
+          title: 'Repetitions',
+          type: 'number',
+          initialValue: 1,
         },
       ],
     },

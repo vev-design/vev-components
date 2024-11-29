@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Vector3 } from 'three';
 // @ts-expect-error - no types
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // @ts-expect-error - no types
@@ -9,10 +10,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Object3dContext } from '../context/object-3d-context';
-import { NO_ANIMATION } from '../object-3d';
-import { Vector3 } from 'three';
 import { animateCameraSpherical } from '../util/animate-camera-spherical';
-import { mix } from 'three/examples/jsm/nodes/shadernode/ShaderNodeBaseElements';
 
 /**
  * Sets up the scene with camera and controls.
@@ -50,27 +48,34 @@ export function useSceneSetup(
   const [controls, setControls] = useState<any>(null);
   const mixer = useRef<THREE.AnimationMixer>();
   const [labelRenderer, setLabelRenderer] = useState<CSS2DRenderer>(null);
-  const currentClip = useRef<THREE.AnimationClip>(new THREE.AnimationClip(NO_ANIMATION, 0, []));
+  const currentClip = useRef<THREE.AnimationClip>();
 
   const [currentModel, setCurrentModel] = useState<THREE.Group | null>(null);
 
-  function playAnimation(animation: string) {
+  function playAnimation(animation: string, loop = true, repetitions?: number) {
+    console.log('currentClip.current', currentClip.current);
+    console.log('animation', animation);
+    console.log('loop', loop);
+    console.log('repetitions', repetitions);
     {
       if (!mixer.current) mixer.current = new THREE.AnimationMixer(scene);
 
-      if (currentClip.current.name !== animation) {
-        mixer.current.clipAction(currentClip.current).stop();
-        mixer.current.uncacheClip(currentClip.current);
-      }
-
-      model.animations.forEach((clip) => {
-        if (animation === clip.name) {
-          console.log('setclip');
-          console.log('clip', clip);
-          console.log('mixer.current', mixer.current);
-          mixer.current.clipAction(clip).play();
+      const clip = model.animations.find((clip) => clip.name === animation);
+      if (!currentClip.current) {
+        const animationAction = mixer.current.clipAction(clip);
+        animationAction.play();
+        currentClip.current = clip;
+      } else {
+        const newAnimation = mixer.current.clipAction(clip);
+        if (!loop) {
+          newAnimation.setLoop(THREE.LoopRepeat, repetitions);
         }
-      });
+        console.log('newAnimation', newAnimation);
+        const currentAction = mixer.current.existingAction(currentClip.current);
+        currentAction.weight = 1;
+        currentAction.crossFadeTo(newAnimation, 1, false);
+        currentClip.current = clip;
+      }
     }
   }
 
@@ -93,8 +98,8 @@ export function useSceneSetup(
         const to = new Vector3(1, 0, 1);
         animateCameraSpherical(from, to, camera, controls);
       });
-      eventCallbacks.play_animation((animation: string) => {
-        playAnimation(animation);
+      eventCallbacks.play_animation((animation: string, loop: boolean, repetitions: number) => {
+        playAnimation(animation, loop, repetitions);
       });
     }
   }, [model, eventCallbacks, controls, rotationSpeed, camera, scene, currentClip]);
