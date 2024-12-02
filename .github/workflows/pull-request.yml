@@ -2,20 +2,23 @@ name: Deploy on PR Merge
 
 on:
   pull_request:
+    # Disable for testing
+    #types: [closed]
     types: [closed,edited]
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
+    # Disable for testing
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: 20
 
       - name: Find changed folders
         id: find_changed_folders
