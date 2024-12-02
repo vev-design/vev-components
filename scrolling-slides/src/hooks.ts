@@ -1,8 +1,8 @@
-import { s, useViewport } from '@vev/react';
-import { MutableRefObject, RefObject, useEffect, useState } from 'react';
+import { s, useViewport } from "@vev/react";
+import { MutableRefObject, RefObject, useEffect, useState } from "react";
 
 type ViewTimelineOptions = {
-  axis: 'block' | 'inline';
+  axis: "block" | "inline";
   subject: HTMLElement;
 };
 
@@ -12,11 +12,11 @@ declare global {
   }
 }
 
-const isSupported = () => CSS.supports('animation-timeline: --works');
+const isSupported = () => CSS.supports("animation-timeline: --works");
 
 export function useViewTimeline(
   sourceRef: RefObject<HTMLElement>,
-  disabled?: boolean,
+  disabled?: boolean
 ): ViewTimeline | undefined {
   const [supported, setSupported] = useState(isSupported);
   const [timeline, setTimeline] = useState<any>();
@@ -26,8 +26,10 @@ export function useViewTimeline(
     // Polyfill for Safari
     if (!supported) {
       let cancel = false;
-      console.log('Scroll timelines not supported, loading polyfill');
-      s.fetch('https://flackr.github.io/scroll-timeline/dist/scroll-timeline.js').then(() => {
+      console.log("Scroll timelines not supported, loading polyfill");
+      s.fetch(
+        "https://cdn.vev.design/v/scrolling-timeline/scroll-timeline-lite.js"
+      ).then(() => {
         if (!cancel) setSupported(true);
       });
 
@@ -37,9 +39,9 @@ export function useViewTimeline(
     }
     setTimeline(
       new ViewTimeline({
-        axis: 'block',
+        axis: "block",
         subject: el,
-      }),
+      })
     );
   }, [supported, el, disabled]);
 
@@ -53,9 +55,8 @@ export function useViewAnimation(
   disable?: boolean,
   options?: KeyframeAnimationOptions,
   offsetStart = 0,
-  offsetEnd = 1,
+  offsetEnd = 1
 ) {
-  console.log('keyframes', keyframes);
   const { scrollHeight, height: windowHeight } = useViewport();
   useEffect(() => {
     const el = ref.current;
@@ -77,21 +78,21 @@ export function useViewAnimation(
       offsetStart -= endOffset;
       offsetEnd -= endOffset;
     }
-    console.log('timeline', timeline);
-    console.log('options', options);
-    console.log('offsetStart', offsetStart);
+    console.log("timeline", timeline);
+    console.log("options", options);
+    console.log("offsetStart", offsetStart);
     const animation = el.animate(keyframes, {
-      fill: 'both',
+      fill: "both",
       timeline,
-      easing: 'linear',
+      easing: "linear",
       ...options,
-      duration: 'auto',
+      duration: "auto",
       rangeStart: {
-        rangeName: 'contain',
+        rangeName: "contain",
         offset: CSS.percent(offsetStart * 100),
       },
       rangeEnd: {
-        rangeName: 'contain',
+        rangeName: "contain",
         offset: CSS.percent(offsetEnd * 100),
       },
       // rangeStart: isLessThanViewport ? enterCrossing : exitCrossing,
