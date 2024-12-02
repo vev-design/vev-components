@@ -1,0 +1,33 @@
+name: Deploy on PR Merge
+
+on:
+  pull_request:
+    types: [closed,edited]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Find changed folders
+        id: find_changed_folders
+        run: |
+          changed_folders=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u)
+          echo "::set-output name=changed_folders::$changed_folders"
+
+      - name: Deploy changed packages
+        run: |
+          for folder in ${{ steps.find_changed_folders.outputs.changed_folders }}; do
+            if [ -f "$folder/package.json" ]; then
+              echo "Deploying $folder"
+              (cd $folder && vev deploy --dev --token=${{ secrets.VEV_TOKEN_DEV }})
+            fi
+          done
