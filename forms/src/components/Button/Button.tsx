@@ -456,7 +456,7 @@ registerVevComponent(Button, {
     },
     {
       type: Event.FORM_VALID,
-      description: 'Form valid',
+      description: 'On valid form',
     },
   ],
   interactions: [
