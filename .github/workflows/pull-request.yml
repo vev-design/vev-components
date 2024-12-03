@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Fetch full history to ensure comparisons work
+          fetch-depth: 0 # Fetch full history for proper diffing
 
       # Step 2: Set up Node.js
       - name: Set up Node.js
@@ -21,8 +21,8 @@ jobs:
         with:
           node-version: '16' # Use the version your project needs
 
-      # Step 3: Identify changed folders with package.json
-      - name: Identify changed folders
+      # Step 3: Identify changed top-level folders with package.json
+      - name: Identify changed top-level folders
         id: find_changed_folders
         run: |
           # Get the base branch from the GitHub event
@@ -35,11 +35,11 @@ jobs:
           CHANGED_FILES=$(git diff --name-only origin/$BASE_BRANCH HEAD)
           echo "Changed files: $CHANGED_FILES"
 
-          # Find unique directories containing changed files
-          CHANGED_FOLDERS=$(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u)
+          # Extract unique top-level directories
+          CHANGED_FOLDERS=$(echo "$CHANGED_FILES" | awk -F'/' '{print $1}' | sort -u)
           echo "Changed folders: $CHANGED_FOLDERS"
 
-          # Filter folders with package.json
+          # Filter folders with a package.json
           DEPLOY_FOLDERS=""
           for folder in $CHANGED_FOLDERS; do
             if [[ -f "$folder/package.json" ]]; then
@@ -49,7 +49,7 @@ jobs:
 
           # Set the output for the next steps
           echo "deploy_folders=$DEPLOY_FOLDERS" >> $GITHUB_OUTPUT
-          echo "Folders to deploy: $DEPLOY_FOLDERS"
+          echo "Top-level folders to deploy: $DEPLOY_FOLDERS"
 
       # Step 4: Run vev deploy for each folder
       - name: Deploy changed folders
