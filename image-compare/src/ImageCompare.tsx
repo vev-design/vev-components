@@ -183,7 +183,7 @@ registerVevComponent(ImageCompare, {
         return (
           <ObjectFitEditor
             name="left"
-            title="Left image"
+            title="Right image"
             value={value || { url: DEFAULT_RIGHT_IMAGE, xPercent: 0.5, yPercent: 0.5, key: '' }}
             onChange={props.onChange}
             context={props.context}
