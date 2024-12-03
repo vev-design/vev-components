@@ -63,6 +63,6 @@ jobs:
           for folder in ${{ steps.find_changed_folders.outputs.deploy_folders }}; do
             echo "Deploying $folder"
             cd $folder
-            vev deploy --dev --token="$VEV_TOKEN_DEV"
+            vev deploy --dev --token "$VEV_TOKEN_DEV"
             cd -
           done
