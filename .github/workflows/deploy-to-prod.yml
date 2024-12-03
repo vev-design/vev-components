@@ -2,10 +2,11 @@ name: PR Deploy
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [closed]
 
 jobs:
   deploy:
+    if: ${{ github.event.pull_request.merged }} # Only run if the PR is merged
     runs-on: ubuntu-latest
 
     steps:
@@ -60,6 +61,6 @@ jobs:
           for folder in ${{ steps.find_changed_folders.outputs.deploy_folders }}; do
             echo "Deploying $folder"
             cd $folder
-            vev deploy --dev --token=${{ secrets.VEV_TOKEN_DEV }}
+            vev deploy --token=${{ secrets.VEV_TOKEN_DEV }}
             cd -
           done

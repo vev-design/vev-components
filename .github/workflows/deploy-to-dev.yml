@@ -1,0 +1,66 @@
+name: PR Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy:
+    if: ${{ !github.event.pull_request.draft }} # Skip draft PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the code with full history
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for proper diffing
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use the version your project needs
+      
+      - run: npm install -g @vev/cli
+
+      # Step 3: Identify changed top-level folders with package.json
+      - name: Identify changed top-level folders
+        id: find_changed_folders
+        run: |
+          # Get the base branch from the GitHub event
+          BASE_BRANCH=${{ github.event.pull_request.base.ref }}
+          
+          # Fetch the base branch to compare changes
+          git fetch origin $BASE_BRANCH
+          
+          # Get the list of changed files between the base branch and the PR head
+          CHANGED_FILES=$(git diff --name-only origin/$BASE_BRANCH HEAD)
+          echo "Changed files: $CHANGED_FILES"
+
+          # Extract unique top-level directories
+          CHANGED_FOLDERS=$(echo "$CHANGED_FILES" | awk -F'/' '{print $1}' | sort -u)
+          echo "Changed folders: $CHANGED_FOLDERS"
+
+          # Filter folders with a package.json
+          DEPLOY_FOLDERS=""
+          for folder in $CHANGED_FOLDERS; do
+            if [[ -f "$folder/package.json" ]]; then
+              DEPLOY_FOLDERS="$DEPLOY_FOLDERS $folder"
+            fi
+          done
+
+          # Set the output for the next steps
+          echo "deploy_folders=$DEPLOY_FOLDERS" >> $GITHUB_OUTPUT
+          echo "Top-level folders to deploy: $DEPLOY_FOLDERS"
+
+      # Step 4: Run vev deploy for each folder
+      - name: Deploy changed folders
+        if: steps.find_changed_folders.outputs.deploy_folders != ''
+        run: |
+          for folder in ${{ steps.find_changed_folders.outputs.deploy_folders }}; do
+            echo "Deploying $folder"
+            cd $folder
+            vev deploy --dev --token=${{ secrets.VEV_TOKEN_DEV }}
+            cd -
+          done
