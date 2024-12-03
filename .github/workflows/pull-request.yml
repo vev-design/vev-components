@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     # Disable for testing
-    # if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,9 +24,9 @@ jobs:
         id: find_changed_folders
         run: |
           git fetch origin main
-          git checkout main
           git pull origin main
           changed_folders=$(git diff --name-only main...HEAD | awk -F'/' '{print $1}' | sort -u)
+          echo "$changed_folders"
           echo "changed_folders=$changed_folders" >> $GITHUB_OUTPUT
 
       - name: Deploy changed packages
