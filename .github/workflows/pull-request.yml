@@ -23,7 +23,8 @@ jobs:
       - name: Find changed folders
         id: find_changed_folders
         run: |
-          changed_folders=$(git diff --name-only HEAD~1 HEAD | awk -F'/' '{print $1}' | sort -u)
+          git fetch origin main:main
+          changed_folders=$(git diff --name-only main...HEAD | awk -F'/' '{print $1}' | sort -u)
           echo "changed_folders=$changed_folders" >> $GITHUB_OUTPUT
 
       - name: Deploy changed packages
