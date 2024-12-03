@@ -57,10 +57,12 @@ jobs:
       # Step 4: Run vev deploy for each folder
       - name: Deploy changed folders
         if: steps.find_changed_folders.outputs.deploy_folders != ''
+        env:
+          VEV_TOKEN_DEV: ${{ secrets.VEV_TOKEN_DEV }}
         run: |
           for folder in ${{ steps.find_changed_folders.outputs.deploy_folders }}; do
             echo "Deploying $folder"
             cd $folder
-            vev deploy --dev --token=${{ secrets.VEV_TOKEN_DEV }}
+            vev deploy --dev --token=$VEV_TOKEN_DEV
             cd -
           done
