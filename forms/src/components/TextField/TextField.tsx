@@ -16,31 +16,30 @@ type Props = FieldProps &
   };
 
 function TextField(props: Props) {
-  const [value, onChange] = useState('');
+  const [value, setValue] = useState('');
   const dispatch = useDispatchVevEvent();
 
   const { name, multiline, type, inputType, className, required, placeholder } = props;
 
   const handleChange = (value: string) => {
-    onChange(value);
+    const valid = validate(value, { ...props, isNumber: type === 'number' });
+
+    setValue(value);
+
     dispatch(Event.onChange, {
       name,
       value,
     });
-  };
 
-  useEffect(() => {
-    dispatch(Event.onValid);
-  }, []);
-
-  const handleValidate = useCallback(() => {
-    const valid = validate(value, { ...props, isNumber: type === 'number' });
-    if (!valid) {
-      dispatch(Event.onInvalid);
+    if (valid) {
+      dispatch(Event.onValid, {
+        name,
+        value,
+      });
     } else {
-      dispatch(Event.onValid);
+      dispatch(Event.onInvalid);
     }
-  }, [value, dispatch, props]);
+  };
 
   return (
     <FieldWrapper>
@@ -59,8 +58,6 @@ function TextField(props: Props) {
             rows={5}
             value={value || ''}
             onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleValidate}
-            onFocus={() => dispatch(Event.onValid)}
             required={required}
             placeholder={placeholder}
           />
@@ -72,8 +69,6 @@ function TextField(props: Props) {
             placeholder={placeholder}
             name={name}
             onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleValidate}
-            onFocus={() => dispatch(Event.onValid)}
             value={value || ''}
             required={required}
           />
@@ -237,6 +232,16 @@ registerVevComponent(TextField, {
     },
     {
       type: Event.onValid,
+      args: [
+        {
+          name: 'name',
+          type: 'string',
+        },
+        {
+          name: 'value',
+          type: 'string',
+        },
+      ],
     },
   ],
 });

@@ -8,7 +8,7 @@ export type Validation = {
 };
 
 export const validate = (value = '', validate: Validation) => {
-  if (!value && validate.required) {
+  if ((!value || value === '') && validate.required) {
     return false;
   }
 
