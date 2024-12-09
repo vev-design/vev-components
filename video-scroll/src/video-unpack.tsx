@@ -59,8 +59,7 @@ export const unpackFrames = async (
 
   const context = offscreenCanvasElement.getContext('2d');
   if (!context) return [];
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = 'high';
+  context.imageSmoothingEnabled = false;
 
   const imageUploadPromises: Promise<FileUpload>[] = [];
 
@@ -119,7 +118,7 @@ async function createScreenshot(
   // create blob
   const blob = await context.canvas.convertToBlob({
     type: 'image/webp',
-    quality: 100,
+    quality: 1,
   });
 
   return blobToBase64(blob);
