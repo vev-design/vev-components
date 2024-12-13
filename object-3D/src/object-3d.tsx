@@ -391,7 +391,7 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(context.value?.modelUrl?.url);
+              const animations = await getAnimations(context.value?.widgetForm?.modelUrl?.url);
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });

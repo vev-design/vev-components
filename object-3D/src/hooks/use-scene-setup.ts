@@ -68,12 +68,13 @@ export function useSceneSetup(
       if (!loop) {
         newAnimation.setLoop(THREE.LoopRepeat, repetitions);
         newAnimation.clampWhenFinished = true;
+        newAnimation.setDuration(1.4);
       }
 
       const currentAction = mixer.current.existingAction(currentClip.current);
       newAnimation.reset();
       newAnimation.play();
-      currentAction.crossFadeTo(newAnimation, 0.5, false);
+      currentAction.crossFadeTo(newAnimation, 0.2, false);
       currentClip.current = newClip;
 
       if (!loop) {
@@ -81,7 +82,7 @@ export function useSceneSetup(
           const currentAction = mixer.current.existingAction(currentClip.current);
           const oldAnimation = mixer.current.existingAction(prevClip.current);
           oldAnimation.reset();
-          currentAction.crossFadeTo(oldAnimation, 0.5, false);
+          currentAction.crossFadeTo(oldAnimation, 0.2, false);
           currentClip.current = prevClip.current;
           isPlayingAnimation.current = false;
         });
