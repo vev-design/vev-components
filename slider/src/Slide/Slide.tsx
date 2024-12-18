@@ -17,8 +17,8 @@ const getSlideScale = (
     move === -200
       ? Math.abs(centerSlideIndex - index + 1)
       : move === 0
-      ? Math.abs(centerSlideIndex - index - 1)
-      : Math.abs(index - centerSlideIndex);
+        ? Math.abs(centerSlideIndex - index - 1)
+        : Math.abs(index - centerSlideIndex);
   return distance === 0 ? '1' : `${1 - scaleFactor / 100}`;
 };
 
@@ -76,12 +76,12 @@ export const Slide = ({
   }, [reverse, slidesToLoad, infinite]);
 
   useEffect(() => {
-    if(!isVisible) {
+    if (!isVisible) {
       setTransitionSpeed(0);
       setMove(-100);
       setSlides();
     }
-  },[isVisible, index]);
+  }, [isVisible, index]);
 
   useEffect(() => {
     const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
@@ -122,7 +122,7 @@ export const Slide = ({
 
   return (
     <div
-    ref={ref}
+      ref={ref}
       className={styles.wrapper}
       style={{
         transform: `translate${moveDirection}(${-100 * (slidesToLoad - 1)}%)`,
@@ -146,7 +146,7 @@ export const Slide = ({
           return (
             <div
               className={styles.slide}
-              key={child}
+              key={checkIfKeyIsDuplicatedInArray(currentSlides, child) ? `${child}${i}` : child}
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,
                 width: '100%',
@@ -173,4 +173,8 @@ export const Slide = ({
       </div>
     </div>
   );
+};
+
+const checkIfKeyIsDuplicatedInArray = (arr: string[], key: string) => {
+  return arr.filter((item) => item === key).length > 1;
 };
