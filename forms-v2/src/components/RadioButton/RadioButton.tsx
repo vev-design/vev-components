@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import React, { useEffect, useRef } from 'react';
+import { FieldProps } from '../../types';
+import { registerVevComponent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './RadioButton.module.css';
-import cx from 'classnames';
 import FieldWrapper from '../FieldWrapper';
+import { useFormField } from '../../hooks/use-form';
 
 type RadioButton = FieldProps & {
   name: string;
@@ -14,18 +14,13 @@ type RadioButton = FieldProps & {
 };
 
 function RadioButton(props: RadioButton) {
-  const dispatch = useDispatchVevEvent();
+  const [value, onChange] = useFormField<string>(props.variable);
+
   const ref = useRef<HTMLInputElement>();
 
-  const handleChange = useCallback(
-    (value: string) => {
-      dispatch(Event.onChange, {
-        name: props.name,
-        value,
-      });
-    },
-    [props.name],
-  );
+  const handleChange = (value: string) => {
+    onChange(value);
+  };
 
   useEffect(() => {
     if (props.initialValue) {
@@ -40,14 +35,14 @@ function RadioButton(props: RadioButton) {
     <FieldWrapper>
       <input
         ref={ref}
-        id={props.value}
+        id={value}
         type="radio"
         value={props.value}
         className={styles.radioButton}
         onChange={(e) => {
-          handleChange(e.target.value);
+          onChange(e.target.value);
         }}
-        name={props.name}
+        name={props.variable}
       />
     </FieldWrapper>
   );
@@ -73,15 +68,10 @@ registerVevComponent(RadioButton, {
       properties: ['background'],
     },
   ],
-  events: [
-    {
-      type: Event.onChange,
-    },
-  ],
   props: [
     {
-      name: 'name',
-      type: 'string',
+      name: 'variable',
+      type: 'variable',
     },
     {
       type: 'string',

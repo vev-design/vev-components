@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React from 'react';
 import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent, useGlobalStateRef } from '@vev/react';
+import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
 import { VevProps } from '@vev/utils';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './TextField.module.css';
 import FieldWrapper from '../FieldWrapper';
 import { validate, Validation } from '../../utils/validate';
+import { useFormField } from '../../hooks/use-form';
 
 type Props = FieldProps &
   Validation & {
@@ -16,22 +17,13 @@ type Props = FieldProps &
   };
 
 function TextField(props: Props) {
+  const [value, onChange] = useFormField(props.value);
   const dispatch = useDispatchVevEvent();
-
-  const [state, stateDispatch] = useGlobalStateRef();
-
-  const { variables } = state.current;
-  const value = variables.find((v) => v.key === props.value)?.value;
-
   const { name, multiline, type, inputType, className, required, placeholder } = props;
 
   const handleChange = (value: string) => {
     const valid = validate(value, { ...props, isNumber: type === 'number' });
-
-    stateDispatch(
-      'variables',
-      variables.map((v) => (v.key === props.value ? { ...v, value } : v)),
-    );
+    onChange(value);
 
     if (valid) {
       dispatch(Event.onValid, {

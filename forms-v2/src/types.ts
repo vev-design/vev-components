@@ -1,6 +1,7 @@
 export type FieldProps = {
   name: string;
   value: string;
+  variable: string;
   className?: string;
   required?: boolean;
   initialValue?: boolean;

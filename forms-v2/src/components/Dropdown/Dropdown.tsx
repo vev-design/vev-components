@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import { FieldProps } from '../../types';
+import { registerVevComponent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Dropdown.module.css';
-import FieldWrapper from '../FieldWrapper';
+import { useFormField } from '../../hooks/use-form';
 
 type DropdownProps = FieldProps & {
   placeholder?: string;
@@ -11,22 +11,16 @@ type DropdownProps = FieldProps & {
 };
 
 function Dropdown(props: DropdownProps) {
-  const [value, setValue] = useState('');
-  const dispatch = useDispatchVevEvent();
+  const [formValue, onChange] = useFormField<string>(props.value);
+  const [value, setValue] = useState(formValue);
 
-  const { name, required, items, placeholder } = props;
+  const { name, items, placeholder } = props;
   const options = items?.map((opt) => opt.item);
 
-  const handleChange = useCallback(
-    (value: string) => {
-      dispatch(Event.onChange, {
-        name: props.name,
-        value,
-      });
-      setValue(value);
-    },
-    [props.name],
-  );
+  const handleChange = (value: string) => {
+    onChange(value);
+    setValue(value);
+  };
 
   useEffect(() => {
     const initialValue = options?.find((item) => item.initialValue);
@@ -88,12 +82,11 @@ registerVevComponent(Dropdown, {
       properties: ['color', 'font-family', 'font-size'],
     },
   ],
-  events: [
-    {
-      type: Event.onChange,
-    },
-  ],
   props: [
+    {
+      name: 'value',
+      type: 'variable',
+    },
     {
       name: 'name',
       type: 'string',

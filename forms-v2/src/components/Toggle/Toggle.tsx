@@ -1,65 +1,49 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { FieldProps, Event } from '../../types';
+import React, { useEffect } from 'react';
+import { FieldProps } from '../../types';
 import cx from 'classnames';
-import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
+import { registerVevComponent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Toggle.module.css';
 import FieldWrapper from '../FieldWrapper';
+import { useFormField } from '../../hooks/use-form';
 
 function Toggle(props: FieldProps) {
-  const [value, setValue] = useState(props.initialValue || false);
-  const dispatch = useDispatchVevEvent();
+  const [value, onChange] = useFormField<string>(props.variable);
+  const { name } = props;
 
-  console.log('toggle', value);
-
-  const { name, required } = props;
-
-  const handleChange = useCallback(
-    (value: boolean) => {
-      dispatch(Event.onChange, {
-        name,
-        value,
-      });
-      setValue(value);
-    },
-    [name],
-  );
-
-  useVevEvent('SET', (e: any) => {
-    setValue(e.value);
-  });
+  const handleChange = (value: boolean) => {
+    onChange(value.toString());
+  };
 
   useEffect(() => {
     if (props.initialValue) {
-      dispatch(Event.onChange, {
-        name,
-        value,
-      });
-      setValue(value);
+      onChange(value);
     }
-  }, []);
+  }, [value, onChange, props.initialValue]);
+
+  const booleanValue: boolean = value === 'true';
 
   return (
     <FieldWrapper>
       <label htmlFor={name} className={styles.container}>
         <span
           className={cx(styles.field, {
-            [styles.fieldActive]: !!value,
-            [styles.fieldInactive]: !value,
+            [styles.fieldActive]: !!booleanValue,
+            [styles.fieldInactive]: !booleanValue,
           })}
         >
           <input
             className={styles.checkbox}
             type="checkbox"
-            value={value.toString() || ''}
+            value={(value || '').toString() || ''}
             id={name}
             name={name}
-            onChange={() => handleChange(!value)}
-            checked={!!value}
+            onChange={() => handleChange(!booleanValue)}
+            checked={!!booleanValue}
           />
           <span
             className={cx(styles.switch, {
-              [styles.switchActive]: !!value,
+              [styles.switchActive]: !!booleanValue,
             })}
           />
         </span>
@@ -98,18 +82,11 @@ registerVevComponent(Toggle, {
     height: 'auto',
     width: 'auto',
   },
-  events: [
-    {
-      type: Event.onChange,
-      args: [
-        {
-          name: 'value',
-          type: 'boolean',
-        },
-      ],
-    },
-  ],
   props: [
+    {
+      name: 'variable',
+      type: 'variable',
+    },
     {
       name: 'name',
       type: 'string',

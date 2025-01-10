@@ -1,42 +1,35 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import { registerVevComponent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Checkbox.module.css';
-import cx from 'classnames';
-import FieldWrapper from '../FieldWrapper';
+import { useFormField } from '../../hooks/use-form';
 
 type Props = FieldProps & {
   name: string;
 };
 
 function Checkbox(props: Props) {
-  const { name, value } = props;
-  const ref = useRef<HTMLInputElement>();
-  const dispatch = useDispatchVevEvent();
+  const [_, onChange] = useFormField<string>(props.variable);
 
-  const isChecked = false;
+  const ref = useRef<HTMLInputElement>();
 
   useEffect(() => {
     if (props.initialValue) {
-      ref?.current && (ref.current.checked = true);
+      if (ref?.current) ref.current.checked = true;
     }
-  }, []);
+  }, [props.initialValue]);
 
   return (
     <div className={styles.checkbox}>
       <input
         ref={ref}
-        name={name}
-        id={name}
+        name={props.variable}
+        id={props.variable}
         type="checkbox"
         onChange={(e) => {
           const { checked } = e.target;
-          dispatch(Event.onChange, {
-            name,
-            value,
-            type: checked ? 'add' : 'remove',
-          });
+          onChange(props.value, checked ? 'add' : 'remove');
         }}
       />
     </div>
@@ -49,9 +42,8 @@ registerVevComponent(Checkbox, {
   icon: formIcon,
   props: [
     {
-      name: 'name',
-      type: 'string',
-      initialValue: 'fruits',
+      name: 'variable',
+      type: 'variable',
     },
     {
       name: 'value',
