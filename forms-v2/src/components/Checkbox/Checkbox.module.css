@@ -20,14 +20,13 @@
   cursor: pointer;
 }
 
-.checkbox input:checked {
+.checkbox input:checked::before {
+  content: "";
   cursor: pointer;
   position: absolute;
   width: 75%;
   height: 75%;
   background-color: rgb(92, 76, 230);
-  top: 0;
-  left: 0;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
