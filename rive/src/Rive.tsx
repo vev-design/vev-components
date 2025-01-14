@@ -58,7 +58,7 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
 
     riveCanvasRef.current = riveCanvas;
 
-    const debouncedResize = debounce(riveCanvas.resizeDrawingSurfaceToCanvas.bind(riveCanvas), 20);
+    const debouncedResize = debounce(riveCanvas.resizeDrawingSurfaceToCanvas.bind(riveCanvas), 0);
 
     const resizeObserver = new ResizeObserver(() => {
       debouncedResize();
@@ -103,8 +103,8 @@ registerVevComponent(Rive, {
   emptyState: {
     action: 'OPEN_PROPERTIES',
     checkProperty: 'file',
-    linkText: 'Upload file or add URL',
-    description: 'to your Rive animation',
+    linkText: 'Upload a file ',
+    description: 'to embed your Rive animation.',
   },
   props: [
     { name: 'file', type: 'upload' },
