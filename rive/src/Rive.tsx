@@ -46,6 +46,7 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
       canvas: ref.current,
       artboard,
       animations,
+      stateMachines: statemachine,
       autoplay: true,
       onLoad: (event) => {
         riveCanvas.resizeDrawingSurfaceToCanvas();
@@ -107,11 +108,12 @@ registerVevComponent(Rive, {
     description: 'to embed your Rive animation.',
   },
   props: [
-    { name: 'file', type: 'upload' },
+    { name: 'file', type: 'upload', clearProps: ['artboard', 'animations', 'statemachine'] },
     {
       name: 'artboard',
       title: 'Artboard',
       type: 'select',
+      clearProps: ['animations', 'statemachine'],
       options: {
         display: 'autocomplete',
         async items(context) {
@@ -159,11 +161,12 @@ registerVevComponent(Rive, {
                   (value) => value.name === context.value.artboard,
                 );
 
-                resolve(
-                  artboard.animations.map((animation) => {
+                resolve([
+                  { label: 'None', value: undefined },
+                  ...artboard.animations.map((animation) => {
                     return { label: animation, value: animation };
                   }),
-                );
+                ]);
               },
             });
           });
@@ -173,37 +176,38 @@ registerVevComponent(Rive, {
         return !context.value.file || !context.value.artboard;
       },
     },
-    // {
-    //  name: 'statemachine',
-    //  title: 'State machines',
-    //  type: 'select',
-    //  options: {
-    //    multiselect: true,
-    //    async items(context) {
-    //      return new Promise((resolve) => {
-    //        const canvas = document.createElement('canvas');
-    //        const riveCanvas = new RiveCanvas({
-    //          src: context.value.file?.url,
-    //          canvas,
-    //          onLoad: (event) => {
-    //            const artboard = riveCanvas.contents.artboards.find(
-    //              (value) => value.name === context.value.artboard,
-    //            );
-    //
-    //            resolve(
-    //              artboard.stateMachines.map((statemachine) => {
-    //                return { label: statemachine.name, value: statemachine.name };
-    //              }),
-    //            );
-    //          },
-    //        });
-    //      });
-    //    },
-    //  },
-    //  hidden: (context) => {
-    //    return !context.value.file || !context.value.artboard;
-    //  },
-    // },
+    {
+      name: 'statemachine',
+      title: 'State machines',
+      type: 'select',
+      options: {
+        multiselect: false,
+        display: 'dropdown',
+        async items(context) {
+          return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            const riveCanvas = new RiveCanvas({
+              src: context.value.file?.url,
+              canvas,
+              onLoad: () => {
+                const artboard = riveCanvas.contents.artboards.find(
+                  (value) => value.name === context.value.artboard,
+                );
+                resolve([
+                  { label: 'None', value: undefined },
+                  ...artboard.stateMachines.map((statemachine) => {
+                    return { label: statemachine.name, value: statemachine.name };
+                  }),
+                ]);
+              },
+            });
+          });
+        },
+      },
+      hidden: (context) => {
+        return !context.value.file || !context.value.artboard;
+      },
+    },
   ],
   interactions: [
     {
