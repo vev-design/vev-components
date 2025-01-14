@@ -24,7 +24,6 @@ function debounce(cb: () => void, ms: number) {
 }
 
 const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
-  console.log('animations', animations);
   const ref = useRef<HTMLCanvasElement>(null);
   const riveCanvasRef = useRef<RiveCanvas>(null);
 
@@ -50,7 +49,6 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
       autoplay: true,
       onLoad: (event) => {
         riveCanvas.resizeDrawingSurfaceToCanvas();
-        console.log('Autoplay');
       },
     });
 
@@ -60,7 +58,7 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
 
     riveCanvasRef.current = riveCanvas;
 
-    const debouncedResize = debounce(riveCanvas.resizeDrawingSurfaceToCanvas.bind(riveCanvas), 0);
+    const debouncedResize = debounce(riveCanvas.resizeDrawingSurfaceToCanvas.bind(riveCanvas), 20);
 
     const resizeObserver = new ResizeObserver(() => {
       debouncedResize();
@@ -215,10 +213,6 @@ registerVevComponent(Rive, {
     {
       type: Interactions.PAUSE,
       description: 'Pause',
-    },
-    {
-      type: Interactions.STOP,
-      description: 'Stop animation',
     },
   ],
   editableCSS: [
