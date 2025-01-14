@@ -66,7 +66,6 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   const showSlideKey: string | undefined = disabled
     ? activeContentChild
     : undefined;
-  console.log("HELLO");
   useViewAnimation(
     ref,
     {

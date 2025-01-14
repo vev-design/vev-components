@@ -1,4 +1,4 @@
-name: PR Deploy
+name: Deploy Vev elements to Production
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Production
     if: ${{ github.event.pull_request.merged }} # Only run if the PR is merged
     runs-on: ubuntu-latest
 

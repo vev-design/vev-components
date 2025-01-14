@@ -1,4 +1,4 @@
-name: PR Deploy
+name: Deploy Vev elements to Development
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Development
     if: ${{ !github.event.pull_request.draft }} # Skip draft PRs
     runs-on: ubuntu-latest
 
@@ -57,12 +58,10 @@ jobs:
       # Step 4: Run vev deploy for each folder
       - name: Deploy changed folders
         if: steps.find_changed_folders.outputs.deploy_folders != ''
-        env:
-          VEV_TOKEN_DEV: ${{ secrets.VEV_TOKEN_DEV }}
         run: |
           for folder in ${{ steps.find_changed_folders.outputs.deploy_folders }}; do
             echo "Deploying $folder"
             cd $folder
-            vev deploy --dev --token "$VEV_TOKEN_DEV"
+            vev deploy --dev --token=${{ secrets.VEV_TOKEN_DEV }}
             cd -
           done
