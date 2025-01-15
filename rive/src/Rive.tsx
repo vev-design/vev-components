@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import styles from './Rive.module.css';
 import { registerVevComponent, useVevEvent } from '@vev/react';
-import { EventType, Rive as RiveCanvas } from '@rive-app/canvas';
+import { EventType, Rive as RiveCanvas, StateMachineInputType } from '@rive-app/canvas';
 import { Interactions } from './events';
+import { debounce, getRiveContent } from './util';
 
 type Props = {
   file: { url: string };
@@ -12,16 +13,6 @@ type Props = {
   statemachine: string;
   hostRef: React.RefObject<HTMLDivElement>;
 };
-
-function debounce(cb: () => void, ms: number) {
-  let timeout: ReturnType<typeof setTimeout>;
-  return () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      cb();
-    }, ms);
-  };
-}
 
 const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -86,11 +77,41 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
     }
   });
 
-  useVevEvent(Interactions.STOP, () => {
-    if (riveCanvasRef.current) {
-      riveCanvasRef.current.stop();
-    }
+  useVevEvent(Interactions.PLAY_ANIMATION, (args: { animations: string | string[] }) => {
+    riveCanvasRef.current.play(args.animations);
   });
+
+  useVevEvent(
+    Interactions.FIRE_INPUT,
+    (args: {
+      input: string;
+      input_boolean?: boolean;
+      input_number?: number;
+      input_boolean_toggle?: boolean;
+    }) => {
+      if (!args.input) return;
+      const inputArgs: { name: string; type: StateMachineInputType } = JSON.parse(args.input);
+
+      const inputs = riveCanvasRef.current.stateMachineInputs(statemachine);
+      const inputObj = inputs.find((input) => input.name === inputArgs.name);
+
+      switch (inputArgs.type) {
+        case StateMachineInputType.Trigger:
+          inputObj.fire();
+          break;
+        case StateMachineInputType.Number:
+          inputObj.value = args.input_number;
+          break;
+        case StateMachineInputType.Boolean:
+          if (args.input_boolean_toggle) {
+            inputObj.value = !inputObj.value;
+          } else {
+            inputObj.value = args.input_boolean;
+          }
+          break;
+      }
+    },
+  );
 
   return (
     <div className={styles.wrapper}>
@@ -108,7 +129,12 @@ registerVevComponent(Rive, {
     description: 'to embed your Rive animation.',
   },
   props: [
-    { name: 'file', type: 'upload', clearProps: ['artboard', 'animations', 'statemachine'] },
+    {
+      name: 'file',
+      type: 'upload',
+      maxSize: 75000,
+      clearProps: ['artboard', 'animations', 'statemachine'],
+    },
     {
       name: 'artboard',
       title: 'Artboard',
@@ -117,23 +143,14 @@ registerVevComponent(Rive, {
       options: {
         display: 'autocomplete',
         async items(context) {
-          if (!context.value.file?.url) {
-            return [];
-          }
-          return new Promise((resolve) => {
-            const canvas = document.createElement('canvas');
-            const riveCanvas = new RiveCanvas({
-              src: context.value.file?.url,
-              canvas,
-              onLoad: () => {
-                resolve(
-                  riveCanvas.contents.artboards.map((artboard) => {
-                    return { label: artboard.name, value: artboard.name };
-                  }),
-                );
-              },
+          const contents = await getRiveContent(context.value.file);
+          if (contents) {
+            return contents.artboards.map((artboard) => {
+              return { label: artboard.name, value: artboard.name };
             });
-          });
+          }
+
+          return [];
         },
       },
       hidden: (context) => {
@@ -148,28 +165,23 @@ registerVevComponent(Rive, {
         // multiselect: true,
         display: 'autocomplete',
         async items(context) {
-          if (!context.value.file?.url) {
-            return [];
-          }
-          return new Promise((resolve) => {
-            const canvas = document.createElement('canvas');
-            const riveCanvas = new RiveCanvas({
-              src: context.value.file?.url,
-              canvas,
-              onLoad: (event) => {
-                const artboard = riveCanvas.contents.artboards.find(
-                  (value) => value.name === context.value.artboard,
-                );
+          const contents = await getRiveContent(context.value.file);
+          if (contents) {
+            const artboard = contents.artboards.find(
+              (value) => value.name === context.value.artboard,
+            );
 
-                resolve([
-                  { label: 'None', value: undefined },
-                  ...artboard.animations.map((animation) => {
-                    return { label: animation, value: animation };
-                  }),
-                ]);
-              },
-            });
-          });
+            if (!artboard) return [];
+
+            return [
+              { label: 'None', value: null },
+              ...artboard.animations.map((animation) => {
+                return { label: animation, value: animation };
+              }),
+            ];
+          }
+
+          return [];
         },
       },
       hidden: (context) => {
@@ -184,24 +196,23 @@ registerVevComponent(Rive, {
         multiselect: false,
         display: 'dropdown',
         async items(context) {
-          return new Promise((resolve) => {
-            const canvas = document.createElement('canvas');
-            const riveCanvas = new RiveCanvas({
-              src: context.value.file?.url,
-              canvas,
-              onLoad: () => {
-                const artboard = riveCanvas.contents.artboards.find(
-                  (value) => value.name === context.value.artboard,
-                );
-                resolve([
-                  { label: 'None', value: undefined },
-                  ...artboard.stateMachines.map((statemachine) => {
-                    return { label: statemachine.name, value: statemachine.name };
-                  }),
-                ]);
-              },
-            });
-          });
+          const contents = await getRiveContent(context.value.file);
+          if (contents) {
+            const artboard = contents.artboards.find(
+              (value) => value.name === context.value.artboard,
+            );
+
+            if (!artboard) return [];
+
+            return [
+              { label: 'None', value: null },
+              ...artboard.stateMachines.map((statemachine) => {
+                return { label: statemachine.name, value: statemachine.name };
+              }),
+            ];
+          }
+
+          return [];
         },
       },
       hidden: (context) => {
@@ -217,6 +228,123 @@ registerVevComponent(Rive, {
     {
       type: Interactions.PAUSE,
       description: 'Pause',
+    },
+    {
+      type: Interactions.PLAY_ANIMATION,
+      description: 'Play animation',
+      args: [
+        {
+          name: 'animations',
+          title: 'Animation',
+          type: 'select',
+          options: {
+            display: 'dropdown',
+            async items(context) {
+              const contents = await getRiveContent(context.value.widgetForm.file);
+              if (contents) {
+                const artboard = contents.artboards.find(
+                  (value) => value.name === context.value.widgetForm.artboard,
+                );
+                if (!artboard) return [];
+
+                return [
+                  { label: 'None', value: null },
+                  ...artboard.animations.map((animation) => {
+                    return { label: animation, value: animation };
+                  }),
+                ];
+              }
+
+              return [];
+            },
+          },
+          hidden: (context) => {
+            return !context.value.widgetForm.file || !context.value.widgetForm.artboard;
+          },
+        },
+      ],
+    },
+    {
+      type: Interactions.FIRE_INPUT,
+      description: 'Fire input',
+      args: [
+        {
+          name: 'input',
+          title: 'Input',
+          type: 'select',
+          options: {
+            display: 'dropdown',
+            async items(context) {
+              const contents = await getRiveContent(context.value.widgetForm.file);
+              if (contents) {
+                const artboard = contents.artboards.find(
+                  (value) => value.name === context.value.widgetForm.artboard,
+                );
+                if (!artboard) return [];
+
+                const statemachine = artboard.stateMachines.find(
+                  (value) => value.name === context.value.widgetForm.statemachine,
+                );
+
+                if (!statemachine) return [];
+
+                return [
+                  { label: 'None', value: null },
+                  ...statemachine.inputs.map((input) => {
+                    return {
+                      label: input.name,
+                      value: JSON.stringify({ name: input.name, type: input.type }),
+                    };
+                  }),
+                ];
+              }
+
+              return [];
+            },
+          },
+          hidden: (context) => {
+            return !context.value.widgetForm.file || !context.value.widgetForm.artboard;
+          },
+        },
+        {
+          name: 'input_boolean_toggle',
+          title: 'Toggle value',
+          type: 'boolean',
+          hidden: (context: any) => {
+            if (!context.value?.interactionForm?.input) return true;
+            const input: { name: string; type: StateMachineInputType } = JSON.parse(
+              context.value?.interactionForm?.input,
+            );
+            return input.type !== StateMachineInputType.Boolean;
+          },
+        },
+        {
+          name: 'input_boolean',
+          title: 'Value',
+          type: 'boolean',
+          initialValue: false,
+          hidden: (context: any) => {
+            if (!context.value?.interactionForm?.input) return true;
+            const input: { name: string; type: StateMachineInputType } = JSON.parse(
+              context.value?.interactionForm?.input,
+            );
+            if (input.type !== StateMachineInputType.Boolean) return false;
+            return context.value.interactionForm?.input_boolean_toggle;
+          },
+        },
+        {
+          name: 'input_number',
+          title: 'Value',
+          type: 'number',
+          hidden: (context: any) => {
+            if (!context.value?.interactionForm?.input) return true;
+            const input: { name: string; type: StateMachineInputType } = JSON.parse(
+              context.value?.interactionForm?.input,
+            );
+            return input.type !== StateMachineInputType.Number;
+          },
+        },
+      ],
     },
   ],
   editableCSS: [

@@ -8,6 +8,6 @@ export enum Events {
 export enum Interactions {
   PLAY = 'PLAY',
   PAUSE = 'PAUSE',
-  STOP = 'STOP',
-  RESET_ANIMATION = 'RESET_ANIMATION',
+  PLAY_ANIMATION = 'PLAY_ANIMATION',
+  FIRE_INPUT = 'FIRE_INPUT',
 }
