@@ -43,6 +43,7 @@ const Video = ({
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
   const videoStarted = useRef(false);
+  
 
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
