@@ -1,23 +1,8 @@
 import { registerVevComponent } from '@vev/react';
 import Video from './Video';
 import styles from './Video.module.css';
+import { VideoEvent, VideoInteraction } from './interactions';
 
-export enum VideoInteraction {
-  play = 'play',
-  restart = 'restart',
-  togglePlay = 'togglePlay',
-  pause = 'pause',
-  mute = 'mute',
-  unMute = 'unMute',
-  toggleSound = 'toggleSound',
-}
-
-export enum VideoEvent {
-  onPlay = 'onPlay',
-  onPause = 'onPause',
-  onEnd = 'onEnd',
-  currentTime = 'currentTime',
-}
 
 registerVevComponent(Video, {
   name: 'Video',

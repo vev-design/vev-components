@@ -2,7 +2,7 @@ import React, { useEffect, useRef, VideoHTMLAttributes } from 'react';
 import styles from './Video.module.css';
 import { useEditorState, useVevEvent, useDispatchVevEvent, useTracking } from '@vev/react';
 import { getNameFromUrl, isIE, createTracker } from './utils';
-import { VideoEvent, VideoInteraction } from '.';
+import { VideoEvent, VideoInteraction } from './interactions';
 
 type Props = {
   video: {
