@@ -8,13 +8,12 @@ import { debounce, getRiveContent } from './util';
 type Props = {
   file: { url: string };
   url: string;
-  animations: string;
   artboard: string;
   statemachine: string;
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
-const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
+const Rive = ({ hostRef, file, artboard, statemachine }: Props) => {
   const ref = useRef<HTMLCanvasElement>(null);
   const riveCanvasRef = useRef<RiveCanvas>(null);
 
@@ -36,7 +35,6 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
       src: file?.url,
       canvas: ref.current,
       artboard,
-      animations,
       stateMachines: statemachine,
       autoplay: true,
       onLoad: (event) => {
@@ -63,7 +61,7 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
         resizeObserver.unobserve(hostRef.current);
       }
     };
-  }, [file, artboard, animations, statemachine]);
+  }, [file, artboard, statemachine]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (riveCanvasRef.current) {
@@ -77,8 +75,8 @@ const Rive = ({ hostRef, file, artboard, animations, statemachine }: Props) => {
     }
   });
 
-  useVevEvent(Interactions.PLAY_ANIMATION, (args: { animations: string | string[] }) => {
-    riveCanvasRef.current.play(args.animations);
+  useVevEvent(Interactions.SET_STATE_MACHINE, (args: { statemachine: string | string[] }) => {
+    riveCanvasRef.current.play(args.statemachine);
   });
 
   useVevEvent(
@@ -133,13 +131,13 @@ registerVevComponent(Rive, {
       name: 'file',
       type: 'upload',
       maxSize: 75000,
-      clearProps: ['artboard', 'animations', 'statemachine'],
+      clearProps: ['artboard', 'statemachine'],
     },
     {
       name: 'artboard',
       title: 'Artboard',
       type: 'select',
-      clearProps: ['animations', 'statemachine'],
+      clearProps: ['statemachine'],
       options: {
         display: 'autocomplete',
         async items(context) {
@@ -155,37 +153,6 @@ registerVevComponent(Rive, {
       },
       hidden: (context) => {
         return !context.value.file;
-      },
-    },
-    {
-      name: 'animations',
-      title: 'Animation',
-      type: 'select',
-      options: {
-        // multiselect: true,
-        display: 'autocomplete',
-        async items(context) {
-          const contents = await getRiveContent(context.value.file);
-          if (contents) {
-            const artboard = contents.artboards.find(
-              (value) => value.name === context.value.artboard,
-            );
-
-            if (!artboard) return [];
-
-            return [
-              { label: 'None', value: null },
-              ...artboard.animations.map((animation) => {
-                return { label: animation, value: animation };
-              }),
-            ];
-          }
-
-          return [];
-        },
-      },
-      hidden: (context) => {
-        return !context.value.file || !context.value.artboard;
       },
     },
     {
@@ -230,12 +197,12 @@ registerVevComponent(Rive, {
       description: 'Pause',
     },
     {
-      type: Interactions.PLAY_ANIMATION,
-      description: 'Play animation',
+      type: Interactions.SET_STATE_MACHINE,
+      description: 'Set state machine',
       args: [
         {
-          name: 'animations',
-          title: 'Animation',
+          name: 'statemachine',
+          title: 'State machine',
           type: 'select',
           options: {
             display: 'dropdown',
@@ -249,8 +216,8 @@ registerVevComponent(Rive, {
 
                 return [
                   { label: 'None', value: null },
-                  ...artboard.animations.map((animation) => {
-                    return { label: animation, value: animation };
+                  ...artboard.stateMachines.map((statemachine) => {
+                    return { label: statemachine.name, value: statemachine.name };
                   }),
                 ];
               }
