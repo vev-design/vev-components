@@ -1,7 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import styles from './Rive.module.css';
 import { registerVevComponent, useVevEvent } from '@vev/react';
-import { EventType, Rive as RiveCanvas, StateMachineInputType } from '@rive-app/canvas';
+import {
+  Alignment,
+  EventType,
+  Fit,
+  Layout,
+  Rive as RiveCanvas,
+  StateMachineInputType,
+} from '@rive-app/canvas';
 import { Interactions } from './events';
 import { debounce, getRiveContent } from './util';
 
@@ -10,10 +17,15 @@ type Props = {
   url: string;
   artboard: string;
   statemachine: string;
+  layout?: {
+    fit?: Fit;
+    alignment?: Alignment;
+  };
+  scrollEnabled: boolean;
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
-const Rive = ({ hostRef, file, artboard, statemachine }: Props) => {
+const Rive = ({ hostRef, file, artboard, statemachine, layout, scrollEnabled = false }: Props) => {
   const ref = useRef<HTMLCanvasElement>(null);
   const riveCanvasRef = useRef<RiveCanvas>(null);
 
@@ -40,13 +52,14 @@ const Rive = ({ hostRef, file, artboard, statemachine }: Props) => {
       artboard,
       stateMachines: statemachine,
       autoplay: true,
-      onLoad: (event) => {
+      isTouchScrollEnabled: scrollEnabled,
+      layout: new Layout({
+        fit: layout?.fit || Fit.Cover,
+        alignment: layout?.alignment || Alignment.Center,
+      }),
+      onLoad: () => {
         riveCanvas.resizeDrawingSurfaceToCanvas();
       },
-    });
-
-    riveCanvas.on(EventType.RiveEvent, (event) => {
-      console.log('event', event);
     });
 
     riveCanvasRef.current = riveCanvas;
@@ -60,11 +73,17 @@ const Rive = ({ hostRef, file, artboard, statemachine }: Props) => {
     resizeObserver.observe(hostRef.current);
 
     return () => {
+      if (riveCanvas) {
+        // Clean up Rive
+        riveCanvas.cleanup();
+        riveCanvas.deleteRiveRenderer();
+        riveCanvas.cleanupInstances();
+      }
       if (hostRef.current) {
         resizeObserver.unobserve(hostRef.current);
       }
     };
-  }, [file, artboard, statemachine, hostRef]);
+  }, [file, artboard, statemachine, hostRef, layout]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (riveCanvasRef.current) {
@@ -161,7 +180,7 @@ registerVevComponent(Rive, {
     },
     {
       name: 'statemachine',
-      title: 'State machines',
+      title: 'State machine',
       type: 'select',
       options: {
         multiselect: false,
@@ -189,6 +208,49 @@ registerVevComponent(Rive, {
       hidden: (context) => {
         return !context.value.file || !context.value.artboard;
       },
+    },
+    {
+      name: 'scrollEnabled',
+      title: 'Touch scroll',
+      description:
+        'Allows scrolling behavior to still occur on when a touch/drag action is performed on touch-enabled devices',
+      type: 'boolean',
+      initialValue: false,
+    },
+    {
+      name: 'layout',
+      title: 'Layout',
+      type: 'object',
+      fields: [
+        {
+          name: 'fit',
+          title: 'Fit',
+          type: 'select',
+          initialValue: Fit.Cover,
+          options: {
+            display: 'dropdown',
+            items: () => {
+              return Object.entries(Fit).map(([label, value]) => {
+                return { label, value };
+              });
+            },
+          },
+        },
+        {
+          name: 'alignment',
+          title: 'Alignment',
+          type: 'select',
+          initialValue: Alignment.Center,
+          options: {
+            display: 'dropdown',
+            items: () => {
+              return Object.entries(Alignment).map(([label, value]) => {
+                return { label, value };
+              });
+            },
+          },
+        },
+      ],
     },
   ],
   interactions: [
@@ -299,7 +361,7 @@ registerVevComponent(Rive, {
             const input: { name: string; type: StateMachineInputType } = JSON.parse(
               context.value?.interactionForm?.input,
             );
-            if (input.type !== StateMachineInputType.Boolean) return false;
+            if (input.type !== StateMachineInputType.Boolean) return true;
             return context.value.interactionForm?.input_boolean_toggle;
           },
         },
