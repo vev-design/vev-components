@@ -18,11 +18,14 @@ const Rive = ({ hostRef, file, artboard, statemachine }: Props) => {
   const riveCanvasRef = useRef<RiveCanvas>(null);
 
   useEffect(() => {
+    if (riveCanvasRef.current) {
+      // Clean up Rive
+      riveCanvasRef.current.cleanup();
+      riveCanvasRef.current.deleteRiveRenderer();
+      riveCanvasRef.current.cleanupInstances();
+    }
     if (!file) {
       if (riveCanvasRef.current) {
-        // Clean up Rive
-        riveCanvasRef.current.cleanup();
-
         // Clear canvas if in editor and removed animation
         ref.current.getContext('2d').clearRect(0, 0, 10000, 10000);
       }
@@ -61,7 +64,7 @@ const Rive = ({ hostRef, file, artboard, statemachine }: Props) => {
         resizeObserver.unobserve(hostRef.current);
       }
     };
-  }, [file, artboard, statemachine]);
+  }, [file, artboard, statemachine, hostRef]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (riveCanvasRef.current) {
@@ -131,6 +134,7 @@ registerVevComponent(Rive, {
       name: 'file',
       type: 'upload',
       maxSize: 75000,
+      accept: '.riv',
       clearProps: ['artboard', 'statemachine'],
     },
     {
