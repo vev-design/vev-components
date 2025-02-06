@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { FieldProps } from '../../types';
-import cx from 'classnames';
-import { registerVevComponent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './Toggle.module.css';
-import FieldWrapper from '../FieldWrapper';
-import { useFormField } from '../../hooks/use-form';
+import React, { useEffect } from "react";
+import { FieldProps } from "../../types";
+import cx from "classnames";
+import { registerVevComponent } from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./Toggle.module.css";
+import FieldWrapper from "../FieldWrapper";
+import { useFormField } from "../../hooks/use-form";
 
 function Toggle(props: FieldProps) {
   const [value, onChange] = useFormField<string>(props.variable);
@@ -21,7 +21,7 @@ function Toggle(props: FieldProps) {
     }
   }, [value, onChange, props.initialValue]);
 
-  const booleanValue: boolean = value === 'true';
+  const booleanValue: boolean = value === "true";
 
   return (
     <FieldWrapper>
@@ -35,7 +35,7 @@ function Toggle(props: FieldProps) {
           <input
             className={styles.checkbox}
             type="checkbox"
-            value={(value || '').toString() || ''}
+            value={(value || "").toString() || ""}
             id={name}
             name={name}
             onChange={() => handleChange(!booleanValue)}
@@ -53,68 +53,54 @@ function Toggle(props: FieldProps) {
 }
 
 registerVevComponent(Toggle, {
-  name: 'Toggle',
+  name: "Toggle",
   icon: formIcon,
-  categories: ['Form'],
+  categories: ["Form"],
   editableCSS: [
     {
       selector: styles.fieldInactive,
-      title: 'Background',
-      properties: ['background'],
+      title: "Background",
+      properties: ["background"],
     },
     {
       selector: styles.field,
-      title: 'Toggle',
-      properties: ['border-radius', 'border'],
+      title: "Toggle",
+      properties: ["border-radius", "border"],
     },
     {
       selector: styles.switch,
-      title: 'Switch',
-      properties: ['background'],
+      title: "Switch",
+      properties: ["background"],
     },
     {
       selector: styles.fieldActive,
-      title: 'Background Active',
-      properties: ['background'],
+      title: "Background Active",
+      properties: ["background"],
     },
   ],
   size: {
-    height: 'auto',
-    width: 'auto',
+    height: "auto",
+    width: "auto",
   },
   props: [
     {
-      name: 'variable',
-      type: 'variable',
+      name: "variable",
+      type: "variable",
     },
     {
-      name: 'name',
-      type: 'string',
-      initialValue: 'toggle',
-    },
-    {
-      name: 'title',
-      type: 'string',
-      initialValue: 'Toggle',
-    },
-    {
-      name: 'required',
-      type: 'boolean',
-    },
-    {
-      name: 'initialValue',
-      type: 'boolean',
-      title: 'Initial value',
+      name: "initialValue",
+      type: "boolean",
+      title: "Default true",
     },
   ],
   interactions: [
     {
-      type: 'SET',
-      description: 'Set value',
+      type: "SET",
+      description: "Set value",
       args: [
         {
-          name: 'value',
-          type: 'boolean',
+          name: "value",
+          type: "boolean",
         },
       ],
     },

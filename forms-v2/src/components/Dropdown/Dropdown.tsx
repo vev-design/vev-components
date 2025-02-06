@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { FieldProps } from '../../types';
-import { registerVevComponent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './Dropdown.module.css';
-import { useFormField } from '../../hooks/use-form';
+import React, { useEffect, useState, useCallback } from "react";
+import { FieldProps } from "../../types";
+import { registerVevComponent } from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./Dropdown.module.css";
+import { useFormField } from "../../hooks/use-form";
 
 type DropdownProps = FieldProps & {
   placeholder?: string;
@@ -31,12 +31,12 @@ function Dropdown(props: DropdownProps) {
     <div className={styles.wrapper}>
       <select
         name={name}
-        value={value || ''}
+        value={value || ""}
         onChange={(e) => handleChange(e.target.value)}
         className={styles.select}
       >
         <option value="" disabled selected>
-          {placeholder || 'Select your option'}
+          {placeholder || "Select your option"}
         </option>
         {options?.map((opt, i) => (
           <option value={opt.value} key={i}>
@@ -54,8 +54,8 @@ function Dropdown(props: DropdownProps) {
 }
 
 registerVevComponent(Dropdown, {
-  name: 'Dropdown',
-  categories: ['Form'],
+  name: "Dropdown",
+  categories: ["Form"],
   icon: formIcon,
   size: {
     height: 50,
@@ -64,62 +64,53 @@ registerVevComponent(Dropdown, {
   editableCSS: [
     {
       selector: styles.select,
-      title: 'Input',
+      title: "Input",
       properties: [
-        'border',
-        'background',
-        'box-shadow',
-        'padding',
-        'color',
-        'border-radius',
-        'font-family',
-        'font-size',
+        "border",
+        "background",
+        "box-shadow",
+        "padding",
+        "color",
+        "border-radius",
+        "font-family",
+        "font-size",
       ],
     },
     {
       selector: styles.arrow,
-      title: 'Arrow',
-      properties: ['color', 'font-family', 'font-size'],
+      title: "Arrow",
+      properties: ["color", "font-family", "font-size"],
     },
   ],
   props: [
     {
-      name: 'value',
-      type: 'variable',
+      name: "value",
+      type: "variable",
     },
     {
-      name: 'name',
-      type: 'string',
+      name: "placeholder",
+      type: "string",
     },
     {
-      name: 'placeholder',
-      type: 'string',
-    },
-    {
-      name: 'required',
-      title: 'Required',
-      type: 'boolean',
-    },
-    {
-      name: 'items',
-      type: 'array',
+      name: "items",
+      type: "array",
       of: [
         {
-          type: 'object',
-          name: 'item',
+          type: "object",
+          name: "item",
           fields: [
             {
-              type: 'string',
-              name: 'label',
+              type: "string",
+              name: "label",
             },
             {
-              type: 'string',
-              name: 'value',
+              type: "string",
+              name: "value",
             },
             {
-              type: 'boolean',
-              name: 'initialValue',
-              title: 'Initial value',
+              type: "boolean",
+              name: "initialValue",
+              title: "Initial value",
             },
           ],
         },

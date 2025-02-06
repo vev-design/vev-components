@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent } from '@vev/react';
-import formIcon from '../../assets/form-icon.svg';
-import styles from './Checkbox.module.css';
-import { useFormField } from '../../hooks/use-form';
+import React, { useEffect, useRef } from "react";
+import { FieldProps, Event } from "../../types";
+import { registerVevComponent } from "@vev/react";
+import formIcon from "../../assets/form-icon.svg";
+import styles from "./Checkbox.module.css";
+import { useFormField } from "../../hooks/use-form";
 
 type Props = FieldProps & {
   name: string;
@@ -29,7 +29,7 @@ function Checkbox(props: Props) {
         type="checkbox"
         onChange={(e) => {
           const { checked } = e.target;
-          onChange(props.value, checked ? 'add' : 'remove');
+          onChange(props.value, checked ? "add" : "remove");
         }}
       />
     </div>
@@ -37,37 +37,33 @@ function Checkbox(props: Props) {
 }
 
 registerVevComponent(Checkbox, {
-  name: 'Checkbox',
-  categories: ['Form'],
+  name: "Checkbox",
+  categories: ["Form"],
   icon: formIcon,
   props: [
     {
-      name: 'variable',
-      type: 'variable',
+      name: "variable",
+      type: "variable",
     },
     {
-      name: 'value',
-      type: 'string',
+      name: "value",
+      type: "string",
     },
     {
-      name: 'initialValue',
-      type: 'boolean',
-    },
-    {
-      name: 'required',
-      type: 'boolean',
+      name: "initialValue",
+      type: "boolean",
     },
   ],
   editableCSS: [
     {
       selector: styles.checkbox,
-      title: 'Background',
-      properties: ['background', 'border', 'border-radius'],
+      title: "Background",
+      properties: ["background", "border", "border-radius"],
     },
     {
-      selector: styles.checkbox + ' input:checked',
-      title: 'Checked',
-      properties: ['background'],
+      selector: styles.checkbox + " input:checked",
+      title: "Checked",
+      properties: ["background"],
     },
   ],
   size: {
