@@ -5,15 +5,18 @@ import { VevProps } from '@vev/utils';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './TextField.module.css';
 import FieldWrapper from '../FieldWrapper';
-import { validate, Validation } from '../../utils/validate';
 
-type Props = FieldProps &
-  Validation & {
-    inputType?: 'text' | 'number';
-    placeholder?: string;
-    multiline?: boolean;
-    type?: 'text' | 'date' | 'email' | 'url' | 'tel' | 'number' | 'time';
-  };
+type Props = FieldProps & {
+  inputType?: 'text' | 'number';
+  placeholder?: string;
+  multiline?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  type?: 'text' | 'date' | 'email' | 'url' | 'tel' | 'number' | 'time';
+};
 
 function TextField(props: Props) {
   const [value, setValue] = useState('');
@@ -31,37 +34,23 @@ function TextField(props: Props) {
     maxLength,
     min,
     max,
+    pattern,
   } = props;
 
   const handleChange = (value: string) => {
-    const valid = validate(value, { ...props, isNumber: type === 'number' });
-
     setValue(value);
-
-    dispatch(Event.onChange, {
-      name,
-      value,
-    });
-
-    if (valid) {
-      dispatch(Event.onValid, {
-        name,
-        value,
-      });
-    } else {
-      dispatch(Event.onInvalid);
-    }
   };
 
   const validationAttributes: Pick<
     InputHTMLAttributes<HTMLInputElement>,
-    'required' | 'minLength' | 'maxLength' | 'min' | 'max'
+    'required' | 'minLength' | 'maxLength' | 'min' | 'max' | 'pattern'
   > = {
     required,
     minLength,
     maxLength,
     min,
     max,
+    pattern,
   };
 
   return (
@@ -203,6 +192,10 @@ const props: VevProps[] = [
     type: 'boolean',
     name: 'multiline',
     hidden: (context) => context.value.type !== 'text',
+  },
+  {
+    type: 'string',
+    name: 'pattern',
   },
 ];
 

@@ -9,13 +9,8 @@ type Props = {
 };
 
 enum Interaction {
-  UPDATE_FORM = 'UPDATE_FORM',
-}
-
-enum Event {
-  FORM_SUBMITTED = 'FORM_SUBMITTED',
-  FORM_INVALID = 'FORM_INVALID',
-  FORM_VALID = 'FORM_VALID',
+  SET_LABEL = 'SET_LABEL',
+  SET_LOADING = 'SET_LOADING',
 }
 
 function Button({ ...props }: Props) {
@@ -82,24 +77,14 @@ registerVevComponent(Button, {
     width: 40,
     height: 100,
   },
-  events: [
-    {
-      type: Event.FORM_SUBMITTED,
-      description: 'On submitted form',
-    },
-    {
-      type: Event.FORM_INVALID,
-      description: 'On invalid form',
-    },
-    {
-      type: Event.FORM_VALID,
-      description: 'On valid form',
-    },
-  ],
   interactions: [
     {
-      type: Interaction.UPDATE_FORM,
-      description: 'Update form',
+      type: Interaction.SET_LABEL,
+      description: 'Update button label',
+    },
+    {
+      type: Interaction.SET_LOADING,
+      description: 'Set loading state',
     },
   ],
 });
