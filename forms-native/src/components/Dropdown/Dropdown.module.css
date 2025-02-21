@@ -1,0 +1,37 @@
+.wrapper {
+  position: relative;
+  height: 100%;
+}
+
+.select {
+  display: block;
+  width: 100%;
+  border: 1px solid rgb(176, 176, 176);
+  appearance: none;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  padding-left: 10%;
+}
+
+.select:focus {
+  border: 1px solid rgb(176, 176, 176);
+  outline: none;
+}
+
+.select::placeholder {
+  color: #888;
+}
+
+.arrow {
+  color: rgb(92, 76, 230);
+  fill: currentColor;
+  top: 50%;
+  transform: translateY(-50%);
+  position: absolute;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+}
