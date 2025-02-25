@@ -39,9 +39,14 @@ export function useHotspotListener(
         mouse.y = -((event.clientY - canvasBounds.top) / height) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(sceneChildren, true);
-
         if (intersects.length) {
-          addHotSpot(intersects[0].point);
+          let modelIndex = 0;
+          let modelIntersection = intersects[modelIndex];
+          while (modelIntersection.object.name === 'intersection_sphere') {
+            modelIndex++;
+            modelIntersection = intersects[modelIndex];
+          }
+          addHotSpot(modelIntersection.point);
         }
       }
     }
