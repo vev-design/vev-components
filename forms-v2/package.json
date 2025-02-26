@@ -1,0 +1,26 @@
+{
+  "name": "vev-form",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "login": "vev login",
+    "init": "vev init",
+    "start": "vev start"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "18.2.48",
+    "prettier": "2.7.0"
+  },
+  "dependencies": {
+    "@vev/react": "^0.2.0",
+    "@vev/silke": "^1.0.28",
+    "@vev/utils": "^1.2.7",
+    "classnames": "^2.5.1",
+    "lodash": "^4.17.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.4.0",
+    "react-router-dom": "^6.3.0"
+  }
+}
