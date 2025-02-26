@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, HTMLInputTypeAttribute, HTMLAttributes, InputHTMLAttributes } from 'react';
+import React, { useState, InputHTMLAttributes } from 'react';
 import { FieldProps, Event } from '../../types';
 import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
 import { VevProps } from '@vev/utils';
@@ -38,6 +38,11 @@ function TextField(props: Props) {
   } = props;
 
   const handleChange = (value: string) => {
+    dispatch(Event.onChange, {
+      name,
+      value,
+    });
+
     setValue(value);
   };
 
@@ -232,22 +237,6 @@ registerVevComponent(TextField, {
   events: [
     {
       type: Event.onChange,
-      args: [
-        {
-          name: 'name',
-          type: 'string',
-        },
-        {
-          name: 'value',
-          type: 'string',
-        },
-      ],
-    },
-    {
-      type: Event.onInvalid,
-    },
-    {
-      type: Event.onValid,
       args: [
         {
           name: 'name',

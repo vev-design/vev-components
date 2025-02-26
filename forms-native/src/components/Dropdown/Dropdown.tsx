@@ -39,6 +39,7 @@ function Dropdown(props: DropdownProps) {
         name={name}
         value={value || ''}
         onChange={(e) => handleChange(e.target.value)}
+        required={required}
         className={styles.select}
       >
         <option value="" disabled selected>
