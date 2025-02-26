@@ -44,7 +44,7 @@ function Checkbox(props: Props) {
 }
 
 registerVevComponent(Checkbox, {
-  name: 'Checkbox',
+  name: 'Checkbox (native)',
   categories: ['Form'],
   icon: formIcon,
   props: [

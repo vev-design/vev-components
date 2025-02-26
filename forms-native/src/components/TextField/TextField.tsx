@@ -200,7 +200,7 @@ const props: VevProps[] = [
 ];
 
 registerVevComponent(TextField, {
-  name: 'Text Field',
+  name: 'Text Field (native)',
   icon: formIcon,
   categories: ['Form'],
   editableCSS: [
