@@ -1,18 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FieldProps, Event } from '../../types';
+import { FieldProps, Event, Interaction } from '../../types';
 import cx from 'classnames';
 import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Toggle.module.css';
 import FieldWrapper from '../FieldWrapper';
 
-function Toggle(props: FieldProps) {
+type ToggleProps = FieldProps & {
+  initialValue?: boolean;
+};
+
+function Toggle(props: ToggleProps) {
   const [value, setValue] = useState(props.initialValue || false);
   const dispatch = useDispatchVevEvent();
 
-  console.log('toggle', value);
-
-  const { name, required } = props;
+  const { name } = props;
 
   const handleChange = useCallback(
     (value: boolean) => {
@@ -25,8 +27,8 @@ function Toggle(props: FieldProps) {
     [name],
   );
 
-  useVevEvent('SET', (e: any) => {
-    setValue(e.value);
+  useVevEvent(Interaction.setValue, (event: { value: boolean }) => {
+    setValue(event?.value);
   });
 
   useEffect(() => {
@@ -109,6 +111,13 @@ registerVevComponent(Toggle, {
       ],
     },
   ],
+  interactions: [
+    {
+      description: 'Set checked',
+      type: Interaction.setValue,
+      args: [{ name: 'value', type: 'boolean' }],
+    },
+  ],
   props: [
     {
       name: 'name',
@@ -128,18 +137,6 @@ registerVevComponent(Toggle, {
       name: 'initialValue',
       type: 'boolean',
       title: 'Initial value',
-    },
-  ],
-  interactions: [
-    {
-      type: 'SET',
-      description: 'Set value',
-      args: [
-        {
-          name: 'value',
-          type: 'boolean',
-        },
-      ],
     },
   ],
 });

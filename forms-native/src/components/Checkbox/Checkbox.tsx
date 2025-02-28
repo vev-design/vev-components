@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import React, { useEffect, useRef } from 'react';
+import { FieldProps, Event, Interaction } from '../../types';
+import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Checkbox.module.css';
-import cx from 'classnames';
-import FieldWrapper from '../FieldWrapper';
 
 type Props = FieldProps & {
   name: string;
+  initialValue?: boolean;
 };
 
 function Checkbox(props: Props) {
@@ -15,11 +14,15 @@ function Checkbox(props: Props) {
   const ref = useRef<HTMLInputElement>();
   const dispatch = useDispatchVevEvent();
 
-  const isChecked = false;
+  useVevEvent(Interaction.setValue, (event: { value: boolean }) => {
+    if (ref.current) {
+      ref.current.checked = event?.value;
+    }
+  });
 
   useEffect(() => {
-    if (props.initialValue) {
-      ref?.current && (ref.current.checked = true);
+    if (props.initialValue && ref.current) {
+      ref.current.checked = props.initialValue;
     }
   }, []);
 
@@ -95,6 +98,13 @@ registerVevComponent(Checkbox, {
   events: [
     {
       type: Event.onChange,
+    },
+  ],
+  interactions: [
+    {
+      description: 'Set checked',
+      type: Interaction.setValue,
+      args: [{ name: 'value', type: 'boolean' }],
     },
   ],
 });

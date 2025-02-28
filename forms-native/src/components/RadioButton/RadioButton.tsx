@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { FieldProps, Event, Interaction } from '../../types';
+import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
-import styles from './RadioButton.module.css';
-import cx from 'classnames';
 import FieldWrapper from '../FieldWrapper';
+import styles from './RadioButton.module.css';
 
 type RadioButton = FieldProps & {
   name: string;
@@ -16,6 +15,10 @@ type RadioButton = FieldProps & {
 function RadioButton(props: RadioButton) {
   const dispatch = useDispatchVevEvent();
   const ref = useRef<HTMLInputElement>();
+
+  useVevEvent(Interaction.setValue, (event: { value: string }) => {
+    ref.current.checked = event?.value === props.value;
+  });
 
   const handleChange = useCallback(
     (value: string) => {
@@ -86,6 +89,13 @@ registerVevComponent(RadioButton, {
   events: [
     {
       type: Event.onChange,
+    },
+  ],
+  interactions: [
+    {
+      description: 'Set value',
+      type: Interaction.setValue,
+      args: [{ name: 'value', type: 'string' }],
     },
   ],
   props: [

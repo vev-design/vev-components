@@ -1,12 +1,13 @@
 import React, { useState, InputHTMLAttributes } from 'react';
-import { FieldProps, Event } from '../../types';
-import { registerVevComponent, useDispatchVevEvent } from '@vev/react';
+import { FieldProps, Event, Interaction } from '../../types';
+import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
 import { VevProps } from '@vev/utils';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './TextField.module.css';
 import FieldWrapper from '../FieldWrapper';
 
 type Props = FieldProps & {
+  initialValue?: string;
   inputType?: 'text' | 'number';
   placeholder?: string;
   multiline?: boolean;
@@ -19,7 +20,7 @@ type Props = FieldProps & {
 };
 
 function TextField(props: Props) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(props.initialValue || '');
   const dispatch = useDispatchVevEvent();
 
   const {
@@ -45,6 +46,10 @@ function TextField(props: Props) {
 
     setValue(value);
   };
+
+  useVevEvent(Interaction.setValue, (event: { value: string }) => {
+    setValue(event?.value);
+  });
 
   const validationAttributes: Pick<
     InputHTMLAttributes<HTMLInputElement>,
@@ -100,6 +105,11 @@ const props: VevProps[] = [
     name: 'name',
     type: 'string',
     initialValue: 'field',
+  },
+  {
+    name: 'initialValue',
+    type: 'string',
+    initialValue: '',
   },
   {
     name: 'required',
@@ -238,6 +248,13 @@ registerVevComponent(TextField, {
           type: 'string',
         },
       ],
+    },
+  ],
+  interactions: [
+    {
+      type: Interaction.setValue,
+      description: 'Set value',
+      args: [{ name: 'value', type: 'string' }],
     },
   ],
 });
