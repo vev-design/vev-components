@@ -14,7 +14,7 @@ function Toggle(props: ToggleProps) {
   const [value, setValue] = useState(props.initialValue || false);
   const dispatch = useDispatchVevEvent();
 
-  const { name } = props;
+  const { name, required } = props;
 
   const handleChange = useCallback(
     (value: boolean) => {
@@ -56,6 +56,7 @@ function Toggle(props: ToggleProps) {
             value={value.toString() || ''}
             id={name}
             name={name}
+            required={required}
             onChange={() => handleChange(!value)}
             checked={!!value}
           />

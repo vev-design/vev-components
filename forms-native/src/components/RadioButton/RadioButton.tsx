@@ -45,6 +45,7 @@ function RadioButton(props: RadioButton) {
         ref={ref}
         id={props.value}
         type="radio"
+        required={props.required}
         value={props.value}
         className={styles.radioButton}
         onChange={(e) => {
