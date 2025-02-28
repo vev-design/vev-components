@@ -88,6 +88,16 @@ registerVevComponent(Dropdown, {
       title: 'Arrow',
       properties: ['color', 'font-family', 'font-size'],
     },
+    {
+      selector: styles.select + ':invalid',
+      title: 'Invalid',
+      properties: ['color', 'background', 'border'],
+    },
+    {
+      selector: styles.select + ':valid',
+      title: 'Valid',
+      properties: ['color', 'background', 'border'],
+    },
   ],
   events: [
     {

@@ -47,6 +47,16 @@ registerVevComponent(Button, {
       title: 'Hover',
       properties: ['background', 'color', 'box-shadow'],
     },
+    {
+      selector: styles.button + ':disabled',
+      title: 'Disabled',
+      properties: ['background', 'color', 'box-shadow'],
+    },
+    {
+      selector: styles.button + ':active',
+      title: 'Active',
+      properties: ['background', 'color', 'box-shadow'],
+    },
   ],
   props: [
     {

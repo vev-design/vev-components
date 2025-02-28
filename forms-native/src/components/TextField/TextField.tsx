@@ -165,25 +165,6 @@ const props: VevProps[] = [
     hidden: (context) => !['text', 'email'].includes(context.value.type),
   },
   {
-    type: 'select',
-    name: 'display',
-    hidden: (context) => context.value.type !== 'number',
-    initialValue: 'input',
-    options: {
-      display: 'dropdown',
-      items: [
-        {
-          value: 'input',
-          label: 'input',
-        },
-        {
-          value: 'slider',
-          label: 'slider',
-        },
-      ],
-    },
-  },
-  {
     type: 'number',
     name: 'min',
     hidden: (context) => context.value.type !== 'number',
@@ -227,6 +208,16 @@ registerVevComponent(TextField, {
       selector: styles.input + '::placeholder',
       title: 'Placeholder',
       properties: ['color', 'font-family', 'font-size'],
+    },
+    {
+      selector: styles.input + ':invalid',
+      title: 'Invalid',
+      properties: ['color', 'background', 'border'],
+    },
+    {
+      selector: styles.input + ':valid',
+      title: 'Valid',
+      properties: ['color', 'background', 'border'],
     },
   ],
   size: {

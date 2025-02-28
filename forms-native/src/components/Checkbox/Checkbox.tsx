@@ -77,6 +77,16 @@ registerVevComponent(Checkbox, {
       title: 'Checked',
       properties: ['background'],
     },
+    {
+      selector: styles.checkbox + ':invalid',
+      title: 'Invalid',
+      properties: ['color', 'background', 'border'],
+    },
+    {
+      selector: styles.checkbox + ':valid',
+      title: 'Valid',
+      properties: ['color', 'background', 'border'],
+    },
   ],
   size: {
     width: 50,

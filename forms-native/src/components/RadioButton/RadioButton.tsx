@@ -72,6 +72,16 @@ registerVevComponent(RadioButton, {
       title: 'Radio',
       properties: ['background'],
     },
+    {
+      selector: styles.radioButton + ':invalid',
+      title: 'Invalid',
+      properties: ['color', 'background', 'border'],
+    },
+    {
+      selector: styles.radioButton + ':valid',
+      title: 'Valid',
+      properties: ['color', 'background', 'border'],
+    },
   ],
   events: [
     {
