@@ -71,17 +71,35 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
   function onPlayerStateChange(event: OnStateChangeEvent) {
     if (typeof YT === 'undefined') return;
     playerState.current = event.data;
+
+    const percentagePlayed = Math.floor(currentTimeRef.current / player?.getDuration() * 100);
+
     switch (event.data) {
       case YT.PlayerState.PLAYING:
-        dispatchTrackingEvent('VEV_VIDEO_PLAY', { videoUrl: videoId, videoName: cleanVideoId });
+        dispatchTrackingEvent('VEV_VIDEO_PLAY', {
+          videoUrl: videoId,
+          videoName: cleanVideoId,
+          totalPlayTime: player?.getDuration(),
+          percentagePlayed,
+        });
         dispatch(YoutubeEvent.onPlay);
         break;
       case YT.PlayerState.PAUSED:
-        dispatchTrackingEvent('VEV_VIDEO_STOP', { videoUrl: videoId, videoName: cleanVideoId });
+        dispatchTrackingEvent('VEV_VIDEO_STOP', {
+          videoUrl: videoId,
+          videoName: cleanVideoId,
+          totalPlayTime: player?.getDuration(),
+          percentagePlayed,
+        });
         dispatch(YoutubeEvent.onPause);
         break;
       case YT.PlayerState.ENDED:
-        dispatchTrackingEvent('VEV_VIDEO_STOP', { videoUrl: videoId, videoName: cleanVideoId });
+        dispatchTrackingEvent('VEV_VIDEO_END', {
+          videoUrl: videoId,
+          videoName: cleanVideoId,
+          totalPlayTime: player?.getDuration(),
+          percentagePlayed: 100,
+        });
         dispatch(YoutubeEvent.onEnd);
         break;
     }
@@ -146,6 +164,8 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
             videoUrl: videoId,
             videoName: cleanVideoId,
             progress: currentTime,
+            totalPlayTime: player?.getDuration(),
+            percentagePlayed: Math.floor(currentTime / player?.getDuration() * 100),
           });
         }
       }

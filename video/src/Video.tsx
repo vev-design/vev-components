@@ -105,7 +105,9 @@ const Video = ({
             dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
               videoUrl: video.url,
               videoName: video.name,
-              progress: current,
+              progress: videoEl.currentTime,
+              totalPlayTime: videoEl.duration,
+              percentagePlayed: update.maxProgress,
             });
             track('Video Progress', label, stateRef.current.maxProgress);
           }
@@ -116,23 +118,33 @@ const Video = ({
             fifth++;
           }
           stateRef.current.current = update.current;
-          stateRef.current.maxProgress = update.maxProgress;
+          stateRef.current.maxProgress = stateRef.current.maxProgress;
           break;
         case 'play':
-          dispatchTrackingEvent('VEV_VIDEO_PLAY', { videoUrl: video.url, videoName: video.name });
+          dispatchTrackingEvent('VEV_VIDEO_PLAY', {
+            videoUrl: video.url,
+            videoName: video.name,
+            totalPlayTime: videoEl.duration,
+            percentagePlayed: update.maxProgress,
+          });
           dispatch(VideoEvent.onPlay);
           return track('Play', label);
         case 'pause':
           dispatchTrackingEvent('VEV_VIDEO_STOP', {
             videoUrl: video.url,
             videoName: video.name,
+            progress: videoEl.currentTime,
+            totalPlayTime: videoEl.duration,
+            percentagePlayed: update.maxProgress,
           });
           dispatch(VideoEvent.onPause);
           return track('Pause', label, stateRef.current.current);
         case 'ended':
-          dispatchTrackingEvent('VEV_VIDEO_STOP', {
+          dispatchTrackingEvent('VEV_VIDEO_END', {
             videoUrl: video.url,
             videoName: video.name,
+            totalPlayTime: videoEl.duration,
+            percentagePlayed: 100,
           });
           if (loop) {
             videoEl.currentTime = 0;
