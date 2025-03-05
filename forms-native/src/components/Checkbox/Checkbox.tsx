@@ -37,8 +37,7 @@ function Checkbox(props: Props) {
           const { checked } = e.target;
           dispatch(Event.onChange, {
             name,
-            value,
-            type: checked ? 'add' : 'remove',
+            value: checked,
           });
         }}
       />
@@ -98,6 +97,18 @@ registerVevComponent(Checkbox, {
   events: [
     {
       type: Event.onChange,
+      args: [
+        {
+          name: 'name',
+          type: 'string',
+          description: 'Field name',
+        },
+        {
+          name: 'value',
+          type: 'boolean',
+          description: 'Field value',
+        },
+      ],
     },
   ],
   interactions: [

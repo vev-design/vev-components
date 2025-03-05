@@ -244,10 +244,12 @@ registerVevComponent(TextField, {
         {
           name: 'name',
           type: 'string',
+          description: 'Field name',
         },
         {
           name: 'value',
           type: 'string',
+          description: 'Field value',
         },
       ],
     },

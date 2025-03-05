@@ -106,8 +106,14 @@ registerVevComponent(Toggle, {
       type: Event.onChange,
       args: [
         {
+          name: 'name',
+          type: 'string',
+          description: 'Field name',
+        },
+        {
           name: 'value',
           type: 'boolean',
+          description: 'Field value',
         },
       ],
     },

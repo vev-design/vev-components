@@ -105,6 +105,18 @@ registerVevComponent(Dropdown, {
   events: [
     {
       type: Event.onChange,
+      args: [
+        {
+          name: 'name',
+          type: 'string',
+          description: 'Field name',
+        },
+        {
+          name: 'value',
+          type: 'string',
+          description: 'Field value',
+        },
+      ],
     },
   ],
   interactions: [
