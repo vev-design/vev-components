@@ -51,17 +51,19 @@ function TextField(props: Props) {
     setValue(event?.value);
   });
 
-  const validationAttributes: Pick<
-    InputHTMLAttributes<HTMLInputElement>,
-    'required' | 'minLength' | 'maxLength' | 'min' | 'max' | 'pattern'
-  > = {
-    required,
-    minLength,
-    maxLength,
-    min,
-    max,
-    pattern,
-  };
+  const validationAttributes: Partial<
+    Pick<
+      InputHTMLAttributes<HTMLInputElement>,
+      'required' | 'minLength' | 'maxLength' | 'min' | 'max' | 'pattern'
+    >
+  > = {};
+
+  if (required !== undefined) validationAttributes.required = required;
+  if (minLength !== undefined) validationAttributes.minLength = minLength;
+  if (maxLength !== undefined) validationAttributes.maxLength = maxLength;
+  if (min !== undefined) validationAttributes.min = min;
+  if (max !== undefined) validationAttributes.max = max;
+  if (!!pattern) validationAttributes.pattern = pattern;
 
   return (
     <FieldWrapper>
