@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
+  useEditorState,
   useScrollTop,
   useVevEvent,
   useViewport,
@@ -57,6 +58,7 @@ const Lottie = ({
   const { scrollHeight, height: viewportHeight } = useViewport();
   const path = (file && file.url) || defaultAnimation;
   const colorsChanged = JSON.stringify(colors);
+  const { disabled } = useEditorState();
 
   const scrollTop = useScrollTop();
 
@@ -152,29 +154,30 @@ const Lottie = ({
   }, [colorsChanged, file]);
 
   return (
-    <DotLottiePlayer
-      key={`id-${scroll}-${autoplay}`}
-      src={isJSON && json ? json : path}
-      ref={lottieRef}
-      autoplay={scroll ? false : autoplay}
-      loop={scroll ? false : loop}
-      speed={speed}
-      className={styles.wrapper}
-      onEvent={(event: PlayerEvents) => {
-        const events = {
-          [PlayerEvents.Play]: Events.PLAY,
-          [PlayerEvents.Pause]: Events.PAUSE,
-          [PlayerEvents.Complete]: Events.COMPLETE,
-          [PlayerEvents.LoopComplete]: Events.LOOP_COMPLETED,
-        };
+    <div key={`id-${scroll}-${autoplay}-${disabled}`}>
+      <DotLottiePlayer
+        src={isJSON && json ? json : path}
+        ref={lottieRef}
+        autoplay={scroll ? false : autoplay}
+        loop={scroll ? false : loop}
+        speed={speed}
+        className={styles.wrapper}
+        onEvent={(event: PlayerEvents) => {
+          const events = {
+            [PlayerEvents.Play]: Events.PLAY,
+            [PlayerEvents.Pause]: Events.PAUSE,
+            [PlayerEvents.Complete]: Events.COMPLETE,
+            [PlayerEvents.LoopComplete]: Events.LOOP_COMPLETED,
+          };
 
-        if (Object.keys(events).includes(event)) {
-          dispatchVevEvent(events[event as keyof typeof events]);
-        }
-      }}
-    >
-      {!hideControls && <Controls />}
-    </DotLottiePlayer>
+          if (Object.keys(events).includes(event)) {
+            dispatchVevEvent(events[event as keyof typeof events]);
+          }
+        }}
+      >
+        {!hideControls && <Controls />}
+      </DotLottiePlayer>
+    </div>
   );
 };
 
