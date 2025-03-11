@@ -72,7 +72,7 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
     if (typeof YT === 'undefined') return;
     playerState.current = event.data;
 
-    const percentagePlayed = Math.floor(currentTimeRef.current / player?.getDuration() * 100);
+    const percentagePlayed = Math.floor((currentTimeRef.current / player?.getDuration()) * 100);
 
     switch (event.data) {
       case YT.PlayerState.PLAYING:
@@ -101,6 +101,11 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
           percentagePlayed: 100,
         });
         dispatch(YoutubeEvent.onEnd);
+
+        // playerVars doesn't always work so force loop here
+        if (loop) {
+          getPlayer().playVideo();
+        }
         break;
     }
   }
@@ -165,7 +170,7 @@ const Youtube = ({ videoId, settings, hostRef }: Props) => {
             videoName: cleanVideoId,
             progress: currentTime,
             totalPlayTime: player?.getDuration(),
-            percentagePlayed: Math.floor(currentTime / player?.getDuration() * 100),
+            percentagePlayed: Math.floor((currentTime / player?.getDuration()) * 100),
           });
         }
       }
