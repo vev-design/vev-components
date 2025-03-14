@@ -1,3 +1,3 @@
-import RadioButtons from './RadioButtons';
+import RadioButton from './RadioButton';
 
-export default RadioButtons;
+export default RadioButton;
