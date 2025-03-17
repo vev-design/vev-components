@@ -194,6 +194,7 @@ registerVevComponent(EmbedAnything, {
       name: 'html',
       type: 'string',
       options: {
+        type: 'text',
         multiline: true,
       },
     },
@@ -208,7 +209,7 @@ registerVevComponent(EmbedAnything, {
       title: 'Render on visible',
       name: 'renderOnVisible',
       type: 'boolean',
-      intialValue: false,
+      initialValue: false,
       description: 'Do not render the embed code until the component is visible',
       hidden: (context) => {
         return context.value.encapsulate || context.value.static;
