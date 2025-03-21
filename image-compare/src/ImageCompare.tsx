@@ -1,8 +1,8 @@
-import React, { ReactNode, useEffect, useState } from 'react';
-import styles from './ImageCompare.module.css';
-import { registerVevComponent, Image } from '@vev/react';
-import { ReactCompareSlider, ReactCompareSliderImage } from 'react-compare-slider';
+import React, { useEffect, useRef, useState } from 'react';
+import { registerVevComponent } from '@vev/react';
+import { ReactCompareSlider } from 'react-compare-slider';
 import { ObjectFitEditor } from './object-fit-editor';
+import styles from './ImageCompare.module.css';
 
 export const DEFAULT_LEFT_IMAGE =
   'https://cdn.vev.design/cdn-cgi/image/f=auto,q=82,w=1280/private/sSh27nYTPBc9oijoH3onf2eolMH2/image/7XbxPUdRtgw';
@@ -43,6 +43,9 @@ type Props = {
   };
   animation?: {
     animate?: boolean;
+    type?: 'endToEnd' | 'random';
+    speed?: number;
+    interval?: number;
   };
 };
 
@@ -81,30 +84,37 @@ const ImageCompare = ({
   right,
   horizontal = false,
   handles = { hideHandle: false },
-  animation = { animate: false },
+  animation = { animate: false, speed: 1, interval: 1, type: 'random' },
 }: Props) => {
+  const cycleRef = useRef<boolean>(false);
   const [position, setPosition] = useState(50);
   const [disableAnimation, setDisableAnimation] = useState(false);
   const actualLeft = left?.url || DEFAULT_LEFT_IMAGE;
   const actualRight = right?.url || DEFAULT_RIGHT_IMAGE;
   const animate = animation.animate && !disableAnimation;
+  const interval = animation.interval * 1000;
+  const type = animation.type;
   const actualIconLeft = handles?.leftIcon || DEFAULT_ICON_LEFT;
   const actualIconRight = handles?.rightIcon || DEFAULT_ICON_RIGHT;
 
   useEffect(() => {
     if (animate) {
-      const interval = setInterval(() => {
-        const newPosition = Math.floor(Math.random() * 25 + 40);
+      const intervalId = setInterval(() => {
+        const newPosition = type === 'endToEnd'
+            ? cycleRef.current ? 90 : 10
+            : Math.floor(Math.random() * 25 + 40);
+
+        cycleRef.current = !cycleRef.current;
         setPosition(newPosition);
-      }, 1000);
+      }, interval);
 
       return () => {
-        clearInterval(interval);
+        clearInterval(intervalId);
       };
     }
 
     setPosition(50);
-  }, [animate]);
+  }, [animate, interval, type]);
 
   function disableAnimationHandler() {
     setDisableAnimation(true);
@@ -119,7 +129,7 @@ const ImageCompare = ({
     >
       <ReactCompareSlider
         position={position}
-        transition={animate ? '1s ease-in-out' : '.3s ease-in-out'}
+        transition={animate ? `${animation.speed}s ease-in-out` : '.3s ease-in-out'}
         portrait={horizontal}
         handle={
           <Handle
@@ -224,6 +234,53 @@ registerVevComponent(ImageCompare, {
           title: 'Animate handle',
           type: 'boolean',
           initialValue: false,
+        },
+        {
+          name: 'type',
+          title: 'Animation type',
+          description: 'Type of animation to use',
+          type: 'select',
+          initialValue: 'random',
+          options: {
+            display: 'dropdown',
+            items: [
+              {
+                value: 'endToEnd',
+                label: 'End to end',
+              },
+              {
+                value: 'random',
+                label: 'Random movement',
+              },
+            ],
+          },
+          hidden: (context) => !context.value.animation?.animate,
+        },
+        {
+          name: 'speed',
+          title: 'Animation duration',
+          description: 'Duration of each line movement (in seconds)',
+          type: 'number',
+          initialValue: 1,
+          options: {
+            display: 'slider',
+            min: 0.1,
+            max: 3,
+          },
+          hidden: (context) => !context.value.animation?.animate,
+        },
+        {
+          name: 'interval',
+          title: 'Animation interval',
+          description: 'Interval of line movements (in seconds)',
+          type: 'number',
+          initialValue: 1,
+          options: {
+            display: 'slider',
+            min: 0.1,
+            max: 3,
+          },
+          hidden: (context) => !context.value.animation?.animate,
         },
       ],
     },
