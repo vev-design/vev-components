@@ -1,0 +1,9 @@
+.icon {
+  height: 20px;
+  width: 20px;
+  color: white;
+}
+
+.svg {
+  fill: currentColor;
+}

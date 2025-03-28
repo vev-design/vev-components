@@ -1,0 +1,22 @@
+.timeline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+}
+
+.bar {
+  cursor: pointer;
+  background: #777777;
+  height: 7px;
+  width: 100%;
+  border-radius: 5px;
+}
+
+.barProgress {
+  background: #0b0b0b;
+  height: 7px;
+  border-radius: 5px;
+  min-width: 0;
+}
