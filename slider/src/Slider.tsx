@@ -172,14 +172,8 @@ registerVevComponent(Slideshow, {
     icon: 'https://cdn.vev.design/visuals/slides.png',
   },
   size: {
-    width: {
-      value: 510,
-      valueOnly: true,
-    },
-    height: {
-      value: 340,
-      valueOnly: true,
-    },
+    width: 600,
+    height: 400,
   },
   editableCSS: [
     {
