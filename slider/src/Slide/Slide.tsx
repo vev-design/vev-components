@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
-import { WidgetNode, useVisible } from '@vev/react';
+import { WidgetNode } from '@vev/react';
 import { Props } from '../Slider';
 import { isGoingForward, isGoingBackward, getNextSlideIndex, getPrevSlideIndex } from '../utils';
 
@@ -35,8 +35,6 @@ export const Slide = ({
 }: Omit<Props, 'children'> & {
   index: number;
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useVisible(ref);
   const slidesToLoad = Math.min(Math.max(slidesToLoadProp, 1), Math.min(5, slides.length - 1)) || 1;
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(-100);
@@ -75,13 +73,7 @@ export const Slide = ({
     setSlides();
   }, [reverse, slidesToLoad, infinite]);
 
-  useEffect(() => {
-    if (!isVisible) {
-      setTransitionSpeed(0);
-      setMove(-100);
-      setSlides();
-    }
-  }, [isVisible, index]);
+
 
   useEffect(() => {
     const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
@@ -122,7 +114,6 @@ export const Slide = ({
 
   return (
     <div
-      ref={ref}
       className={styles.wrapper}
       style={{
         transform: `translate${moveDirection}(${-100 * (slidesToLoad - 1)}%)`,
