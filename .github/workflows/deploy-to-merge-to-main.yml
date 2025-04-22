@@ -26,12 +26,14 @@ jobs:
         run: npm i -g @vev/cli
 
       - name: Deploy widgets
+        env:
+          VEV_TOKEN: ${{ secrets.VEV_DEPLOY_TOKEN }}
         run: |
           for folder in ${{ steps.changed.outputs.changed_folders }}; do
             echo "Checking $folder"
             if [ -f "$folder/vev.json" ]; then
               echo "Deploying $folder"
-              (cd "$folder" && vev deploy -m "${{ github.sha }}")
+              (cd "$folder" && vev deploy --token "$VEV_TOKEN" -m "${{ github.sha }}")
             else
               echo "Skipping $folder (no vev.json)"
             fi
