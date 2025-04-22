@@ -1,6 +1,6 @@
 import React from 'react';
-import { registerVevComponent } from '@vev/react';
 import styles from './Tidal.module.css';
+import { registerVevComponent } from '@vev/react';
 
 type Props = {
   url: string;
