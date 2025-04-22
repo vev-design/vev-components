@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Get changed folders from last commit
+      - name: Get widgets with changes
         id: changed
         run: |
           folders=$(git diff --name-only HEAD^ HEAD | cut -d/ -f1 | sort -u)
@@ -22,9 +22,17 @@ jobs:
           echo "$folders" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Run command in changed folders
+      - name: Install CLI
+        run: npm i -g @vev/cli
+
+      - name: Deploy widgets
         run: |
           for folder in ${{ steps.changed.outputs.changed_folders }}; do
-            echo "Running in $folder"
-            # (cd $folder && your-command)
+            if [ -f "$folder/vev.json" ]; then
+              echo "Deploying $folder"
+              (cd "$folder" && vev deploy -m "${{ github.sha }}")
+            else
+              echo "Skipping $folder (no vev.json)"
+            fi
           done
+
