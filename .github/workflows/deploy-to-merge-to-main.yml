@@ -1,0 +1,30 @@
+name: Detect Changed Folders on Merge to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Get changed folders from last commit
+        id: changed
+        run: |
+          folders=$(git diff --name-only HEAD^ HEAD | cut -d/ -f1 | sort -u)
+          echo "changed_folders<<EOF" >> $GITHUB_OUTPUT
+          echo "$folders" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run command in changed folders
+        run: |
+          for folder in ${{ steps.changed.outputs.changed_folders }}; do
+            echo "Running in $folder"
+            # (cd $folder && your-command)
+          done
