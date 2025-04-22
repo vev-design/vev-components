@@ -52,7 +52,7 @@ const GoogleForms = ({ formUrl, hostRef }: Props) => {
     form.addEventListener('submit', handleFormSubmit);
   };
 
-  if (!url.includes('google')) {
+  if (formUrl && formUrl !== '' && !url.includes('google')) {
     return (
       <div className={styles.instructions}>
         <div>
