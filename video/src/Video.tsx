@@ -181,11 +181,9 @@ const Video = ({
   if (isIE()) attributes.className = 'ie';
   if (autoplay) attributes.autoPlay = true;
 
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    videoEl.style.objectFit = fill ? 'cover' : 'contain';
-  }, [fill, videoRef.current]);
+  let videoCl = styles.video;
+  if (fill) videoCl += ' ' + styles.fill;
+
 
   return (
     <div className={styles.wrapper}>
@@ -200,7 +198,7 @@ const Video = ({
         aria-label={video?.name || ''}
         playsInline
         disableRemotePlayback
-        className={styles.video}
+        className={videoCl}
         poster={thumbnail && thumbnail.url ? thumbnail.url : video && video.thumbnail}
         preload={preload}
         {...attributes}
