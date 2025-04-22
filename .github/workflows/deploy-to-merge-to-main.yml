@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  detect-changes:
+  deploy-widgets:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +28,7 @@ jobs:
       - name: Deploy widgets
         run: |
           for folder in ${{ steps.changed.outputs.changed_folders }}; do
+            echo "Checking $folder"
             if [ -f "$folder/vev.json" ]; then
               echo "Deploying $folder"
               (cd "$folder" && vev deploy -m "${{ github.sha }}")
