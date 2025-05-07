@@ -1,0 +1,10 @@
+.label {
+    border-radius: 50%;
+    position: absolute;
+    min-width: 50px;
+    min-height: 50px;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
