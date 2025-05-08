@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Label } from '../types';
 import { PlusIcon } from '../plus-icon';
 import styles from './label-overlay-editor.module.css';
 import labelStyles from '../label-overlay.module.css';
-import { doc } from '@vev/react';
 
 interface Props {
   labels: Label[];

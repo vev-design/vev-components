@@ -14,7 +14,8 @@
     width: 100%;
     user-select: none;
     cursor: crosshair;
-    object-position: left;
+    object-fit: contain;
+    background: #1c2937;
 }
 
 .active {

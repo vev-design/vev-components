@@ -39,8 +39,8 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
       const containerWidth = containerRect.width;
       const containerHeight = containerRect.height;
 
-      const imageAspect = naturalWidth / naturalHeight;
-      const containerAspect = containerWidth / containerHeight;
+      const imageAspect = naturalWidth / naturalHeight || 1;
+      const containerAspect = containerWidth / containerHeight || 1;
 
       let renderedWidth, renderedHeight, offsetX, offsetY;
 

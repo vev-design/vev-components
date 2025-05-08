@@ -51,17 +51,47 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
             onClick={(e) => {
               const imageEl = e.currentTarget;
               const rect = imageEl.getBoundingClientRect();
-              const clickX = e.clientX - rect.left;
-              const clickY = e.clientY - rect.top;
 
-              const normX = clickX / rect.width;
-              const normY = clickY / rect.height;
+              const { naturalWidth } = imageEl;
+              const { naturalHeight } = imageEl;
+              const containerWidth = rect.width;
+              const containerHeight = rect.height;
+
+              const imageAspect = naturalWidth / naturalHeight;
+              const containerAspect = containerWidth / containerHeight;
+
+              let renderedWidth, renderedHeight, offsetX, offsetY;
+
+              if (imageAspect > containerAspect) {
+                // image fits width
+                renderedWidth = containerWidth;
+                renderedHeight = containerWidth / imageAspect;
+                offsetX = 0;
+                offsetY = (containerHeight - renderedHeight) / 2;
+              } else {
+                // image fits height
+                renderedHeight = containerHeight;
+                renderedWidth = containerHeight * imageAspect;
+                offsetY = 0;
+                offsetX = (containerWidth - renderedWidth) / 2;
+              }
+
+              const clickX = e.clientX - rect.left - offsetX;
+              const clickY = e.clientY - rect.top - offsetY;
+
+              // Make sure click is inside the image
+              if (clickX < 0 || clickY < 0 || clickX > renderedWidth || clickY > renderedHeight)
+                return;
+
+              const normX = clickX / renderedWidth;
+              const normY = clickY / renderedHeight;
+
               onAdd({ pos: { x: normX, y: normY }, index: currentIndex + 1 });
             }}
           />
         </SilkeBox>
       </SilkeBox>
-      <SilkeBox column hPad="m" gap="s" style={{ minWidth: '180px' }} overflow="scroll-y">
+      <SilkeBox column hPad="m" gap="s" style={{ minWidth: '180px' }} hAlign="center">
         {labels &&
           labels.map((label) => {
             return (
