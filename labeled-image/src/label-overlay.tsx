@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { Label } from './types';
 import { PlusIcon } from './plus-icon';
 import styles from './label-overlay.module.css';
+import { useDispatchVevEvent } from '@vev/react';
+import { EventTypes } from './even-types';
 
 interface Props {
   labels: Label[];
   imageRef: React.RefObject<HTMLImageElement>;
+  showLabelIndex: boolean;
 }
 
-export function LabelOverlay({ labels, imageRef }: Props) {
+export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
   const [rendered, setRendered] = useState<{
     width: number;
@@ -16,6 +19,8 @@ export function LabelOverlay({ labels, imageRef }: Props) {
     offsetX: number;
     offsetY: number;
   } | null>(null);
+
+  const dispatchVevEvent = useDispatchVevEvent();
 
   useEffect(() => {
     if (!imageRef?.current) return;
@@ -97,22 +102,29 @@ export function LabelOverlay({ labels, imageRef }: Props) {
             className={styles.label}
             onMouseEnter={() => {
               setHoverIndex(index);
+              dispatchVevEvent(EventTypes.LABEL_HOVER, {
+                [EventTypes.LABEL_HOVER]: index,
+              });
             }}
             onMouseLeave={() => {
               setHoverIndex(-1);
             }}
             key={index}
+            onClick={() => {
+              console.log(`Clicked ${index}`);
+              dispatchVevEvent(EventTypes.LABEL_CLICKED, {
+                [EventTypes.LABEL_CLICKED]: index,
+              });
+            }}
             style={{
               transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
                 rendered.offsetY + label.pos.y * rendered.height - 25
               }px)`,
             }}
           >
-            <PlusIcon />
+            {showLabelIndex ? <p>{index}</p> : <PlusIcon />}
             {label.caption && hoverIndex === index && (
-              <div className={styles.captionWrapper}>
-                <p>{label.caption}</p>
-              </div>
+              <div className={styles.captionWrapper}>{label.caption}</div>
             )}
           </div>
         ))}

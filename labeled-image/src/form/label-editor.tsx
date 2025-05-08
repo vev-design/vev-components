@@ -55,7 +55,12 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
         {labels &&
           labels.map((label, index) => {
             return (
-              <SilkeBox key={index} column rounded="tiny">
+              <SilkeBox
+                key={index}
+                column
+                rounded="tiny"
+                bg={hoverIndex === index ? 'surface-3' : undefined}
+              >
                 <SilkeBox
                   align
                   hPad="s"
@@ -90,7 +95,7 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
                   </SilkeBox>
                 </SilkeBox>
                 {editIndex === index && (
-                  <SilkeBox hPad="m">
+                  <SilkeBox hPad="s">
                     <SilkeTextField
                       label="Caption"
                       value={label.caption}

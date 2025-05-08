@@ -19,13 +19,12 @@
 .captionWrapper {
     z-index: 1000;
     color: white;
-    border-radius: 10px;
-    padding: 0 1rem 0 1rem;
+    border-radius: 5px;
+    padding: 0.5rem;
     min-width: 200px;
     background: rgba(0, 0, 0, 0.57);
     position: absolute;
     top: 55px;
     display: flex;
-    width: auto;
     justify-content: center;
 }

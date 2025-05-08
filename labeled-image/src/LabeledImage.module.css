@@ -9,13 +9,3 @@
   height: 100%;
   object-fit: cover;
 }
-
-.button {
-  opacity: 0.5;
-  position: absolute;
-  min-width: 50px;
-  min-height: 50px;
-  background-color: green;
-  border-radius: 50%;
-}
-
