@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import styles from './LabeledImage.module.css';
+import styles from './labeled-image.module.css';
 import overlayStyles from './label-overlay.module.css';
 import { Image, registerVevComponent, useEditorState, useGlobalStore } from '@vev/react';
 import { LabelEditorForm } from './form/label-editor-form';
