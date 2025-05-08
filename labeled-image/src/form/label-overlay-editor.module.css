@@ -1,0 +1,28 @@
+.label {
+    border-radius: 50%;
+    position: absolute;
+    min-width: 50px;
+    min-height: 50px;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.image {
+    user-select: none;
+    width: 100%;
+    cursor: crosshair;
+    object-position: left;
+}
+
+.active {
+    outline: 1px #1d1d1d1d solid;
+    box-shadow: 0 0 10px 0 rgba(0,0,0,1);
+}
+
+.label:hover {
+    outline: 1px #1d1d1d1d solid;
+    box-shadow: 0 0 10px 0 rgba(0,0,0,1);
+}

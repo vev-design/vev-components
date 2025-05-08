@@ -1,8 +1,7 @@
 import React, { useRef } from 'react';
 import styles from './LabeledImage.module.css';
-import { registerVevComponent, Image } from '@vev/react';
+import { Image, registerVevComponent } from '@vev/react';
 import { LabelEditorForm } from './form/label-editor-form';
-import { SilkeBox } from '@vev/silke';
 import { LabelOverlay } from './label-overlay';
 import { Label } from './types';
 
@@ -27,6 +26,12 @@ const LabeledImage = ({ image, labels }: Props) => {
 
 registerVevComponent(LabeledImage, {
   name: 'LabeledImage',
+  emptyState: {
+    action: 'OPEN_PROPERTIES',
+    linkText: 'Select',
+    description: 'an image to start',
+    checkProperty: 'image',
+  },
   props: [
     {
       name: 'image',
@@ -56,45 +61,5 @@ registerVevComponent(LabeledImage, {
   ],
   type: 'both',
 });
-
-function getImageOffsetCoords(img: HTMLImageElement, naturalX: number, naturalY: number) {
-  const container = img.parentElement;
-  const containerWidth = container.clientWidth;
-  const containerHeight = container.clientHeight;
-  const imgWidth = img.naturalWidth;
-  const imgHeight = img.naturalHeight;
-  const renderedWidth = img.clientWidth;
-  const renderedHeight = img.clientHeight;
-
-  const { objectFit } = getComputedStyle(img);
-
-  let scaleX = renderedWidth / imgWidth;
-  let scaleY = renderedHeight / imgHeight;
-  let offsetX = 0;
-  let offsetY = 0;
-
-  if (objectFit === 'contain') {
-    const ratio = Math.min(containerWidth / imgWidth, containerHeight / imgHeight);
-    const finalWidth = imgWidth * ratio;
-    const finalHeight = imgHeight * ratio;
-    offsetX = (containerWidth - finalWidth) / 2;
-    offsetY = (containerHeight - finalHeight) / 2;
-    scaleX = scaleY = ratio;
-  }
-
-  if (objectFit === 'cover') {
-    const ratio = Math.max(containerWidth / imgWidth, containerHeight / imgHeight);
-    const finalWidth = imgWidth * ratio;
-    const finalHeight = imgHeight * ratio;
-    offsetX = (containerWidth - finalWidth) / 2;
-    offsetY = (containerHeight - finalHeight) / 2;
-    scaleX = scaleY = ratio;
-  }
-
-  return {
-    x: offsetX + naturalX * scaleX,
-    y: offsetY + naturalY * scaleY,
-  };
-}
 
 export default LabeledImage;

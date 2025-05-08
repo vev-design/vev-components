@@ -1,6 +1,7 @@
 import { SilkeBox, SilkeButton, SilkeModal } from '@vev/silke';
 import React, { useState } from 'react';
 import { LabelEditor } from './label-editor';
+import { Label } from '../types';
 
 export function LabelEditorForm(form: any) {
   const imageUrl = form.context.value?.image?.url;
@@ -18,10 +19,21 @@ export function LabelEditorForm(form: any) {
             labels={labels}
             url={imageUrl}
             onRemove={(index) => {
-              form.onChange([...labels.splice(index, 1)]);
+              labels.splice(index, 1);
+              form.onChange([...labels]);
             }}
             onAdd={(label) => {
               form.onChange([...(labels || []), label]);
+            }}
+            onChange={(index, label: Label) => {
+              form.onChange([
+                ...labels.map((l, lIndex) => {
+                  if (lIndex === index) {
+                    return label;
+                  }
+                  return l;
+                }),
+              ]);
             }}
           />
         </SilkeModal>

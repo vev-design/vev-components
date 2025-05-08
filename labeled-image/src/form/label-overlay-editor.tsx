@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Label } from './types';
-import { PlusIcon } from './plus-icon';
-import styles from './label-overlay.module.css';
+import { Label } from '../types';
+import { PlusIcon } from '../plus-icon';
+import styles from './label-overlay-editor.module.css';
 
 interface Props {
   labels: Label[];
   imageRef: React.RefObject<HTMLImageElement>;
+  onHover: (index: number) => void;
+  onClick: (index: number) => void;
+  hoverIndex: number | null;
+  editIndex: number | null;
 }
 
-export function LabelOverlay({ labels, imageRef }: Props) {
-  const [hoverIndex, setHoverIndex] = useState<number>(-1);
+export function LabelOverlayEditor({
+  labels,
+  imageRef,
+  onHover,
+  onClick,
+  hoverIndex,
+  editIndex,
+}: Props) {
   const [rendered, setRendered] = useState<{
     width: number;
     height: number;
@@ -89,31 +99,27 @@ export function LabelOverlay({ labels, imageRef }: Props) {
   }, [imageRef]);
 
   return (
-    <div className={styles.wrapper}>
+    <div style={{ position: 'absolute', top: 0, left: 0 }}>
       {rendered &&
         labels &&
         labels.map((label, index) => (
           <div
-            className={styles.label}
             onMouseEnter={() => {
-              setHoverIndex(index);
+              onHover(index);
             }}
-            onMouseLeave={() => {
-              setHoverIndex(-1);
+            onClick={() => {
+              onClick(index);
             }}
+            className={hoverIndex === index ? `${styles.active} ${styles.label}` : styles.label}
             key={index}
             style={{
               transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
                 rendered.offsetY + label.pos.y * rendered.height - 25
               }px)`,
+              color: 'black',
             }}
           >
             <PlusIcon />
-            {label.caption && hoverIndex === index && (
-              <div className={styles.captionWrapper}>
-                <p>{label.caption}</p>
-              </div>
-            )}
           </div>
         ))}
     </div>
