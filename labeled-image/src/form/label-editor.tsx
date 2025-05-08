@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { SilkeBox, SilkeButton, SilkeTextField } from '@vev/silke';
 import { Label } from '../types';
 import { LabelOverlayEditor } from './label-overlay-editor';
@@ -16,6 +16,16 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
   const imageRef: React.RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number>(-1);
+
+  const currentIndex = useMemo(() => {
+    if (!labels || labels.length === 0) return -1;
+    return labels
+      .map((l) => l.index)
+      .sort((a, b) => {
+        return a - b;
+      })
+      .reverse()[0];
+  }, [labels]);
 
   return (
     <SilkeBox style={{ minHeight: '80vh', maxHeight: '80vh' }}>
@@ -46,32 +56,32 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
 
               const normX = clickX / rect.width;
               const normY = clickY / rect.height;
-              onAdd({ pos: { x: normX, y: normY } });
+              onAdd({ pos: { x: normX, y: normY }, index: currentIndex + 1 });
             }}
           />
         </SilkeBox>
       </SilkeBox>
       <SilkeBox column hPad="m" gap="s" style={{ minWidth: '180px' }} overflow="scroll-y">
         {labels &&
-          labels.map((label, index) => {
+          labels.map((label) => {
             return (
               <SilkeBox
-                key={index}
+                key={label.index}
                 column
                 rounded="tiny"
-                bg={hoverIndex === index ? 'surface-3' : undefined}
+                bg={hoverIndex === label.index ? 'surface-3' : undefined}
               >
                 <SilkeBox
                   align
                   hPad="s"
                   gap="s"
                   onMouseEnter={() => {
-                    setHoverIndex(index);
+                    setHoverIndex(label.index);
                   }}
-                  bg={hoverIndex === index ? 'surface-3' : undefined}
+                  bg={hoverIndex === label.index ? 'surface-3' : undefined}
                   rounded="tiny"
                 >
-                  {`Label ${index + 1}`}
+                  {`Label ${label.index}`}
                   <SilkeBox>
                     <SilkeButton
                       kind="ghost"
@@ -79,8 +89,8 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
                       icon="edit"
                       title="Edit caption"
                       onClick={() => {
-                        if (editIndex === index) setEditIndex(-1);
-                        else setEditIndex(index);
+                        if (editIndex === label.index) setEditIndex(-1);
+                        else setEditIndex(label.index);
                       }}
                     />
                     <SilkeButton
@@ -89,18 +99,18 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
                       icon="delete"
                       title="Remove"
                       onClick={() => {
-                        onRemove(index);
+                        onRemove(label.index);
                       }}
                     />
                   </SilkeBox>
                 </SilkeBox>
-                {editIndex === index && (
+                {editIndex === label.index && (
                   <SilkeBox hPad="s">
                     <SilkeTextField
                       label="Caption"
                       value={label.caption}
                       onChange={(change) => {
-                        onChange(index, { ...label, caption: change });
+                        onChange(label.index, { ...label, caption: change });
                       }}
                     />
                   </SilkeBox>

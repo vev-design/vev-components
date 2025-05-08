@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Label } from '../types';
 import { PlusIcon } from '../plus-icon';
 import styles from './label-overlay-editor.module.css';
@@ -28,7 +28,6 @@ export function LabelOverlayEditor({
     offsetX: number;
     offsetY: number;
   } | null>(null);
-  const [dragIndex, setDragIndex] = useState(-1);
 
   useEffect(() => {
     if (!imageRef?.current) return;
@@ -105,16 +104,18 @@ export function LabelOverlayEditor({
     <div style={{ position: 'absolute', top: 0, left: 0 }}>
       {rendered &&
         labels &&
-        labels.map((label, index) => (
+        labels.map((label) => (
           <div
             onMouseUp={() => {
-              onClick(index);
+              onClick(label.index);
             }}
             onMouseEnter={() => {
-              onHover(index);
+              onHover(label.index);
             }}
-            className={hoverIndex === index ? `${styles.active} ${styles.label}` : styles.label}
-            key={index}
+            className={
+              hoverIndex === label.index ? `${styles.active} ${styles.label}` : styles.label
+            }
+            key={label.index}
             style={{
               transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
                 rendered.offsetY + label.pos.y * rendered.height - 25
@@ -123,7 +124,7 @@ export function LabelOverlayEditor({
             }}
           >
             <PlusIcon />
-            {label.caption && editIndex === index && (
+            {label.caption && editIndex === label.index && (
               <div className={labelStyles.captionWrapper}>{label.caption}</div>
             )}
           </div>

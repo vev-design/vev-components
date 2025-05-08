@@ -97,37 +97,38 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
     <div className={styles.wrapper}>
       {rendered &&
         labels &&
-        labels.map((label, index) => (
-          <div
-            className={styles.label}
-            onMouseEnter={() => {
-              setHoverIndex(index);
-              dispatchVevEvent(EventTypes.LABEL_HOVER, {
-                [EventTypes.LABEL_HOVER]: index,
-              });
-            }}
-            onMouseLeave={() => {
-              setHoverIndex(-1);
-            }}
-            key={index}
-            onClick={() => {
-              console.log(`Clicked ${index}`);
-              dispatchVevEvent(EventTypes.LABEL_CLICKED, {
-                [EventTypes.LABEL_CLICKED]: index,
-              });
-            }}
-            style={{
-              transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
-                rendered.offsetY + label.pos.y * rendered.height - 25
-              }px)`,
-            }}
-          >
-            {showLabelIndex ? <p>{index}</p> : <PlusIcon />}
-            {label.caption && hoverIndex === index && (
-              <div className={styles.captionWrapper}>{label.caption}</div>
-            )}
-          </div>
-        ))}
+        labels.map((label) => {
+          return (
+            <div
+              className={styles.label}
+              onMouseEnter={() => {
+                setHoverIndex(label.index);
+                dispatchVevEvent(EventTypes.LABEL_HOVER, {
+                  [EventTypes.LABEL_HOVER]: label.index,
+                });
+              }}
+              onMouseLeave={() => {
+                setHoverIndex(-1);
+              }}
+              key={label.index}
+              onClick={() => {
+                dispatchVevEvent(EventTypes.LABEL_CLICKED, {
+                  [EventTypes.LABEL_CLICKED]: label.index,
+                });
+              }}
+              style={{
+                transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
+                  rendered.offsetY + label.pos.y * rendered.height - 25
+                }px)`,
+              }}
+            >
+              {showLabelIndex ? <p>{label.index}</p> : <PlusIcon />}
+              {label.caption && hoverIndex === label.index && (
+                <div className={styles.captionWrapper}>{label.caption}</div>
+              )}
+            </div>
+          );
+        })}
     </div>
   );
 }

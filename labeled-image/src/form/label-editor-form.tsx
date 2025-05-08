@@ -18,9 +18,11 @@ export function LabelEditorForm(form: any) {
           <LabelEditor
             labels={labels}
             url={imageUrl}
-            onRemove={(index) => {
-              labels.splice(index, 1);
-              form.onChange([...labels]);
+            onRemove={(removeIndex) => {
+              const newLabels = labels.filter((label) => {
+                return label.index !== removeIndex;
+              });
+              form.onChange([...newLabels]);
             }}
             onAdd={(label) => {
               form.onChange([...(labels || []), label]);
