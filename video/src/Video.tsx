@@ -22,6 +22,7 @@ type Props = {
     url: string;
   };
   preload: 'auto' | 'metadata' | 'none';
+  section?: boolean;
 };
 
 const Video = ({
@@ -34,6 +35,7 @@ const Video = ({
   loop,
   disableTracking,
   autoplay = false,
+  section = false,
 }: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
@@ -184,9 +186,11 @@ const Video = ({
   let videoCl = styles.video;
   if (fill) videoCl += ' ' + styles.fill;
 
+  let cl = styles.wrapper;
+  if (section) cl = styles.section;
 
   return (
-    <div className={styles.wrapper}>
+    <div className={cl}>
       {!video && (
         <div className={styles.empty}>
           <h3>Double-click to select video</h3>
