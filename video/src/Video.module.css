@@ -5,6 +5,11 @@
   overflow: hidden;
 }
 
+.section {
+  position: absolute;
+  inset: 0 0 0 0;
+}
+
 .video {
   outline: none;
   width: 100%;

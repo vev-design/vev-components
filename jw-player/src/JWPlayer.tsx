@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { registerVevComponent, Tracking } from '@vev/react';
-import { SilkeNotification } from '@vev/silke';
+import { SilkeToastNotification } from '@vev/silke';
 import './global.css';
 
 type Props = {
@@ -226,8 +226,10 @@ registerVevComponent(JWPlayer, {
       type: 'string',
       component: (props) => {
         return (
-          <SilkeNotification
+          <SilkeToastNotification
             dark
+            fluid
+            inline
             kind="information"
             subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
           />

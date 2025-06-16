@@ -14,8 +14,8 @@
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
-    "@vev/react": "^0.2.0",
-    "@vev/silke": "latest",
+    "@vev/react": "^0.2.1",
+    "@vev/silke": "^1.0.29",
     "react": "^18.2.0"
   }
 }
