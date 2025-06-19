@@ -1,0 +1,30 @@
+.wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.label {
+    cursor: pointer;
+    border-radius: 50%;
+    position: absolute;
+    min-width: 50px;
+    min-height: 50px;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.captionWrapper {
+    z-index: 1000;
+    color: white;
+    border-radius: 5px;
+    padding: 0.5rem;
+    min-width: 200px;
+    background: rgba(0, 0, 0, 0.57);
+    position: absolute;
+    top: 55px;
+    display: flex;
+    justify-content: center;
+}
