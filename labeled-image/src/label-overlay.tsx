@@ -104,7 +104,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
               onMouseEnter={() => {
                 setHoverIndex(label.index);
                 dispatchVevEvent(EventTypes.LABEL_HOVER, {
-                  [EventTypes.LABEL_HOVER]: label.index,
+                  [EventTypes.LABEL_HOVER]: label.index + 1,
                 });
               }}
               onMouseLeave={() => {
@@ -113,7 +113,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
               key={label.index}
               onClick={() => {
                 dispatchVevEvent(EventTypes.LABEL_CLICKED, {
-                  [EventTypes.LABEL_CLICKED]: label.index,
+                  [EventTypes.LABEL_CLICKED]: label.index + 1,
                 });
               }}
               style={{
@@ -122,7 +122,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
                 }px)`,
               }}
             >
-              {showLabelIndex ? <p>{label.index}</p> : <PlusIcon />}
+              {showLabelIndex ? <p>{label.index + 1}</p> : <PlusIcon />}
               {label.caption && hoverIndex === label.index && (
                 <div className={styles.captionWrapper}>{label.caption}</div>
               )}
