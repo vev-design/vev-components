@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
-import { registerVevComponent, useEditorState, useVisible } from '@vev/react';
+import { registerVevComponent, useEditorState, useModel, useVisible } from '@vev/react';
 
 type Props = {
   html: string;
@@ -43,8 +43,9 @@ function EmbedAnything({
     );
   }
 
-  if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />;
   if (encapsulate) return <EmbedIframe html={html} />;
+  if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />;
+
   return (
     <EmbedScript
       html={html}
@@ -56,12 +57,13 @@ function EmbedAnything({
 }
 
 function EmbedIframe({ html }: { html: string }) {
+  const { key: messageFrom } = useModel() || { key: 'none' };
   const iframeRef = useRef(null);
   const [iframeHeight, setIframeHeight] = useState('auto');
 
   useEffect(() => {
     function handleIframeMessage(event) {
-      if (event.data.iframeHeight) {
+      if (event.data.iframeHeight && event.data.messageFrom === messageFrom) {
         setIframeHeight(`${event.data.iframeHeight}px`);
       }
     }
@@ -99,7 +101,7 @@ function EmbedIframe({ html }: { html: string }) {
             const height = document.body.scrollHeight;
             if(prevHeight !== height){
               prevHeight = height;
-              window.parent.postMessage({ iframeHeight: height }, '*');
+              window.parent.postMessage({ iframeHeight: height, messageFrom: '${messageFrom}' }, '*');
             }
           }
 
@@ -221,6 +223,9 @@ registerVevComponent(EmbedAnything, {
       type: 'boolean',
       description: 'Static HTML (mounted directly)',
       initialValue: false,
+      hidden: (context) => {
+        return context.value.encapsulate;
+      },
     },
     {
       title: 'Allow inner scroll',
