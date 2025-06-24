@@ -24,12 +24,18 @@ registerVevComponent(Video, {
   type: 'both',
   props: [
     { name: 'video', type: 'video' },
+    { name: 'fill', type: 'boolean', initialValue: true },
     { name: 'mute', type: 'boolean' },
     { name: 'controls', type: 'boolean', initialValue: true },
     { name: 'autoplay', type: 'boolean', initialValue: true },
     { name: 'loop', type: 'boolean' },
-    { name: 'fill', type: 'boolean', initialValue: true },
     { name: 'disableTracking', type: 'boolean' },
+    {
+      name: 'altText',
+      type: 'string',
+      title: 'Fallback text',
+      description: 'If video fails to load, this text will be displayed instead',
+    },
     {
       name: 'preload',
       type: 'select',
@@ -48,6 +54,10 @@ registerVevComponent(Video, {
     {
       selector: styles.wrapper,
       properties: ['background', 'border', 'border-radius', 'box-shadow'],
+    },
+    {
+      selector: styles.video,
+      properties: ['width', 'height', 'object-fit'],
     },
   ],
   events: [

@@ -194,7 +194,7 @@ registerVevComponent(ScrollingSlide, {
           options: {
             format: "%",
             min: 0,
-            max: 1,
+            max: 100,
             scale: 100,
           },
         },

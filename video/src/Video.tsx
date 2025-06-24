@@ -23,6 +23,7 @@ type Props = {
   };
   preload: 'auto' | 'metadata' | 'none';
   section?: boolean;
+  altText?: string;
 };
 
 const Video = ({
@@ -36,6 +37,7 @@ const Video = ({
   disableTracking,
   autoplay = false,
   section = false,
+  altText,
 }: Props) => {
   const videoRef = useRef<HTMLVideoElement>();
   const stateRef = useRef<{ current: number; maxProgress: number }>({
@@ -212,7 +214,7 @@ const Video = ({
           video.sources
             .sort((v) => (v.format === 'video/webm' ? -1 : 1))
             .map((v) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
-        Your browser does not support this video
+        <p>{altText || 'Your browser does not support this video'}</p>
       </video>
     </div>
   );
