@@ -15,7 +15,7 @@
     user-select: none;
     cursor: crosshair;
     object-fit: contain;
-    background: #1c2937;
+    border-radius: 8px;
 }
 
 .active {

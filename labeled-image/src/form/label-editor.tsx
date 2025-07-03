@@ -1,5 +1,12 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { SilkeBox, SilkeButton, SilkeTextField } from '@vev/silke';
+import {
+  SilkeBox,
+  SilkeButton,
+  SilkeDivider,
+  SilkeIcon,
+  SilkeText,
+  SilkeTextField,
+} from '@vev/silke';
 import { Label } from '../types';
 import { LabelOverlayEditor } from './label-overlay-editor';
 import style from './label-overlay-editor.module.css';
@@ -91,63 +98,67 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange }: Props) {
           />
         </SilkeBox>
       </SilkeBox>
-      <SilkeBox column hPad="m" gap="s" style={{ minWidth: '180px' }} hAlign="center">
-        {labels &&
-          labels.map((label) => {
-            return (
-              <SilkeBox
-                key={label.index}
-                column
-                rounded="tiny"
-                bg={hoverIndex === label.index ? 'surface-3' : undefined}
-              >
-                <SilkeBox
-                  align
-                  hPad="s"
-                  gap="s"
-                  onMouseEnter={() => {
-                    setHoverIndex(label.index);
+      <SilkeBox
+        column
+        hPad="m"
+        gap="s"
+        style={{ minWidth: '256px', maxWidth: '256px' }}
+        hAlign="center"
+      >
+        <SilkeBox style={{ width: '100%' }}>
+          <SilkeText weight="strong">Labels</SilkeText>
+        </SilkeBox>
+        {!labels.length && (
+          <SilkeBox pad="m" rounded="small" bg="neutral-10" style={{ width: '100%' }}>
+            <SilkeBox pad="l" style={{ width: '100%', textAlign: 'center' }} column vAlign hAlign>
+              <SilkeIcon icon="hand.pointer" />
+              <SilkeText size="small" color="neutral-70">
+                Click anywhere on the image to add labels
+              </SilkeText>
+            </SilkeBox>
+          </SilkeBox>
+        )}
+        {labels.length !== 0 && (
+          <SilkeBox style={{ width: '100%' }}>
+            <SilkeText size="small" color="neutral-70">
+              Click on the image to add labels
+            </SilkeText>
+          </SilkeBox>
+        )}
+        {labels.map((label) => {
+          return (
+            <SilkeBox
+              key={label.index}
+              bg="neutral-10"
+              column
+              rounded="tiny"
+              style={{ width: '100%' }}
+            >
+              <SilkeBox vPad="xs" hPad="s" vAlign="center" hAlign="spread">
+                <SilkeText size="small">{`Label ${label.index + 1}`}</SilkeText>
+                <SilkeButton
+                  icon="delete"
+                  size="s"
+                  kind="ghost"
+                  onClick={() => {
+                    onRemove(label.index);
                   }}
-                  bg={hoverIndex === label.index ? 'surface-3' : undefined}
-                  rounded="tiny"
-                >
-                  {`Label ${label.index}`}
-                  <SilkeBox>
-                    <SilkeButton
-                      kind="ghost"
-                      size="s"
-                      icon="edit"
-                      title="Edit caption"
-                      onClick={() => {
-                        if (editIndex === label.index) setEditIndex(-1);
-                        else setEditIndex(label.index);
-                      }}
-                    />
-                    <SilkeButton
-                      kind="ghost"
-                      size="s"
-                      icon="delete"
-                      title="Remove"
-                      onClick={() => {
-                        onRemove(label.index);
-                      }}
-                    />
-                  </SilkeBox>
-                </SilkeBox>
-                {editIndex === label.index && (
-                  <SilkeBox hPad="s">
-                    <SilkeTextField
-                      label="Caption"
-                      value={label.caption}
-                      onChange={(change) => {
-                        onChange(label.index, { ...label, caption: change });
-                      }}
-                    />
-                  </SilkeBox>
-                )}
+                />
               </SilkeBox>
-            );
-          })}
+              <SilkeDivider dark />
+              <SilkeBox vPad="s" hPad="s" vAlign="center" hAlign="spread">
+                <SilkeTextField
+                  size="s"
+                  label="Caption"
+                  value={label.caption}
+                  onChange={(change) => {
+                    onChange(label.index, { ...label, caption: change });
+                  }}
+                />
+              </SilkeBox>
+            </SilkeBox>
+          );
+        })}
       </SilkeBox>
     </SilkeBox>
   );
