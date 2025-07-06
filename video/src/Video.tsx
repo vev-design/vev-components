@@ -211,8 +211,23 @@ const Video = ({
       >
         {video &&
           video.sources &&
-          video.sources
-            .sort((v) => (v.format === 'video/webm' ? -1 : 1))
+           video.sources
+            .sort((a, b) => {
+              
+              if (a.format === b.format) return 0;
+              if (a.format === 'video/quicktime') return -1;
+              if (b.format === 'video/quicktime') return 1;
+              
+              if (a.format === 'video/mp4') return -1;
+              if (b.format === 'video/mp4') return 1;
+              
+              if (a.format === 'video/webm') return -1;
+              if (b.format === 'video/webm') return 1;
+
+              if (a.format === 'video/ogg') return -1;
+              if (b.format === 'video/ogg') return 1;
+              return 0;
+            })
             .map((v) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
         <p>{altText || 'Your browser does not support this video'}</p>
       </video>
