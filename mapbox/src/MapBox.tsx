@@ -33,8 +33,9 @@ async function initMapbox(
   }
   await mapBoxPromise;
   window.mapboxgl.accessToken = accessToken;
-  const map = new window.mapboxgl.Map({
+  const map = new window.a.Map({
     container,
+
     // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
     style: mapStyle || "mapbox://styles/mapbox/standard",
     center: firstMarker?.center || [-0.15591514, 51.51830379],

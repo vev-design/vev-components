@@ -11,6 +11,7 @@
   "devDependencies": {
     "@types/react": "latest",
     "prettier": "2.7.0",
+    "mapbox-gl": "^3.13.0",
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
