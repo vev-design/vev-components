@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import { Label } from './types';
 import { PlusIcon } from './plus-icon';
 import styles from './label-overlay.module.css';
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
+  const labelRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
   const [rendered, setRendered] = useState<{
     width: number;
@@ -19,6 +20,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
     offsetX: number;
     offsetY: number;
   } | null>(null);
+  const [labelWidth, setLabelWidth] = useState(25);
 
   const dispatchVevEvent = useDispatchVevEvent();
 
@@ -28,6 +30,12 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
 
     const updateRect = () => {
       if (!imageRef?.current) return;
+
+      // Find hotspot width
+      if(labelRef.current) {
+        setLabelWidth(labelRef.current.getBoundingClientRect().width);
+      }
+
 
       const el = imageRef.current;
       const styleMap = el.computedStyleMap();
@@ -43,7 +51,6 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
       const containerAspect = containerWidth / containerHeight || 1;
 
       let renderedWidth, renderedHeight, offsetX, offsetY;
-
       if (objectFit === 'contain') {
         if (imageAspect > containerAspect) {
           renderedWidth = containerWidth;
@@ -97,9 +104,10 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
     <div className={styles.wrapper}>
       {rendered &&
         labels &&
-        labels.map((label) => {
+        labels.map((label, index) => {
           return (
             <div
+              ref={index === 0 ? labelRef : null}
               className={styles.label}
               onMouseEnter={() => {
                 setHoverIndex(label.index);
@@ -117,8 +125,8 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
                 });
               }}
               style={{
-                transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
-                  rendered.offsetY + label.pos.y * rendered.height - 25
+                transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - (labelWidth/2)}px, ${
+                  rendered.offsetY + label.pos.y * rendered.height - (labelWidth/2)
                 }px)`,
               }}
             >

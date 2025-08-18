@@ -1,8 +1,8 @@
 .label {
     border-radius: 50%;
     position: absolute;
-    min-width: 50px;
-    min-height: 50px;
+    min-width: 2vw;
+    min-height: 2vw;
     background: #FFFFFF;
     display: flex;
     align-items: center;

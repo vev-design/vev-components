@@ -8,8 +8,8 @@
     cursor: pointer;
     border-radius: 50%;
     position: absolute;
-    min-width: 50px;
-    min-height: 50px;
+    min-width: 3.5vw;
+    min-height: 3.5vw;
     background: #FFFFFF;
     display: flex;
     align-items: center;
@@ -17,14 +17,15 @@
 }
 
 .captionWrapper {
+    font-size: 1vw;
     z-index: 1000;
     color: white;
-    border-radius: 5px;
+    border-radius: 0.2vw;
     padding: 0.5rem;
-    min-width: 200px;
+    min-width: 10vw;
     background: rgba(0, 0, 0, 0.57);
     position: absolute;
-    top: 55px;
+    top: 4vw;
     display: flex;
     justify-content: center;
 }

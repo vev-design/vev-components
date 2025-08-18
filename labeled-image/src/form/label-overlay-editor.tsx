@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import { Label } from '../types';
 import { PlusIcon } from '../plus-icon';
 import styles from './label-overlay-editor.module.css';
@@ -21,12 +21,14 @@ export function LabelOverlayEditor({
   hoverIndex,
   editIndex,
 }: Props) {
+  const labelRef = useRef<HTMLDivElement>(null);
   const [rendered, setRendered] = useState<{
     width: number;
     height: number;
     offsetX: number;
     offsetY: number;
   } | null>(null);
+  const [labelWidth, setLabelWidth] = useState(25);
 
   useEffect(() => {
     if (!imageRef?.current) return;
@@ -34,6 +36,12 @@ export function LabelOverlayEditor({
 
     const updateRect = () => {
       if (!imageRef?.current) return;
+
+
+      // Find hotspot width
+      if(labelRef.current) {
+        setLabelWidth(labelRef.current.getBoundingClientRect().width);
+      }
 
       const el = imageRef.current;
       const styleMap = el.computedStyleMap();
@@ -103,8 +111,9 @@ export function LabelOverlayEditor({
     <div style={{ position: 'absolute', top: 0, left: 0 }}>
       {rendered &&
         labels &&
-        labels.map((label) => (
+        labels.map((label, index) => (
           <div
+            ref={index === 0 ? labelRef : null}
             onMouseUp={() => {
               onClick(label.index);
             }}
@@ -116,8 +125,8 @@ export function LabelOverlayEditor({
             }
             key={label.index}
             style={{
-              transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - 25}px, ${
-                rendered.offsetY + label.pos.y * rendered.height - 25
+              transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - (labelWidth/2)}px, ${
+                rendered.offsetY + label.pos.y * rendered.height - (labelWidth/2)
               }px)`,
               color: 'black',
             }}

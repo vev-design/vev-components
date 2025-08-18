@@ -1,11 +1,11 @@
 .icon {
-    height: 16px;
-    width: 16px;
+    height: 1.2vw;
+    width: 1.2vw;
     color: black;
 }
 
 .svg {
-    height: 16px;
-    width: 16px;
+    height: 1.2vw;
+    width: 1.2vw;
     fill: currentColor;
 }
