@@ -8,7 +8,7 @@ import { Label } from './types';
 import { EventTypes } from './even-types';
 
 type Props = {
-  image: string;
+  image: { key: string; url: string };
   labels: Label[];
 };
 
@@ -28,7 +28,7 @@ const LabeledImage = ({ image, labels }: Props) => {
   return (
     <div className={styles.wrapper}>
       <LabelOverlay labels={labels} imageRef={imageRef} showLabelIndex={showNumbers} />
-      <Image ref={imageRef} src={image} className={styles.image} />
+      <img ref={imageRef} src={image.url} className={styles.image} />
     </div>
   );
 };
