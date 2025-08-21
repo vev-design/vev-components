@@ -24,6 +24,7 @@ registerVevComponent(Video, {
   type: 'both',
   props: [
     { name: 'video', type: 'video' },
+    { name: 'fill', type: 'boolean', initialValue: true },
     { name: 'mute', type: 'boolean' },
     { name: 'controls', type: 'boolean', initialValue: true },
     { name: 'autoplay', type: 'boolean', initialValue: true },

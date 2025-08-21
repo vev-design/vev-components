@@ -16,6 +16,7 @@ type Props = {
   autoplay: boolean;
   loop: boolean;
   controls: boolean;
+  fill: boolean;
   disableTracking: boolean;
   thumbnail: {
     url: string;
@@ -29,6 +30,7 @@ const Video = ({
   video,
   mute,
   controls,
+  fill,
   thumbnail,
   preload,
   loop,
@@ -44,6 +46,7 @@ const Video = ({
   });
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
+  const videoStarted = useRef(false);
 
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
@@ -183,6 +186,7 @@ const Video = ({
   if (autoplay) attributes.autoPlay = true;
 
   let videoCl = styles.video;
+  if (fill) videoCl += ' ' + styles.fill;
 
   let cl = styles.wrapper;
   if (section) cl = styles.section;

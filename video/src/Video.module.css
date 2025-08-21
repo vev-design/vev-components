@@ -16,6 +16,9 @@
   height: 100%;
   filter: none;
   object-fit: contain;
+  &.fill {
+    object-fit: cover;
+  }
 }
 
 .ie .video {
