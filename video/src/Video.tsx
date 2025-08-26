@@ -166,17 +166,23 @@ const Video = ({
     const videoEl = videoRef.current;
     if (!videoEl) return;
 
+    if (!video) {
+      videoEl.load();
+      return;
+    }
+
     if (autoplay && !disabled) {
       videoEl.muted = true;
       videoEl.play();
     }
+    
 
     if (disabled) {
       loopedAmount.current = 1;
       videoEl.load();
       videoEl.pause();
     }
-  }, [disabled, autoplay]);
+  }, [disabled, autoplay, video]);
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
