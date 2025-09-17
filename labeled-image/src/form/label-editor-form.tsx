@@ -11,6 +11,8 @@ export function LabelEditorForm(form: any) {
     <SilkeBox align="center" pad="s">
       {showModal && (
         <SilkeModal
+          size="large"
+          pad='xs'
           title={<SilkeTitle kind="xs">Add labels to your image</SilkeTitle>}
           onClose={() => {
             setShowModal(false);
