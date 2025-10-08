@@ -7,7 +7,7 @@ import {
   useDispatchVevEvent,
   useVevEvent,
 } from '@vev/react';
-import { SilkeTextField, SilkeBox, SilkeTextSmall } from '@vev/silke';
+import { SilkeTextField, SilkeBox } from '@vev/silke';
 
 import Player from '@vimeo/player';
 import { Events, Interaction } from './interactions';
@@ -29,11 +29,12 @@ type Props = {
     loop: boolean;
     background: boolean;
     fill: boolean;
+    autopause: boolean;
   };
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
-function getVimeoUrl(videoId, autoplay, loop, mute, disableControls, background, disabled) {
+function getVimeoUrl(videoId, autoplay, loop, mute, disableControls, background, disabled, autopause) {
   const params = ['byline=1'];
 
   if (autoplay && !disabled) params.push('autoplay=1', 'muted=1');
@@ -41,6 +42,7 @@ function getVimeoUrl(videoId, autoplay, loop, mute, disableControls, background,
   if (loop) params.push('loop=1');
   if (disableControls) params.push('controls=0');
   if (background) params.push('background=1');
+  if(!autopause) params.push('autopause=0');
 
   return `https://player.vimeo.com/video/${videoId}?${params.join('&')}`;
 }
@@ -88,7 +90,7 @@ const VimeoUrl = (props) => {
       <SilkeBox>
         <SilkeTextField
           label="Video URL"
-          size="xs"
+          size="s"
           value={props.value?.fullUrl}
           onChange={(value) => {
             props.onChange({ fullUrl: value, videoId: props.value.videoId });
@@ -113,12 +115,14 @@ const Vimeo = ({
     disableControls: false,
     loop: false,
     background: false,
+    fill: false,
+    autopause: false
   },
   hostRef,
 }: Props) => {
   const { disabled } = useEditorState();
-  const iframeRef = useRef<HTMLIFrameElement>();
-  const playerRef = useRef<Player>();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const playerRef = useRef<Player>(null);
   const currentTime = useRef<number>(0);
   const dispatch = useDispatchVevEvent();
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
@@ -127,6 +131,7 @@ const Vimeo = ({
   const lazy = settings.lazy || false;
   const mute = settings.mute || false;
   const disableControls = settings.disableControls || false;
+  const autopause = settings.autopause || false;
   const background = settings.background || false;
   const loop = settings.loop || false;
   const fill = settings.fill || false;
@@ -228,6 +233,7 @@ const Vimeo = ({
         disableControls,
         background,
         disabled,
+        autopause,
       )}
       id={`vimeo-${videoInfo.videoId}`}
       width="100%"
@@ -279,6 +285,13 @@ registerVevComponent(Vimeo, {
           initialValue: false,
         },
         {
+          title: 'Auto pause',
+          name: 'autopause',
+          type: 'boolean',
+          description: 'Whether to pause the video when another video starts playing',
+          initialValue: false,
+        },
+        {
           title: 'Lazy load',
           name: 'lazy',
           type: 'boolean',
@@ -297,6 +310,7 @@ registerVevComponent(Vimeo, {
           name: 'background',
           type: 'boolean',
           initialValue: false,
+          description: 'Will mute, autoplay and hide all elements in the player'
         },
         {
           title: 'Fill container',

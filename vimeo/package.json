@@ -10,16 +10,16 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/vimeo__player": "latest",
+    "@types/react": "^19.2.2",
+    "@types/vimeo__player": "^2.18.3",
     "prettier": "2.7.0",
     "typescript-plugin-css-modules": "^3.4.0"
   },
   "dependencies": {
-    "@vev/cli": "^0.0.1-beta.22",
-    "@vev/react": "latest",
-    "@vev/silke": "^1.0.11",
-    "@vimeo/player": "^2.20.1",
+    "@vev/cli": "^0.3.0",
+    "@vev/react": "^0.3.0",
+    "@vev/silke": "^1.1.0",
+    "@vimeo/player": "^2.29.7",
     "react": "^18.2.0"
   }
 }
