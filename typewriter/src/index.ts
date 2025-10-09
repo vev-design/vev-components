@@ -68,6 +68,10 @@ registerVevComponent(Typewriter, {
         "text-transform",
       ],
     },
+    {
+      selector: styles.wrapper,
+      properties: ['background', 'border', 'border-radius', 'box-shadow', 'margin', 'padding'],
+    },
   ],
   type: "standard",
   icon: "https://cdn.vev.design/private/5YlQ6CapVRbr7RUqaPTH7gT1clH2/rm-typewriter-svg",

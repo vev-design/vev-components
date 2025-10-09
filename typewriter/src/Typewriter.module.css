@@ -3,3 +3,13 @@
   font-weight: 600;
   color: darkslategray;
 }
+
+.wrapper {
+    height: 100%;
+    width: 100%;
+    border: 0 solid black;
+
+    p {
+        margin: 0;
+    }
+}
