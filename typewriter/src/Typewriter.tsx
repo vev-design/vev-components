@@ -111,7 +111,7 @@ const Typewriter = ({ before, after, words, timer, loop, pauseOnStart }: Props) 
   }
 
   return (
-    <div>
+    <div className={styles.wrapper}>
       <p className={styles.words}>
         {before}
         {textView}

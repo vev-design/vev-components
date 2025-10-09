@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './plus-icon-module.css';
+import styles from './plus-icon.module.css';
 
 export function PlusIcon() {
   return (
