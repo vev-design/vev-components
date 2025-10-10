@@ -1,6 +1,6 @@
 import { useFrame, useZoom } from '@vev/react';
 import React, { useEffect, useRef } from 'react';
-import { useVideoImageWorker } from '../../image-loadworker';
+import { useVideoImageWorker } from '../../use-video-image-worker';
 import { DEFAULT_IMAGES } from './video-scroll-default';
 import styles from './video-scroll.module.scss';
 
@@ -153,6 +153,7 @@ export function VideoScroll({
   }, [offsetVideoStart, offsetVideoEnd, zoom, images]);
 
   useFrame(() => {
+    const frames = preloadedImagesRef.current || [];
     const el = imageRef.current;
     if (el) {
       const duration = images?.length || 0;
@@ -174,17 +175,17 @@ export function VideoScroll({
       }
 
       const currentFrame = currentFrameRef.current || 0;
-      let image = preloadedImagesRef.current[desiredFrame];
+      let image = frames[desiredFrame];
 
       // trying to find closes frame which is loaded
       let i = 0;
-      while (!image && i < preloadedImagesRef.current.length) {
+      while (!image && i < frames.length) {
         i++;
-        if (preloadedImagesRef.current[desiredFrame + i]) {
-          image = preloadedImagesRef.current[desiredFrame + i];
+        if (frames[desiredFrame + i]) {
+          image = frames[desiredFrame + i];
           desiredFrame = desiredFrame + i;
-        } else if (preloadedImagesRef.current[desiredFrame - i]) {
-          image = preloadedImagesRef.current[desiredFrame - i];
+        } else if (frames[desiredFrame - i]) {
+          image = frames[desiredFrame - i];
           desiredFrame = desiredFrame - i;
         }
       }
@@ -194,7 +195,6 @@ export function VideoScroll({
         if (!ctx) return;
 
         currentFrameRef.current = desiredFrame;
-        console.log('### DESIRED FRAME', desiredFrame);
         ctx.canvas.width = image.width;
         ctx.canvas.height = image.height;
         ctx.drawImage(image, 0, 0, image.width, image.height);
