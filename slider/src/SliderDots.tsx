@@ -1,15 +1,18 @@
 import React, { useCallback } from 'react';
-import { registerVevComponent, useGlobalState } from '@vev/react';
+import { registerVevComponent, useGlobalState, useGlobalStore } from '@vev/react';
 import styles from './Slider.module.css';
 
 type Props = {
   target: string;
 };
 
-const SLIDESHOW_TYPE = '1QRRiAt1Js1nD0ApT2Ek_Slideshow';
+const SLIDESHOW_TYPE = ['4m4woXHPJqnEyfmHuuf1_Slideshow', '1QRRiAt1Js1nD0ApT2Ek_Slideshow'];
 
 const SlideshowDots = (props: Props) => {
-  const [state, setState] = useGlobalState(props.target, SLIDESHOW_TYPE);
+  const models = useGlobalStore((store) => store.models);
+  const slideModel = models?.find((e) => e.key === props.target);
+  const [state, setState] = useGlobalState(props.target, slideModel?.type);
+
   const handleClick = useCallback(
     (index: number) => setState({ ...state, index }),
     [setState, state],
@@ -60,10 +63,10 @@ registerVevComponent(SlideshowDots, {
       description: 'Which slideshow should the dots target',
       type: 'select',
       options: {
-        display: 'autocomplete',
+        display: 'dropdown',
         async items(data) {
           return data.content
-            ?.filter((e) => e.type === SLIDESHOW_TYPE)
+            ?.filter((e) => SLIDESHOW_TYPE.includes(e.type))
             .map((s) => ({ value: s.key, label: s.name }));
         },
       },
