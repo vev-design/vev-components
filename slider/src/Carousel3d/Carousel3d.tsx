@@ -21,7 +21,7 @@ const Slide3d = ({
   const sin = Math.sin(angle);
   return (
     <div
-      className={styles.slide}
+      className={styles.slide + (!active ? (' ' + styles.notActive) : '')}
       style={{
         rotate: `0 1 0 ${angle}rad`,
         translate: `${sin * radius}px 0 ${cos * radius - radius}px`,
@@ -47,7 +47,7 @@ export const Carousel3d = ({
   action,
   infinite,
 }: Omit<Props, 'children'> & { index: number }) => {
-  const { width, height } = useSize(hostRef);
+  const { width } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
   const angle = Math.PI * 2;
   const prevIndex = useRef(0);
@@ -94,8 +94,6 @@ export const Carousel3d = ({
           transition: `rotate ${speed}ms ${easing || 'ease'}`,
           rotate: `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
-          width,
-          height,
           transformStyle: 'preserve-3d',
         }}
       >
