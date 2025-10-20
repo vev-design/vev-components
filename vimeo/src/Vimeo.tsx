@@ -172,18 +172,22 @@ const Vimeo = ({
   });
 
   const dispatchTracking = useCallback(async (eventName: string, currentSec?: number) => {
-    const duration = Math.round(totalPlayTimeRef.current || await playerRef.current.getDuration().then((duration) => duration || 0));
-    const percentagePlayed = Math.round((currentSec / duration) * 100);
+    try {
+      const duration = Math.round(totalPlayTimeRef.current || await playerRef.current.getDuration().then((duration) => duration || 0));
+      const percentagePlayed = Math.round((currentSec / duration) * 100);
 
-    const trackingEvent = {
-      videoUrl: defaultVideoUrl,
-      videoName: defaultVideoId,
-      totalPlayTime: duration,
-      progress: currentSec,
-      percentagePlayed,
-    };
+      const trackingEvent = {
+        videoUrl: defaultVideoUrl,
+        videoName: defaultVideoId,
+        totalPlayTime: duration,
+        progress: currentSec,
+        percentagePlayed,
+      };
 
-    dispatchTrackingEvent(eventName, trackingEvent);
+      dispatchTrackingEvent(eventName, trackingEvent);
+    } catch (e) {
+      console.error("Failed to send tracking event", e);
+    }
   }, [dispatchTrackingEvent]);
 
   useEffect(() => {
