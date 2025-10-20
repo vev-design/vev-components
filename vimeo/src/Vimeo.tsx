@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Vimeo.module.css';
 import {
   registerVevComponent,
@@ -6,6 +6,7 @@ import {
   useVisible,
   useDispatchVevEvent,
   useVevEvent,
+  useTracking,
 } from '@vev/react';
 import { SilkeTextField, SilkeBox } from '@vev/silke';
 
@@ -42,7 +43,7 @@ function getVimeoUrl(videoId, autoplay, loop, mute, disableControls, background,
   if (loop) params.push('loop=1');
   if (disableControls) params.push('controls=0');
   if (background) params.push('background=1');
-  if(!autopause) params.push('autopause=0');
+  if (!autopause) params.push('autopause=0');
 
   return `https://player.vimeo.com/video/${videoId}?${params.join('&')}`;
 }
@@ -126,6 +127,8 @@ const Vimeo = ({
   const currentTime = useRef<number>(0);
   const dispatch = useDispatchVevEvent();
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  const totalPlayTimeRef = useRef<number>(0);
+  const dispatchTrackingEvent = useTracking();
 
   const autoplay = settings.autoplay || false;
   const lazy = settings.lazy || false;
@@ -168,6 +171,21 @@ const Vimeo = ({
     }
   });
 
+  const dispatchTracking = useCallback(async (eventName: string, currentSec?: number) => {
+    const duration = Math.round(totalPlayTimeRef.current || await playerRef.current.getDuration().then((duration) => duration || 0));
+    const percentagePlayed = Math.round((currentSec / duration) * 100);
+
+    const trackingEvent = {
+      videoUrl: defaultVideoUrl,
+      videoName: defaultVideoId,
+      totalPlayTime: duration,
+      progress: currentSec,
+      percentagePlayed,
+    };
+
+    dispatchTrackingEvent(eventName, trackingEvent);
+  }, [dispatchTrackingEvent]);
+
   useEffect(() => {
     try {
       if (iframeRef.current) {
@@ -181,30 +199,36 @@ const Vimeo = ({
         }
         playerRef.current = player;
 
-        player.on('play', () => {
+        player.on('play', (event) => {
           dispatch(Events.ON_PLAY);
+          const currentSec = Math.round(event.seconds);
+          dispatchTracking('VEV_VIDEO_PLAY', currentSec);
         });
 
-        player.on('pause', () => {
+        player.on('pause', (event) => {
           dispatch(Events.ON_PAUSE);
+          const currentSec = Math.round(event.seconds);
+          dispatchTracking('VEV_VIDEO_STOP', currentSec);
         });
 
-        player.on('ended', () => {
+        player.on('ended', (event) => {
           dispatch(Events.ON_END);
+          const currentSec = Math.round(event.seconds);
+          dispatchTracking('VEV_VIDEO_END', currentSec);
         });
 
         player.on('timeupdate', (event) => {
-          const currentSec = Math.floor(event.seconds);
-
+          const currentSec = Math.round(event.seconds);
           if (currentSec !== currentTime.current) {
             currentTime.current = currentSec;
             dispatch(Events.CURRENT_TIME, {
               currentTime: currentSec,
             });
+            dispatchTracking('VEV_VIDEO_PROGRESS', currentSec);
           }
         });
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [iframeRef, fill]);
 
   let cl = styles.wrapper;
@@ -217,12 +241,12 @@ const Vimeo = ({
       style={
         fill && aspectRatio
           ? {
-              minWidth: '100%',
-              minHeight: '100%',
-              width: 'auto',
-              height: 'auto',
-              aspectRatio,
-            }
+            minWidth: '100%',
+            minHeight: '100%',
+            width: 'auto',
+            height: 'auto',
+            aspectRatio,
+          }
           : null
       }
       src={getVimeoUrl(
