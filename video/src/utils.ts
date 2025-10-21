@@ -1,7 +1,7 @@
 import { Tracking } from '@vev/react';
 
 export function createTracker(disable?: boolean) {
-  if (disable) return;
+  if (disable) () => {};
   return (action: string, label?: string, value?: any, nonInteractive?: boolean) => {
     Tracking.send('video', 'HTML5 Video', action, label, value, nonInteractive);
   };
