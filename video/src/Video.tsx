@@ -113,11 +113,11 @@ const Video = ({
               totalPlayTime: videoEl.duration,
               percentagePlayed: update.maxProgress,
             });
-            track('Video Progress', label, stateRef.current.maxProgress);
+            track?.('Video Progress', label, stateRef.current.maxProgress);
           }
           if (videoEl.currentTime > (fifth * videoEl.duration) / 5) {
             const progress = fifth * 20;
-            track(`Video Progress ${progress}`, label);
+            track?.(`Video Progress ${progress}`, label);
             dispatch(VideoEvent.currentTime, { currentTime: progress });
             fifth++;
           }
@@ -132,7 +132,7 @@ const Video = ({
             percentagePlayed: update.maxProgress,
           });
           dispatch(VideoEvent.onPlay);
-          return track('Play', label);
+          return track?.('Play', label);
         case 'pause':
           dispatchTrackingEvent('VEV_VIDEO_STOP', {
             videoUrl: video.url,
@@ -142,7 +142,7 @@ const Video = ({
             percentagePlayed: update.maxProgress,
           });
           dispatch(VideoEvent.onPause);
-          return track('Pause', label, stateRef.current.current);
+          return track?.('Pause', label, stateRef.current.current);
         case 'ended':
           dispatchTrackingEvent('VEV_VIDEO_END', {
             videoUrl: video.url,
@@ -155,7 +155,7 @@ const Video = ({
             videoEl.play();
           }
           dispatch(VideoEvent.onEnd);
-          return track('Finished', label);
+          return track?.('Finished', label);
       }
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
