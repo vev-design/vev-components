@@ -119,7 +119,8 @@ export function VideoScroll({
 
         style.position = 'fixed';
 
-        if (wrapperRect.width < window.innerWidth) {
+        const clientWidth = window?.document?.documentElement?.clientWidth || window.innerWidth;
+        if (wrapperRect.width < clientWidth) {
           style.maxWidth = wrapperRect.width + 'px';
           style.left = wrapperRect.left + 'px';
         }
