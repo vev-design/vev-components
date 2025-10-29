@@ -1,5 +1,5 @@
 import { registerVevComponent, useEditorState, useVisible } from "@vev/react";
-import React, { useEffect, useRef } from "react";
+import React, { RefObject, useEffect, useRef } from "react";
 import { useViewAnimation, useViewTimeline } from "../../hooks";
 import styles from "./ScrollingSlide.module.css";
 import { ScrollingSlideTypeField } from "./fields/ScrollingSlideTypeField";
@@ -67,7 +67,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
     ? activeContentChild
     : undefined;
   useViewAnimation(
-    ref,
+    ref as RefObject<HTMLElement>,
     {
       translate: ["0 0", `${-100 + 100 / children.length}% 0`],
     },

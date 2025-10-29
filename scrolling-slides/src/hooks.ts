@@ -15,7 +15,7 @@ declare global {
 const isSupported = () => CSS.supports("animation-timeline: --works");
 
 export function useViewTimeline(
-  sourceRef: RefObject<HTMLElement>,
+  sourceRef: RefObject<HTMLElement | null>,
   disabled?: boolean
 ): ViewTimeline | undefined {
   const [supported, setSupported] = useState(isSupported);
@@ -62,25 +62,44 @@ export function useViewAnimation(
     const el = ref.current;
     if (disable || !timeline || !el || !el.parentElement) return;
 
+    // Guard against invalid windowHeight to prevent division by zero
+    if (!windowHeight || windowHeight <= 0 || !isFinite(windowHeight)) return;
+
     const { top, bottom, height } = el.parentElement.getBoundingClientRect();
     const rootOffset = top + window.scrollY;
     const isLessThanViewport = height < windowHeight;
 
+    // Ensure offsetStart and offsetEnd are finite numbers
+    let computedOffsetStart = Number(offsetStart);
+    let computedOffsetEnd = Number(offsetEnd);
+
+    if (!isFinite(computedOffsetStart)) computedOffsetStart = 0;
+    if (!isFinite(computedOffsetEnd)) computedOffsetEnd = 1;
+
     if (isLessThanViewport && rootOffset < windowHeight) {
-      // console.log(offsetStart, el);
-      offsetStart += 1 - (rootOffset + height) / windowHeight;
+      const adjustment = 1 - (rootOffset + height) / windowHeight;
+      if (isFinite(adjustment)) {
+        computedOffsetStart += adjustment;
+      }
     }
 
     const scrollBottomTop = scrollHeight - windowHeight;
 
     if (isLessThanViewport && rootOffset > scrollBottomTop) {
       const endOffset = (rootOffset - scrollBottomTop) / windowHeight;
-      offsetStart -= endOffset;
-      offsetEnd -= endOffset;
+      if (isFinite(endOffset)) {
+        computedOffsetStart -= endOffset;
+        computedOffsetEnd -= endOffset;
+      }
     }
-    console.log("timeline", timeline);
-    console.log("options", options);
-    console.log("offsetStart", offsetStart);
+
+    // Clamp values to reasonable range (0-1) and ensure they're finite
+    computedOffsetStart = Math.max(0, Math.min(1, computedOffsetStart));
+    computedOffsetEnd = Math.max(0, Math.min(1, computedOffsetEnd));
+
+    if (!isFinite(computedOffsetStart)) computedOffsetStart = 0;
+    if (!isFinite(computedOffsetEnd)) computedOffsetEnd = 1;
+
     const animation = el.animate(keyframes, {
       fill: "both",
       timeline,
@@ -89,11 +108,11 @@ export function useViewAnimation(
       duration: "auto",
       rangeStart: {
         rangeName: "contain",
-        offset: CSS.percent(offsetStart * 100),
+        offset: CSS.percent(computedOffsetStart * 100),
       },
       rangeEnd: {
         rangeName: "contain",
-        offset: CSS.percent(offsetEnd * 100),
+        offset: CSS.percent(computedOffsetEnd * 100),
       },
       // rangeStart: isLessThanViewport ? enterCrossing : exitCrossing,
       // rangeEnd: isLessThanViewport ? exitCrossing : enterCrossing,

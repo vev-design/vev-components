@@ -23,21 +23,22 @@ export function AnimatedSlide({
   let cl = styles.content;
   if (selected) cl += ' ' + styles.selected;
   const transitionCount = slideCount - 1;
-  let fromOffset = (index - 1) / transitionCount;
-  let toOffset = index / transitionCount;
+  // Guard against division by zero when there's only one slide
+  let fromOffset = transitionCount > 0 ? (index - 1) / transitionCount : 0;
+  let toOffset = transitionCount > 0 ? index / transitionCount : 1;
   const offsetRange = toOffset - fromOffset;
   let disableAnimation = index === 0;
   if (settings?.reverse) {
     disableAnimation = index === slideCount - 1;
     keyframes = keyframes.slice().reverse();
 
-    fromOffset = index / transitionCount;
-    toOffset = (index + 1) / transitionCount;
+    fromOffset = transitionCount > 0 ? index / transitionCount : 0;
+    toOffset = transitionCount > 0 ? (index + 1) / transitionCount : 1;
   }
 
   if (transitionOut && index < transitionCount) {
     disableAnimation = false;
-    toOffset = (index + 1) / transitionCount;
+    toOffset = transitionCount > 0 ? (index + 1) / transitionCount : 1;
     if (index === 0) {
       fromOffset = fromOffset + (toOffset - fromOffset) / 2;
       keyframes = keyframes.slice().reverse();
