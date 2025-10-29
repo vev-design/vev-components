@@ -70,15 +70,15 @@ export function listenForAnimationRange(
   cb: () => void,
 ) {
   if (offset === 1) offset -= OFFSET_RANGE;
-  const animation = el.animate(
-    { opacity: [0, 1] },
-    {
-      duration: 1,
-      timeline: viewTimeline,
-      rangeStart: `${rangeName} ${offset * 100}%`,
-      rangeEnd: `${rangeName} ${(offset + OFFSET_RANGE) * 100}%`,
-    },
-  );
+  // Type assertion needed because rangeStart/rangeEnd are not yet in KeyframeAnimationOptions types
+  const animationOptions = {
+    duration: 1,
+    timeline: viewTimeline,
+    rangeStart: `${rangeName} ${offset * 100}%`,
+    rangeEnd: `${rangeName} ${(offset + OFFSET_RANGE) * 100}%`,
+  } as any;
+
+  const animation = el.animate({ opacity: [0, 1] }, animationOptions);
 
   animation.onfinish = cb;
 

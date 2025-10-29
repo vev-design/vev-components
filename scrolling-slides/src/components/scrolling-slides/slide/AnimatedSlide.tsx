@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { RefObject, useRef } from 'react';
 import { useViewAnimation } from '../../../hooks';
 import styles from '../ScrollingSlide.module.css';
 import { BaseSlide, BaseSlideProps } from './BaseSlide';
@@ -53,7 +53,7 @@ export function AnimatedSlide({
   }
 
   useViewAnimation(
-    ref,
+    ref as RefObject<HTMLElement>,
     keyframes,
     timeline,
     selected || disableAnimation,

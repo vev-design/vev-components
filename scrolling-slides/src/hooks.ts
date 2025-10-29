@@ -1,5 +1,5 @@
 import { s, useViewport } from "@vev/react";
-import { MutableRefObject, RefObject, useEffect, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 
 type ViewTimelineOptions = {
   axis: "block" | "inline";
@@ -100,23 +100,19 @@ export function useViewAnimation(
     if (!isFinite(computedOffsetStart)) computedOffsetStart = 0;
     if (!isFinite(computedOffsetEnd)) computedOffsetEnd = 1;
 
-    const animation = el.animate(keyframes, {
-      fill: "both",
+    // Type assertion needed because rangeStart/rangeEnd are not yet in KeyframeAnimationOptions types
+    const animationOptions = {
+      fill: "both" as const,
       timeline,
       easing: "linear",
       ...options,
-      duration: "auto",
-      rangeStart: {
-        rangeName: "contain",
-        offset: CSS.percent(computedOffsetStart * 100),
-      },
-      rangeEnd: {
-        rangeName: "contain",
-        offset: CSS.percent(computedOffsetEnd * 100),
-      },
-      // rangeStart: isLessThanViewport ? enterCrossing : exitCrossing,
-      // rangeEnd: isLessThanViewport ? exitCrossing : enterCrossing,
-    });
+      duration: "auto" as const,
+      // Use string format for better Safari compatibility (matches keyframe.ts)
+      rangeStart: `contain ${computedOffsetStart * 100}%`,
+      rangeEnd: `contain ${computedOffsetEnd * 100}%`,
+    } as any;
+
+    const animation = el.animate(keyframes, animationOptions);
     return () => {
       animation.cancel();
     };
