@@ -41,7 +41,7 @@ export function useVideoImageWorker(images: string[]) {
     worker.postMessage({
       images,
       screenWidth: window.innerWidth,
-      parentLocation: `${self.location.origin}${self.location.pathname}`,
+      parentLocation,
     });
 
     return () => worker.terminate();
