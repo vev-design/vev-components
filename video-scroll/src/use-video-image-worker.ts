@@ -21,13 +21,22 @@ export function useVideoImageWorker(images: string[]) {
     const imageElements = new Array(images.length);
     imagesRef.current = imageElements;
     const worker = new ImageWorker();
-    
+
     worker.addEventListener('message', async (e: any) => {
       const { url, index } = e.data as { index: number; url: string };
       const img = await resolveImage(url);
       const images = imagesRef.current;
-      if(images && img) images[index] = img;
+      if (images && img) images[index] = img;
     });
+
+    let parentLocation = `${self.location.origin}${self.location.pathname}`;
+
+    /**
+     * Dirty hack to fix index.html in ZIP
+     */
+    if (parentLocation.includes('index.html')) {
+      parentLocation = parentLocation.replace('index.html', '');
+    }
 
     worker.postMessage({
       images,
