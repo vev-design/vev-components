@@ -21,6 +21,7 @@ export function useVideoImageWorker(images: string[]) {
     const imageElements = new Array(images.length);
     imagesRef.current = imageElements;
     const worker = new ImageWorker();
+
     worker.addEventListener('message', async (e: any) => {
       const { url, index } = e.data as { index: number; url: string };
       const img = await resolveImage(url);
@@ -29,7 +30,7 @@ export function useVideoImageWorker(images: string[]) {
     });
 
     const host = self.location.origin;
-    const dir = ((window as any).vev as any)?.getState().dir;
+    const dir = ((window as any).vev as any)?.getState()?.dir;
     const parentLocation = `${host}${dir ? '/' + dir : ''}`;
 
     worker.postMessage({
