@@ -3,6 +3,7 @@ import React from 'react';
 
 function DirectionField(props) {
   const isSlide = props.context?.value?.animation === 'slide';
+  const is3d = props.context?.value?.animation === '3d';
 
   const directions = {
     HORIZONTAL: 'arrow.right',
@@ -16,7 +17,7 @@ function DirectionField(props) {
       <SilkeTextSmall style={{ width: '80px' }}>Direction</SilkeTextSmall>
       <SilkeBox>
         {Object.keys(directions)
-          .slice(0, isSlide ? 4 : 2)
+          .slice(0, isSlide || is3d ? 4 : 2)
           .map((direction, i) => (
             <SilkeBox
               key={i}
