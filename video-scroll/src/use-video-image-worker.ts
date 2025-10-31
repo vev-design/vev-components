@@ -30,7 +30,7 @@ export function useVideoImageWorker(images: string[]) {
     });
 
     const host = self.location.origin;
-    const dir = ((window as any).vev as any)?.getState()?.dir;
+    const dir = ((window as any).vev as any)?.getState?.()?.dir;
     const parentLocation = `${host}${dir ? '/' + dir : ''}`;
 
     worker.postMessage({
