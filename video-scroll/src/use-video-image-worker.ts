@@ -29,14 +29,13 @@ export function useVideoImageWorker(images: string[]) {
       if (images && img) images[index] = img;
     });
 
-    let parentLocation = `${self.location.origin}${self.location.pathname}`;
+    const host = self.location.origin;
+    const dir = ((window as any).vev as any)?.getState().dir;
+    const parentLocation = `${host}${dir ? '/' + dir : ''}`;
 
-    /**
-     * Dirty hack to fix index.html in ZIP
-     */
-    if (parentLocation.includes('index.html')) {
-      parentLocation = parentLocation.replace('index.html', '');
-    }
+
+
+    console.log('# parentLocation', parentLocation);
 
     worker.postMessage({
       images,
