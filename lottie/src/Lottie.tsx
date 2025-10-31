@@ -21,6 +21,12 @@ import '@dotlottie/react-player/dist/index.css';
 
 import styles from './Lottie.module.css';
 import { Events, Interactions } from './events';
+import {
+  computeInViewProgress,
+  computeWidgetProgress,
+  computeOffsetProgress,
+  clampProgress,
+} from './utils/scrollProgress';
 
 type Props = {
   file: File;
@@ -33,8 +39,9 @@ type Props = {
   scroll: boolean;
   scrollOffsetStart: number;
   scrollOffsetStop: number;
-  scrollType: 'enterView' | 'widget' | 'offset';
+  scrollType: 'enterView' | 'widget' | 'offset' | 'timeline';
   scrollWidget: string;
+  scrollTimelineWidget: string;
 };
 
 const Lottie = ({
@@ -49,6 +56,7 @@ const Lottie = ({
   scrollOffsetStop = 0,
   scrollType = 'enterView',
   scrollWidget,
+  scrollTimelineWidget,
   hostRef,
 }: Props) => {
   const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
@@ -67,25 +75,41 @@ const Lottie = ({
       if (lottieRef.current) {
         let progress = 0;
         const { totalFrames } = lottieRef.current;
+
         if (scrollType === 'offset') {
-          progress =
-            (scrollTop - scrollOffsetStart) /
-            (scrollHeight - scrollOffsetStart - viewportHeight - scrollOffsetStop);
+          progress = computeOffsetProgress(
+            scrollTop,
+            scrollOffsetStart,
+            scrollHeight,
+            viewportHeight,
+            scrollOffsetStop,
+          );
         } else if (scrollType === 'enterView') {
-          const offsetTop = hostRef.current?.offsetTop || 0;
-          progress = (scrollTop - offsetTop + viewportHeight) / viewportHeight;
+          progress = computeInViewProgress(hostRef.current || null, scrollTop, viewportHeight);
         } else if (scrollType === 'widget') {
           const element = document.getElementById(scrollWidget);
-          const offsetTop = element?.offsetTop || 0;
-          progress = (scrollTop - offsetTop + viewportHeight) / viewportHeight;
+          progress = computeWidgetProgress(element || null, scrollTop, viewportHeight);
+        } else if (scrollType === 'timeline') {
+          const el = document.getElementById(scrollTimelineWidget);
+          progress = computeInViewProgress(el, scrollTop, viewportHeight);
         }
 
-        if (progress >= 0 && progress <= 1) {
-          lottieRef.current.goToAndStop(Math.min(totalFrames * progress, totalFrames * 0.99), true);
-        }
+        progress = clampProgress(progress);
+
+        lottieRef.current.goToAndStop(Math.min(totalFrames * progress, totalFrames * 0.99), true);
       }
     }
-  }, [scroll, scrollOffsetStart, scrollOffsetStop, scrollTop]);
+  }, [
+    scroll,
+    scrollOffsetStart,
+    scrollOffsetStop,
+    scrollTop,
+    viewportHeight,
+    scrollType,
+    scrollWidget,
+    scrollTimelineWidget,
+    hostRef,
+  ]);
 
   useVevEvent(Interactions.PLAY, () => {
     if (lottieRef.current) {
@@ -247,7 +271,8 @@ registerVevComponent(Lottie, {
         display: 'dropdown',
         items: [
           { label: 'Start when entering view', value: 'enterView' },
-          { label: 'Relative to element', value: 'widget' },
+          { label: 'Start when element enters view', value: 'widget' },
+          { label: 'Run while element is in view', value: 'timeline' },
           { label: 'Offset', value: 'offset' },
         ],
       },
@@ -261,6 +286,15 @@ registerVevComponent(Lottie, {
       type: 'widgetSelect',
       hidden: (context) => {
         return !context?.value?.scroll || context?.value?.scrollType !== 'widget';
+      },
+    },
+    {
+      name: 'scrollTimelineWidget',
+      title: 'Element',
+      description: 'Animation runs while element is in view',
+      type: 'widgetSelect',
+      hidden: (context) => {
+        return !context?.value?.scroll || context?.value?.scrollType !== 'timeline';
       },
     },
     {
