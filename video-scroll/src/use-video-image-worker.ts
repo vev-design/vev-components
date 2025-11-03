@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useGlobalStateRef } from "@vev/react";
 // @ts-ignore
 import ImageWorker from "./image-load-worker?worker";
 
@@ -16,6 +17,7 @@ function resolveImage(url: string): Promise<HTMLImageElement | null> {
 }
 export function useVideoImageWorker(images: string[]) {
   const imagesRef = useRef<HTMLImageElement[]>([]);
+  const [globalVevState] = useGlobalStateRef();
 
   useEffect(() => {
     const imageElements = new Array(images.length);
@@ -30,7 +32,7 @@ export function useVideoImageWorker(images: string[]) {
     });
 
     const host = self.location.origin;
-    const dir = ((window as any).vev as any)?.getState?.()?.dir;
+    const dir = globalVevState?.current?.dir;
     const parentLocation = `${host}${dir ? '/' + dir : ''}`;
 
     worker.postMessage({
