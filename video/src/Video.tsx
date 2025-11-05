@@ -39,14 +39,13 @@ const Video = ({
   section = false,
   altText,
 }: Props) => {
-  const videoRef = useRef<HTMLVideoElement>();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const stateRef = useRef<{ current: number; maxProgress: number }>({
     current: 0,
     maxProgress: 0,
   });
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
-  const videoStarted = useRef(false);
 
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
@@ -106,56 +105,76 @@ const Video = ({
       switch (e.type) {
         case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
-            dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
-              videoUrl: video.url,
-              videoName: video.name,
-              progress: videoEl.currentTime,
-              totalPlayTime: videoEl.duration,
-              percentagePlayed: update.maxProgress,
-            });
-            track?.('Video Progress', label, stateRef.current.maxProgress);
+            if(!disableTracking) {
+              dispatchTrackingEvent('VEV_VIDEO_PROGRESS', {
+                videoUrl: video.url,
+                videoName: video.name,
+                progress: videoEl.currentTime,
+                totalPlayTime: videoEl.duration,
+                percentagePlayed: update.maxProgress,
+              });
+              track?.('Video Progress', label, stateRef.current.maxProgress);
+            }
           }
           if (videoEl.currentTime > (fifth * videoEl.duration) / 5) {
-            const progress = fifth * 20;
-            track?.(`Video Progress ${progress}`, label);
-            dispatch(VideoEvent.currentTime, { currentTime: progress });
+            if(!disableTracking) {
+              const progress = fifth * 20;
+              track?.(`Video Progress ${progress}`, label);
+              dispatch(VideoEvent.currentTime, { currentTime: progress });
+            }
+
             fifth++;
           }
           stateRef.current.current = update.current;
           stateRef.current.maxProgress = stateRef.current.maxProgress;
           break;
         case 'play':
-          dispatchTrackingEvent('VEV_VIDEO_PLAY', {
-            videoUrl: video.url,
-            videoName: video.name,
-            totalPlayTime: videoEl.duration,
-            percentagePlayed: update.maxProgress,
-          });
+          if(!disableTracking) {
+            dispatchTrackingEvent('VEV_VIDEO_PLAY', {
+              videoUrl: video.url,
+              videoName: video.name,
+              totalPlayTime: videoEl.duration,
+              percentagePlayed: update.maxProgress,
+            });
+
+            track?.('Play', label);
+          }
+
           dispatch(VideoEvent.onPlay);
-          return track?.('Play', label);
+          break;
         case 'pause':
-          dispatchTrackingEvent('VEV_VIDEO_STOP', {
-            videoUrl: video.url,
-            videoName: video.name,
-            progress: videoEl.currentTime,
-            totalPlayTime: videoEl.duration,
-            percentagePlayed: update.maxProgress,
-          });
+          if(!disableTracking) {
+            dispatchTrackingEvent('VEV_VIDEO_STOP', {
+              videoUrl: video.url,
+              videoName: video.name,
+              progress: videoEl.currentTime,
+              totalPlayTime: videoEl.duration,
+              percentagePlayed: update.maxProgress,
+            });
+
+            track?.('Pause', label, stateRef.current.current);
+          }
+
           dispatch(VideoEvent.onPause);
-          return track?.('Pause', label, stateRef.current.current);
+          break;
         case 'ended':
-          dispatchTrackingEvent('VEV_VIDEO_END', {
-            videoUrl: video.url,
-            videoName: video.name,
-            totalPlayTime: videoEl.duration,
-            percentagePlayed: 100,
-          });
+          if(!disableTracking) {
+            dispatchTrackingEvent('VEV_VIDEO_END', {
+              videoUrl: video.url,
+              videoName: video.name,
+              totalPlayTime: videoEl.duration,
+              percentagePlayed: 100,
+            });
+
+            track?.('Finished', label);
+          }
+
           if (loop) {
             videoEl.currentTime = 0;
             videoEl.play();
           }
           dispatch(VideoEvent.onEnd);
-          return track?.('Finished', label);
+          break;
       }
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
