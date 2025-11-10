@@ -13,14 +13,17 @@ export type BaseSlideProps = {
   disabled?: boolean;
   transitionOut?: boolean;
   style?: React.CSSProperties;
+  section?: boolean;
 };
 export const BaseSlide = React.forwardRef(
   (
-    { selected, id, index, settings, slideCount, style }: BaseSlideProps,
+    { selected, id, index, settings, slideCount, style, section, disabled }: BaseSlideProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) => {
-    let cl = styles.content;
+    let cl = disabled ? styles.static : styles.content;
     if (selected) cl += ' ' + styles.selected;
+    const contentClass = section ? '__sc' : null;
+    
     return (
       <div
         className={cl}
@@ -32,7 +35,7 @@ export const BaseSlide = React.forwardRef(
           } as any
         }
       >
-        <WidgetNode id={id} />
+        <WidgetNode contentClassName={contentClass} id={id} />
       </div>
     );
   },

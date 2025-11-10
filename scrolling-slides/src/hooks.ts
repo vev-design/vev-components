@@ -59,7 +59,7 @@ export function useViewAnimation(
 ) {
   const { scrollHeight, height: windowHeight } = useViewport();
   useEffect(() => {
-    const el = ref.current;
+    const el = ref.current as HTMLElement;
     if (disable || !timeline || !el || !el.parentElement) return;
 
     const { top, bottom, height } = el.parentElement.getBoundingClientRect();
@@ -78,9 +78,7 @@ export function useViewAnimation(
       offsetStart -= endOffset;
       offsetEnd -= endOffset;
     }
-    console.log("timeline", timeline);
-    console.log("options", options);
-    console.log("offsetStart", offsetStart);
+
     const animation = el.animate(keyframes, {
       fill: "both",
       timeline,

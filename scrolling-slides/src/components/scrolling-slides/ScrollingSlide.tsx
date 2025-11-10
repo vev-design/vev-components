@@ -27,6 +27,7 @@ type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   type: SlideType;
   settings?: { [key: string]: any };
+  section?: boolean;
 };
 
 type Layout = "row" | "column" | "grid";
@@ -55,24 +56,22 @@ function isSafariBrowser() {
   return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 }
 
-const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
+const ScrollingSlide = ({ children, type, settings, hostRef, section }: Props) => {
   if (!type) type = "scroll";
 
   const visible = useVisible(hostRef);
 
   const ref = useRef<HTMLDivElement>(null);
-  const { disabled, activeContentChild, ...rest } = useEditorState();
+  const { disabled, ...rest } = useEditorState();
   const timeline = useViewTimeline(ref, !visible);
-  const showSlideKey: string | undefined = disabled
-    ? activeContentChild
-    : undefined;
+
   useViewAnimation(
     ref,
     {
       translate: ["0 0", `${-100 + 100 / children.length}% 0`],
     },
     timeline,
-    !!showSlideKey || type !== "scroll" || !visible,
+    type !== "scroll" || !visible || disabled,
     {
       direction: settings?.reverse ? "reverse" : undefined,
       easing: settings?.easing,
@@ -91,14 +90,40 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
     }
   }, []);
 
-  useSlideEditMode(hostRef, disabled, showSlideKey);
+  // useSlideEditMode(hostRef, disabled, showSlideKey);
+
+  if (disabled) {
+    const cl = `${styles.wrapper} ${styles.column}`;
+    return (
+      <div className={cl} style={
+        {
+          "--slide-count": children.length,
+        } as any
+      }>
+        {children.map((childKey, index) => (
+          <BaseSlide
+          key={childKey}
+          id={childKey}
+          section={section}
+          index={index}
+          slideCount={children.length}
+          timeline={timeline}
+          settings={settings}
+          transitionOut={settings?.transitionOut}
+          disabled={disabled}
+          />
+        ))}
+        </div>
+      );
+    }
 
   const layout = SLIDE_LAYOUT[type] || "row";
   let cl = `${styles.wrapper} ${styles[layout]}`;
-  if (showSlideKey) cl += " " + styles.editSlides;
   if (type === "scroll" && settings?.reverse) cl += " " + styles.reverse;
 
   const Comp = SLIDE_COMPONENT[type] || BaseSlide;
+
+
   return (
     <div
       ref={ref}
@@ -114,14 +139,14 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
       )}
       {children.map(
         (childKey, index) =>
-          (!activeContentChild || showSlideKey === childKey) && (
+           (
             <Comp
               key={childKey}
               id={childKey}
+              section={section}
               index={index}
               slideCount={children.length}
               timeline={timeline}
-              selected={showSlideKey === childKey}
               settings={settings}
               transitionOut={settings?.transitionOut}
               disabled={disabled}
@@ -459,5 +484,5 @@ registerVevComponent(ScrollingSlide, {
       properties: ["background"],
     },
   ],
-  type: "standard",
+  type: "both",
 });

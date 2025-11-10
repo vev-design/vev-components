@@ -18,6 +18,7 @@ export function AnimatedSlide({
   keyframes,
   style,
   transitionOut,
+  section,
 }: AnimatedSlideProps) {
   const ref = useRef<HTMLDivElement>(null);
   let cl = styles.content;
@@ -68,6 +69,7 @@ export function AnimatedSlide({
       id={id}
       selected={selected}
       index={index}
+      section={section}
       slideCount={slideCount}
       timeline={timeline}
       settings={settings}
