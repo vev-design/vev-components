@@ -32,6 +32,8 @@ export const Slide = ({
   action,
   slidesToLoad: slidesToLoadProp,
   shrinkFactorBeforeAfter,
+  section,
+  editMode,
 }: Omit<Props, 'children'> & {
   index: number;
 }) => {
@@ -46,6 +48,7 @@ export const Slide = ({
   const reverse = direction?.includes('REVERSE');
   const scaleBeforeAfter = shrinkFactorBeforeAfter && shrinkFactorBeforeAfter > 0;
   const centerSlideIndex = Math.floor(currentSlides.length / 2);
+  const contentCl = section ? '__sc' : null;
 
   const setSlides = useCallback(() => {
     const getIndexValue = (val: any, curr: number) => (val === undefined ? curr : val);
@@ -104,10 +107,10 @@ export const Slide = ({
     }
   }, [index, prevIndex, speed]);
 
-  if (slides.length === 1) {
+  if (slides.length === 1 || editMode) {
     return (
       <div className={styles.slide}>
-        <WidgetNode id={slides[index]} />
+        <WidgetNode contentClassName={contentCl} id={slides[index]} />
       </div>
     );
   }
@@ -136,7 +139,7 @@ export const Slide = ({
         {currentSlides?.map((child: string, i: number) => {
           return (
             <div
-              className={styles.slide}
+              className={[styles.slide, editMode && i !== centerSlideIndex ? styles.inactive : ''].join(' ')}
               key={checkIfKeyIsDuplicatedInArray(currentSlides, child) ? `${child}${i}` : child}
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,
@@ -153,10 +156,10 @@ export const Slide = ({
                     transition: `scale ${speed || 1}ms ${easing || 'ease'}`,
                   }}
                 >
-                  {child && <WidgetNode id={child} />}
+                  {child && <WidgetNode contentClassName={contentCl} id={child} />}
                 </div>
-              ) : (
-                <WidgetNode id={child} />
+                ) : (
+                  <WidgetNode contentClassName={contentCl} id={child} />
               )}
             </div>
           );

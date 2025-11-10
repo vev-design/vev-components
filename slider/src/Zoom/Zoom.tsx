@@ -14,6 +14,8 @@ export const Zoom = ({
   scaleFactor = 300,
   action,
   infinite,
+  section,
+  editMode,
 }: Omit<Props, 'children'> & {
   index: number;
   preview?: boolean;
@@ -65,10 +67,10 @@ export const Zoom = ({
     }
   }, [index, prevIndex, speed]);
 
-  if (slides.length === 1) {
+  if (slides.length === 1 || editMode) {
     return (
       <div className={styles.slide}>
-        <WidgetNode id={currentSlide} />
+        <WidgetNode id={currentSlide} contentClassName={section ? '__sc' : null} />
       </div>
     );
   }
@@ -100,7 +102,7 @@ export const Zoom = ({
               transform: i === move || i === move - 1 ? 'scale(1)' : `scale(${scaleFactor}%)`,
             }}
           >
-            {child && <WidgetNode id={child} />}
+            {child && <WidgetNode contentClassName={section ? '__sc' : null} id={child} />}
           </div>
         );
       })}

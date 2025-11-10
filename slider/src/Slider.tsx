@@ -39,6 +39,7 @@ export type Props = {
   action: 'NEXT' | 'PREV';
   slidesToLoad: number;
   disableSwipe?: boolean;
+  section?: boolean;
 };
 
 enum Interactions {
@@ -60,7 +61,7 @@ export const Slideshow = (props: Props) => {
   const [slides, setSlides] = useState(children || []);
   const prevIndex = useRef(state?.index || 0);
 
-  const numberOfSlides = props?.children?.length || 0;
+  const numberOfSlides = children?.length || 0;
 
   useEffect(() => {
     setState({
@@ -72,10 +73,10 @@ export const Slideshow = (props: Props) => {
             ? prevIndex.current || 0
             : 0,
       ),
-      length: numberOfSlides || 0,
+      length: children?.length || 0,
     });
     prevIndex.current = children.indexOf(editor.activeContentChild);
-  }, [editor.activeContentChild, editor.disabled]);
+  }, [editor.activeContentChild, editor.disabled, children]);
 
   useEffect(() => {
     if (state?.index !== undefined) {
@@ -163,7 +164,7 @@ export const Slideshow = (props: Props) => {
 
 registerVevComponent(Slideshow, {
   name: 'Slider',
-  type: 'standard',
+  type: 'both',
   icon: 'https://cdn.vev.design/assets/slider.svg',
   description:
     'Add a dynamic slider to display diverse design elements, tailor animation, and add Interactions for custom navigation.',
@@ -173,7 +174,7 @@ registerVevComponent(Slideshow, {
   },
   size: {
     width: 600,
-    height: 400,
+    height: 'auto',
   },
   editableCSS: [
     {

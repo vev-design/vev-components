@@ -11,6 +11,7 @@ const Slide3d = ({
   radius,
   active,
   isVertical,
+  section,
 }: {
   contentKey: string;
   angle: number;
@@ -18,6 +19,7 @@ const Slide3d = ({
   size: number;
   active: boolean;
   isVertical: boolean;
+  section: boolean;
 }) => {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
@@ -34,7 +36,7 @@ const Slide3d = ({
         pointerEvents: active ? 'all' : 'none',
       }}
     >
-      <WidgetNode id={contentKey} />
+      <WidgetNode contentClassName={section ? '__sc' : null} id={contentKey} />
     </div>
   );
 };
@@ -51,6 +53,7 @@ export const Carousel3d = ({
   direction,
   action,
   infinite,
+  section,
 }: Omit<Props, 'children'> & { index: number }) => {
   const { width, height } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
@@ -114,6 +117,7 @@ export const Carousel3d = ({
           return (
             <Slide3d
               key={child}
+              section={section}
               contentKey={child}
               angle={angle + angleStep * i}
               radius={circleRadius}
