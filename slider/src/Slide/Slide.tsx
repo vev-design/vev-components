@@ -107,7 +107,7 @@ export const Slide = ({
     }
   }, [index, prevIndex, speed]);
 
-  if (slides.length === 1 || editMode) {
+  if (slides.length === 1) {
     return (
       <div className={styles.slide}>
         <WidgetNode contentClassName={contentCl} id={slides[index]} />
