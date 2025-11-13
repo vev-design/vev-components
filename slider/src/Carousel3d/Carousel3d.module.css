@@ -1,14 +1,28 @@
 .wrapper {
+  object-fit: cover;
   position: relative;
   width: 100%;
-  height: 100%;
-  margin: auto;
+  height: auto;
+  overflow: inherit;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 100%;
+  grid-area: 1/1;
 }
 
 .slide {
   width: 100%;
-  height: 100%;
-  position: absolute;
+  margin: 0;
   left: 0;
+  top: 0;
+  grid-area: 1/1;
+  height: min(max-content, 100%);
   transform-style: preserve-3d;
+}
+
+.notActive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: auto;
 }

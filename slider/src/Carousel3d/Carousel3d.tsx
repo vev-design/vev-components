@@ -24,7 +24,7 @@ const Slide3d = ({
 
   return (
     <div
-      className={styles.slide}
+      className={styles.slide + (!active ? (' ' + styles.notActive) : '')}
       style={{
         rotate: isVertical ? `1 0 0 ${-angle}rad` : `0 1 0 ${angle}rad`,
         translate: isVertical
@@ -52,7 +52,7 @@ export const Carousel3d = ({
   action,
   infinite,
 }: Omit<Props, 'children'> & { index: number }) => {
-  const { width, height } = useSize(hostRef);
+  const { width } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
   const angle = Math.PI * 2;
   const prevIndex = useRef(0);
@@ -105,8 +105,6 @@ export const Carousel3d = ({
             ? `1 0 0 ${angle * (editMode ? selectSlide : percentage)}rad`
             : `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
-          width,
-          height,
           transformStyle: 'preserve-3d',
         }}
       >
