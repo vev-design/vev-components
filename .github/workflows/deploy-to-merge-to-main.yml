@@ -18,9 +18,8 @@ jobs:
         id: changed
         run: |
           folders=$(git diff --name-only HEAD^ HEAD | cut -d/ -f1 | sort -u)
-          echo "changed_folders<<EOF" >> $GITHUB_OUTPUT
-          echo "$folders" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          folders_line=$(echo "$folders" | tr '\n' ' ')
+          echo "changed_folders=$folders_line" >> $GITHUB_OUTPUT
 
       - name: Install CLI
         run: npm i -g @vev/cli
