@@ -1,0 +1,22 @@
+{
+  "name": "threads",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "login": "vev login",
+    "init": "vev init",
+    "start": "vev start"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "latest",
+    "prettier": "2.7.0",
+    "typescript-plugin-css-modules": "^5.0.1"
+  },
+  "dependencies": {
+    "@vev/react": "latest",
+    "@vev/silke": "^1.1.0",
+    "ogl": "^1.0.11",
+    "react": "^18.2.0"
+  }
+}
