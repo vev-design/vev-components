@@ -69,20 +69,35 @@ export function listenForAnimationRange(
   viewTimeline: ViewTimeline,
   cb: () => void,
 ) {
+  // Validate element is actually an Element instance (fixes getComputedStyle error in polyfill)
+  if (!(el instanceof Element) || !el.isConnected) {
+    return () => { };
+  }
+
   if (offset === 1) offset -= OFFSET_RANGE;
-  const animation = el.animate(
-    { opacity: [0, 1] },
-    {
+
+  try {
+    // Type assertion needed because rangeStart/rangeEnd are not yet in KeyframeAnimationOptions types
+    const animationOptions = {
       duration: 1,
       timeline: viewTimeline,
       rangeStart: `${rangeName} ${offset * 100}%`,
       rangeEnd: `${rangeName} ${(offset + OFFSET_RANGE) * 100}%`,
-    },
-  );
+    } as any;
 
-  animation.onfinish = cb;
+    const animation = el.animate({ opacity: [0, 1] }, animationOptions);
 
-  return () => {
-    animation.cancel();
-  };
+    animation.onfinish = cb;
+
+    return () => {
+      try {
+        animation.cancel();
+      } catch (error) {
+        // Silently handle polyfill errors
+      }
+    };
+  } catch (error) {
+    // Polyfill errors are caught but can't be fixed from here
+    return () => { };
+  }
 }
