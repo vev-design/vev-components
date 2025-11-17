@@ -62,12 +62,12 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
 
   const ref = useRef<HTMLDivElement>(null);
   const { disabled, activeContentChild, ...rest } = useEditorState();
-  const timeline = useViewTimeline(ref, !visible);
+  const timeline = useViewTimeline(ref as React.RefObject<HTMLElement>, !visible);
   const showSlideKey: string | undefined = disabled
     ? activeContentChild
     : undefined;
   useViewAnimation(
-    ref,
+    ref as React.RefObject<HTMLElement>,
     {
       translate: ["0 0", `${-100 + 100 / children.length}% 0`],
     },
