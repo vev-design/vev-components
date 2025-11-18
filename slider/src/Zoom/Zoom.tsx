@@ -67,14 +67,6 @@ export const Zoom = ({
     }
   }, [index, prevIndex, speed]);
 
-  if (slides.length === 1) {
-    return (
-      <div className={styles.slide}>
-        <WidgetNode id={currentSlide} contentClassName={section ? '__sc' : null} />
-      </div>
-    );
-  }
-
   return (
     <div
       className={styles.wrapper}

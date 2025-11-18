@@ -75,7 +75,7 @@ export const Slideshow = (props: Props) => {
       ),
       length: children?.length || 0,
     });
-    prevIndex.current = children.indexOf(editor.activeContentChild);
+    prevIndex.current = Math.max(0, children.indexOf(editor.activeContentChild));
   }, [editor.activeContentChild, editor.disabled, children]);
 
   useEffect(() => {
