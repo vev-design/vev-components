@@ -71,9 +71,6 @@ export const Slideshow = (props: Props) => {
   const transitionInProgress = useCallback(() => {
     const isTransitioning = transitionSpeed > 1;
     const supportedTypes = ['slide', 'zoom', 'fade'].includes(animation);
-    if (supportedTypes && isTransitioning) {
-      console.log('### transition in progress', transitionSpeed);
-    }
     return supportedTypes && isTransitioning;
   }, [transitionSpeed, animation]);
 
@@ -85,8 +82,7 @@ export const Slideshow = (props: Props) => {
     if (((!props.infinite || animation === 'none') && state?.index === numberOfSlides - 1)) return;
     if (transitionInProgress()) return;
 
-    const nextSlideIndex = getNextSlideIndex(state?.index || 0, slides); console.log('### handleNextSlide', props.speed);
-
+    const nextSlideIndex = getNextSlideIndex(state?.index || 0, slides);
     setTransitionSpeed(props.speed || 1);
 
     setState({
