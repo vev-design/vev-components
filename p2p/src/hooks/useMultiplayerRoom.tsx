@@ -14,9 +14,30 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
  * onEvent: (type: string, callback: (payload: any) => void) => () => void
  * }}
  */
-export const useMultiplayerRoom = (endpointUrl) => {
+export const useMultiplayerRoom = (endpointUrl, roomIdOverride) => {
   // Determine the room ID from the current URL path
-  const roomId = window.location.pathname.replace(/\/$/, "");
+  const [roomId, setRoomId] = useState("");
+
+  useEffect(() => {
+    if (roomIdOverride) {
+      setRoomId(roomIdOverride);
+      return;
+    }
+
+    let id = window.location.pathname.replace(/\/$/, "");
+    if (window.location.href === "about:srcdoc") {
+      try {
+        const url = new URL(document.referrer);
+        id = url.pathname.replace(/\/$/, "");
+      } catch (e) {
+        console.warn(
+          "[MP] Could not resolve room ID from referrer in srcdoc",
+          e
+        );
+      }
+    }
+    setRoomId(id);
+  }, [roomIdOverride]);
 
   // State for connection status
   const [isConnected, setIsConnected] = useState(false);

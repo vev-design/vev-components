@@ -87,6 +87,15 @@ export class Room {
 
       // The client message structure is: { type: string, payload: any, roomId: string }
       if (message && message.type) {
+        // Handle system messages
+        if (message.type === "sys:identify") {
+          ws.userData = message.payload;
+          console.log(
+            `[DO] Client ${sessionId} identified as`,
+            message.payload
+          );
+        }
+
         console.log(
           `[DO] Received event '${message.type}' from ${sessionId}. Broadcasting...`
         );
@@ -104,7 +113,15 @@ export class Room {
       console.log(
         `[DO] Connection closed: ID ${sessionId}. Total: ${this.sessions.size}`
       );
-      // Optional: Broadcast 'user_left' event here
+
+      if (ws.userData) {
+        this.broadcast(
+          JSON.stringify({
+            type: "player_leave",
+            payload: ws.userData,
+          })
+        );
+      }
     });
 
     // 3. Handle connection error
