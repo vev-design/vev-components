@@ -40,6 +40,7 @@ type Props = {
     leftIcon?: IconProp;
     rightIcon?: IconProp;
     hideHandle?: boolean;
+    initialPosition?: number;
   };
   animation?: {
     animate?: boolean;
@@ -83,11 +84,11 @@ const ImageCompare = ({
   left,
   right,
   horizontal = false,
-  handles = { hideHandle: false },
+  handles = { hideHandle: false, initialPosition: 50 },
   animation = { animate: false, speed: 1, interval: 1, type: 'random' },
 }: Props) => {
   const cycleRef = useRef<boolean>(false);
-  const [position, setPosition] = useState(50);
+  const [position, setPosition] = useState(handles.initialPosition);
   const [disableAnimation, setDisableAnimation] = useState(false);
   const actualLeft = left?.url || DEFAULT_LEFT_IMAGE;
   const actualRight = right?.url || DEFAULT_RIGHT_IMAGE;
@@ -100,9 +101,8 @@ const ImageCompare = ({
   useEffect(() => {
     if (animate) {
       const intervalId = setInterval(() => {
-        const newPosition = type === 'endToEnd'
-            ? cycleRef.current ? 90 : 10
-            : Math.floor(Math.random() * 25 + 40);
+        const newPosition =
+          type === 'endToEnd' ? (cycleRef.current ? 90 : 10) : Math.floor(Math.random() * 25 + 40);
 
         cycleRef.current = !cycleRef.current;
         setPosition(newPosition);
@@ -113,12 +113,12 @@ const ImageCompare = ({
       };
     }
 
-    setPosition(50);
-  }, [animate, interval, type]);
+    setPosition(handles.initialPosition);
+  }, [animate, interval, type, handles]);
 
   function disableAnimationHandler() {
     setDisableAnimation(true);
-    setPosition(50);
+    setPosition(handles.initialPosition);
   }
 
   return (
@@ -221,6 +221,12 @@ registerVevComponent(ImageCompare, {
           title: 'Hide handles',
           type: 'boolean',
           initialValue: false,
+        },
+        {
+          name: 'initialPosition',
+          title: 'Initial handle position (%)',
+          type: 'number',
+          initialValue: 50,
         },
       ],
     },
