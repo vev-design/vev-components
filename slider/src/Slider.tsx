@@ -1,4 +1,4 @@
-import React, { useEffect, RefObject, useMemo, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   registerVevComponent,
   useVevEvent,
@@ -8,6 +8,7 @@ import {
 } from '@vev/react';
 import { shuffleArray, getNextSlideIndex, getPrevSlideIndex } from './utils';
 import DirectionField from './DirectionField';
+import { Events, Interactions, Props } from './types';
 
 import Slide from './Slide';
 import Fade from './Fade';
@@ -19,46 +20,15 @@ import { useTouch } from './use-touch';
 
 import styles from './Slider.module.css';
 
-export type Props = {
-  hostRef: RefObject<any>;
-  children: string[];
-  animation: 'slide' | 'zoom' | 'fade' | '3d';
-  speed?: number;
-  selectedIndex?: number;
-  gap?: number;
-  random?: boolean;
-  infinite?: boolean;
-  perspective?: number;
-  scaleFactor?: number;
-  easing?: string;
-  shrinkFactorBeforeAfter?: number;
-  direction: 'HORIZONTAL' | 'HORIZONTAL_REVERSE' | 'VERTICAL' | 'VERTICAL_REVERSE';
-  slides: string[];
-  editMode?: boolean;
-  index: number;
-  action: 'NEXT' | 'PREV';
-  slidesToLoad: number;
-  disableSwipe?: boolean;
-};
-
-enum Interactions {
-  NEXT = 'NEXT',
-  PREV = 'PREV',
-  SET = 'SET',
-}
-
-enum Events {
-  SLIDE_CHANGED = 'SLIDE_CHANGED',
-}
-
 export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
   const dispatch = useDispatchVevEvent();
-  const [isTransitioning, setIsTransitioning] = useState(false);
+
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
   const prevIndex = useRef(state?.index || 0);
+  const [transitionSpeed, setTransitionSpeed] = useState(1);
 
   const numberOfSlides = props?.children?.length || 0;
 
@@ -94,26 +64,60 @@ export const Slideshow = (props: Props) => {
     }
   }, [random, editor.disabled, children]);
 
+  /**
+   * transitionInProgress
+   */
+
+  const transitionInProgress = useCallback(() => {
+    const isTransitioning = transitionSpeed > 1;
+    const supportedTypes = ['slide', 'zoom', 'fade'].includes(animation);
+    if (supportedTypes && isTransitioning) {
+      console.log('### transition in progress', transitionSpeed);
+    }
+    return supportedTypes && isTransitioning;
+  }, [transitionSpeed, animation]);
+
+  /**
+   * handleNextSlide
+   */
+
   const handleNextSlide = useCallback(() => {
-    if ((!props.infinite && state?.index === numberOfSlides - 1) || slides.length <= 1) return;
-    setIsTransitioning(true);
+    if (((!props.infinite || animation === 'none') && state?.index === numberOfSlides - 1)) return;
+    if (transitionInProgress()) return;
+
+    const nextSlideIndex = getNextSlideIndex(state?.index || 0, slides); console.log('### handleNextSlide', props.speed);
+
+    setTransitionSpeed(props.speed || 1);
+
     setState({
-      index: getNextSlideIndex(state?.index, slides),
+      index: nextSlideIndex,
       length: numberOfSlides || 0,
       action: 'NEXT',
     });
-  }, [state?.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, props.speed, animation, transitionInProgress, animation]);
+
+  /**
+   * handlePrevSlide
+   */
 
   const handlePrevSlide = useCallback(() => {
-    if ((!props.infinite && state?.index === 0) || slides.length <= 1) return;
+    if (((!props.infinite || animation === 'none') && state?.index === 0)) return;
+    if (transitionInProgress()) return;
 
-    setIsTransitioning(true);
+
+    const prevSlideIndex = getPrevSlideIndex(state?.index || 0, slides);
+    setTransitionSpeed(props.speed || 1);
+
     setState({
-      index: getPrevSlideIndex(state?.index, slides),
+      index: prevSlideIndex,
       length: numberOfSlides || 0,
       action: 'PREV',
     });
-  }, [state?.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, props.speed, animation, transitionInProgress, animation]);
+
+  /**
+   * useTouch
+   */
 
   useTouch(
     hostRef,
@@ -150,11 +154,13 @@ export const Slideshow = (props: Props) => {
       {(slides[state?.index] || slides[0]) && (
         <Comp
           {...props}
+          transitionSpeed={transitionSpeed}
+          resetTransitionSpeed={() => {
+            setTransitionSpeed(0);
+          }}
           slides={slides}
-          speed={editor?.disabled ? 1 : props.speed}
           index={isNaN(state?.index) ? 0 : state?.index}
           editMode={editor.disabled}
-          action={state?.action}
         />
       )}
     </div>
@@ -239,12 +245,14 @@ registerVevComponent(Slideshow, {
           },
         ],
       },
+      hidden: (context) => context.value?.animation === 'none',
     },
     {
       name: 'direction',
       type: 'string',
       component: DirectionField,
       initialValue: 'HORIZONTAL',
+      hidden: (context) => ['none'].includes(context.value?.animation),
     },
     {
       name: 'random',
@@ -256,6 +264,7 @@ registerVevComponent(Slideshow, {
       title: 'Infinite',
       type: 'boolean',
       initialValue: true,
+      hidden: (context) => context.value?.animation === 'none',
     },
     {
       name: 'gap',
@@ -312,6 +321,17 @@ registerVevComponent(Slideshow, {
   events: [
     {
       type: Events.SLIDE_CHANGED,
+      description: 'Slide changing',
+      args: [
+        {
+          name: 'currentSlide',
+          description: 'Slide number',
+          type: 'number',
+        },
+      ],
+    },
+    {
+      type: Events.SLIDE_DID_CHANGED,
       description: 'Slide was changed',
       args: [
         {
