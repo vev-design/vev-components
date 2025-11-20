@@ -1,0 +1,12 @@
+name = "multiplayer-room-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[durable_objects.bindings]]
+name = "ROOMS" # This MUST match env.ROOMS in the JavaScript code
+class_name = "Room" # This MUST match the exported class name
+
+[[migrations]]
+tag = "v1"
+# FIX: Changed 'new_classes' to 'new_sqlite_classes' as required by the Cloudflare free tier setup.
+new_sqlite_classes = ["Room"]
