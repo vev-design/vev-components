@@ -1,7 +1,9 @@
 import React from 'react';
 import { WidgetNode } from '@vev/react';
-import { Props } from '../Slider';
+import { Props } from '../types';
 
 export const None = ({ slides, index }: Props) => {
-  return <WidgetNode id={slides[index]} />;
+  const slide = slides[index];
+  if (!slide) return null;
+  return <WidgetNode id={slide} />;
 };

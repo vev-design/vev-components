@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { WidgetNode, useSize } from '@vev/react';
-import { Props } from '../Slider';
+import { WidgetNode, useDispatchVevEvent, useSize } from '@vev/react';
+import { Events, Props } from '../types';
 import { isGoingForward, isGoingBackward } from '../utils';
 
 import styles from './Carousel3d.module.css';
@@ -49,8 +49,6 @@ export const Carousel3d = ({
   perspective = 800,
   editMode,
   direction,
-  action,
-  infinite,
 }: Omit<Props, 'children'> & { index: number }) => {
   const { width, height } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
@@ -69,16 +67,17 @@ export const Carousel3d = ({
     slides.length <= 2 ? gap : (containerSize / 2 + gap) / Math.tan(Math.PI / slides.length),
   );
 
+  const dispatch = useDispatchVevEvent();
+
   useEffect(() => {
     const unit = 1 / slides.length;
 
     const moveLeft = () => setPercentage((percentage) => percentage - unit);
     const moveRight = () => setPercentage((percentage) => percentage + unit);
 
-    if (isGoingForward(index, prevIndex.current, slides.length, infinite, action)) {
+    if (isGoingForward(index, prevIndex.current, slides.length)) {
       (isReverse ? moveRight : moveLeft)();
-    }
-    if (isGoingBackward(index, prevIndex.current, slides.length)) {
+    } else if (isGoingBackward(index, prevIndex.current, slides.length)) {
       (isReverse ? moveLeft : moveRight)();
     }
 
@@ -96,6 +95,13 @@ export const Carousel3d = ({
       className={styles.wrapper}
       style={{
         perspective,
+      }}
+      onTransitionEnd={(e) => {
+        if (e.propertyName === 'rotate') {
+          dispatch(Events.SLIDE_DID_CHANGED, {
+            currentSlide: index + 1,
+          });
+        }
       }}
     >
       <div
