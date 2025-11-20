@@ -190,7 +190,6 @@ function EmbedScript({
   return (
     <div
       className={styles.wrapper}
-      data-show-overflow={showOverflow && !allowScroll}
       style={{ overflow: allowScroll ? 'auto' : showOverflow ? 'initial' : 'hidden' }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
