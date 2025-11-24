@@ -31,7 +31,6 @@ export function ClipPathField({ value, onChange }: KeyframeFieldProps) {
         ]}
         onChange={(type) => {
           onChange(type);
-          console.log('TYPE', type);
         }}
       />
     </SilkeBox>

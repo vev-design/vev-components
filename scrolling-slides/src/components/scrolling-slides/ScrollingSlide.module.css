@@ -62,7 +62,7 @@
     grid-area: 1/1;
 }
 
-.wrapper.edit-slides {
+/* .wrapper.edit-slides {
     display: grid;
 }
 
@@ -70,7 +70,7 @@
     grid-area: 1/1;
     position: static;
     margin: 0 0;
-}
+} */
 
 .content {
     position: sticky;
@@ -80,4 +80,13 @@
     max-width: 100vw;
     min-width: calc(100% / var(--slide-count));
     width: 100%;
+    /* max-height: min(100vh, 100%); */
 }
+
+/* .row .content{
+    width: calc(var(--slide-duration) * 1%);
+}
+
+.grid .content{
+    height: calc(var(--slide-duration) * 1%);
+} */
