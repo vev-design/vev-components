@@ -139,7 +139,7 @@ export const Slide = ({
           const isActive = centerSlideIndex === i;
           return (
             <div
-              className={styles.slide + (!isActive && ' ' + styles.notActive)}
+              className={[styles.slide, !isActive && styles.notActive].filter(Boolean).join(' ')}
               key={checkIfKeyIsDuplicatedInArray(currentSlides, child) ? `${child}${i}` : child}
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,
