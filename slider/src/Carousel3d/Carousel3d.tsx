@@ -52,7 +52,7 @@ export const Carousel3d = ({
   action,
   infinite,
 }: Omit<Props, 'children'> & { index: number }) => {
-  const { width } = useSize(hostRef);
+  const { width, height } = useSize(hostRef);
   const [percentage, setPercentage] = useState(0);
   const angle = Math.PI * 2;
   const prevIndex = useRef(0);
@@ -106,6 +106,8 @@ export const Carousel3d = ({
             : `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
           transformStyle: 'preserve-3d',
+          width,
+          height,
         }}
       >
         {slides?.map((child: string, i: number) => {
