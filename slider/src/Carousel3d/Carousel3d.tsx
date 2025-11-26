@@ -10,21 +10,26 @@ const Slide3d = ({
   angle,
   radius,
   active,
+  isVertical,
 }: {
   contentKey: string;
   angle: number;
   radius: number;
   size: number;
   active: boolean;
+  isVertical: boolean;
 }) => {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
+
   return (
     <div
       className={styles.slide + (!active ? (' ' + styles.notActive) : '')}
       style={{
-        rotate: `0 1 0 ${angle}rad`,
-        translate: `${sin * radius}px 0 ${cos * radius - radius}px`,
+        rotate: isVertical ? `1 0 0 ${-angle}rad` : `0 1 0 ${angle}rad`,
+        translate: isVertical
+          ? `0 ${sin * radius}px ${cos * radius - radius}px`
+          : `${sin * radius}px 0 ${cos * radius - radius}px`,
         zIndex: active ? 1 : -1,
         pointerEvents: active ? 'all' : 'none',
       }}
@@ -53,11 +58,15 @@ export const Carousel3d = ({
   const prevIndex = useRef(0);
 
   const isReverse = direction?.includes('REVERSE');
+  const isVertical = ['VERTICAL', 'VERTICAL_REVERSE'].includes(direction);
   const selectSlide = 1 - index / slides.length;
   const angleStep = (Math.PI * 2) / slides.length;
+
+  // For vertical, use height; for horizontal, use width
+  const containerSize = isVertical ? height : width;
   const circleRadius = Math.max(
     0.4,
-    slides.length <= 2 ? gap : (width / 2 + gap) / Math.tan(Math.PI / slides.length),
+    slides.length <= 2 ? gap : (containerSize / 2 + gap) / Math.tan(Math.PI / slides.length),
   );
 
   useEffect(() => {
@@ -92,7 +101,9 @@ export const Carousel3d = ({
       <div
         style={{
           transition: `rotate ${speed}ms ${easing || 'ease'}`,
-          rotate: `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
+          rotate: isVertical
+            ? `1 0 0 ${angle * (editMode ? selectSlide : percentage)}rad`
+            : `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
           transformStyle: 'preserve-3d',
         }}
@@ -106,6 +117,7 @@ export const Carousel3d = ({
               radius={circleRadius}
               size={width}
               active={i === index}
+              isVertical={isVertical}
             />
           );
         })}
