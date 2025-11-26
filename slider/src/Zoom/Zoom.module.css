@@ -4,6 +4,10 @@
   width: 100%;
   height: 100%;
   overflow: inherit;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 100%;
+  grid-area: 1/1;
 }
 
 .wrapper > vev {
@@ -13,11 +17,10 @@
 
 .slide {
   width: 100%;
-  height: 100%;
-  position: absolute;
-  width: 100%;
   left: 0;
-  pointer-events: none;
+  margin: 0;
+  grid-area: 1/1;
+  height: min(max-content, 100%);
 
   * {
     pointer-events: none;
@@ -30,4 +33,11 @@
   * {
     pointer-events: all;
   }
+}
+
+.notActive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
 }

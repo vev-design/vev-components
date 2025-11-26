@@ -27,6 +27,7 @@ export const Zoom = ({
   const currentSlide = slides[index];
   const nextSlide = slides[getNextSlideIndex(index, slides)];
   const prevSlide = slides[getPrevSlideIndex(index, slides)];
+  const currentSlideIndex = Math.floor(currentSlides.length / 2);
 
   useEffect(() => {
     setSlides();
@@ -67,8 +68,10 @@ export const Zoom = ({
 
   if (slides.length === 1) {
     return (
-      <div className={styles.slide}>
-        <WidgetNode id={currentSlide} />
+      <div className={styles.wrapper}>
+        <div className={styles.slide}>
+          <WidgetNode id={currentSlide} />
+        </div>
       </div>
     );
   }
@@ -88,10 +91,12 @@ export const Zoom = ({
       }}
     >
       {currentSlides?.map((child: string, i: number) => {
+        const isActive = currentSlideIndex === i;
+
         // If only two slides, and index to prevent duplicate keys
         return (
           <div
-            className={[styles.slide, i === move ? styles.active : ''].join(' ')}
+            className={[styles.slide, i === move && styles.active, !isActive && styles.notActive].join(' ')}
             key={child}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
