@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import styles from "../css/threads.module.css";
+import React, { useEffect, useMemo, useRef } from 'react';
+import styles from "../css/threads.css";
 import { registerVevComponent } from "@vev/react";
-import { Renderer, Program, Mesh, Triangle, Color } from 'ogl';
 
 
 interface ThreadsProps {
@@ -128,6 +127,71 @@ void main() {
 }
 `;
 
+const TRIANGLE_VERTICES = new Float32Array([
+  -1, -1, 0, 0,
+  3, -1, 2, 0,
+  -1, 3, 0, 2,
+]);
+
+function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.warn('[Threads] Shader compile error:', gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string) {
+  const vertex = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+  const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+  if (!vertex || !fragment) return null;
+
+  const program = gl.createProgram();
+  if (!program) return null;
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+  gl.deleteShader(vertex);
+  gl.deleteShader(fragment);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.warn('[Threads] Program link error:', gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    return null;
+  }
+  return program;
+}
+
+type GLState = {
+  gl: WebGLRenderingContext;
+  canvas: HTMLCanvasElement;
+  buffer: WebGLBuffer;
+  program: WebGLProgram;
+  uniforms: {
+    iTime: WebGLUniformLocation | null;
+    iResolution: WebGLUniformLocation | null;
+    uColor: WebGLUniformLocation | null;
+    uAmplitude: WebGLUniformLocation | null;
+    uDistance: WebGLUniformLocation | null;
+    uMouse: WebGLUniformLocation | null;
+  };
+  resizeObserver?: ResizeObserver | null;
+  animationFrame: number;
+  currentMouse: { x: number; y: number };
+  targetMouse: { x: number; y: number };
+  mouseEnabled: boolean;
+  enableMouse: () => void;
+  disableMouse: () => void;
+  setColor: (value: [number, number, number]) => void;
+  setAmplitude: (value: number) => void;
+  setDistance: (value: number) => void;
+};
+
 const Threads: React.FC<ThreadsProps> = ({
   color = [1, 1, 1],
   amplitude = 1,
@@ -136,95 +200,217 @@ const Threads: React.FC<ThreadsProps> = ({
   ...rest
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrameId = useRef<number>(null);
+  const colorVector = useMemo<[number, number, number]>(() => [...color] as [number, number, number], [color]);
+  const glStateRef = useRef<GLState | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
 
-    const renderer = new Renderer({ alpha: true });
-    const gl = renderer.gl;
-    gl.clearColor(0, 0, 0, 0);
+    const canvas = document.createElement('canvas');
+    canvas.className = styles.canvas;
+    container.appendChild(canvas);
+
+    const gl = canvas.getContext('webgl', {
+      alpha: true,
+      antialias: false,
+      preserveDrawingBuffer: false,
+      powerPreference: 'high-performance',
+    });
+    if (!gl) {
+      console.warn('[Threads] WebGL not supported');
+      container.removeChild(canvas);
+      return undefined;
+    }
+
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    container.appendChild(gl.canvas);
 
-    const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-      vertex: vertexShader,
-      fragment: fragmentShader,
-      uniforms: {
-        iTime: { value: 0 },
-        iResolution: {
-          value: new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height)
-        },
-        uColor: { value: new Color(...color) },
-        uAmplitude: { value: amplitude },
-        uDistance: { value: distance },
-        uMouse: { value: new Float32Array([0.5, 0.5]) }
-      }
-    });
-
-    const mesh = new Mesh(gl, { geometry, program });
-
-    function resize() {
-      const { clientWidth, clientHeight } = container;
-      renderer.setSize(clientWidth, clientHeight);
-      program.uniforms.iResolution.value.r = clientWidth;
-      program.uniforms.iResolution.value.g = clientHeight;
-      program.uniforms.iResolution.value.b = clientWidth / clientHeight;
-      renderer.render({ scene: mesh });
+    const program = createProgram(gl, vertexShader, fragmentShader);
+    if (!program) {
+      container.removeChild(canvas);
+      return undefined;
     }
-    container.addEventListener('resize', resize);
+    gl.useProgram(program);
+
+    const buffer = gl.createBuffer();
+    if (!buffer) {
+      console.warn('[Threads] Failed to create buffer');
+      gl.deleteProgram(program);
+      container.removeChild(canvas);
+      return undefined;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, TRIANGLE_VERTICES, gl.STATIC_DRAW);
+
+    const positionLocation = gl.getAttribLocation(program, 'position');
+    const uvLocation = gl.getAttribLocation(program, 'uv');
+    const stride = 4 * Float32Array.BYTES_PER_ELEMENT;
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, stride, 0);
+    gl.enableVertexAttribArray(uvLocation);
+    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
+
+    const uniforms = {
+      iTime: gl.getUniformLocation(program, 'iTime'),
+      iResolution: gl.getUniformLocation(program, 'iResolution'),
+      uColor: gl.getUniformLocation(program, 'uColor'),
+      uAmplitude: gl.getUniformLocation(program, 'uAmplitude'),
+      uDistance: gl.getUniformLocation(program, 'uDistance'),
+      uMouse: gl.getUniformLocation(program, 'uMouse'),
+    };
+
+    const state: GLState = {
+      gl,
+      canvas,
+      buffer,
+      program,
+      uniforms,
+      resizeObserver: null,
+      animationFrame: 0,
+      currentMouse: { x: 0.5, y: 0.5 },
+      targetMouse: { x: 0.5, y: 0.5 },
+      mouseEnabled: false,
+      enableMouse: () => {},
+      disableMouse: () => {},
+      setColor: (value) => {
+        if (uniforms.uColor) {
+          gl.uniform3f(uniforms.uColor, value[0], value[1], value[2]);
+        }
+      },
+      setAmplitude: (value) => {
+        if (uniforms.uAmplitude) {
+          gl.uniform1f(uniforms.uAmplitude, value);
+        }
+      },
+      setDistance: (value) => {
+        if (uniforms.uDistance) {
+          gl.uniform1f(uniforms.uDistance, value);
+        }
+      },
+    };
+
+    state.setColor(colorVector);
+    state.setAmplitude(amplitude);
+    state.setDistance(distance);
+    if (uniforms.uMouse) {
+      gl.uniform2f(uniforms.uMouse, 0.5, 0.5);
+    }
+
+    const resize = () => {
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        gl.viewport(0, 0, width, height);
+      }
+      if (uniforms.iResolution) {
+        gl.uniform3f(uniforms.iResolution, width, height, width / height);
+      }
+    };
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
+    resizeObserver?.observe(container);
+    window.addEventListener('resize', resize);
     resize();
+    state.resizeObserver = resizeObserver;
 
-    let currentMouse = [0.5, 0.5];
-    let targetMouse = [0.5, 0.5];
-
-    function handleMouseMove(e: MouseEvent) {
+    const handleMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = 1.0 - (e.clientY - rect.top) / rect.height;
-      targetMouse = [x, y];
-    }
-    function handleMouseLeave() {
-      targetMouse = [0.5, 0.5];
-    }
-    if (enableMouseInteraction) {
+      state.targetMouse = { x, y };
+    };
+
+    const handleMouseLeave = () => {
+      state.targetMouse = { x: 0.5, y: 0.5 };
+    };
+
+    state.enableMouse = () => {
+      if (state.mouseEnabled) return;
       window.addEventListener('mousemove', handleMouseMove);
       container.addEventListener('mouseleave', handleMouseLeave);
-    }
+      state.mouseEnabled = true;
+    };
 
-    function update(t: number) {
-      if (enableMouseInteraction) {
-        const smoothing = 0.05;
-        currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
-        currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
-        program.uniforms.uMouse.value[0] = currentMouse[0];
-        program.uniforms.uMouse.value[1] = currentMouse[1];
-      } else {
-        program.uniforms.uMouse.value[0] = 0.5;
-        program.uniforms.uMouse.value[1] = 0.5;
+    state.disableMouse = () => {
+      if (!state.mouseEnabled) return;
+      window.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+      state.mouseEnabled = false;
+      state.targetMouse = { x: 0.5, y: 0.5 };
+    };
+
+    const render = (time: number) => {
+      state.animationFrame = requestAnimationFrame(render);
+      const smoothing = state.mouseEnabled ? 0.05 : 1.0;
+      state.currentMouse.x += smoothing * (state.targetMouse.x - state.currentMouse.x);
+      state.currentMouse.y += smoothing * (state.targetMouse.y - state.currentMouse.y);
+
+      if (uniforms.uMouse) {
+        gl.uniform2f(uniforms.uMouse, state.currentMouse.x, state.currentMouse.y);
       }
-      program.uniforms.iTime.value = t * 0.001;
+      if (uniforms.iTime) {
+        gl.uniform1f(uniforms.iTime, time * 0.001);
+      }
 
-      renderer.render({ scene: mesh });
-      animationFrameId.current = requestAnimationFrame(update);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    state.animationFrame = requestAnimationFrame(render);
+    glStateRef.current = state;
+    if (enableMouseInteraction) {
+      state.enableMouse();
     }
-    animationFrameId.current = requestAnimationFrame(update);
 
     return () => {
-      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-      container.removeEventListener('resize', resize);
-
-      if (enableMouseInteraction) {
-        window.removeEventListener('mousemove', handleMouseMove);
-        container.removeEventListener('mouseleave', handleMouseLeave);
+      state.disableMouse();
+      cancelAnimationFrame(state.animationFrame);
+      state.resizeObserver?.disconnect();
+      window.removeEventListener('resize', resize);
+      gl.deleteBuffer(state.buffer);
+      gl.deleteProgram(state.program);
+      if (container.contains(canvas)) {
+        container.removeChild(canvas);
       }
-      if (container.contains(gl.canvas)) container.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
+      glStateRef.current = null;
     };
-  }, [color, amplitude, distance, enableMouseInteraction]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const state = glStateRef.current;
+    if (!state) return;
+    state.setColor(colorVector);
+  }, [colorVector]);
+
+  useEffect(() => {
+    const state = glStateRef.current;
+    if (!state) return;
+    state.setAmplitude(amplitude);
+  }, [amplitude]);
+
+  useEffect(() => {
+    const state = glStateRef.current;
+    if (!state) return;
+    state.setDistance(distance);
+  }, [distance]);
+
+  useEffect(() => {
+    const state = glStateRef.current;
+    if (!state) return;
+    if (enableMouseInteraction) {
+      state.enableMouse();
+    } else {
+      state.disableMouse();
+    }
+  }, [enableMouseInteraction]);
 
   return <div ref={containerRef}  {...rest} className={styles.wrapper} />;
 };

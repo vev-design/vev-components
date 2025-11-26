@@ -1,17 +1,14 @@
-import React,{ useEffect, useRef } from "react";
-import styles from "../css/galaxy.module.css";
-import { registerVevComponent } from "@vev/react";
-import { Renderer, Program, Mesh, Color, Triangle } from 'ogl';
+import React, { useCallback, useEffect, useRef } from 'react';
+import styles from '../css/galaxy.css';
+import { registerVevComponent } from '@vev/react';
 
 const vertexShader = `
-attribute vec2 uv;
 attribute vec2 position;
-
 varying vec2 vUv;
 
 void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 0, 1);
+  vUv = position * 0.5 + 0.5;
+  gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
@@ -171,9 +168,11 @@ void main() {
 }
 `;
 
-interface GalaxyProps {
-  focal?: [number, number];
-  rotation?: [number, number];
+type Vec2 = [number, number];
+
+interface GalaxyProps extends React.HTMLAttributes<HTMLDivElement> {
+  focal?: Vec2;
+  rotation?: Vec2;
   starSpeed?: number;
   density?: number;
   hueShift?: number;
@@ -189,6 +188,99 @@ interface GalaxyProps {
   autoCenterRepulsion?: number;
   transparent?: boolean;
 }
+
+type UniformName =
+  | 'uTime'
+  | 'uResolution'
+  | 'uFocal'
+  | 'uRotation'
+  | 'uStarSpeed'
+  | 'uDensity'
+  | 'uHueShift'
+  | 'uSpeed'
+  | 'uMouse'
+  | 'uGlowIntensity'
+  | 'uSaturation'
+  | 'uMouseRepulsion'
+  | 'uTwinkleIntensity'
+  | 'uRotationSpeed'
+  | 'uRepulsionStrength'
+  | 'uMouseActiveFactor'
+  | 'uAutoCenterRepulsion'
+  | 'uTransparent';
+
+type UniformValue = number | Float32Array | [number, number];
+
+type UniformMetaType = 'float' | 'vec2' | 'vec3' | 'int';
+
+const UNIFORM_META: Record<UniformName, UniformMetaType> = {
+  uTime: 'float',
+  uResolution: 'vec3',
+  uFocal: 'vec2',
+  uRotation: 'vec2',
+  uStarSpeed: 'float',
+  uDensity: 'float',
+  uHueShift: 'float',
+  uSpeed: 'float',
+  uMouse: 'vec2',
+  uGlowIntensity: 'float',
+  uSaturation: 'float',
+  uMouseRepulsion: 'int',
+  uTwinkleIntensity: 'float',
+  uRotationSpeed: 'float',
+  uRepulsionStrength: 'float',
+  uMouseActiveFactor: 'float',
+  uAutoCenterRepulsion: 'float',
+  uTransparent: 'int'
+};
+
+const FLOAT_SMOOTHED: UniformName[] = [
+  'uDensity',
+  'uHueShift',
+  'uGlowIntensity',
+  'uSaturation',
+  'uTwinkleIntensity',
+  'uRotationSpeed',
+  'uRepulsionStrength',
+  'uAutoCenterRepulsion',
+  'uSpeed'
+];
+
+const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
+  const shader = gl.createShader(type);
+  if (!shader) throw new Error('Failed to create shader');
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const info = gl.getShaderInfoLog(shader);
+    gl.deleteShader(shader);
+    throw new Error(info || 'Unknown shader compile error');
+  }
+  return shader;
+};
+
+const createProgram = (gl: WebGLRenderingContext, vertex: string, fragment: string) => {
+  const vs = createShader(gl, gl.VERTEX_SHADER, vertex);
+  const fs = createShader(gl, gl.FRAGMENT_SHADER, fragment);
+  const program = gl.createProgram();
+  if (!program) throw new Error('Failed to create program');
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    const info = gl.getProgramInfoLog(program);
+    gl.deleteProgram(program);
+    throw new Error(info || 'Unknown program link error');
+  }
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+  return program;
+};
+
+const buildResolution = (width: number, height: number) =>
+  new Float32Array([width, height, width / Math.max(height, 1)]);
+
+const toVec2 = (value: Vec2) => new Float32Array(value);
 
 function Galaxy({
   focal = [0.5, 0.5],
@@ -209,147 +301,325 @@ function Galaxy({
   transparent = true,
   ...rest
 }: GalaxyProps) {
-  const ctnDom = useRef<HTMLDivElement>(null);
-  const targetMousePos = useRef({ x: 0.5, y: 0.5 });
-  const smoothMousePos = useRef({ x: 0.5, y: 0.5 });
-  const targetMouseActive = useRef(0.0);
-  const smoothMouseActive = useRef(0.0);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
+  const uniformLocationsRef = useRef<Record<UniformName, WebGLUniformLocation | null>>(
+    {} as Record<UniformName, WebGLUniformLocation | null>
+  );
+  const uniformValuesRef = useRef<Record<UniformName, UniformValue>>({} as Record<
+    UniformName,
+    UniformValue
+  >);
+  const floatTargetsRef = useRef<Partial<Record<UniformName, number>>>({});
+  const animationRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
+  const logicalTimeRef = useRef<number>(0);
+  const speedRef = useRef<number>(speed);
+  const starSpeedRef = useRef<number>(starSpeed);
+  const disableAnimationRef = useRef<boolean>(disableAnimation);
+  const mouseInteractionRef = useRef<boolean>(mouseInteraction);
+  const pointerTargetRef = useRef<[number, number]>([0.5, 0.5]);
+  const pointerValueRef = useRef<[number, number]>([0.5, 0.5]);
+  const pointerActiveTargetRef = useRef<number>(0);
+  const pointerActiveRef = useRef<number>(0);
+
+  const applyUniform = useCallback((name: UniformName, value: UniformValue) => {
+    const gl = glRef.current;
+    const location = uniformLocationsRef.current[name];
+    if (!gl || !location) return;
+
+    const type = UNIFORM_META[name];
+    if (value instanceof Float32Array) {
+      if (type === 'vec2') {
+        gl.uniform2fv(location, value);
+      } else {
+        gl.uniform3fv(location, value);
+      }
+    } else if (Array.isArray(value)) {
+      gl.uniform2f(location, value[0], value[1]);
+    } else if (type === 'int') {
+      gl.uniform1i(location, value);
+    } else {
+      gl.uniform1f(location, value);
+    }
+    uniformValuesRef.current[name] = value;
+  }, []);
+
+  const setNumericTarget = useCallback(
+    (name: UniformName, value: number) => {
+      const type = UNIFORM_META[name];
+      if (type === 'int') {
+        applyUniform(name, Math.round(value));
+        return;
+      }
+      floatTargetsRef.current[name] = value;
+      if (uniformValuesRef.current[name] === undefined && glRef.current) {
+        applyUniform(name, value);
+      }
+    },
+    [applyUniform]
+  );
+
+  const updateVec2Uniform = useCallback((name: UniformName, value: Vec2) => {
+    applyUniform(name, toVec2(value));
+  }, [applyUniform]);
 
   useEffect(() => {
-    if (!ctnDom.current) return;
-    const ctn = ctnDom.current;
-    const renderer = new Renderer({
-      alpha: transparent,
-      premultipliedAlpha: false
-    });
-    const gl = renderer.gl;
+    speedRef.current = speed;
+    setNumericTarget('uSpeed', speed);
+  }, [speed, setNumericTarget]);
+
+  useEffect(() => {
+    starSpeedRef.current = starSpeed;
+  }, [starSpeed]);
+
+  useEffect(() => {
+    disableAnimationRef.current = disableAnimation;
+  }, [disableAnimation]);
+
+  useEffect(() => {
+    mouseInteractionRef.current = mouseInteraction;
+    if (!mouseInteraction) {
+      pointerTargetRef.current = [0.5, 0.5];
+      pointerActiveTargetRef.current = 0;
+    }
+  }, [mouseInteraction]);
+
+  useEffect(() => {
+    setNumericTarget('uTransparent', transparent ? 1 : 0);
+    const gl = glRef.current;
+    if (!gl) return;
+    if (transparent) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.clearColor(0, 0, 0, 0);
+    } else {
+      gl.disable(gl.BLEND);
+      gl.clearColor(0, 0, 0, 1);
+    }
+  }, [transparent, setNumericTarget]);
+
+  useEffect(() => {
+    updateVec2Uniform('uFocal', focal);
+  }, [focal, updateVec2Uniform]);
+
+  useEffect(() => {
+    updateVec2Uniform('uRotation', rotation);
+  }, [rotation, updateVec2Uniform]);
+
+  useEffect(() => {
+    setNumericTarget('uDensity', density);
+  }, [density, setNumericTarget]);
+
+  useEffect(() => {
+    setNumericTarget('uHueShift', hueShift);
+  }, [hueShift, setNumericTarget]);
+
+  useEffect(() => setNumericTarget('uGlowIntensity', glowIntensity), [glowIntensity, setNumericTarget]);
+  useEffect(() => setNumericTarget('uSaturation', saturation), [saturation, setNumericTarget]);
+  useEffect(() => setNumericTarget('uTwinkleIntensity', twinkleIntensity), [twinkleIntensity, setNumericTarget]);
+  useEffect(() => setNumericTarget('uRotationSpeed', rotationSpeed), [rotationSpeed, setNumericTarget]);
+  useEffect(() => setNumericTarget('uRepulsionStrength', repulsionStrength), [repulsionStrength, setNumericTarget]);
+  useEffect(() => setNumericTarget('uAutoCenterRepulsion', autoCenterRepulsion), [autoCenterRepulsion, setNumericTarget]);
+  useEffect(() => setNumericTarget('uMouseRepulsion', mouseRepulsion ? 1 : 0), [mouseRepulsion, setNumericTarget]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    container.appendChild(canvas);
+    canvasRef.current = canvas;
+
+    const gl = canvas.getContext('webgl', { antialias: true, alpha: true });
+    if (!gl) {
+      console.error('WebGL not supported');
+      return () => {};
+    }
+    glRef.current = gl;
+
+    const program = createProgram(gl, vertexShader, fragmentShader);
+    gl.useProgram(program);
+    programRef.current = program;
 
     if (transparent) {
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.clearColor(0, 0, 0, 0);
     } else {
+      gl.disable(gl.BLEND);
       gl.clearColor(0, 0, 0, 1);
     }
 
-    let program: Program;
+    const positionLocation = gl.getAttribLocation(program, 'position');
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    function resize() {
-      const scale = 1;
-      renderer.setSize(ctn.offsetWidth * scale, ctn.offsetHeight * scale);
-      if (program) {
-        program.uniforms.uResolution.value = new Color(
-          gl.canvas.width,
-          gl.canvas.height,
-          gl.canvas.width / gl.canvas.height
-        );
-      }
-    }
-    window.addEventListener('resize', resize, false);
-    resize();
-
-    const geometry = new Triangle(gl);
-    program = new Program(gl, {
-      vertex: vertexShader,
-      fragment: fragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uResolution: {
-          value: new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height)
-        },
-        uFocal: { value: new Float32Array(focal) },
-        uRotation: { value: new Float32Array(rotation) },
-        uStarSpeed: { value: starSpeed },
-        uDensity: { value: density },
-        uHueShift: { value: hueShift },
-        uSpeed: { value: speed },
-        uMouse: {
-          value: new Float32Array([smoothMousePos.current.x, smoothMousePos.current.y])
-        },
-        uGlowIntensity: { value: glowIntensity },
-        uSaturation: { value: saturation },
-        uMouseRepulsion: { value: mouseRepulsion },
-        uTwinkleIntensity: { value: twinkleIntensity },
-        uRotationSpeed: { value: rotationSpeed },
-        uRepulsionStrength: { value: repulsionStrength },
-        uMouseActiveFactor: { value: 0.0 },
-        uAutoCenterRepulsion: { value: autoCenterRepulsion },
-        uTransparent: { value: transparent }
-      }
+    (Object.keys(UNIFORM_META) as UniformName[]).forEach((name) => {
+      const location = gl.getUniformLocation(program, name);
+      uniformLocationsRef.current[name] = location;
     });
 
-    const mesh = new Mesh(gl, { geometry, program });
-    let animateId: number;
+    applyUniform('uFocal', toVec2(focal));
+    applyUniform('uRotation', toVec2(rotation));
+    applyUniform('uDensity', density);
+    floatTargetsRef.current.uDensity = density;
+    applyUniform('uHueShift', hueShift);
+    floatTargetsRef.current.uHueShift = hueShift;
+    applyUniform('uGlowIntensity', glowIntensity);
+    floatTargetsRef.current.uGlowIntensity = glowIntensity;
+    applyUniform('uSaturation', saturation);
+    floatTargetsRef.current.uSaturation = saturation;
+    applyUniform('uTwinkleIntensity', twinkleIntensity);
+    floatTargetsRef.current.uTwinkleIntensity = twinkleIntensity;
+    applyUniform('uRotationSpeed', rotationSpeed);
+    floatTargetsRef.current.uRotationSpeed = rotationSpeed;
+    applyUniform('uRepulsionStrength', repulsionStrength);
+    floatTargetsRef.current.uRepulsionStrength = repulsionStrength;
+    applyUniform('uAutoCenterRepulsion', autoCenterRepulsion);
+    floatTargetsRef.current.uAutoCenterRepulsion = autoCenterRepulsion;
+    const mouseRepelValue = mouseRepulsion ? 1 : 0;
+    applyUniform('uMouseRepulsion', mouseRepelValue);
+    floatTargetsRef.current.uMouseRepulsion = mouseRepelValue;
+    applyUniform('uSpeed', speed);
+    floatTargetsRef.current.uSpeed = speed;
+    applyUniform('uTransparent', transparent ? 1 : 0);
+    floatTargetsRef.current.uTransparent = transparent ? 1 : 0;
+    applyUniform('uMouse', [0.5, 0.5]);
+    applyUniform('uMouseActiveFactor', 0);
 
-    function update(t: number) {
-      animateId = requestAnimationFrame(update);
-      if (!disableAnimation) {
-        program.uniforms.uTime.value = t * 0.001;
-        program.uniforms.uStarSpeed.value = (t * 0.001 * starSpeed) / 10.0;
+    const drawScene = () => {
+      if (!glRef.current) return;
+      glRef.current.drawArrays(glRef.current.TRIANGLES, 0, 3);
+    };
+
+    const resize = () => {
+      if (!canvasRef.current || !glRef.current) return;
+      const rect = container.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.floor(rect.width * ratio));
+      const height = Math.max(1, Math.floor(rect.height * ratio));
+      canvas.width = width;
+      canvas.height = height;
+      gl.viewport(0, 0, width, height);
+      applyUniform('uResolution', buildResolution(width, height));
+      drawScene();
+    };
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
+    resize();
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!mouseInteractionRef.current || !canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / Math.max(rect.width, 1);
+      const y = 1 - (event.clientY - rect.top) / Math.max(rect.height, 1);
+      pointerTargetRef.current = [x, y];
+      pointerActiveTargetRef.current = 1;
+      if (!mouseInteractionRef.current) {
+        pointerActiveTargetRef.current = 0;
+      }
+    };
+
+    const handlePointerLeave = () => {
+      pointerTargetRef.current = [0.5, 0.5];
+      pointerActiveTargetRef.current = 0;
+    };
+
+    const handleWindowMouseMove = (event: MouseEvent) => {
+      if (!mouseInteractionRef.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = 1 - (event.clientY - rect.top) / rect.height;
+      pointerTargetRef.current = [x, y];
+      const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;
+      pointerActiveTargetRef.current = inside ? 1 : 0;
+    };
+
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerleave', handlePointerLeave);
+    window.addEventListener('mousemove', handleWindowMouseMove);
+
+    const loop = (timestamp: number) => {
+      animationRef.current = requestAnimationFrame(loop);
+      let delta = 0;
+      if (lastTimeRef.current) {
+        delta = (timestamp - lastTimeRef.current) / 1000;
+      }
+      lastTimeRef.current = timestamp;
+
+      if (!disableAnimationRef.current) {
+        logicalTimeRef.current += delta * speedRef.current;
       }
 
-      const lerpFactor = 0.05;
-      smoothMousePos.current.x += (targetMousePos.current.x - smoothMousePos.current.x) * lerpFactor;
-      smoothMousePos.current.y += (targetMousePos.current.y - smoothMousePos.current.y) * lerpFactor;
+      const currentTime = logicalTimeRef.current;
+      applyUniform('uTime', currentTime);
+      applyUniform('uStarSpeed', (currentTime * starSpeedRef.current) / 10);
 
-      smoothMouseActive.current += (targetMouseActive.current - smoothMouseActive.current) * lerpFactor;
+      const tau = 0.2;
+      const factor = delta > 0 ? 1 - Math.exp(-delta / tau) : 1;
+      const target = pointerTargetRef.current;
+      const current = pointerValueRef.current;
+      current[0] += (target[0] - current[0]) * factor;
+      current[1] += (target[1] - current[1]) * factor;
+      pointerValueRef.current = current;
+      applyUniform('uMouse', current);
 
-      program.uniforms.uMouse.value[0] = smoothMousePos.current.x;
-      program.uniforms.uMouse.value[1] = smoothMousePos.current.y;
-      program.uniforms.uMouseActiveFactor.value = smoothMouseActive.current;
+      pointerActiveRef.current +=
+        (pointerActiveTargetRef.current - pointerActiveRef.current) * factor;
+      applyUniform('uMouseActiveFactor', pointerActiveRef.current);
 
-      renderer.render({ scene: mesh });
-    }
-    animateId = requestAnimationFrame(update);
-    ctn.appendChild(gl.canvas);
+      FLOAT_SMOOTHED.forEach((name) => {
+        const target = floatTargetsRef.current[name];
+        if (typeof target !== 'number') return;
+        const current = (uniformValuesRef.current[name] as number) ?? target;
+        if (Math.abs(target - current) < 1e-4) {
+          if (uniformValuesRef.current[name] !== target) {
+            applyUniform(name, target);
+          }
+          return;
+        }
+        const blend = Math.min(1, (delta || 0) * 6);
+        const next = current + (target - current) * blend;
+        applyUniform(name, next);
+      });
 
-    function handleMouseMove(e: MouseEvent) {
-      const rect = ctn.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = 1.0 - (e.clientY - rect.top) / rect.height;
-      targetMousePos.current = { x, y };
-      targetMouseActive.current = 1.0;
-    }
+      drawScene();
+    };
 
-    function handleMouseLeave() {
-      targetMouseActive.current = 0.0;
-    }
-
-    if (mouseInteraction) {
-      window.addEventListener('mousemove', handleMouseMove);
-      ctn.addEventListener('mouseleave', handleMouseLeave);
-    }
+    animationRef.current = requestAnimationFrame(loop);
 
     return () => {
-      cancelAnimationFrame(animateId);
-      window.removeEventListener('resize', resize);
-      if (mouseInteraction) {
-        window.removeEventListener('mousemove', handleMouseMove);
-        ctn.removeEventListener('mouseleave', handleMouseLeave);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      resizeObserver.disconnect();
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerleave', handlePointerLeave);
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      if (canvas.parentElement === container) {
+        container.removeChild(canvas);
       }
-      ctn.removeChild(gl.canvas);
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      if (programRef.current && glRef.current) {
+        glRef.current.deleteProgram(programRef.current);
+      }
+      programRef.current = null;
+      glRef.current = null;
+      canvasRef.current = null;
+      uniformLocationsRef.current = {} as Record<UniformName, WebGLUniformLocation | null>;
+      uniformValuesRef.current = {} as Record<UniformName, UniformValue>;
     };
-  }, [
-    focal,
-    rotation,
-    starSpeed,
-    density,
-    hueShift,
-    disableAnimation,
-    speed,
-    mouseInteraction,
-    glowIntensity,
-    saturation,
-    mouseRepulsion,
-    twinkleIntensity,
-    rotationSpeed,
-    repulsionStrength,
-    autoCenterRepulsion,
-    transparent
-  ]);
+  }, [applyUniform, updateVec2Uniform]);
 
-  return <div ref={ctnDom}  {...rest} className={styles.wrapper} />;
+  return <div ref={containerRef}  {...rest} className={styles.wrapper} />;
 }
 
 
