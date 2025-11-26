@@ -54,12 +54,12 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   const disabled = !visible && !activeContentChild;
 
   const ref = useRef<HTMLDivElement>(null);
-  const timeline = useViewTimeline(ref, disabled);
+  const timeline = useViewTimeline(ref as React.RefObject<HTMLElement>, disabled);
   const size = useSize(ref);
   useSlideEditMode(hostRef, children, timeline);
 
   useViewAnimation(
-    ref,
+    ref as React.RefObject<HTMLElement>,
     // Use margin to make frame calculation in the editor correct when editing slides
     editorDisabled && activeContentChild
       ? {

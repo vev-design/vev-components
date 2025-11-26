@@ -8,14 +8,23 @@ type Props = {
   renderOnVisible: boolean;
   isStatic: boolean;
   allowScroll: boolean;
+  showOverflow: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
-function StaticHTML({ html, allowScroll }) {
+function StaticHTML({
+  html,
+  allowScroll,
+  showOverflow,
+}: {
+  html: string;
+  allowScroll: boolean;
+  showOverflow: boolean;
+}) {
   return (
     <div
       className="fill"
-      style={{ overflow: allowScroll ? 'auto' : 'hidden' }}
+      style={{ overflow: allowScroll ? 'auto' : showOverflow ? 'initial' : 'hidden' }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -27,6 +36,7 @@ function EmbedAnything({
   allowScroll = false,
   isStatic = false,
   renderOnVisible = false,
+  showOverflow = false,
   hostRef,
 }: Props) {
   const { disabled } = useEditorState();
@@ -43,8 +53,9 @@ function EmbedAnything({
     );
   }
 
-  if (encapsulate) return <EmbedIframe html={html} />;
-  if (isStatic) return <StaticHTML html={html} allowScroll={allowScroll} />;
+  if (encapsulate) return <EmbedIframe html={html} showOverflow={showOverflow} />;
+  if (isStatic)
+    return <StaticHTML html={html} allowScroll={allowScroll} showOverflow={showOverflow} />;
 
   return (
     <EmbedScript
@@ -52,11 +63,12 @@ function EmbedAnything({
       hostRef={hostRef}
       allowScroll={allowScroll}
       renderOnVisible={renderOnVisible}
+      showOverflow={showOverflow}
     />
   );
 }
 
-function EmbedIframe({ html }: { html: string }) {
+function EmbedIframe({ html, showOverflow }: { html: string; showOverflow: boolean }) {
   const { key: messageFrom } = useModel() || { key: 'none' };
   const iframeRef = useRef(null);
   const [iframeHeight, setIframeHeight] = useState('auto');
@@ -84,6 +96,7 @@ function EmbedIframe({ html }: { html: string }) {
   return (
     <iframe
       className={styles.wrapper}
+      data-show-overflow={showOverflow}
       ref={iframeRef}
       title="Auto-resizing iframe"
       srcDoc={`<!DOCTYPE html>
@@ -92,7 +105,7 @@ function EmbedIframe({ html }: { html: string }) {
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>html,body{margin:0;padding:0;height:auto;overflow:hidden;}</style>
+        <style>html,body{margin:0;padding:0;height:auto;${showOverflow ? '' : 'overflow:hidden;'}}</style>
       </head>
       <body>
        <script>
@@ -132,7 +145,8 @@ function EmbedScript({
   hostRef,
   allowScroll,
   renderOnVisible,
-}: Pick<Props, 'hostRef' | 'html' | 'allowScroll' | 'renderOnVisible'>) {
+  showOverflow,
+}: Pick<Props, 'hostRef' | 'html' | 'allowScroll' | 'renderOnVisible' | 'showOverflow'>) {
   const [loaded, setLoaded] = useState<boolean>(false);
   const visible = useVisible(hostRef);
 
@@ -176,7 +190,7 @@ function EmbedScript({
   return (
     <div
       className={styles.wrapper}
-      style={{ overflow: allowScroll ? 'auto' : 'hidden' }}
+      style={{ overflow: allowScroll ? 'auto' : showOverflow ? 'initial' : 'hidden' }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -232,6 +246,16 @@ registerVevComponent(EmbedAnything, {
       name: 'allowScroll',
       type: 'boolean',
       initialValue: false,
+    },
+    {
+      title: 'Show overflow',
+      name: 'showOverflow',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Show the overflow of the container',
+      hidden: (context) => {
+        return context.value.allowScroll;
+      },
     },
   ],
   editableCSS: [

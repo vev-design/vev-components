@@ -106,8 +106,10 @@ export const Slide = ({
 
   if (slides.length === 1) {
     return (
-      <div className={styles.slide}>
-        <WidgetNode id={slides[index]} />
+      <div className={styles.wrapper}>
+        <div className={styles.slide}>
+          <WidgetNode id={slides[index]} />
+        </div>
       </div>
     );
   }
@@ -134,9 +136,10 @@ export const Slide = ({
         }}
       >
         {currentSlides?.map((child: string, i: number) => {
+          const isActive = centerSlideIndex === i;
           return (
             <div
-              className={styles.slide}
+              className={[styles.slide, !isActive && styles.notActive].filter(Boolean).join(' ')}
               key={checkIfKeyIsDuplicatedInArray(currentSlides, child) ? `${child}${i}` : child}
               style={{
                 transform: `translate${moveDirection}(${100 * i}%)`,

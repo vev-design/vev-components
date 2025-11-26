@@ -1,15 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent } from '@vev/react';
-import { Events, Interactions } from './events';
-import { PlayIcon } from './icon/PlayIcon';
-import { Button } from './button/Button';
+import React, {useEffect, useRef, useState} from 'react';
+import {registerVevComponent, useDispatchVevEvent, useEditorState, useVevEvent} from '@vev/react';
+import {Events, Interactions} from './events';
 import styles from './HTML5Audio.module.css';
-import iconStyles from './icon/Icon.module.css';
-import buttonStyles from './button/Button.module.css';
-import timelineStyles from './timeline/Timeline.module.css';
-import { PauseIcon } from './icon/PauseIcon';
-import { Timeline } from './timeline/Timeline';
-import { Timestamp } from './timestamp/Timestamp';
 
 type Audio = {
   name: string;
@@ -26,23 +18,19 @@ type Props = {
     autoplay: boolean;
     loop: boolean;
   };
-  design: {
-    type: 'native' | 'custom';
-  };
 };
 
 const HTML5Audio = (props: Props) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { audioUrl, audioUrlLink, settings } = props;
+  const {audioUrl, audioUrlLink, settings} = props;
   const showControls = settings?.showControls || true;
   const loop = settings?.loop || false;
   const autoplay = settings?.autoplay || false;
-  const { disabled } = useEditorState();
+  const {disabled} = useEditorState();
   const shouldAutoPlay = !disabled && autoplay;
   const actualUrl = audioUrlLink ? audioUrlLink : audioUrl ? audioUrl.url : '';
   const dispatch = useDispatchVevEvent();
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  const type = props.design?.type || 'native';
 
   const [playerState, setPlayerState] = useState({
     playing: autoplay,
@@ -143,54 +131,19 @@ const HTML5Audio = (props: Props) => {
     }
   }, [dispatch]);
 
-  if (type === 'native') {
-    return (
-      <div className={styles.wrapper} key={`autoplay-${shouldAutoPlay}`}>
-        <audio
-          ref={audioRef}
-          autoPlay={shouldAutoPlay}
-          preload="none"
-          controls={showControls}
-          style={{ width: '100%', height: '100%' }}
-          loop={loop}
-          src={actualUrl as string}
-        >
-          Your browser does not support the audio element.
-        </audio>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.wrapper} key={`autoplay-${shouldAutoPlay}`}>
       <audio
         ref={audioRef}
         autoPlay={shouldAutoPlay}
-        preload="metadata"
+        preload="none"
         controls={showControls}
-        style={{ display: 'none' }}
+        style={{width: '100%', height: '100%'}}
         loop={loop}
         src={actualUrl as string}
       >
         Your browser does not support the audio element.
       </audio>
-      <div className={styles.customWrapper}>
-        <Button
-          onClick={() => {
-            if (playerState.playing) {
-              audioRef.current.pause();
-              setPlayerState({ ...playerState, playing: false });
-            } else {
-              audioRef.current.play();
-              setPlayerState({ ...playerState, playing: true });
-            }
-          }}
-        >
-          {playerState.playing ? <PauseIcon /> : <PlayIcon />}
-        </Button>
-        <Timeline audioElement={audioRef.current} />
-        <Timestamp audioElement={audioRef.current} />
-      </div>
     </div>
   );
 };
@@ -199,28 +152,6 @@ registerVevComponent(HTML5Audio, {
   name: 'HTML5 Audio',
   description:
     'Embed a HTML5 audio player directly to your canvas.\n\n[Read documentation](https://help.vev.design/design/elements/audio-widgets?ref=addmenu)',
-  editableCSS: [
-    {
-      title: 'Icon color',
-      selector: iconStyles.icon,
-      properties: ['color'],
-    },
-    {
-      title: 'Play button color',
-      selector: buttonStyles.button,
-      properties: ['background'],
-    },
-    {
-      title: 'Progress bar',
-      selector: timelineStyles.barProgress,
-      properties: ['background'],
-    },
-    {
-      title: 'Progress bar background',
-      selector: timelineStyles.bar,
-      properties: ['background'],
-    },
-  ],
   props: [
     {
       name: 'audioUrlLink',
@@ -232,32 +163,12 @@ registerVevComponent(HTML5Audio, {
     },
     {
       name: 'audioUrl',
-      title: 'Audio file upload',
+      title: 'Audio file',
       accept: 'audio/*',
-      type: 'upload',
-      maxSize: 75000,
+      type: 'audio',
       hidden: (context) => {
         return !!context.value.audioUrlLink;
       },
-    },
-    {
-      name: 'design',
-      title: 'Design',
-      type: 'object',
-      fields: [
-        {
-          name: 'type',
-          type: 'select',
-          initialValue: 'native',
-          options: {
-            display: 'dropdown',
-            items: [
-              { label: 'Native', value: 'native' },
-              { label: 'Custom', value: 'custom' },
-            ],
-          },
-        },
-      ],
     },
     {
       name: 'settings',
@@ -280,20 +191,20 @@ registerVevComponent(HTML5Audio, {
           type: 'boolean',
           initialValue: false,
         },
-        { name: 'loop', title: 'Loop', type: 'boolean', initialValue: false },
+        {name: 'loop', title: 'Loop', type: 'boolean', initialValue: false},
       ],
     },
   ],
   events: [
-    { type: Events.PLAY, description: 'On play' },
-    { type: Events.PAUSE, description: 'On pause' },
-    { type: Events.COMPLETE, description: 'On end' },
-    { type: Events.CURRENT_TIME, description: 'On current time update' },
+    {type: Events.PLAY, description: 'On play'},
+    {type: Events.PAUSE, description: 'On pause'},
+    {type: Events.COMPLETE, description: 'On end'},
+    {type: Events.CURRENT_TIME, description: 'On current time update'},
   ],
   interactions: [
-    { type: Interactions.PLAY, description: 'Play' },
-    { type: Interactions.PAUSE, description: 'Pause' },
-    { type: Interactions.TOGGLE, description: 'Toggle play' },
+    {type: Interactions.PLAY, description: 'Play'},
+    {type: Interactions.PAUSE, description: 'Pause'},
+    {type: Interactions.TOGGLE, description: 'Toggle play'},
     {
       type: Interactions.FADE_OUT,
       description: 'Fade out',
