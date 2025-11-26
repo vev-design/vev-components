@@ -1,11 +1,4 @@
-import {
-  registerVevComponent,
-  useEditorState,
-  useGlobalState,
-  useGlobalStore,
-  useVisible,
-  useModels,
-} from '@vev/react';
+import { registerVevComponent, useEditorState, useSize, useVisible } from '@vev/react';
 import React, { useEffect, useRef } from 'react';
 import { useViewAnimation, useViewTimeline } from '../../hooks';
 import styles from './ScrollingSlide.module.css';
@@ -56,23 +49,25 @@ function isSafariBrowser() {
 const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   if (!type) type = 'scroll';
 
-  const { activeContentChild } = useEditorState();
+  const { activeContentChild, disabled: editorDisabled } = useEditorState();
   const visible = useVisible(hostRef);
   const disabled = !visible && !activeContentChild;
-  // const models = useModels();
-  // const durations = children?.map((key) => models?.[key]?.content?.duration || 100);
-  // const totalDuration = durations.reduce((p, v) => p + v, 0);
-  // const normalizedDurations = durations.map((d) => d / totalDuration);
 
   const ref = useRef<HTMLDivElement>(null);
   const timeline = useViewTimeline(ref, disabled);
+  const size = useSize(ref);
+  useSlideEditMode(hostRef, children, timeline);
 
   useViewAnimation(
     ref,
-    {
-      // marginLeft: ['0', `${-100 + 100 / children.length}px`],
-      translate: ['0 0', `${-100 + 100 / children.length}% 0`],
-    },
+    // Use margin to make frame calculation in the editor correct when editing slides
+    editorDisabled && activeContentChild
+      ? {
+          marginLeft: ['0', `${(-1 + 1 / children.length) * size.width}px`],
+        }
+      : {
+          translate: ['0 0', `${-100 + 100 / children.length}% 0`],
+        },
     timeline,
     type !== 'scroll' || disabled,
     {
@@ -93,39 +88,40 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
     }
   }, []);
 
-  useSlideEditMode(hostRef, children, timeline);
-
   const layout = SLIDE_LAYOUT[type] || 'row';
   let cl = `${styles.wrapper} ${styles[layout]}`;
   if (type === 'scroll' && settings?.reverse) cl += ' ' + styles.reverse;
 
   const Comp = SLIDE_COMPONENT[type] || BaseSlide;
+
   return (
-    <div
-      ref={ref}
-      className={cl}
-      style={
-        {
-          '--slide-count': children.length,
-        } as any
-      }
-    >
-      {type === 'scroll' && isSafariBrowser() && (
-        <style>{`.${styles.content} > vev > .__wc vev{will-change:transform;}`}</style>
-      )}
-      {children.map((childKey, index) => (
-        <Comp
-          key={childKey}
-          id={childKey}
-          index={index}
-          slideCount={children.length}
-          timeline={timeline}
-          settings={settings}
-          selected={false}
-          transitionOut={settings?.transitionOut}
-        />
-      ))}
-    </div>
+    <>
+      <div
+        ref={ref}
+        className={cl}
+        style={
+          {
+            '--slide-count': children.length,
+          } as any
+        }
+      >
+        {type === 'scroll' && isSafariBrowser() && (
+          <style>{`.${styles.content} > vev > .__wc vev{will-change:transform;}`}</style>
+        )}
+        {children.map((childKey, index) => (
+          <Comp
+            key={childKey}
+            id={childKey}
+            index={index}
+            slideCount={children.length}
+            timeline={timeline}
+            settings={settings}
+            selected={false}
+            transitionOut={settings?.transitionOut}
+          />
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -452,13 +448,6 @@ registerVevComponent(ScrollingSlide, {
   ],
   children: {
     name: 'Block',
-    props: [
-      {
-        type: 'number',
-        name: 'duration',
-        initialValue: 1000,
-      },
-    ],
   },
   editableCSS: [
     {

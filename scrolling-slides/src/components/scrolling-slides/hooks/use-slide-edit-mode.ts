@@ -1,140 +1,151 @@
 import { useEditorState } from '@vev/react';
-import { MutableRefObject, RefObject, useLayoutEffect, useRef } from 'react';
+import { RefObject, useLayoutEffect, useRef } from 'react';
 
-const SNAP_TIME = 250;
-const SCROLL_TIMEOUT = 300;
+const SNAP_DELAY = 250;
+const SCROLL_DEBOUNCE = 300;
+const SCROLL_UNLOCK_DELAY = 200;
 
-const getScrollProgress = (scrollAnimationStartPos: number, scrollAnimationEndPos: number) => {
-  const scrollPositionInside = window.scrollY - scrollAnimationStartPos;
-  const distance = scrollAnimationEndPos - scrollAnimationStartPos;
-  const clampedScroll = Math.max(0, Math.min(distance, scrollPositionInside));
-  return clampedScroll / distance;
-};
+export function useSlideEditMode(
+  hostRef: RefObject<HTMLDivElement>,
+  children: string[],
+  timeline?: ViewTimeline
+): void {
+  const {
+    disabled,
+    activeContentChild,
+    onRequestActiveContentChange,
+    onRequestScrollTop,
+  } = useEditorState();
 
-/**
- * Determines the preferred slide index based on scroll position and direction.
- * - Calculates how far the element has been scrolled relative to its total scrollable distance.
- * - Uses scroll direction to round the index up or down.
- * - Clamps the index to valid range.
- */
-const getPreferredSlideIndex = (scrollProgress: number, children: string[], dir: 1 | -1 | 0) => {
-  console.log('Preffered scroll index ', scrollProgress, children.length, dir);
-  // Depending on scroll direction, round index up or down
-  const roundFn = dir === 1 ? Math.ceil : dir === -1 ? Math.floor : Math.round;
-  const roundedIndex = roundFn(scrollProgress * children.length);
+  const lastScrollY = useRef<number>(window.scrollY);
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<number>();
 
-  // Clamp the index to the last slide
-  const maxIndex = children.length - 1;
-  return Math.min(maxIndex, roundedIndex);
-};
-
-export function useSlideEditMode(hostRef: RefObject<HTMLDivElement>, children: string[], timeline?:ViewTimeline): void {
-  const { disabled, activeContentChild, onRequestActiveContentChange, onRequestScrollTop } =
-    useEditorState();
-
-  const prevScrollTop = useRef<number>(window.scrollY);
-  const scrollDir = useRef<1 | -1 | 0>(1);
-
-  const requestSlideChange = useRef<(slideKey: string) => void>();
-  requestSlideChange.current = onRequestActiveContentChange;
-  const requestScrollTop = useRef<(scrollTop: number, duration: number, onEnd?: () => void) => void>();
-  requestScrollTop.current = onRequestScrollTop;
-
-  const prevEditorState = useRef<{ disabled: boolean; activeContentChild: string }>({
-    disabled: false,
-    activeContentChild: '',
+  // Store callbacks in a ref to avoid effect dependencies
+  const callbacksRef = useRef({
+    onRequestActiveContentChange,
+    onRequestScrollTop,
   });
+  callbacksRef.current = { onRequestActiveContentChange, onRequestScrollTop };
+
+  // Track the previous state to handle external vs internal updates
+  const prevStateRef = useRef({ disabled, activeContentChild });
 
   useLayoutEffect(() => {
-    const el = hostRef.current;
-    
-    if (timeline && el && activeContentChild && disabled) {
-      const ogHeight = el.clientHeight;
-      // No need to pin position if content is smaller than viewport
-      const { top } = el.getBoundingClientRect();
+    const element = hostRef.current;
 
-      const originalOffsetTop = top + window.scrollY;
-      const winHeight = window.innerHeight;
-      const scrollAnimationStartPos =
-        ogHeight < winHeight ? originalOffsetTop - (winHeight - ogHeight) : originalOffsetTop;
-      const scrollAnimationEndPos =
-        ogHeight < winHeight ? originalOffsetTop : originalOffsetTop + ogHeight - winHeight;
-      let scrollTimeout: any;
-      let disableScroll = false;
-
-      const getProgress = () => {
-        const currentTime = timeline?.currentTime;
-        if (!currentTime) return 0;
-        const value = typeof currentTime === 'number' ? currentTime : (currentTime as any).value;
-        return (value || 0) / 100;
-      };
-
-      const getIndex = () => {
-        const progress = getProgress();
-        //const dir = scrollDir.current || 0;
-        //const roundFn = dir === 1 ? Math.ceil : dir === -1 ? Math.floor : Math.round;
-        
-        const childLenght = children.length + 2;
-        const indexWithPading = Math.round(progress * childLenght - 1.5);
-        const index = Math.max(0, Math.min((children.length- 1), indexWithPading));
-        return index;
-      }
-      const handleScrollFinished = () => {
-        setTimeout(() => (disableScroll = false), 200);
-        clearTimeout(scrollTimeout);
-      };
-
-      const scrollToPreferred = (
-        index: number = getIndex()
-      ) => {
-        changeToSlide(index);
-        clearTimeout(scrollTimeout);
-        
-
-        const distance = scrollAnimationEndPos - scrollAnimationStartPos;
-        const scrollPos = scrollAnimationStartPos + (index * distance) / (children.length - 1);
-
-        disableScroll = true;
-        requestScrollTop.current?.(scrollPos, SNAP_TIME, handleScrollFinished);
-      };
-
-      const changeToSlide = (index: number) => {
-        const slideKey = children[index];
-        prevEditorState.current.activeContentChild = slideKey;
-        requestSlideChange.current?.(slideKey);
-      }
-
-      // When going into edit mode, scroll to the active content
-      if (!prevEditorState.current.activeContentChild) {
-        scrollToPreferred();
-      } else if (prevEditorState.current.activeContentChild !== activeContentChild) {
-        scrollToPreferred(children.indexOf(activeContentChild));
-      }
-
-      prevEditorState.current = { disabled, activeContentChild };
-
-      const update = () => {
-        const newScrollTop = window.scrollY;
-        const diff = newScrollTop - prevScrollTop.current;
-        if(!diff) return;
-
-        scrollDir.current = Math.sign(diff) as 1 | -1;
-        prevScrollTop.current = newScrollTop;
-        if (disableScroll) return;
-        changeToSlide(getIndex());
-
-        clearTimeout(scrollTimeout);
-       scrollTimeout = setTimeout(() => scrollToPreferred(), SCROLL_TIMEOUT);
-      };
-      window.addEventListener('scroll', update);
-
-      return () => {
-        clearTimeout(scrollTimeout);
-        window.removeEventListener('scroll', update);
-      };
-    } else {
-      scrollDir.current = 0;
-      prevEditorState.current = { disabled, activeContentChild };
+    // Only run if we have all requirements and the editor is in the correct state
+    if (!timeline || !element || !activeContentChild || !disabled) {
+      prevStateRef.current = { disabled, activeContentChild };
+      return;
     }
-  }, [activeContentChild, disabled, children, timeline]);
+
+    const { clientHeight: hostHeight } = element;
+    const { top: hostTop } = element.getBoundingClientRect();
+    const absoluteTop = hostTop + window.scrollY;
+    const windowHeight = window.innerHeight;
+
+    // Calculate scroll boundaries
+    // If the content is smaller than the viewport, we adjust the start position
+    const isSmallerThanViewport = hostHeight < windowHeight;
+    const scrollStart = isSmallerThanViewport
+      ? absoluteTop - (windowHeight - hostHeight)
+      : absoluteTop;
+
+    const scrollEnd = isSmallerThanViewport
+      ? absoluteTop
+      : absoluteTop + hostHeight - windowHeight;
+
+    const scrollRange = scrollEnd - scrollStart;
+
+    const getTimelineProgress = () => {
+      const currentTime = timeline.currentTime;
+      if (!currentTime) return 0;
+      // Handle CSSNumericValue which might be returned by timeline.currentTime
+      const value =
+        typeof currentTime === 'number'
+          ? currentTime
+          : (currentTime as any).value;
+      return (value || 0) / 100;
+    };
+
+    const getSlideIndexFromProgress = () => {
+      const progress = getTimelineProgress();
+      // Map progress (0-1) to child index with some padding at start/end
+      const paddedLength = children.length + 2;
+      const rawIndex = Math.round(progress * paddedLength - 1.5);
+      return Math.max(0, Math.min(children.length - 1, rawIndex));
+    };
+
+    const changeSlide = (index: number) => {
+      const slideKey = children[index];
+      // Update local ref so we know this change originated from here
+      prevStateRef.current.activeContentChild = slideKey;
+      callbacksRef.current.onRequestActiveContentChange?.(slideKey);
+    };
+
+    const onScrollAnimationFinished = () => {
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, SCROLL_UNLOCK_DELAY);
+    };
+
+    const scrollToSlide = (index: number = getSlideIndexFromProgress()) => {
+      changeSlide(index);
+      
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+
+      const targetScrollY =
+        scrollStart + (index * scrollRange) / (children.length - 1);
+
+      isScrollingRef.current = true;
+      callbacksRef.current.onRequestScrollTop?.(
+        targetScrollY,
+        SNAP_DELAY,
+        onScrollAnimationFinished
+      );
+    };
+
+    // Handle initial sync or external updates
+    const prevActiveChild = prevStateRef.current.activeContentChild;
+    
+    if (!prevActiveChild) {
+      // Initial mount: snap to the preferred slide based on current scroll
+      scrollToSlide();
+    } else if (prevActiveChild !== activeContentChild) {
+      // External update: scroll to the new active child
+      const index = children.indexOf(activeContentChild);
+      if (index !== -1) {
+        scrollToSlide(index);
+      }
+    }
+
+    // Update ref to current props after handling sync
+    prevStateRef.current = { disabled, activeContentChild };
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - lastScrollY.current;
+
+      if (delta === 0) return;
+      lastScrollY.current = currentScrollY;
+
+      if (isScrollingRef.current) return;
+
+      // Update active slide as we scroll
+      changeSlide(getSlideIndexFromProgress());
+
+      // Debounce snapping to the nearest slide
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        scrollToSlide(getSlideIndexFromProgress());
+      }, SCROLL_DEBOUNCE);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, [activeContentChild, disabled, children, timeline, hostRef]);
 }

@@ -32,6 +32,12 @@
     display: flex;
     flex-direction: row;
     overflow: clip;
+    /* This is to allow auto height of vev container*/
+    height:calc(100vh  * var(--slide-count));
+    /** If not auto height this will clamp it to be max 100% of container */
+    max-height:100%;
+    /** If not auto height this will clamp it to be min 100% of container and 100px if auto height and no slides */
+    min-height:max(100%,100px);
 }
 
 @supports not (overflow: clip) {
