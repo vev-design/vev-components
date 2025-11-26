@@ -96,7 +96,13 @@ export const Zoom = ({
         // If only two slides, and index to prevent duplicate keys
         return (
           <div
-            className={[styles.slide, i === move && styles.active, !isActive && styles.notActive].join(' ')}
+            className={[
+              styles.slide,
+              i === move && styles.active,
+              !isActive && styles.notActive,
+            ]
+              .filter(Boolean)
+              .join(' ')}
             key={child}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
