@@ -105,6 +105,7 @@ export const Carousel3d = ({
             ? `1 0 0 ${angle * (editMode ? selectSlide : percentage)}rad`
             : `0 1 0 ${angle * (editMode ? selectSlide : percentage)}rad`,
           transformOrigin: `center center -${circleRadius}px`,
+          transformStyle: 'preserve-3d',
           width,
           height,
         }}
