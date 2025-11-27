@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styles from "../css/prismatic-burst.css";
+import styles from "../css/prismatic-burst.module.css";
 import { registerVevComponent } from "@vev/react";
+import { Renderer, Program, Mesh, Triangle, Texture } from 'ogl';
 import { SilkeBox, SilkeColorPickerButton, SilkeText } from '@vev/silke';
 
 type Offset = { x?: number | string; y?: number | string };
@@ -217,78 +218,6 @@ const toPx = (v: number | string | undefined): number => {
   return isNaN(num) ? 0 : num;
 };
 
-const TRIANGLE_VERTICES = new Float32Array([
-  -1, -1, 0, 0,
-  3, -1, 2, 0,
-  -1, 3, 0, 2,
-]);
-
-function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.warn('[PrismaticBurst] Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-function createProgram(gl: WebGL2RenderingContext, vertexSource: string, fragmentSource: string) {
-  const vertex = createShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  if (!vertex || !fragment) return null;
-
-  const program = gl.createProgram();
-  if (!program) return null;
-
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  gl.deleteShader(vertex);
-  gl.deleteShader(fragment);
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.warn('[PrismaticBurst] Program link error:', gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
-    return null;
-  }
-  return program;
-}
-
-type UniformLocations = {
-  uResolution: WebGLUniformLocation | null;
-  uTime: WebGLUniformLocation | null;
-  uIntensity: WebGLUniformLocation | null;
-  uSpeed: WebGLUniformLocation | null;
-  uAnimType: WebGLUniformLocation | null;
-  uMouse: WebGLUniformLocation | null;
-  uColorCount: WebGLUniformLocation | null;
-  uDistort: WebGLUniformLocation | null;
-  uOffset: WebGLUniformLocation | null;
-  uGradient: WebGLUniformLocation | null;
-  uNoiseAmount: WebGLUniformLocation | null;
-  uRayCount: WebGLUniformLocation | null;
-};
-
-type GLState = {
-  gl: WebGL2RenderingContext;
-  program: WebGLProgram;
-  vao: WebGLVertexArrayObject;
-  buffer: WebGLBuffer;
-  canvas: HTMLCanvasElement;
-  uniforms: UniformLocations;
-  gradientTexture: WebGLTexture;
-  resizeObserver: ResizeObserver | null;
-  animationFrame: number;
-  pointerTarget: [number, number];
-  pointerSmooth: [number, number];
-  accumTime: number;
-  lastTime: number;
-};
-
 const PrismaticBurst = ({
   intensity = 2,
   speed = 0.5,
@@ -302,14 +231,20 @@ const PrismaticBurst = ({
   mixBlendMode = 'lighten'
 }: PrismaticBurstProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const glStateRef = useRef<GLState | null>(null);
-  const pausedRef = useRef(paused);
-  const hoverDampRef = useRef(hoverDampness);
+  const programRef = useRef<Program | null>(null);
+  const rendererRef = useRef<Renderer | null>(null);
+  const mouseTargetRef = useRef<[number, number]>([0.5, 0.5]);
+  const mouseSmoothRef = useRef<[number, number]>([0.5, 0.5]);
+  const pausedRef = useRef<boolean>(paused);
+  const gradTexRef = useRef<Texture | null>(null);
+  const hoverDampRef = useRef<number>(hoverDampness);
+  const isVisibleRef = useRef<boolean>(true);
+  const meshRef = useRef<Mesh | null>(null);
+  const triRef = useRef<Triangle | null>(null);
 
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
-
   useEffect(() => {
     hoverDampRef.current = hoverDampness;
   }, [hoverDampness]);
@@ -318,242 +253,185 @@ const PrismaticBurst = ({
     const container = containerRef.current;
     if (!container) return;
 
-    const canvas = document.createElement('canvas');
-    canvas.className = styles.canvas;
-    canvas.style.mixBlendMode = mixBlendMode && mixBlendMode !== 'none' ? mixBlendMode : '';
-    container.appendChild(canvas);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const renderer = new Renderer({ dpr, alpha: false, antialias: false });
+    rendererRef.current = renderer;
 
-    const gl = canvas.getContext('webgl2', {
-      alpha: false,
-      antialias: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'high-performance',
+    const gl = renderer.gl;
+    gl.canvas.style.position = 'absolute';
+    gl.canvas.style.inset = '0';
+    gl.canvas.style.width = '100%';
+    gl.canvas.style.height = '100%';
+    gl.canvas.style.mixBlendMode = mixBlendMode && mixBlendMode !== 'none' ? mixBlendMode : '';
+    container.appendChild(gl.canvas);
+
+    const white = new Uint8Array([255, 255, 255, 255]);
+    const gradientTex = new Texture(gl, {
+      image: white,
+      width: 1,
+      height: 1,
+      generateMipmaps: false,
+      flipY: false
     });
-    if (!gl) {
-      console.warn('[PrismaticBurst] WebGL2 not supported');
-      container.removeChild(canvas);
-      return;
-    }
 
-    const program = createProgram(gl, vertexShader, fragmentShader);
-    if (!program) {
-      container.removeChild(canvas);
-      return;
-    }
+    gradientTex.minFilter = gl.LINEAR;
+    gradientTex.magFilter = gl.LINEAR;
+    gradientTex.wrapS = gl.CLAMP_TO_EDGE;
+    gradientTex.wrapT = gl.CLAMP_TO_EDGE;
+    gradTexRef.current = gradientTex;
 
-    const buffer = gl.createBuffer();
-    const vao = gl.createVertexArray();
-    if (!buffer || !vao) {
-      console.warn('[PrismaticBurst] Failed to create buffer/VAO');
-      if (buffer) gl.deleteBuffer(buffer);
-      gl.deleteProgram(program);
-      container.removeChild(canvas);
-      return;
-    }
+    const program = new Program(gl, {
+      vertex: vertexShader,
+      fragment: fragmentShader,
+      uniforms: {
+        uResolution: { value: [1, 1] as [number, number] },
+        uTime: { value: 0 },
 
-    gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, TRIANGLE_VERTICES, gl.STATIC_DRAW);
+        uIntensity: { value: 1 },
+        uSpeed: { value: 1 },
+        uAnimType: { value: 0 },
+        uMouse: { value: [0.5, 0.5] as [number, number] },
+        uColorCount: { value: 0 },
+        uDistort: { value: 0 },
+        uOffset: { value: [0, 0] as [number, number] },
+        uGradient: { value: gradientTex },
+        uNoiseAmount: { value: 0.8 },
+        uRayCount: { value: 0 }
+      }
+    });
 
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    const stride = 4 * Float32Array.BYTES_PER_ELEMENT;
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, stride, 0);
-    gl.enableVertexAttribArray(uvLocation);
-    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
-    gl.bindVertexArray(null);
+    programRef.current = program;
 
-    const uniforms: UniformLocations = {
-      uResolution: gl.getUniformLocation(program, 'uResolution'),
-      uTime: gl.getUniformLocation(program, 'uTime'),
-      uIntensity: gl.getUniformLocation(program, 'uIntensity'),
-      uSpeed: gl.getUniformLocation(program, 'uSpeed'),
-      uAnimType: gl.getUniformLocation(program, 'uAnimType'),
-      uMouse: gl.getUniformLocation(program, 'uMouse'),
-      uColorCount: gl.getUniformLocation(program, 'uColorCount'),
-      uDistort: gl.getUniformLocation(program, 'uDistort'),
-      uOffset: gl.getUniformLocation(program, 'uOffset'),
-      uGradient: gl.getUniformLocation(program, 'uGradient'),
-      uNoiseAmount: gl.getUniformLocation(program, 'uNoiseAmount'),
-      uRayCount: gl.getUniformLocation(program, 'uRayCount'),
-    };
-
-    const gradientTexture = gl.createTexture();
-    if (!gradientTexture) {
-      console.warn('[PrismaticBurst] Failed to create texture');
-      gl.deleteBuffer(buffer);
-      gl.deleteVertexArray(vao);
-      gl.deleteProgram(program);
-      container.removeChild(canvas);
-      return;
-    }
-
-    gl.useProgram(program);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, gradientTexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
-    if (uniforms.uGradient) gl.uniform1i(uniforms.uGradient, 0);
-    if (uniforms.uNoiseAmount) gl.uniform1f(uniforms.uNoiseAmount, 0.8);
+    const triangle = new Triangle(gl);
+    const mesh = new Mesh(gl, { geometry: triangle, program });
+    triRef.current = triangle;
+    meshRef.current = mesh;
 
     const resize = () => {
-      const rect = container.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = Math.max(1, Math.floor(rect.width * dpr));
-      const height = Math.max(1, Math.floor(rect.height * dpr));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-      }
-      gl.viewport(0, 0, width, height);
-      if (uniforms.uResolution) gl.uniform2f(uniforms.uResolution, width, height);
+      const w = container.clientWidth || 1;
+      const h = container.clientHeight || 1;
+      renderer.setSize(w, h);
+      program.uniforms.uResolution.value = [gl.drawingBufferWidth, gl.drawingBufferHeight];
     };
 
-    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
-    resizeObserver?.observe(container);
-    window.addEventListener('resize', resize);
+    let ro: ResizeObserver | null = null;
+    if ('ResizeObserver' in window) {
+      ro = new ResizeObserver(resize);
+      ro.observe(container);
+    } else {
+      (window as Window).addEventListener('resize', resize);
+    }
     resize();
 
-    const pointerTarget: [number, number] = [0.5, 0.5];
-    const pointerSmooth: [number, number] = [0.5, 0.5];
-    let isVisible = true;
-
-    const handlePointerMove = (e: PointerEvent) => {
+    const onPointer = (e: PointerEvent) => {
       const rect = container.getBoundingClientRect();
       const x = (e.clientX - rect.left) / Math.max(rect.width, 1);
       const y = (e.clientY - rect.top) / Math.max(rect.height, 1);
-      pointerTarget[0] = Math.min(Math.max(x, 0), 1);
-      pointerTarget[1] = Math.min(Math.max(y, 0), 1);
+      mouseTargetRef.current = [Math.min(Math.max(x, 0), 1), Math.min(Math.max(y, 0), 1)];
     };
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointermove', onPointer, { passive: true });
 
-    let intersectionObserver: IntersectionObserver | null = null;
+    let io: IntersectionObserver | null = null;
     if ('IntersectionObserver' in window) {
-      intersectionObserver = new IntersectionObserver(
-        (entries) => {
-          if (entries[0]) {
-            isVisible = entries[0].isIntersecting;
-          }
+      io = new IntersectionObserver(
+        entries => {
+          if (entries[0]) isVisibleRef.current = entries[0].isIntersecting;
         },
         { root: null, threshold: 0.01 }
       );
-      intersectionObserver.observe(container);
+      io.observe(container);
     }
+    const onVis = () => {};
+    document.addEventListener('visibilitychange', onVis);
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        isVisible = false;
-      } else {
-        isVisible = true;
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    let lastTime = performance.now();
+    let raf = 0;
+    let last = performance.now();
     let accumTime = 0;
-    let state: GLState;
 
-    const render = (now: number) => {
-      const dt = Math.max(0, now - lastTime) * 0.001;
-      lastTime = now;
-      if (!pausedRef.current) {
-        accumTime += dt;
+    const update = (now: number) => {
+      const dt = Math.max(0, now - last) * 0.001;
+      last = now;
+      const visible = isVisibleRef.current && !document.hidden;
+      if (!pausedRef.current) accumTime += dt;
+      if (!visible) {
+        raf = requestAnimationFrame(update);
+        return;
       }
-
-      if (isVisible) {
-        const tau = 0.02 + Math.max(0, Math.min(1, hoverDampRef.current)) * 0.5;
-        const alpha = 1 - Math.exp(-dt / tau);
-        pointerSmooth[0] += (pointerTarget[0] - pointerSmooth[0]) * alpha;
-        pointerSmooth[1] += (pointerTarget[1] - pointerSmooth[1]) * alpha;
-
-        gl.useProgram(program);
-        gl.bindVertexArray(vao);
-        if (uniforms.uMouse) gl.uniform2f(uniforms.uMouse, pointerSmooth[0], pointerSmooth[1]);
-        if (uniforms.uTime) gl.uniform1f(uniforms.uTime, accumTime);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        gl.bindVertexArray(null);
-      }
-
-      state.animationFrame = requestAnimationFrame(render);
+      const tau = 0.02 + Math.max(0, Math.min(1, hoverDampRef.current)) * 0.5;
+      const alpha = 1 - Math.exp(-dt / tau);
+      const tgt = mouseTargetRef.current;
+      const sm = mouseSmoothRef.current;
+      sm[0] += (tgt[0] - sm[0]) * alpha;
+      sm[1] += (tgt[1] - sm[1]) * alpha;
+      program.uniforms.uMouse.value = sm as any;
+      program.uniforms.uTime.value = accumTime;
+      renderer.render({ scene: meshRef.current! });
+      raf = requestAnimationFrame(update);
     };
-
-    state = {
-      gl,
-      program,
-      vao,
-      buffer,
-      canvas,
-      uniforms,
-      gradientTexture,
-      resizeObserver,
-      animationFrame: 0,
-      pointerTarget,
-      pointerSmooth,
-      accumTime,
-      lastTime,
-    };
-
-    state.animationFrame = requestAnimationFrame(render);
-    glStateRef.current = state;
+    raf = requestAnimationFrame(update);
 
     return () => {
-      cancelAnimationFrame(state.animationFrame);
-      window.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      intersectionObserver?.disconnect();
-      state.resizeObserver?.disconnect();
-      window.removeEventListener('resize', resize);
-      gl.deleteTexture(state.gradientTexture);
-      gl.deleteBuffer(state.buffer);
-      gl.deleteVertexArray(state.vao);
-      gl.deleteProgram(state.program);
-      if (container.contains(canvas)) {
-        container.removeChild(canvas);
+      cancelAnimationFrame(raf);
+      window.removeEventListener('pointermove', onPointer);
+      ro?.disconnect();
+      if (!ro) window.removeEventListener('resize', resize);
+      io?.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+      try {
+        container.removeChild(gl.canvas);
+      } catch (e) {
+        void e;
       }
-      glStateRef.current = null;
+      meshRef.current = null;
+      triRef.current = null;
+      programRef.current = null;
+      try {
+        const glCtx = rendererRef.current?.gl;
+        if (glCtx && gradTexRef.current?.texture) glCtx.deleteTexture(gradTexRef.current.texture);
+      } catch (e) {
+        void e;
+      }
+      programRef.current = null;
+      rendererRef.current = null;
+      gradTexRef.current = null;
+      meshRef.current = null;
+      triRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const canvas = glStateRef.current?.canvas;
+    const canvas = rendererRef.current?.gl?.canvas as HTMLCanvasElement | undefined;
     if (canvas) {
       canvas.style.mixBlendMode = mixBlendMode && mixBlendMode !== 'none' ? mixBlendMode : '';
     }
   }, [mixBlendMode]);
 
   useEffect(() => {
-    const state = glStateRef.current;
-    if (!state) return;
-    const { gl, uniforms, gradientTexture, program } = state;
-    gl.useProgram(program);
+    const program = programRef.current;
+    const renderer = rendererRef.current;
+    const gradTex = gradTexRef.current;
+    if (!program || !renderer || !gradTex) return;
 
-    if (uniforms.uIntensity) gl.uniform1f(uniforms.uIntensity, intensity ?? 1);
-    if (uniforms.uSpeed) gl.uniform1f(uniforms.uSpeed, speed ?? 1);
+    program.uniforms.uIntensity.value = intensity ?? 1;
+    program.uniforms.uSpeed.value = speed ?? 1;
 
     const animTypeMap: Record<AnimationType, number> = {
       rotate: 0,
       rotate3d: 1,
-      hover: 2,
+      hover: 2
     };
-    if (uniforms.uAnimType) gl.uniform1i(uniforms.uAnimType, animTypeMap[animationType ?? 'rotate']);
-    if (uniforms.uDistort) gl.uniform1f(uniforms.uDistort, typeof distort === 'number' ? distort : 0);
+    program.uniforms.uAnimType.value = animTypeMap[animationType ?? 'rotate'];
+
+    program.uniforms.uDistort.value = typeof distort === 'number' ? distort : 0;
 
     const ox = toPx(offset?.x);
     const oy = toPx(offset?.y);
-    if (uniforms.uOffset) gl.uniform2f(uniforms.uOffset, ox, oy);
-    if (uniforms.uRayCount) gl.uniform1i(uniforms.uRayCount, Math.max(0, Math.floor(rayCount ?? 0)));
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, gradientTexture);
+    program.uniforms.uOffset.value = [ox, oy];
+    program.uniforms.uRayCount.value = Math.max(0, Math.floor(rayCount ?? 0));
 
     let count = 0;
     if (Array.isArray(colors) && colors.length > 0) {
+      const gl = renderer.gl;
       const capped = colors.slice(0, 64);
       count = capped.length;
       const data = new Uint8Array(count * 4);
@@ -564,12 +442,22 @@ const PrismaticBurst = ({
         data[i * 4 + 2] = Math.round(b * 255);
         data[i * 4 + 3] = 255;
       }
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, count, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+      gradTex.image = data;
+      gradTex.width = count;
+      gradTex.height = 1;
+      gradTex.minFilter = gl.LINEAR;
+      gradTex.magFilter = gl.LINEAR;
+      gradTex.wrapS = gl.CLAMP_TO_EDGE;
+      gradTex.wrapT = gl.CLAMP_TO_EDGE;
+      gradTex.flipY = false;
+      gradTex.generateMipmaps = false;
+      gradTex.format = gl.RGBA;
+      gradTex.type = gl.UNSIGNED_BYTE;
+      gradTex.needsUpdate = true;
     } else {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+      count = 0;
     }
-
-    if (uniforms.uColorCount) gl.uniform1i(uniforms.uColorCount, count);
+    program.uniforms.uColorCount.value = count;
   }, [intensity, speed, animationType, colors, distort, offset, rayCount]);
 
   return <div className={styles.wrapper} ref={containerRef} />;
