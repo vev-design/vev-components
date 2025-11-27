@@ -260,7 +260,16 @@ registerVevComponent(P2p, {
     {
       type: Events.PLAYER_JOIN,
       description: "Player joined",
-      args: [{ name: "player", type: "object", fields: [] }],
+      args: [
+        {
+          name: "player",
+          type: "object",
+          fields: [
+            { name: "id", type: "string" },
+            { name: "label", type: "string" },
+          ],
+        },
+      ],
     },
     {
       type: Events.PLAYER_LEAVE,
@@ -272,8 +281,16 @@ registerVevComponent(P2p, {
       description: "Custom event received",
       args: [
         { name: "name", type: "string" },
-        { name: "payload", type: "object", fields: [] },
-        { name: "sender", type: "object", fields: [] },
+        {
+          name: "payload",
+          type: "object",
+          fields: [{ name: "text", type: "string" }],
+        },
+        {
+          name: "sender",
+          type: "object",
+          fields: [{ name: "id", type: "string" }],
+        },
       ],
     },
   ],
@@ -293,7 +310,11 @@ registerVevComponent(P2p, {
       description: "Broadcast an event to the room",
       args: [
         { name: "eventName", type: "string" },
-        { name: "data", type: "object", fields: [] },
+        {
+          name: "data",
+          type: "object",
+          fields: [{ name: "text", type: "string" }],
+        },
       ],
     },
   ],
