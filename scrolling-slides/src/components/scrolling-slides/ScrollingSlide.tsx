@@ -92,9 +92,13 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   if (type === 'scroll' && settings?.reverse) cl += ' ' + styles.reverse;
 
   const Comp = SLIDE_COMPONENT[type] || BaseSlide;
-
   return (
     <>
+      {editorDisabled && document.body.scrollHeight < window.innerHeight && (
+        <div className={styles.warningOverlay}>
+          <p>Greater scroll length is required. Adjust section(s) to be taller.</p>
+        </div>
+      )}
       <div
         ref={ref}
         className={cl}

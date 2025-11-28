@@ -96,3 +96,17 @@
 .grid .content{
     height: calc(var(--slide-duration) * 1%);
 } */
+
+.warningOverlay{
+    position: absolute;
+    inset:0 0 0 0;
+    background: rgba(0,0,0,0.2);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center; 
+    font-size: 24px;
+    z-index: 100;
+}
