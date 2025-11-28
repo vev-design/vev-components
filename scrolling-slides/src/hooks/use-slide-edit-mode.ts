@@ -1,5 +1,6 @@
 import { useEditorState } from '@vev/react';
 import { RefObject, useLayoutEffect, useRef } from 'react';
+import { calculateScrollAnimationOffset } from '../utils/calculations';
 
 const SNAP_DELAY = 250;
 const SCROLL_DEBOUNCE = 300;
@@ -45,16 +46,20 @@ export function useSlideEditMode(
     const absoluteTop = hostTop + window.scrollY;
     const windowHeight = window.innerHeight;
 
+    const { offsetStart, offsetEnd, startPosition, endPosition } = calculateScrollAnimationOffset(element);
+
     // Calculate scroll boundaries
     // If the content is smaller than the viewport, we adjust the start position
-    const isSmallerThanViewport = hostHeight < windowHeight;
-    const scrollStart = isSmallerThanViewport
-      ? absoluteTop - (windowHeight - hostHeight)
-      : absoluteTop;
+    //const isSmallerThanViewport = hostHeight < windowHeight;
+    const scrollStart = startPosition;
+    // isSmallerThanViewport
+    //   ? absoluteTop - (windowHeight - hostHeight)
+    //   : absoluteTop;
 
-    const scrollEnd = isSmallerThanViewport
-      ? absoluteTop
-      : absoluteTop + hostHeight - windowHeight;
+    const scrollEnd = endPosition
+    // isSmallerThanViewport
+    //   ? absoluteTop
+    //   : absoluteTop + hostHeight - windowHeight;
 
     const scrollRange = scrollEnd - scrollStart;
 
@@ -70,7 +75,8 @@ export function useSlideEditMode(
     };
 
     const getSlideIndexFromProgress = () => {
-      const progress = getTimelineProgress();
+      const progress = Math.max(0, Math.min(1, (getTimelineProgress() - offsetStart) / (offsetEnd - offsetStart)));
+      
       // Map progress (0-1) to child index with some padding at start/end
       const paddedLength = children.length + 2;
       const rawIndex = Math.round(progress * paddedLength - 1.5);
@@ -85,7 +91,12 @@ export function useSlideEditMode(
     };
 
     const onScrollAnimationFinished = () => {
+      // Hack to force editor to update frame position
+      element.style.width = element.clientWidth + 0.1+ 'px';
+
+      
       setTimeout(() => {
+        element.style.width = '';
         isScrollingRef.current = false;
       }, SCROLL_UNLOCK_DELAY);
     };

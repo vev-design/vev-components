@@ -1,9 +1,8 @@
 import { registerVevComponent, useEditorState, useSize, useVisible } from '@vev/react';
 import React, { useEffect, useRef } from 'react';
-import { useViewAnimation, useViewTimeline } from '../../hooks';
+import { useSlideEditMode, useViewAnimation, useViewTimeline } from '../../hooks';
 import styles from './ScrollingSlide.module.css';
 import { ScrollingSlideTypeField } from './fields/ScrollingSlideTypeField';
-import { useSlideEditMode } from './hooks/use-slide-edit-mode';
 import {
   BaseSlide,
   BaseSlideProps,
@@ -452,7 +451,7 @@ registerVevComponent(ScrollingSlide, {
   editableCSS: [
     {
       selector: styles.wrapper,
-      properties: ['background'],
+      properties: ['background', 'border', 'filter'],
     },
   ],
   type: 'standard',
