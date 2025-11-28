@@ -1,0 +1,26 @@
+{
+  "name": "charts",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "login": "vev login",
+    "init": "vev init",
+    "start": "vev start"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/lodash.merge": "^4.6.9",
+    "@types/echarts": "^5.0.0",
+    "@types/react": "^18.3.1",
+    "typescript-plugin-css-modules": "^5.0.1"
+  },
+  "dependencies": {
+    "react-datasheet-grid": "^4.11.5",
+    "lodash.merge": "^4.6.2",
+    "@vev/silke": "^1.1.2",
+    "echarts": "^6.0.0",
+    "@vev/react": "^0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
