@@ -32,7 +32,7 @@ jobs:
             echo "Checking $folder"
             if [ -f "$folder/vev.json" ]; then
               echo "Deploying $folder"
-              (cd "$folder" && vev deploy --token "$VEV_TOKEN" -m "${{ github.sha }}")
+              (cd "$folder" && npm install --omit=dev && vev deploy --token "$VEV_TOKEN" -m "${{ github.sha }}")
             else
               echo "Skipping $folder (no vev.json)"
             fi
