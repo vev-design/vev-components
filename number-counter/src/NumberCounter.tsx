@@ -87,7 +87,7 @@ const NumberCounter = ({
   const { disabled, schemaOpen } = useEditorState();
   const [startedTimestamp, setStartedTimestamp] = useState<number>(0);
   const dispatchVevEvent = useDispatchVevEvent();
-  
+
   const actualSchemaOpen = disabled && schemaOpen;
   // Stores the original params of the first render, used to reset the counter when props are changed(through variants)
   const previousSettings = useRef({ start: initStart, end: initEnd, actualDelay, autostart });
