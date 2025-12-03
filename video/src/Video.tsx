@@ -175,7 +175,6 @@ const Video = ({
       videoEl.muted = true;
       videoEl.play();
     }
-    
 
     if (disabled) {
       loopedAmount.current = 1;
@@ -206,6 +205,7 @@ const Video = ({
       )}
       <video
         autoPlay={autoplay}
+        key={video?.sources?.[0]?.url}
         ref={videoRef}
         aria-label={video?.name || ''}
         playsInline
@@ -217,16 +217,15 @@ const Video = ({
       >
         {video &&
           video.sources &&
-           video.sources
+          video.sources
             .sort((a, b) => {
-              
               if (a.format === b.format) return 0;
               if (a.format === 'video/quicktime') return -1;
               if (b.format === 'video/quicktime') return 1;
-              
+
               if (a.format === 'video/mp4') return -1;
               if (b.format === 'video/mp4') return 1;
-              
+
               if (a.format === 'video/webm') return -1;
               if (b.format === 'video/webm') return 1;
 
