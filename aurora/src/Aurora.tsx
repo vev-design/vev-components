@@ -305,6 +305,7 @@ function Aurora({
       const height = Math.max(1, Math.floor(rect.height * ratio));
       canvas.width = width;
       canvas.height = height;
+      canvas.className = styles.canvas;
       gl.viewport(0, 0, width, height);
       applyUniform('uResolution', new Float32Array([width, height]));
       if (!uniformValuesRef.current.uPointer) {

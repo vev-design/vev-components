@@ -402,6 +402,7 @@ const GradientBlinds: React.FC<GradientBlindsProps> = ({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
+    canvas.className = styles.canvas;
     container.appendChild(canvas);
     canvasRef.current = canvas;
 

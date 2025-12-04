@@ -360,6 +360,7 @@ function FaultyTerminal({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
+    canvas.className = styles.canvas;
     canvasRef.current = canvas;
     container.appendChild(canvas);
 
@@ -461,8 +462,7 @@ function FaultyTerminal({
       ro.observe(container);
       resizeObserverRef.current = ro;
     } else {
-      const win = window as Window;
-      win.addEventListener('resize', setSize);
+      container.addEventListener('resize', setSize);
     }
 
     // Set initial uniforms
@@ -491,7 +491,7 @@ function FaultyTerminal({
     loadAnimationStartRef.current = 0;
 
     // Mouse interaction
-    container.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     // Animation loop
     const animate = (currentTime: number) => {
@@ -564,6 +564,7 @@ function FaultyTerminal({
 
       rafRef.current = requestAnimationFrame(animate);
     };
+
     rafRef.current = requestAnimationFrame(animate);
 
     // Cleanup
@@ -572,11 +573,10 @@ function FaultyTerminal({
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       } else {
-        const win = window as Window;
-        win.removeEventListener('resize', setSize);
+        container.removeEventListener('resize', setSize);
       }
       
-      container.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleMouseMove);
       
       if (state.buffers.position) gl.deleteBuffer(state.buffers.position);
       if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
@@ -591,7 +591,7 @@ function FaultyTerminal({
     };
   }, [dpr]);
 
-  return <div ref={containerRef} style={style} {...rest} className={`${styles.wrapper}  ${className}`}  />;
+  return <div ref={containerRef} style={style}  className={`${styles.wrapper}  ${className}`}  />;
 }
 
 

@@ -232,6 +232,7 @@ function ColorBends({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
+    canvas.className = styles.canvas;
     canvasRef.current = canvas;
     container.appendChild(canvas);
 

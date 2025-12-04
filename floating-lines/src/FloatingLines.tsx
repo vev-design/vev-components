@@ -384,6 +384,7 @@ function FloatingLines({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
+    canvas.className = styles.canvas;
     canvasRef.current = canvas;
     container.appendChild(canvas);
 
@@ -517,7 +518,7 @@ function FloatingLines({
     };
 
     if (interactive) {
-      canvas.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointermove', handlePointerMove);
       canvas.addEventListener('pointerleave', handlePointerLeave);
     }
 
@@ -738,7 +739,7 @@ function FloatingLines({
       if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
       
       if (interactive) {
-        canvas.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointermove', handlePointerMove);
         canvas.removeEventListener('pointerleave', handlePointerLeave);
       }
 

@@ -1,5 +1,5 @@
 import React,{ useEffect, useMemo, useRef } from 'react';
-import styles from '../css/iridescence.css';
+import styles from './Iridescence.module.css';
 import { registerVevComponent } from '@vev/react';
 
 

@@ -150,6 +150,7 @@ const defaultColors = ['#5227FF', '#FF9FFC', '#B19EEF'];
         el.style.width = '100%';
         el.style.height = '100%';
         el.style.display = 'block';
+        el.className = styles.canvas;
         this.clock = new THREE.Clock();
         this.clock.start();
       }
@@ -1059,7 +1060,7 @@ const defaultColors = ['#5227FF', '#FF9FFC', '#B19EEF'];
           if (this._onVisibility) document.removeEventListener('visibilitychange', this._onVisibility);
           Mouse.dispose();
           if (Common.renderer) {
-            const canvas = Common.renderer.domElement;
+            const canvas = Common.renderer.domElement;;
             if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
             Common.renderer.dispose();
           }
