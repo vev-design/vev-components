@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+
 import {
   registerVevComponent,
   useDispatchVevEvent,
@@ -88,6 +89,8 @@ const NumberCounter = ({
   const dispatchVevEvent = useDispatchVevEvent();
 
   const actualSchemaOpen = disabled && schemaOpen;
+  // Stores the original params of the first render, used to reset the counter when props are changed(through variants)
+  const previousSettings = useRef({ start: initStart, end: initEnd, actualDelay, autostart });
 
   function resetCounter() {
     setStartedTimestamp(0);
@@ -168,6 +171,19 @@ const NumberCounter = ({
     },
     [hasStarted, startedTimestamp],
   );
+  
+  useEffect(() => {
+    if (disabled) return;
+    const { start, end } = settings;
+    const { delay, autostart } = animation;
+    // Resets counter and playState if either start or end is changed through props
+    if (previousSettings.current.start !== start || previousSettings.current.end !== end) {
+      previousSettings.current = { start, end, actualDelay: delay * 1000 , autostart };
+      setStartedTimestamp(0);
+      setCount(start)
+      if (autostart) setTimeout(() => setHasStarted(true), actualDelay);
+    }
+  }, [settings, animation, disabled]);
 
   useEffect(() => {
     if (once && finished) return;
