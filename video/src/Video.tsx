@@ -196,7 +196,7 @@ const Video = ({
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
-  if (mutedRef.current !== undefined && mute) attributes.muted = true;
+  if (mutedRef.current === undefined && mute) attributes.muted = true;
   if (controls) attributes.controls = true;
   if (isIE()) attributes.className = 'ie';
   if (autoplay) attributes.autoPlay = true;
