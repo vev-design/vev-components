@@ -62,8 +62,6 @@ export const Slideshow = (props: Props) => {
   const prevIndex = useRef(state?.index || 0);
   const [transitionSpeed, setTransitionSpeed] = useState(1);
 
-  console.log('transitionSpeed', transitionSpeed);
-
   /**
    * transitionInProgress
    */
