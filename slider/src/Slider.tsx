@@ -39,6 +39,7 @@ export type Props = {
   action: 'NEXT' | 'PREV';
   slidesToLoad: number;
   disableSwipe?: boolean;
+  transitionEnd?: () => void;
 };
 
 enum Interactions {
@@ -55,10 +56,24 @@ export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
   const dispatch = useDispatchVevEvent();
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
   const prevIndex = useRef(state?.index || 0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  /**
+   * transitionInProgress
+   */
+
+  const transitionInProgress = useCallback(() => {
+    const supportedTypes = ['slide', 'zoom', 'fade'].includes(animation);
+    return supportedTypes && isTransitioning;
+  }, [animation, isTransitioning]);
+
+  useEffect(() => {
+    // If animation changes, reset the transition state
+    setIsTransitioning(false);
+  }, [animation]);
 
   const numberOfSlides = props?.children?.length || 0;
 
@@ -95,25 +110,30 @@ export const Slideshow = (props: Props) => {
   }, [random, editor.disabled, children]);
 
   const handleNextSlide = useCallback(() => {
+    if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === numberOfSlides - 1) || slides.length <= 1) return;
+
     setIsTransitioning(true);
+
     setState({
       index: getNextSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
       action: 'NEXT',
     });
-  }, [state?.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, transitionInProgress, props.speed]);
 
   const handlePrevSlide = useCallback(() => {
+    if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === 0) || slides.length <= 1) return;
 
     setIsTransitioning(true);
+
     setState({
       index: getPrevSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
       action: 'PREV',
     });
-  }, [state?.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, transitionInProgress, props.speed]);
 
   useTouch(
     hostRef,
@@ -133,6 +153,20 @@ export const Slideshow = (props: Props) => {
     });
   });
 
+  const handleTransitionEnd = useCallback(() => {
+    setIsTransitioning(false);
+  }, []);
+
+  const currentSpeed = useMemo(
+    () => (editor?.disabled ? 1 : props.speed),
+    [editor?.disabled, props.speed],
+  );
+
+  const currentIndex = useMemo(
+    () => (isNaN(state?.index) ? 0 : state?.index),
+    [state?.index],
+  );
+
   if (!props?.children?.length) return null;
 
   const render = {
@@ -151,10 +185,11 @@ export const Slideshow = (props: Props) => {
         <Comp
           {...props}
           slides={slides}
-          speed={editor?.disabled ? 1 : props.speed}
-          index={isNaN(state?.index) ? 0 : state?.index}
+          speed={currentSpeed}
+          index={currentIndex}
           editMode={editor.disabled}
           action={state?.action}
+          transitionEnd={handleTransitionEnd}
         />
       )}
     </div>
