@@ -14,8 +14,7 @@ export const Zoom = ({
   scaleFactor = 300,
   action,
   infinite,
-  transitionSpeed,
-  resetTransitionSpeed,
+  transitionEnd,
 }: Omit<Props, 'children'> & {
   index: number;
   preview?: boolean;
@@ -24,6 +23,7 @@ export const Zoom = ({
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(1);
   const prevIndex = useRef(index);
+  const transitionSpeed = speed;
 
   const currentSlide = slides[index];
   const nextSlide = slides[getNextSlideIndex(index, slides)];
@@ -82,9 +82,9 @@ export const Zoom = ({
       }}
       onTransitionEnd={(e) => {
         if (e.propertyName === 'opacity') {
-          resetTransitionSpeed();
           setSlides();
           setMove(1);
+          transitionEnd();
         }
       }}
     >

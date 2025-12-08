@@ -32,8 +32,7 @@ export const Slide = ({
   action,
   slidesToLoad: slidesToLoadProp,
   shrinkFactorBeforeAfter,
-  transitionSpeed,
-  resetTransitionSpeed,
+  transitionEnd,
 }: Omit<Props, 'children'> & {
   index: number;
 }) => {
@@ -41,6 +40,7 @@ export const Slide = ({
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(-100);
   const prevIndex = useRef(0);
+  const [transitionSpeed, setTransitionSpeed] = useState(speed);
 
   const moveDirection = ['VERTICAL', 'VERTICAL_REVERSE'].includes(direction) ? 'Y' : 'X';
 
@@ -80,10 +80,12 @@ export const Slide = ({
     const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
     const moveLeft = () => {
+      setTransitionSpeed(speed || 1);
       setMove(-200);
     };
 
     const moveRight = () => {
+      setTransitionSpeed(speed || 1);
       setMove(0);
     };
 
@@ -128,9 +130,10 @@ export const Slide = ({
         }}
         onTransitionEnd={(e) => {
           if (e.propertyName === 'transform') {
-            resetTransitionSpeed();
+            setTransitionSpeed(0);
             setMove(-100);
             setSlides();
+            transitionEnd();
           }
         }}
       >

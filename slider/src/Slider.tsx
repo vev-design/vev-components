@@ -39,8 +39,7 @@ export type Props = {
   action: 'NEXT' | 'PREV';
   slidesToLoad: number;
   disableSwipe?: boolean;
-  transitionSpeed?: number;
-  resetTransitionSpeed?: () => void;
+  transitionEnd?: () => void;
 };
 
 enum Interactions {
@@ -60,17 +59,21 @@ export const Slideshow = (props: Props) => {
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
   const prevIndex = useRef(state?.index || 0);
-  const [transitionSpeed, setTransitionSpeed] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   /**
    * transitionInProgress
    */
 
   const transitionInProgress = useCallback(() => {
-    const isTransitioning = transitionSpeed > 1;
     const supportedTypes = ['slide', 'zoom', 'fade'].includes(animation);
     return supportedTypes && isTransitioning;
-  }, [transitionSpeed, animation]);
+  }, [animation, isTransitioning]);
+
+  useEffect(() => {
+    // If animation changes, reset the transition state
+    setIsTransitioning(false);
+  }, [animation]);
 
   const numberOfSlides = props?.children?.length || 0;
 
@@ -107,10 +110,11 @@ export const Slideshow = (props: Props) => {
   }, [random, editor.disabled, children]);
 
   const handleNextSlide = useCallback(() => {
+    console.log('handleNextSlide', transitionInProgress());
     if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === numberOfSlides - 1) || slides.length <= 1) return;
 
-    setTransitionSpeed(props.speed || 1);
+    setIsTransitioning(true);
 
     setState({
       index: getNextSlideIndex(state?.index, slides),
@@ -123,7 +127,7 @@ export const Slideshow = (props: Props) => {
     if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === 0) || slides.length <= 1) return;
 
-    setTransitionSpeed(props.speed || 1);
+    setIsTransitioning(true);
 
     setState({
       index: getPrevSlideIndex(state?.index, slides),
@@ -150,6 +154,20 @@ export const Slideshow = (props: Props) => {
     });
   });
 
+  const handleTransitionEnd = useCallback(() => {
+    setIsTransitioning(false);
+  }, []);
+
+  const currentSpeed = useMemo(
+    () => (editor?.disabled ? 1 : props.speed),
+    [editor?.disabled, props.speed],
+  );
+
+  const currentIndex = useMemo(
+    () => (isNaN(state?.index) ? 0 : state?.index),
+    [state?.index],
+  );
+
   if (!props?.children?.length) return null;
 
   const render = {
@@ -168,14 +186,11 @@ export const Slideshow = (props: Props) => {
         <Comp
           {...props}
           slides={slides}
-          speed={editor?.disabled ? 1 : props.speed}
-          index={isNaN(state?.index) ? 0 : state?.index}
+          speed={currentSpeed}
+          index={currentIndex}
           editMode={editor.disabled}
           action={state?.action}
-          transitionSpeed={transitionSpeed}
-          resetTransitionSpeed={() => {
-            setTransitionSpeed(1);
-          }}
+          transitionEnd={handleTransitionEnd}
         />
       )}
     </div>
