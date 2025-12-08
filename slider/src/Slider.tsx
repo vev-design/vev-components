@@ -39,6 +39,8 @@ export type Props = {
   action: 'NEXT' | 'PREV';
   slidesToLoad: number;
   disableSwipe?: boolean;
+  transitionSpeed?: number;
+  resetTransitionSpeed?: () => void;
 };
 
 enum Interactions {
@@ -55,10 +57,22 @@ export const Slideshow = (props: Props) => {
   const editor = useEditorState();
   const [state, setState] = useGlobalState();
   const dispatch = useDispatchVevEvent();
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const { children, animation, random, hostRef } = props;
   const [slides, setSlides] = useState(children || []);
   const prevIndex = useRef(state?.index || 0);
+  const [transitionSpeed, setTransitionSpeed] = useState(1);
+
+  console.log('transitionSpeed', transitionSpeed);
+
+  /**
+   * transitionInProgress
+   */
+
+  const transitionInProgress = useCallback(() => {
+    const isTransitioning = transitionSpeed > 1;
+    const supportedTypes = ['slide', 'zoom', 'fade'].includes(animation);
+    return supportedTypes && isTransitioning;
+  }, [transitionSpeed, animation]);
 
   const numberOfSlides = props?.children?.length || 0;
 
@@ -95,25 +109,30 @@ export const Slideshow = (props: Props) => {
   }, [random, editor.disabled, children]);
 
   const handleNextSlide = useCallback(() => {
+    if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === numberOfSlides - 1) || slides.length <= 1) return;
-    setIsTransitioning(true);
+
+    setTransitionSpeed(props.speed || 1);
+
     setState({
       index: getNextSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
       action: 'NEXT',
     });
-  }, [state?.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, transitionInProgress, props.speed]);
 
   const handlePrevSlide = useCallback(() => {
+    if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === 0) || slides.length <= 1) return;
 
-    setIsTransitioning(true);
+    setTransitionSpeed(props.speed || 1);
+
     setState({
       index: getPrevSlideIndex(state?.index, slides),
       length: numberOfSlides || 0,
       action: 'PREV',
     });
-  }, [state?.index, slides, numberOfSlides, isTransitioning]);
+  }, [state?.index, slides, numberOfSlides, transitionInProgress, props.speed]);
 
   useTouch(
     hostRef,
@@ -155,6 +174,10 @@ export const Slideshow = (props: Props) => {
           index={isNaN(state?.index) ? 0 : state?.index}
           editMode={editor.disabled}
           action={state?.action}
+          transitionSpeed={transitionSpeed}
+          resetTransitionSpeed={() => {
+            setTransitionSpeed(1);
+          }}
         />
       )}
     </div>
