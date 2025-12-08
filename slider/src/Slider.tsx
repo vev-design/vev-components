@@ -110,7 +110,6 @@ export const Slideshow = (props: Props) => {
   }, [random, editor.disabled, children]);
 
   const handleNextSlide = useCallback(() => {
-    console.log('handleNextSlide', transitionInProgress());
     if (transitionInProgress()) return;
     if ((!props.infinite && state?.index === numberOfSlides - 1) || slides.length <= 1) return;
 
