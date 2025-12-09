@@ -12,3 +12,8 @@
   left: 0;
   transform-style: preserve-3d;
 }
+
+/* Dirty hack to fix that some times slide is not selectable */
+.slide > vev {
+  z-index: 1;
+}
