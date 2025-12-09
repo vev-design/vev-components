@@ -42,6 +42,8 @@ const Video = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   // Keeps track of the muted state given by interaction events
   const mutedRef = useRef<boolean>(undefined);
+  // Keeps track of the video has been manually paused
+  const pausedRef = useRef(false);
   const stateRef = useRef<{ current: number; maxProgress: number }>({
     current: 0,
     maxProgress: 0,
@@ -56,23 +58,28 @@ const Video = ({
   const dispatchTrackingEvent = useTracking(disableTracking);
 
   useVevEvent(VideoInteraction.play, () => {
+    pausedRef.current = false;
     videoRef.current.play();
   });
 
   useVevEvent(VideoInteraction.restart, () => {
+    pausedRef.current = false;
     videoRef.current.currentTime = 0;
     videoRef.current.play();
   });
 
   useVevEvent(VideoInteraction.togglePlay, () => {
     if (videoRef.current.paused) {
+      pausedRef.current = false;
       videoRef.current.play();
     } else {
+      pausedRef.current = true;
       videoRef.current.pause();
     }
   });
 
   useVevEvent(VideoInteraction.pause, () => {
+    pausedRef.current = true;
     videoRef.current.pause();
   });
 
@@ -108,6 +115,7 @@ const Video = ({
         current,
         maxProgress: Math.max(current, stateRef.current.maxProgress),
       };
+
       switch (e.type) {
         case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
@@ -182,12 +190,14 @@ const Video = ({
       } else {
         videoEl.muted = mutedRef.current;
       }
-      videoEl.play();
+
+      if (!pausedRef.current) videoEl.play();
     }
     
 
     if (disabled) {
       mutedRef.current = undefined;
+      pausedRef.current = undefined;
       loopedAmount.current = 1;
       videoEl.load();
       videoEl.pause();
@@ -196,7 +206,7 @@ const Video = ({
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
-  if (mutedRef.current !== undefined && mute) attributes.muted = true;
+  if ((mutedRef.current === undefined && mute) || mutedRef.current) attributes.muted = true;
   if (controls) attributes.controls = true;
   if (isIE()) attributes.className = 'ie';
   if (autoplay) attributes.autoPlay = true;
