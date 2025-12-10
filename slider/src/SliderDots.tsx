@@ -1,9 +1,16 @@
 import React, { useCallback } from 'react';
-import { registerVevComponent, useGlobalState, useGlobalStore } from '@vev/react';
+import { registerVevComponent, useGlobalState, useGlobalStore, WidgetNode } from '@vev/react';
 import styles from './Slider.module.css';
+
+interface CustomDot {
+  mainComponent: string;
+  variant?: string;
+}
 
 type Props = {
   target: string;
+  dot: CustomDot;
+  activeDot: CustomDot;
 };
 
 const SLIDESHOW_TYPE = ['4m4woXHPJqnEyfmHuuf1_Slideshow', '1QRRiAt1Js1nD0ApT2Ek_Slideshow'];
@@ -22,15 +29,28 @@ const SlideshowDots = (props: Props) => {
 
   return (
     <div style={{ textAlign: 'center' }} className={styles.dots}>
-      {[...Array(state?.length || 0).keys()].map((key, i) => (
-        <span
-          key={i}
-          className={i === (state.index || 0) ? styles.selected : ''}
-          onClick={() => handleClick(i)}
-        >
-          •
-        </span>
-      ))}
+      {[...Array(state?.length || 0).keys()].map((key, i) => {
+        let isActive = i === (state.index || 0);
+
+        if (props.dot && !isActive) {
+          return <WidgetNode id={props.dot.mainComponent} externalVariant={props.dot.variant} />;
+        }
+
+        if (isActive && props.activeDot) {
+          return (
+            <WidgetNode
+              id={props.activeDot.mainComponent}
+              externalVariant={props.activeDot.variant}
+            />
+          );
+        }
+
+        return (
+          <span key={i} className={isActive ? styles.selected : ''} onClick={() => handleClick(i)}>
+            •
+          </span>
+        );
+      })}
     </div>
   );
 };
@@ -65,11 +85,24 @@ registerVevComponent(SlideshowDots, {
       options: {
         display: 'dropdown',
         async items(data) {
+          console.log('data', data);
           return data.content
             ?.filter((e) => SLIDESHOW_TYPE.includes(e.type))
             .map((s) => ({ value: s.key, label: s.name }));
         },
       },
+    },
+    {
+      name: 'dot',
+      title: 'Dot',
+      description: 'Main component to use for inactive dot',
+      type: 'mainComponent',
+    },
+    {
+      name: 'activeDot',
+      title: 'Active dot',
+      description: 'Main component to use for active dot',
+      type: 'mainComponent',
     },
   ],
 });
