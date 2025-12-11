@@ -33,15 +33,21 @@ const SlideshowDots = (props: Props) => {
         let isActive = i === (state.index || 0);
 
         if (props.dot && !isActive) {
-          return <WidgetNode id={props.dot.mainComponent} externalVariant={props.dot.variant} />;
+          return (
+            <span key={i} className={styles.customDot} onClick={() => handleClick(i)}>
+              <WidgetNode id={props.dot.mainComponent} externalVariant={props.dot.variant} />
+            </span>
+          );
         }
 
         if (isActive && props.activeDot) {
           return (
-            <WidgetNode
-              id={props.activeDot.mainComponent}
-              externalVariant={props.activeDot.variant}
-            />
+            <span key={i} className={styles.customDot} onClick={() => handleClick(i)}>
+              <WidgetNode
+                id={props.activeDot.mainComponent}
+                externalVariant={props.activeDot.variant}
+              />
+            </span>
           );
         }
 
