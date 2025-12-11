@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { registerVevComponent } from '@vev/react';
-import { ReactCompareSlider } from 'react-compare-slider';
+import { ReactCompareSlider } from './react-compare-slider';
 import { ObjectFitEditor } from './object-fit-editor';
 import styles from './ImageCompare.module.css';
 
@@ -98,6 +98,8 @@ const ImageCompare = ({
   const actualIconLeft = handles?.leftIcon || DEFAULT_ICON_LEFT;
   const actualIconRight = handles?.rightIcon || DEFAULT_ICON_RIGHT;
 
+  console.log('yoooo');
+
   useEffect(() => {
     if (animate) {
       const intervalId = setInterval(() => {
@@ -153,9 +155,8 @@ const ImageCompare = ({
             className={styles.image}
             src={actualRight}
             style={{
-              objectPosition: `${(right?.xPercent || 0.5) * 100}% ${
-                (right?.yPercent || 0.5) * 100
-              }%`,
+              objectPosition: `${(right?.xPercent || 0.5) * 100}% ${(right?.yPercent || 0.5) * 100
+                }%`,
             }}
           />
         }
