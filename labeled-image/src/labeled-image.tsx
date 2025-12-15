@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import styles from './labeled-image.module.css';
 import overlayStyles from './label-overlay.module.css';
-import { Image, registerVevComponent, useEditorState, useGlobalStore } from '@vev/react';
+import { registerVevComponent, useEditorState, useGlobalStore } from '@vev/react';
 import { LabelEditorForm } from './form/label-editor-form';
 import { LabelOverlay } from './label-overlay';
 import { Label } from './types';
@@ -10,9 +10,10 @@ import { EventTypes } from './even-types';
 type Props = {
   image: { key: string; url: string };
   labels: Label[];
+  customHotspot: string;
 };
 
-const LabeledImage = ({ image, labels }: Props) => {
+const LabeledImage = ({ image, labels, customHotspot }: Props) => {
   const imageRef: React.RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
   const { selected, disabled } = useEditorState();
   const interactionsOpen = useGlobalStore((state) => {
@@ -27,7 +28,12 @@ const LabeledImage = ({ image, labels }: Props) => {
 
   return (
     <div className={styles.wrapper}>
-      <LabelOverlay labels={labels} imageRef={imageRef} showLabelIndex={showNumbers} />
+      <LabelOverlay
+        customHotspot={customHotspot}
+        labels={labels}
+        imageRef={imageRef}
+        showLabelIndex={showNumbers}
+      />
       <img ref={imageRef} src={image.url} className={styles.image} />
     </div>
   );
@@ -61,6 +67,14 @@ registerVevComponent(LabeledImage, {
       },
       component: LabelEditorForm,
     },
+    {
+      name: 'customHotspot',
+      type: 'mainComponent',
+      description: 'Custom hotspots are main components that are used in the project',
+      hidden: (context) => {
+        return !context.value.image;
+      },
+    },
   ],
   events: [
     {
@@ -91,11 +105,6 @@ registerVevComponent(LabeledImage, {
       title: 'Image',
       selector: styles.image,
       properties: ['object-fit'],
-    },
-    {
-      title: 'Container',
-      selector: styles.wrapper,
-      properties: ['background', 'border', 'border-radius', 'box-shadow'],
     },
     {
       title: 'Label',

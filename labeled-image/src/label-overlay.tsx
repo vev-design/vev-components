@@ -1,17 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import { Label } from './types';
 import { PlusIcon } from './plus-icon';
 import styles from './label-overlay.module.css';
-import { useDispatchVevEvent } from '@vev/react';
+import { useDispatchVevEvent, WidgetNode } from '@vev/react';
 import { EventTypes } from './even-types';
 
 interface Props {
   labels: Label[];
   imageRef: React.RefObject<HTMLImageElement>;
   showLabelIndex: boolean;
+  customHotspot?: {
+    mainComponent: string;
+    variant?: string;
+  };
 }
 
-export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
+export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }: Props) {
   const labelRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
   const [rendered, setRendered] = useState<{
@@ -32,10 +36,9 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
       if (!imageRef?.current) return;
 
       // Find hotspot width
-      if(labelRef.current) {
+      if (labelRef.current) {
         setLabelWidth(labelRef.current.getBoundingClientRect().width);
       }
-
 
       const el = imageRef.current;
       const styleMap = el.computedStyleMap();
@@ -100,6 +103,52 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
     };
   }, [imageRef]);
 
+  if (customHotspot) {
+    let customHotspotElem = (
+      <WidgetNode id={customHotspot.mainComponent} externalVariant={customHotspot.variant} />
+    );
+
+    return (
+      <div className={styles.wrapper}>
+        {rendered &&
+          labels &&
+          labels.map((label, index) => {
+            return (
+              <div
+                ref={index === 0 ? labelRef : null}
+                className={styles.mainComponentLabel}
+                onMouseEnter={() => {
+                  setHoverIndex(label.index);
+                  dispatchVevEvent(EventTypes.LABEL_HOVER, {
+                    [EventTypes.LABEL_HOVER]: label.index + 1,
+                  });
+                }}
+                onMouseLeave={() => {
+                  setHoverIndex(-1);
+                }}
+                key={label.index}
+                onClick={() => {
+                  dispatchVevEvent(EventTypes.LABEL_CLICKED, {
+                    [EventTypes.LABEL_CLICKED]: label.index + 1,
+                  });
+                }}
+                style={{
+                  transform: `translate(${
+                    rendered.offsetX + label.pos.x * rendered.width - labelWidth / 2
+                  }px, ${rendered.offsetY + label.pos.y * rendered.height - labelWidth / 2}px)`,
+                }}
+              >
+                {customHotspotElem}
+                {label.caption && hoverIndex === label.index && (
+                  <div className={styles.captionWrapper}>{label.caption}</div>
+                )}
+              </div>
+            );
+          })}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.wrapper}>
       {rendered &&
@@ -125,9 +174,9 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex }: Props) {
                 });
               }}
               style={{
-                transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - (labelWidth/2)}px, ${
-                  rendered.offsetY + label.pos.y * rendered.height - (labelWidth/2)
-                }px)`,
+                transform: `translate(${
+                  rendered.offsetX + label.pos.x * rendered.width - labelWidth / 2
+                }px, ${rendered.offsetY + label.pos.y * rendered.height - labelWidth / 2}px)`,
               }}
             >
               {showLabelIndex ? <p>{label.index + 1}</p> : <PlusIcon />}
