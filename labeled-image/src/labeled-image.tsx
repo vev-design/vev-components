@@ -107,11 +107,6 @@ registerVevComponent(LabeledImage, {
       properties: ['object-fit'],
     },
     {
-      title: 'Container',
-      selector: styles.wrapper,
-      properties: ['background', 'border', 'border-radius', 'box-shadow'],
-    },
-    {
       title: 'Label',
       selector: overlayStyles.label,
       properties: ['background', 'border', 'border-radius', 'box-shadow', 'color'],
