@@ -91,7 +91,6 @@ registerVevComponent(SlideshowDots, {
       options: {
         display: 'dropdown',
         async items(data) {
-          console.log('data', data);
           return data.content
             ?.filter((e) => SLIDESHOW_TYPE.includes(e.type))
             .map((s) => ({ value: s.key, label: s.name }));
