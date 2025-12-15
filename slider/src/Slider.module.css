@@ -31,3 +31,7 @@
 .selected {
   color: blue;
 }
+
+.customDot {
+    margin: 0.2rem;
+}
