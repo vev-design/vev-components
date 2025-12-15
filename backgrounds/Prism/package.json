@@ -1,5 +1,5 @@
 {
-  "name": "threads",
+  "name": "Prism",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
@@ -15,8 +15,6 @@
   },
   "dependencies": {
     "@vev/react": "latest",
-    "@vev/silke": "^1.1.0",
-    "ogl": "^1.0.11",
     "react": "^18.2.0"
   }
 }

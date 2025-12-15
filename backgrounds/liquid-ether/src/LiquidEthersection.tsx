@@ -57,7 +57,7 @@ interface LiquidEtherWebGL {
 
 const defaultColors = ['#5227FF', '#FF9FFC', '#B19EEF'];
 
- function LiquidEthersection({
+function LiquidEthersection({
   mouseForce = 20,
   cursorSize = 100,
   isViscous = false,
@@ -1230,7 +1230,7 @@ const defaultColors = ['#5227FF', '#FF9FFC', '#B19EEF'];
 
 
 const multipleColorSelect = (props: any) => {
-  const [value, setValue] = useState(props.value || ["#5227FF","#FF9FFC","#B19EEF"]);
+  const [value, setValue] = useState(props.value || ["#5227FF", "#FF9FFC", "#B19EEF"]);
   const handleChange = (color: string, index: number) => {
     setValue(value.map((c: string, i: number) => i === index ? color : c));
     props.onChange?.(value);
@@ -1238,7 +1238,7 @@ const multipleColorSelect = (props: any) => {
 
   return <SilkeBox gap="s" align="center" vPad="s">
     {value.map((color: string, index: number) => (
-      <SilkeColorPickerButton  value={color} size="s" onChange={(v) => handleChange(v, index)} key={index} /> 
+      <SilkeColorPickerButton value={color} size="s" onChange={(v) => handleChange(v, index)} key={index} />
     ))}
   </SilkeBox>
 }
@@ -1247,49 +1247,63 @@ const multipleColorSelect = (props: any) => {
 
 
 registerVevComponent(LiquidEthersection, {
-  name: "LiquidEthersection",
+  name: "Liquid Ether",
   props: [
-    { name: "colors", type: "array", initialValue: ["#5227FF","#FF9FFC","#B19EEF"] , component: multipleColorSelect, of: "string"},
-    { name: "mouseForce", type: "number", initialValue: 20, options:{
-      display: "slider",
-      min: 0,
-      max: 60,
-    } },
-    { name: "cursorSize", type: "number", initialValue: 100, options:{
-      display: "slider",
-      min: 0,
-      max: 300,
-    } },
-    { name: "resolution", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 0.5,
-    } },
-    { name: "autoSpeed", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-    { name: "autoIntensity", type: "number", initialValue: 2.2, options:{
-      display: "slider",
-      min: 0,
-      max: 4,
-    } },
-    { name: "iterationsViscous", type: "number", initialValue: 32, options:{
-      display: "slider",
-      min: 0,
-      max: 64,
-    } },
-    { name: "iterationsPoisson", type: "number", initialValue: 32, options:{
-      display: "slider",
-      min: 0,
-      max: 64,
-    } },
-    { name: "isBounce", title: "Bounce Edges",  type: "boolean", initialValue: false },
-    { name: "autoDemo", title: "Auto Animate",  type: "boolean", initialValue: true },
-    { name: "isViscous", title: "Viscous",  type: "boolean", initialValue: false },
+    { name: "colors", type: "array", initialValue: ["#5227FF", "#FF9FFC", "#B19EEF"], component: multipleColorSelect, of: "string" },
+    {
+      name: "mouseForce", type: "number", initialValue: 20, options: {
+        display: "slider",
+        min: 0,
+        max: 60,
+      }
+    },
+    {
+      name: "cursorSize", type: "number", initialValue: 100, options: {
+        display: "slider",
+        min: 0,
+        max: 300,
+      }
+    },
+    {
+      name: "resolution", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 0.5,
+      }
+    },
+    {
+      name: "autoSpeed", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "autoIntensity", type: "number", initialValue: 2.2, options: {
+        display: "slider",
+        min: 0,
+        max: 4,
+      }
+    },
+    {
+      name: "iterationsViscous", type: "number", initialValue: 32, options: {
+        display: "slider",
+        min: 0,
+        max: 64,
+      }
+    },
+    {
+      name: "iterationsPoisson", type: "number", initialValue: 32, options: {
+        display: "slider",
+        min: 0,
+        max: 64,
+      }
+    },
+    { name: "isBounce", title: "Bounce Edges", type: "boolean", initialValue: false },
+    { name: "autoDemo", title: "Auto Animate", type: "boolean", initialValue: true },
+    { name: "isViscous", title: "Viscous", type: "boolean", initialValue: false },
 
-  
+
   ],
   editableCSS: [
     {

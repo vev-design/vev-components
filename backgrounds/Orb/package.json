@@ -1,5 +1,5 @@
 {
-  "name": "Prism",
+  "name": "Orb",
   "version": "0.0.1",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@vev/react": "latest",
-    "ogl": "^1.0.11",
     "react": "^18.2.0"
   }
 }

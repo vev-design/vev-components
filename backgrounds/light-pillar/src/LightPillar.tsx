@@ -30,7 +30,7 @@ const LightPillar = ({
   const mouseRef = useRef({ x: 0, y: 0 });
   const timeRef = useRef(0);
   const startTimeRef = useRef(0);
-  
+
   // Props refs for smooth updates
   const propsRef = useRef({
     topColor,
@@ -73,38 +73,38 @@ const LightPillar = ({
   function compileShader(gl: WebGLRenderingContext, source: string, type: number): WebGLShader | null {
     const shader = gl.createShader(type);
     if (!shader) return null;
-    
+
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    
+
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       console.error('Shader compile error:', gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
       return null;
     }
-    
+
     return shader;
   }
 
   function createProgram(gl: WebGLRenderingContext, vertSource: string, fragSource: string): WebGLProgram | null {
     const vertShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
     const fragShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
-    
+
     if (!vertShader || !fragShader) return null;
-    
+
     const program = gl.createProgram();
     if (!program) return null;
-    
+
     gl.attachShader(program, vertShader);
     gl.attachShader(program, fragShader);
     gl.linkProgram(program);
-    
+
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       console.error('Program link error:', gl.getProgramInfoLog(program));
       gl.deleteProgram(program);
       return null;
     }
-    
+
     return program;
   }
 
@@ -307,9 +307,9 @@ const LightPillar = ({
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       -1, -1,
-       1, -1,
-      -1,  1,
-       1,  1
+      1, -1,
+      -1, 1,
+      1, 1
     ]), gl.STATIC_DRAW);
 
     const uvBuffer = gl.createBuffer();
@@ -344,12 +344,12 @@ const LightPillar = ({
     // Set initial uniforms
     if (uniforms.uResolution) gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
     if (uniforms.uMouse) gl.uniform2f(uniforms.uMouse, 0, 0);
-    
+
     const [topR, topG, topB] = parseColor(propsRef.current.topColor);
     const [bottomR, bottomG, bottomB] = parseColor(propsRef.current.bottomColor);
     if (uniforms.uTopColor) gl.uniform3f(uniforms.uTopColor, topR, topG, topB);
     if (uniforms.uBottomColor) gl.uniform3f(uniforms.uBottomColor, bottomR, bottomG, bottomB);
-    
+
     if (uniforms.uIntensity) gl.uniform1f(uniforms.uIntensity, propsRef.current.intensity);
     if (uniforms.uInteractive) gl.uniform1i(uniforms.uInteractive, propsRef.current.interactive ? 1 : 0);
     if (uniforms.uGlowAmount) gl.uniform1f(uniforms.uGlowAmount, propsRef.current.glowAmount);
@@ -411,13 +411,13 @@ const LightPillar = ({
 
       const elapsed = (currentTime / 1000) - startTimeRef.current;
       const props = propsRef.current;
-      
+
       timeRef.current = elapsed * props.rotationSpeed;
 
       // Update uniforms
       if (uniforms.uTime) gl.uniform1f(uniforms.uTime, timeRef.current);
       if (uniforms.uMouse) gl.uniform2f(uniforms.uMouse, mouseRef.current.x, mouseRef.current.y);
-      
+
       // Update props uniforms
       if (uniforms.uIntensity) gl.uniform1f(uniforms.uIntensity, props.intensity);
       if (uniforms.uInteractive) gl.uniform1i(uniforms.uInteractive, props.interactive ? 1 : 0);
@@ -426,7 +426,7 @@ const LightPillar = ({
       if (uniforms.uPillarHeight) gl.uniform1f(uniforms.uPillarHeight, props.pillarHeight);
       if (uniforms.uNoiseIntensity) gl.uniform1f(uniforms.uNoiseIntensity, props.noiseIntensity);
       if (uniforms.uPillarRotation) gl.uniform1f(uniforms.uPillarRotation, props.pillarRotation);
-      
+
       // Update colors
       const [topR, topG, topB] = parseColor(props.topColor);
       const [bottomR, bottomG, bottomB] = parseColor(props.bottomColor);
@@ -460,14 +460,14 @@ const LightPillar = ({
         const win = window as Window;
         win.removeEventListener('resize', setSize);
       }
-      
+
       window.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseleave', handleMouseLeave);
 
       if (state.buffers.position) gl.deleteBuffer(state.buffers.position);
       if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
       if (program) gl.deleteProgram(program);
-      
+
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
@@ -482,15 +482,15 @@ const LightPillar = ({
 registerVevComponent(LightPillar, {
   name: "LightPillar",
   props: [
-    { name: "topColor", title: "Top Color", type: "string", initialValue: "#5227FF", options: {  type: "color" } },
-    { name: "bottomColor", title: "Bottom Color", type: "string", initialValue: "#FF9FFC", options: {  type: "color" } },
-    { name: "intensity", title: "Intensity", type: "number", initialValue: 2.6, options: {  display: "slider", min: 0.1, max: 3 } },
-    { name: "rotationSpeed",title: "Rotation Speed", type: "number", initialValue: 0.3, options: {  display: "slider", min: 0, max: 2 } }, 
-    { name: "glowAmount",title: "Glow Amount", type: "number", initialValue: 0.005, options: {  display: "slider", min: 0.001, max: 0.02, scale: 0.001 } },
-    { name: "pillarWidth", type: "number", initialValue: 3.0, options: {  display: "slider", min: 1, max: 10 } },
-    { name: "pillarHeight", type: "number", initialValue: 0.4, options: {  display: "slider", min: 0.1, max: 2 } },
-    { name: "noiseIntensity", type: "number", initialValue: 0.5, options: {  display: "slider", min: 0, max: 2 } },
-    { name: "pillarRotation", type: "number", initialValue: 0, options: {  display: "slider", min: 0, max: 360 } },
+    { name: "topColor", title: "Top Color", type: "string", initialValue: "#5227FF", options: { type: "color" } },
+    { name: "bottomColor", title: "Bottom Color", type: "string", initialValue: "#FF9FFC", options: { type: "color" } },
+    { name: "intensity", title: "Intensity", type: "number", initialValue: 2.6, options: { display: "slider", min: 0.1, max: 3 } },
+    { name: "rotationSpeed", title: "Rotation Speed", type: "number", initialValue: 0.3, options: { display: "slider", min: 0, max: 2 } },
+    { name: "glowAmount", title: "Glow Amount", type: "number", initialValue: 0.005, options: { display: "slider", min: 0.001, max: 0.02, scale: 0.001 } },
+    { name: "pillarWidth", type: "number", initialValue: 3.0, options: { display: "slider", min: 1, max: 10 } },
+    { name: "pillarHeight", type: "number", initialValue: 0.4, options: { display: "slider", min: 0.1, max: 2 } },
+    { name: "noiseIntensity", type: "number", initialValue: 0.5, options: { display: "slider", min: 0, max: 2 } },
+    { name: "pillarRotation", type: "number", initialValue: 0, options: { display: "slider", min: 0, max: 360 } },
     { name: "interactive", title: "Mouse interactive", type: "boolean", initialValue: false },
   ],
   editableCSS: [
