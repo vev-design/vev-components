@@ -16,6 +16,17 @@
     justify-content: center;
 }
 
+.mainComponentLabel {
+    cursor: pointer;
+    border-radius: 50%;
+    position: absolute;
+    min-width: 3.5vw;
+    min-height: 3.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .captionWrapper {
     font-size: 1vw;
     z-index: 1000;

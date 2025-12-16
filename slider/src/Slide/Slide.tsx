@@ -32,14 +32,15 @@ export const Slide = ({
   action,
   slidesToLoad: slidesToLoadProp,
   shrinkFactorBeforeAfter,
+  transitionEnd,
 }: Omit<Props, 'children'> & {
   index: number;
 }) => {
   const slidesToLoad = Math.min(Math.max(slidesToLoadProp, 1), Math.min(5, slides.length - 1)) || 1;
   const [currentSlides, setCurrentSlides] = useState<string[]>([]);
   const [move, setMove] = useState(-100);
-  const [transitionSpeed, setTransitionSpeed] = useState(speed || 1);
   const prevIndex = useRef(0);
+  const [transitionSpeed, setTransitionSpeed] = useState(speed);
 
   const moveDirection = ['VERTICAL', 'VERTICAL_REVERSE'].includes(direction) ? 'Y' : 'X';
 
@@ -132,6 +133,7 @@ export const Slide = ({
             setTransitionSpeed(0);
             setMove(-100);
             setSlides();
+            transitionEnd();
           }
         }}
       >

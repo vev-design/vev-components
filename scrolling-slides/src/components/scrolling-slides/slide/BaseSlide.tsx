@@ -1,7 +1,7 @@
 import React, { ForwardedRef } from 'react';
 
 import styles from '../ScrollingSlide.module.css';
-import { WidgetNode } from '@vev/react';
+import { useModel, WidgetNode } from '@vev/react';
 
 export type BaseSlideProps = {
   id: string;

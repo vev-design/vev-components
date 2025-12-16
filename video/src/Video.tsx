@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, VideoHTMLAttributes } from 'react';
+import React, { useEffect, useRef, useState, VideoHTMLAttributes } from 'react';
 import styles from './Video.module.css';
 import { useEditorState, useVevEvent, useDispatchVevEvent, useTracking } from '@vev/react';
 import { getNameFromUrl, isIE, createTracker } from './utils';
@@ -39,7 +39,11 @@ const Video = ({
   section = false,
   altText,
 }: Props) => {
-  const videoRef = useRef<HTMLVideoElement>();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  // Keeps track of the muted state given by interaction events
+  const mutedRef = useRef<boolean>(undefined);
+  // Keeps track of the video has been manually paused
+  const pausedRef = useRef(false);
   const stateRef = useRef<{ current: number; maxProgress: number }>({
     current: 0,
     maxProgress: 0,
@@ -48,41 +52,49 @@ const Video = ({
   const loopedAmount = useRef(1);
   const videoStarted = useRef(false);
 
+
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
   const dispatchTrackingEvent = useTracking(disableTracking);
 
   useVevEvent(VideoInteraction.play, () => {
-    console.log('play');
+    pausedRef.current = false;
     videoRef.current.play();
   });
 
   useVevEvent(VideoInteraction.restart, () => {
+    pausedRef.current = false;
     videoRef.current.currentTime = 0;
     videoRef.current.play();
   });
 
   useVevEvent(VideoInteraction.togglePlay, () => {
     if (videoRef.current.paused) {
+      pausedRef.current = false;
       videoRef.current.play();
     } else {
+      pausedRef.current = true;
       videoRef.current.pause();
     }
   });
 
   useVevEvent(VideoInteraction.pause, () => {
+    pausedRef.current = true;
     videoRef.current.pause();
   });
 
   useVevEvent(VideoInteraction.mute, () => {
+    mutedRef.current = true;
     videoRef.current.muted = true;
   });
 
   useVevEvent(VideoInteraction.unMute, () => {
+    mutedRef.current = false;
     videoRef.current.muted = false;
   });
 
   useVevEvent(VideoInteraction.toggleSound, () => {
+    mutedRef.current = !mutedRef.current;
     videoRef.current.muted = !videoRef.current.muted;
   });
 
@@ -103,6 +115,7 @@ const Video = ({
         current,
         maxProgress: Math.max(current, stateRef.current.maxProgress),
       };
+
       switch (e.type) {
         case 'timeupdate':
           if (current > stateRef.current.maxProgress) {
@@ -172,12 +185,19 @@ const Video = ({
     }
 
     if (autoplay && !disabled) {
-      videoEl.muted = true;
-      videoEl.play();
+      if (mutedRef.current === undefined) {
+        videoEl.muted = true;
+      } else {
+        videoEl.muted = mutedRef.current;
+      }
+
+      if (!pausedRef.current) videoEl.play();
     }
     
 
     if (disabled) {
+      mutedRef.current = undefined;
+      pausedRef.current = undefined;
       loopedAmount.current = 1;
       videoEl.load();
       videoEl.pause();
@@ -186,7 +206,7 @@ const Video = ({
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
-  if (mute) attributes.muted = true;
+  if ((mutedRef.current === undefined && mute) || mutedRef.current) attributes.muted = true;
   if (controls) attributes.controls = true;
   if (isIE()) attributes.className = 'ie';
   if (autoplay) attributes.autoPlay = true;
@@ -206,6 +226,7 @@ const Video = ({
       )}
       <video
         autoPlay={autoplay}
+        key={video?.sources?.[0]?.url}
         ref={videoRef}
         aria-label={video?.name || ''}
         playsInline

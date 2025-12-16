@@ -1,24 +1,27 @@
-import { SilkeBox, SilkeButton, SilkeModal, SilkeText, SilkeTitle } from '@vev/silke';
+import { SilkeBox, SilkeButton, SilkeModal, SilkeTitle } from '@vev/silke';
 import React, { useState } from 'react';
 import { LabelEditor } from './label-editor';
 import { Label } from '../types';
 
 export function LabelEditorForm(form: any) {
   const imageUrl = form.context.value?.image?.url;
+  const pkg = form.context.pkg;
   const { labels } = form.context.value;
   const [showModal, setShowModal] = useState(false);
+
   return (
     <SilkeBox align="center" pad="s">
       {showModal && (
         <SilkeModal
           size="large"
-          pad='xs'
+          pad="xs"
           title={<SilkeTitle kind="xs">Add labels to your image</SilkeTitle>}
           onClose={() => {
             setShowModal(false);
           }}
         >
           <LabelEditor
+            pkg={pkg}
             labels={labels || []}
             url={imageUrl}
             onRemove={(removeIndex) => {
