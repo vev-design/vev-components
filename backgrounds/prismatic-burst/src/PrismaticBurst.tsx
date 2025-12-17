@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './PrismaticBurst.module.css';
 import { registerVevComponent } from "@vev/react";
-import { SilkeBox, SilkeColorPickerButton, SilkeText } from '@vev/silke';
+import { SilkeBox, SilkeColorPickerButton, SilkeText, SilkeTextSmall } from '@vev/silke';
 
 type Offset = { x?: number | string; y?: number | string };
 type AnimationType = 'rotate' | 'rotate3d' | 'hover';
@@ -582,55 +582,68 @@ const multipleColorSelect = (props: any) => {
     props.onChange?.(value);
   }
 
-  return <SilkeBox gap="s" vAlign="center" hAlign="start" vPad="s">
-    <SilkeText>Colors</SilkeText>
-    <SilkeBox gap="s" align="center" vPad="s">
-    {value.map((color: string, index: number) => (
-      <SilkeColorPickerButton  value={color} size="s" onChange={(v) => handleChange(v, index)} key={index} /> 
-    ))}
-  </SilkeBox>
-  </SilkeBox>
+  return (
+    <SilkeBox gap="s" column>
+      <SilkeTextSmall>Colors</SilkeTextSmall>
+      <SilkeBox gap="s" vPad="s">
+        {value.map((color: string, index: number) => (
+          <SilkeColorPickerButton value={color} size="s" onChange={(v) => handleChange(v, index)} key={index} />
+        ))}
+      </SilkeBox>
+    </SilkeBox>
+  )
 }
 
 
 registerVevComponent(PrismaticBurst, {
   name: "PrismaticBurst",
   props: [
-    { name: "colors", type: "array", initialValue: ['#ff007a', '#4d3dff', '#ffffff'] , component: multipleColorSelect, of: "string"},
-    { name: "animationType", title: "Animation Type", type: "select", initialValue: "rotate3d", options:{
-      display: "dropdown",
-      items: [
-        { label: "Rotate", value: "rotate" },
-        { label: "Hover", value: "hover" },
-        { label: "3D Rotate", value: "rotate3d" },
-      ],
-    } },
-    { name: "intensity", type: "number", initialValue: 2, options:{
-      display: "slider",
-      min: 0,
-      max: 5,
-    } },
-    { name: "speed", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 2,
-    } },
-    { name: "distort", type: "number", initialValue: 0, options:{
-      display: "slider",
-      min: 0,
-      max: 10,
-    } },
-    { name: "rayCount", title: "Ray Count", type: "number", initialValue: 0, options:{
-      display: "slider",
-      min: 0,
-      max: 64,
-    } },
-    { name: "hoverDampness", title: "Hover Dampness", type: "number", initialValue: 0, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-   
+    {
+      name: "animationType", title: "Animation Type", type: "select", initialValue: "rotate3d", options: {
+        display: "dropdown",
+        items: [
+          { label: "Rotate", value: "rotate" },
+          { label: "Hover", value: "hover" },
+          { label: "3D Rotate", value: "rotate3d" },
+        ],
+      }
+    },
+    {
+      name: "intensity", type: "number", initialValue: 2, options: {
+        display: "slider",
+        min: 0,
+        max: 5,
+      }
+    },
+    {
+      name: "speed", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    {
+      name: "distort", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 10,
+      }
+    },
+    {
+      name: "rayCount", title: "Ray Count", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 64,
+      }
+    },
+    {
+      name: "hoverDampness", title: "Hover Dampness", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    { name: "colors", type: "array", initialValue: ['#ff007a', '#4d3dff', '#ffffff'], component: multipleColorSelect, of: "string" },
   ],
   editableCSS: [
     {

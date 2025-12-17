@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './ColorBends.module.css';
 import { registerVevComponent } from "@vev/react";
-import { SilkeBox, SilkeButton, SilkeColorPickerButton } from '@vev/silke';
+import { SilkeBox, SilkeButton, SilkeColorPickerButton, SilkeTextSmall } from '@vev/silke';
 
 const MAX_COLORS = 8;
 
@@ -128,38 +128,38 @@ interface WebGLState {
 function compileShader(gl: WebGLRenderingContext, source: string, type: number): WebGLShader | null {
   const shader = gl.createShader(type);
   if (!shader) return null;
-  
+
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     console.error('Shader compile error:', gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return null;
   }
-  
+
   return shader;
 }
 
 function createProgram(gl: WebGLRenderingContext, vertSource: string, fragSource: string): WebGLProgram | null {
   const vertShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
   const fragShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
-  
+
   if (!vertShader || !fragShader) return null;
-  
+
   const program = gl.createProgram();
   if (!program) return null;
-  
+
   gl.attachShader(program, vertShader);
   gl.attachShader(program, fragShader);
   gl.linkProgram(program);
-  
+
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.error('Program link error:', gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;
   }
-  
+
   return program;
 }
 
@@ -190,7 +190,7 @@ function ColorBends({
   const pointerSmoothRef = useRef(8);
   const startTimeRef = useRef(0);
   const lastTimeRef = useRef(0);
-  
+
   // Props refs for smooth updates
   const propsRef = useRef({
     speed,
@@ -276,9 +276,9 @@ function ColorBends({
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       -1, -1,
-       1, -1,
-      -1,  1,
-       1,  1
+      1, -1,
+      -1, 1,
+      1, 1
     ]), gl.STATIC_DRAW);
 
     const uvBuffer = gl.createBuffer();
@@ -385,15 +385,15 @@ function ColorBends({
           const hex = colorArray[i].replace('#', '').trim();
           const v = hex.length === 3
             ? [
-                parseInt(hex[0] + hex[0], 16),
-                parseInt(hex[1] + hex[1], 16),
-                parseInt(hex[2] + hex[2], 16)
-              ]
+              parseInt(hex[0] + hex[0], 16),
+              parseInt(hex[1] + hex[1], 16),
+              parseInt(hex[2] + hex[2], 16)
+            ]
             : [
-                parseInt(hex.slice(0, 2), 16),
-                parseInt(hex.slice(2, 4), 16),
-                parseInt(hex.slice(4, 6), 16)
-              ];
+              parseInt(hex.slice(0, 2), 16),
+              parseInt(hex.slice(2, 4), 16),
+              parseInt(hex.slice(4, 6), 16)
+            ];
           colorVecs.push(v[0] / 255, v[1] / 255, v[2] / 255);
         } else {
           colorVecs.push(0, 0, 0);
@@ -427,11 +427,11 @@ function ColorBends({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
       else window.removeEventListener('resize', handleResize);
-      
+
       if (state.buffers.position) gl.deleteBuffer(state.buffers.position);
       if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
       if (program) gl.deleteProgram(program);
-      
+
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
@@ -475,15 +475,15 @@ const multipleColorSelect = (props: any) => {
 
 
   return (
-    <SilkeBox gap="s" align="center" vPad="s" style={{ width: '100%', overflow: 'hidden', display: 'flex', flexWrap: 'wrap' }}>
-
-        <SilkeColorPickerButton
-          title="Single Color"
-          value={value[0] || ''}
-          size="s"
-          onChange={handleChange}
-        />
-      <SilkeButton size="s" kind='secondary' icon="close" onClick={handleClear}/>
+    <SilkeBox gap="s" vPad="s" style={{ width: '100%', overflow: 'hidden', display: 'flex', flexWrap: 'wrap' }}>
+      <SilkeColorPickerButton
+        title="Single Color"
+        value={value[0] || ''}
+        size="s"
+        onChange={handleChange}
+        label="Color tint"
+      />
+      <SilkeButton size="s" kind='secondary' icon="close" onClick={handleClear} />
     </SilkeBox>
   );
 };
@@ -491,53 +491,72 @@ const multipleColorSelect = (props: any) => {
 
 registerVevComponent(ColorBends, {
   name: "ColorBends",
+  type: 'both',
   props: [
+    {
+      name: "rotation", title: "Rotation (deg)", type: "number", initialValue: 45, options: {
+        display: "slider",
+        min: -180,
+        max: 180,
+      }
+    },
+    {
+      name: "autoRotate", title: "Auto Rotate (deg/s)", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: -5,
+        max: 5,
+      }
+    },
+    {
+      name: "speed", type: "number", initialValue: 0.2, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "scale", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0.2,
+        max: 5,
+      }
+    },
+    {
+      name: "frequency", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 5,
+      }
+    },
+    {
+      name: "warpStrength", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "mouseInfluence", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "parallax", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    {
+      name: "noise", type: "number", initialValue: 0.1, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
     { name: "colors", title: "Single Color", type: "array", initialValue: [], component: multipleColorSelect, of: "string" },
-    {name: "rotation", title: "Rotation (deg)", type: "number", initialValue: 45, options:{
-      display: "slider",
-      min: -180,
-      max: 180,
-    } },
-    { name: "autoRotate", title: "Auto Rotate (deg/s)", type: "number", initialValue: 0, options:{
-      display: "slider",
-      min: -5,
-      max: 5,
-    } },
-    { name: "speed", type: "number", initialValue: 0.2, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-    { name: "scale", type: "number", initialValue: 1, options:{
-      display: "slider",
-      min: 0.2,
-      max: 5,
-    } },
-    { name: "frequency", type: "number", initialValue: 1, options:{
-      display: "slider",
-      min: 0,
-      max: 5,
-    } },
-    { name: "warpStrength", type: "number", initialValue: 1, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-    { name: "mouseInfluence", type: "number", initialValue: 1, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-    { name: "parallax", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 2,
-    } },
-    { name: "noise", type: "number", initialValue: 0.1, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
   ],
   editableCSS: [
     {
@@ -545,7 +564,6 @@ registerVevComponent(ColorBends, {
       properties: ["background"],
     },
   ],
-  type: 'both',
 });
 
 export default ColorBends;
