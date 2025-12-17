@@ -1,4 +1,3 @@
-
 export function calculateScrollAnimationOffset(el: HTMLElement): {
   startPosition: number;
   endPosition: number;
@@ -31,11 +30,9 @@ export function calculateScrollAnimationOffset(el: HTMLElement): {
       offsetEnd = 1 - (endPosition - scrollHeight + windowHeight) / durationHeight;
       endPosition = scrollHeight - windowHeight;
     }
-
-    
   } else {
     startPosition = rootOffset;
-    endPosition = rootOffset + height - windowHeight
+    endPosition = rootOffset + height - windowHeight;
   }
 
   return {
