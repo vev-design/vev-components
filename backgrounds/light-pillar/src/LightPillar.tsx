@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./LightPillar.module.css";
 import { registerVevComponent } from "@vev/react";
 import { useRef, useEffect } from 'react';
+import { SilkeColorPickerButton } from "@vev/silke";
 
 const LightPillar = ({
   topColor = '#5227FF',
@@ -482,16 +483,16 @@ const LightPillar = ({
 registerVevComponent(LightPillar, {
   name: "LightPillar",
   props: [
-    { name: "topColor", title: "Top Color", type: "string", initialValue: "#5227FF", options: { type: "color" } },
-    { name: "bottomColor", title: "Bottom Color", type: "string", initialValue: "#FF9FFC", options: { type: "color" } },
     { name: "intensity", title: "Intensity", type: "number", initialValue: 2.6, options: { display: "slider", min: 0.1, max: 3 } },
     { name: "rotationSpeed", title: "Rotation Speed", type: "number", initialValue: 0.3, options: { display: "slider", min: 0, max: 2 } },
-    { name: "glowAmount", title: "Glow Amount", type: "number", initialValue: 0.005, options: { display: "slider", min: 0.001, max: 0.02, scale: 0.001 } },
+    /*     { name: "glowAmount", title: "Glow Amount", type: "number", initialValue: 0.005, options: { display: "slider", min: 0.001, max: 0.02, scale: 0.001 } }, */
     { name: "pillarWidth", type: "number", initialValue: 3.0, options: { display: "slider", min: 1, max: 10 } },
     { name: "pillarHeight", type: "number", initialValue: 0.4, options: { display: "slider", min: 0.1, max: 2 } },
     { name: "noiseIntensity", type: "number", initialValue: 0.5, options: { display: "slider", min: 0, max: 2 } },
     { name: "pillarRotation", type: "number", initialValue: 0, options: { display: "slider", min: 0, max: 360 } },
     { name: "interactive", title: "Mouse interactive", type: "boolean", initialValue: false },
+    { name: "topColor", title: "Top Color", type: "string", initialValue: "#5227FF", component: SilkeColorPickerButton },
+    { name: "bottomColor", title: "Bottom Color", type: "string", initialValue: "#FF9FFC", component: SilkeColorPickerButton },
   ],
   editableCSS: [
     {
