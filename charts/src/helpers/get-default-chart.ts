@@ -18,6 +18,6 @@ const defaultData: Array<(string | number)[]> = [
 export function getDefaultChart(): ChartDefinition {
   return {
     type: 'bar',
-    data: defaultData,
+    data: [defaultData],
   };
 }

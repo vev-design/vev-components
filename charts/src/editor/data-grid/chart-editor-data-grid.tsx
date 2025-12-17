@@ -1,14 +1,14 @@
 import { SilkeBox, SilkeOverflowMenu } from '@vev/silke';
 import React, { useEffect, useState } from 'react';
 import styles from './chart-editor-data-grid.module.css';
-import { ChartDefinition } from '../../types';
+import { ChartData, ChartDefinition } from '../../types';
 import { SchemaContextModel } from '@vev/utils';
 import cloneDeep from 'lodash.clonedeep';
 import { SilkeOverflowMenuItem } from '@vev/silke/dist/types/components/silke-overflow-menu/silke-overflow-menu';
 
 interface Props {
-  value: Partial<ChartDefinition>;
-  onChange: (value: Partial<ChartDefinition>) => void;
+  value: ChartData;
+  onChange: (value: ChartData) => void;
   context: SchemaContextModel<ChartDefinition>;
 }
 
@@ -39,11 +39,15 @@ const overflowMenuItemsLeft: SilkeOverflowMenuItem[] = [
 ];
 
 export function ChartEditorDataGrid({ value, onChange, context }: Props) {
-  const [data, setData] = useState<Array<(string | number)[]>>(value?.data || []);
+  const [data, setData] = useState<ChartData>(value || []);
 
   useEffect(() => {
-    onChange({ data });
+    onChange(data);
   }, [data]);
+
+  useEffect(() => {
+    setData(value);
+  }, [value]);
 
   const columnCount = data[0]?.length || 0;
 

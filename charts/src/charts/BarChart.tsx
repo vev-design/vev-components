@@ -11,7 +11,7 @@ export function BarChart({ data }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
 
   const { axisLabels, xAxisData, yAxisData } = useMemo(() => {
-    const clonedData = cloneDeep(data) as Array<(string | number)[]>;
+    const clonedData = cloneDeep([...data]) as Array<(string | number)[]>;
     const axisLabels = clonedData.shift();
     const xAxisData = clonedData.map((value) => {
       return value[0];

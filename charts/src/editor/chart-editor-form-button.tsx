@@ -28,7 +28,7 @@ export function ChartEditorFormButton({ context, value, onChange }: Props) {
                 value
                   ? {
                       ...value,
-                      data: JSON.parse(value?.data || '[]') as Array<(string | number)[]>,
+                      data: JSON.parse(value?.data || '[]') as ChartDefinition['data'],
                     }
                   : undefined
               }
