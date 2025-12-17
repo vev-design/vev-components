@@ -440,9 +440,9 @@ const Prism: React.FC<PrismProps> = ({
   animationType = 'rotate',
   glow = 1,
   offset = { x: 0, y: 0 },
-  noise = 0.5,
+  noise = 0,
   transparent = true,
-  scale = 3.6,
+  scale = 1.5,
   hueShift = 0,
   colorFrequency = 1,
   hoverStrength = 2,
@@ -751,55 +751,73 @@ const Prism: React.FC<PrismProps> = ({
 registerVevComponent(Prism, {
   name: "Prism",
   props: [
-    { name: "animationType", type: "select", initialValue: "rotate",  options:{
-      items: [
-        { label: "Rotate", value: "rotate" },
-        { label: "Hover", value: "hover" },
-        { label: "3D Rotate", value: "3drotate" },
-      ],
-      
-    } },
-    { name: "timeScale", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 2,
-    } },
-    { name: "scale", type: "number", initialValue: 3.6, options:{
-      display: "slider",
-      min: 0,
-      max: 5,
-    } },
-    { name: "height", type: "number", initialValue: 3.5, options:{
-      display: "slider",
-      min: 0,
-      max: 8,
-    } },
-    { name: "baseWidth", type: "number", initialValue: 5.5, options:{
-      display: "slider",
-      min: 0,
-      max: 10,
-    } },
-    { name: "noise", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-    { name: "glow", type: "number", initialValue: 1, options:{
-      display: "slider",
-      min: 0,
-      max: 3,
-    } },
-    { name: "hueShift", type: "number", initialValue: 0 , options:{
-      display: "slider",
-      min: 0,
-      max: 3.06,
-    } },
-    { name: "colorFrequency", type: "number", initialValue: 0.8, options:{
-      display: "slider",
-      min: 0,
-      max: 4,
-    } },
-    
+    {
+      name: "animationType", type: "select", initialValue: "rotate", options: {
+        display: "dropdown",
+        items: [
+          { label: "Rotate", value: "rotate" },
+          { label: "Hover", value: "hover" },
+          { label: "3D Rotate", value: "3drotate" },
+        ],
+
+      }
+    },
+    {
+      name: "timeScale", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    {
+      name: "scale", type: "number", initialValue: 1.5, options: {
+        display: "slider",
+        min: 0,
+        max: 5,
+      }
+    },
+    {
+      name: "height", type: "number", initialValue: 3.5, options: {
+        display: "slider",
+        min: 0,
+        max: 8,
+      }
+    },
+    {
+      name: "baseWidth", type: "number", initialValue: 5.5, options: {
+        display: "slider",
+        min: 0,
+        max: 10,
+      }
+    },
+    {
+      name: "noise", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "glow", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 3,
+      }
+    },
+    {
+      name: "hueShift", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 3.06,
+      }
+    },
+    {
+      name: "colorFrequency", type: "number", initialValue: 0.8, options: {
+        display: "slider",
+        min: 0,
+        max: 4,
+      }
+    },
   ],
   editableCSS: [
     {

@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./FaultyTerminal.module.css";
 import { registerVevComponent } from "@vev/react";
 import { useEffect, useRef } from 'react';
+import { SilkeColorPickerButton } from "@vev/silke";
 
 const vertexShader = `
 attribute vec2 aPosition;
@@ -230,38 +231,38 @@ interface WebGLState {
 function compileShader(gl: WebGLRenderingContext, source: string, type: number): WebGLShader | null {
   const shader = gl.createShader(type);
   if (!shader) return null;
-  
+
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     console.error('Shader compile error:', gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return null;
   }
-  
+
   return shader;
 }
 
 function createProgram(gl: WebGLRenderingContext, vertSource: string, fragSource: string): WebGLProgram | null {
   const vertShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
   const fragShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
-  
+
   if (!vertShader || !fragShader) return null;
-  
+
   const program = gl.createProgram();
   if (!program) return null;
-  
+
   gl.attachShader(program, vertShader);
   gl.attachShader(program, fragShader);
   gl.linkProgram(program);
-  
+
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.error('Program link error:', gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;
   }
-  
+
   return program;
 }
 
@@ -299,7 +300,7 @@ function FaultyTerminal({
   const loadAnimationStartRef = useRef(0);
   const timeOffsetRef = useRef(Math.random() * 100);
   const startTimeRef = useRef(0);
-  
+
   // Props refs for smooth updates
   const propsRef = useRef({
     scale,
@@ -411,9 +412,9 @@ function FaultyTerminal({
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       -1, -1,
-       1, -1,
-      -1,  1,
-       1,  1
+      1, -1,
+      -1, 1,
+      1, 1
     ]), gl.STATIC_DRAW);
 
     const uvBuffer = gl.createBuffer();
@@ -468,7 +469,7 @@ function FaultyTerminal({
     // Set initial uniforms
     const initialProps = propsRef.current;
     const [tintR, tintG, tintB] = hexToRgb(initialProps.tint);
-    
+
     if (uniforms.uScale) gl.uniform1f(uniforms.uScale, initialProps.scale);
     if (uniforms.uGridMul) gl.uniform2f(uniforms.uGridMul, initialProps.gridMul[0], initialProps.gridMul[1]);
     if (uniforms.uDigitSize) gl.uniform1f(uniforms.uDigitSize, initialProps.digitSize);
@@ -543,7 +544,7 @@ function FaultyTerminal({
       if (uniforms.uMouseStrength) gl.uniform1f(uniforms.uMouseStrength, props.mouseStrength);
       if (uniforms.uUseMouse) gl.uniform1f(uniforms.uUseMouse, props.mouseReact ? 1 : 0);
       if (uniforms.uBrightness) gl.uniform1f(uniforms.uBrightness, props.brightness);
-      
+
       // Update tint color
       const [tintR, tintG, tintB] = hexToRgb(props.tint);
       if (uniforms.uTint) gl.uniform3f(uniforms.uTint, tintR, tintG, tintB);
@@ -575,40 +576,39 @@ function FaultyTerminal({
       } else {
         container.removeEventListener('resize', setSize);
       }
-      
+
       window.removeEventListener('mousemove', handleMouseMove);
-      
+
       if (state.buffers.position) gl.deleteBuffer(state.buffers.position);
       if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
       if (program) gl.deleteProgram(program);
-      
+
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
-      
+
       loadAnimationStartRef.current = 0;
       timeOffsetRef.current = Math.random() * 100;
     };
   }, [dpr]);
 
-  return <div ref={containerRef} style={style}  className={`${styles.wrapper}  ${className}`}  />;
+  return <div ref={containerRef} style={style} className={`${styles.wrapper}  ${className}`} />;
 }
 
 
 registerVevComponent(FaultyTerminal, {
   name: "FaultyTerminal",
   props: [
-    { name: "tint", title: "Tint color", type: "string", initialValue: "#ffffff", options: {  type: "color" } },
-    { name: "scale", type: "number", initialValue: 1, options: {  display: "slider", min: 1, max: 3 } },
-    { name: "digitSize", title: "Digit Size", type: "number", initialValue: 1.5, options: {  display: "slider", min: 0.5, max: 2 } },
-    { name: "timeScale", title: "Speed", type: "number", initialValue: 0.3, options: {  display: "slider", min: 0, max: 3 } },
-    { name: "noiseAmp", title: "Noise Amplitude", type: "number", initialValue: 0, options: {  display: "slider", min: 0.5, max: 1 } },
-    { name: "brightness", title: "Brightness", type: "number", initialValue: 0.6, options: {  display: "slider", min: 0.1, max: 1 } },
-    { name: "scanlineIntensity", title: "Scanline Intensity", type: "number", initialValue: 0.5, options: {  display: "slider", min: 0, max: 2 } },
-    { name: "curvature", title: "Curvature", type: "number", initialValue: 0.1, options: {  display: "slider", min: 0, max: 0.5 } },
-    { name: "mouseStrength", title: "Mouse Strength", type: "number", initialValue: 0.5, options: {  display: "slider", min: 0, max: 2 } },
+    { name: "scale", type: "number", initialValue: 1, options: { display: "slider", min: 1, max: 3 } },
+    { name: "digitSize", title: "Digit Size", type: "number", initialValue: 1.5, options: { display: "slider", min: 0.5, max: 2 } },
+    { name: "timeScale", title: "Speed", type: "number", initialValue: 0.3, options: { display: "slider", min: 0, max: 3 } },
+    { name: "noiseAmp", title: "Noise Amplitude", type: "number", initialValue: 0, options: { display: "slider", min: 0.5, max: 1 } },
+    { name: "brightness", title: "Brightness", type: "number", initialValue: 0.6, options: { display: "slider", min: 0.1, max: 1 } },
+    { name: "scanlineIntensity", title: "Scanline Intensity", type: "number", initialValue: 0.5, options: { display: "slider", min: 0, max: 2 } },
+    { name: "curvature", title: "Curvature", type: "number", initialValue: 0.1, options: { display: "slider", min: 0, max: 0.5 } },
+    { name: "mouseStrength", title: "Mouse Strength", type: "number", initialValue: 0.5, options: { display: "slider", min: 0, max: 2 } },
     { name: "mouseReact", title: "Mouse interaction", type: "boolean", initialValue: true },
-    
+    { name: "tint", title: "Tint color", type: "string", initialValue: "#ffffff", component: SilkeColorPickerButton },
   ],
   editableCSS: [
     {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./FloatingLines.module.css";
 import { registerVevComponent } from "@vev/react";
-import { SilkeBox, SilkeColorPickerButton } from "@vev/silke";
+import { SilkeBox, SilkeColorPickerButton, SilkeTextSmall } from "@vev/silke";
 
 const vertexShader = `
 attribute vec2 aPosition;
@@ -257,38 +257,38 @@ interface WebGLState {
 function compileShader(gl: WebGLRenderingContext, source: string, type: number): WebGLShader | null {
   const shader = gl.createShader(type);
   if (!shader) return null;
-  
+
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     console.error('Shader compile error:', gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return null;
   }
-  
+
   return shader;
 }
 
 function createProgram(gl: WebGLRenderingContext, vertSource: string, fragSource: string): WebGLProgram | null {
   const vertShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
   const fragShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
-  
+
   if (!vertShader || !fragShader) return null;
-  
+
   const program = gl.createProgram();
   if (!program) return null;
-  
+
   gl.attachShader(program, vertShader);
   gl.attachShader(program, fragShader);
   gl.linkProgram(program);
-  
+
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.error('Program link error:', gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;
   }
-  
+
   return program;
 }
 
@@ -315,14 +315,14 @@ function FloatingLines({
   const rafRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const startTimeRef = useRef(0);
-  
+
   const targetMouseRef = useRef({ x: -1000, y: -1000 });
   const currentMouseRef = useRef({ x: -1000, y: -1000 });
   const targetInfluenceRef = useRef(0);
   const currentInfluenceRef = useRef(0);
   const targetParallaxRef = useRef({ x: 0, y: 0 });
   const currentParallaxRef = useRef({ x: 0, y: 0 });
-  
+
   // Props refs for smooth updates
   const propsRef = useRef({
     linesGradient: linesGradient || [],
@@ -439,9 +439,9 @@ function FloatingLines({
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       -1, -1,
-       1, -1,
-      -1,  1,
-       1,  1
+      1, -1,
+      -1, 1,
+      1, 1
     ]), gl.STATIC_DRAW);
 
     const uvBuffer = gl.createBuffer();
@@ -527,7 +527,7 @@ function FloatingLines({
     // Set initial uniforms
     gl.useProgram(program);
     const initialProps = propsRef.current;
-    
+
     // Set initial gradient
     const initialGradient = initialProps.linesGradient || [];
     if (initialGradient.length > 0) {
@@ -552,7 +552,7 @@ function FloatingLines({
         gl.uniform1i(uniforms.lineGradientCount, 0);
       }
     }
-    
+
     // Set other initial uniforms
     if (uniforms.animationSpeed) gl.uniform1f(uniforms.animationSpeed, initialProps.animationSpeed);
     if (uniforms.enableTop) gl.uniform1i(uniforms.enableTop, initialProps.enabledWaves.includes('top') ? 1 : 0);
@@ -566,7 +566,7 @@ function FloatingLines({
     if (uniforms.iMouse) gl.uniform2f(uniforms.iMouse, -1000, -1000);
     if (uniforms.bendInfluence) gl.uniform1f(uniforms.bendInfluence, 0);
     if (uniforms.parallaxOffset) gl.uniform2f(uniforms.parallaxOffset, 0, 0);
-    
+
     // Set initial line counts and distances
     const initialTopLineCount = initialProps.enabledWaves.includes('top') ? getLineCount('top') : 0;
     const initialMiddleLineCount = initialProps.enabledWaves.includes('middle') ? getLineCount('middle') : 0;
@@ -574,14 +574,14 @@ function FloatingLines({
     const initialTopLineDistance = initialProps.enabledWaves.includes('top') ? getLineDistance('top') * 0.01 : 0.01;
     const initialMiddleLineDistance = initialProps.enabledWaves.includes('middle') ? getLineDistance('middle') * 0.01 : 0.01;
     const initialBottomLineDistance = initialProps.enabledWaves.includes('bottom') ? getLineDistance('bottom') * 0.01 : 0.01;
-    
+
     if (uniforms.topLineCount) gl.uniform1i(uniforms.topLineCount, initialTopLineCount);
     if (uniforms.middleLineCount) gl.uniform1i(uniforms.middleLineCount, initialMiddleLineCount);
     if (uniforms.bottomLineCount) gl.uniform1i(uniforms.bottomLineCount, initialBottomLineCount);
     if (uniforms.topLineDistance) gl.uniform1f(uniforms.topLineDistance, initialTopLineDistance);
     if (uniforms.middleLineDistance) gl.uniform1f(uniforms.middleLineDistance, initialMiddleLineDistance);
     if (uniforms.bottomLineDistance) gl.uniform1f(uniforms.bottomLineDistance, initialBottomLineDistance);
-    
+
     // Set initial wave positions
     if (uniforms.topWavePosition) {
       gl.uniform3f(
@@ -737,7 +737,7 @@ function FloatingLines({
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
-      
+
       if (interactive) {
         window.removeEventListener('pointermove', handlePointerMove);
         canvas.removeEventListener('pointerleave', handlePointerLeave);
@@ -746,7 +746,7 @@ function FloatingLines({
       if (state.buffers.position) gl.deleteBuffer(state.buffers.position);
       if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
       if (program) gl.deleteProgram(program);
-      
+
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
@@ -782,52 +782,63 @@ const multipleColorSelect = (props: any) => {
   };
 
   return (
-    <SilkeBox gap="s" align="center" vPad="s">
-      {value.map((color: string, index: number) => (
-        <SilkeColorPickerButton
-          value={color}
-          size="s"
-          onChange={(v) => handleChange(v, index)}
-          key={index}
-        />
-      ))}
+    <SilkeBox gap="s" vPad="s" column>
+      <SilkeTextSmall>Gradient Colors</SilkeTextSmall>
+      <SilkeBox gap="s" vPad="s">
+        {value.map((color: string, index: number) => (
+          <SilkeColorPickerButton
+            value={color}
+            size="s"
+            onChange={(v) => handleChange(v, index)}
+            key={index}
+          />
+        ))}
+      </SilkeBox>
     </SilkeBox>
   );
 };
 
 registerVevComponent(FloatingLines, {
   name: "FloatingLines",
-  props: [ 
-  { name: "linesGradient", title: "Lines Gradient", type: "array", initialValue: ['#5227FF', '#7cff67', '#5227FF'], component: multipleColorSelect, of: "string" },
-
-  { name: "lineCount", title: "Line Count", type: "number", initialValue: 6, options:{
-    display: "slider",
-    min: 1,
-    max: 20,
-  } },
-  { name: "lineDistance", title: "Line Distance", type: "number", initialValue: 5, options:{
-    display: "slider",
-    min: 1,
-    max: 100,
-  } },
-  { name: "bendRadius", title: "Bend Radius", type: "number", initialValue: 5.0, options:{
-    display: "slider",
-    min: 1,
-    max: 30,
-  } },
-  { name: "bendStrength", title: "Bend Strength", type: "number", initialValue: -0.5, options:{
-    display: "slider",
-    min: -15,
-    max: 15,
-  } },
-  { name: "animationSpeed", title: "Animation Speed", type: "number", initialValue: 1, options:{
-    display: "slider",
-    min: 0,
-    max: 2,
-  } },
-  { name: "interactive", title: " Mouse interactive", type: "boolean", initialValue: true },
-
-],
+  props: [
+    {
+      name: "lineCount", title: "Line Count", type: "number", initialValue: 6, options: {
+        display: "slider",
+        min: 1,
+        max: 20,
+      }
+    },
+    {
+      name: "lineDistance", title: "Line Distance", type: "number", initialValue: 5, options: {
+        display: "slider",
+        min: 1,
+        max: 100,
+      }
+    },
+    {
+      name: "bendRadius", title: "Bend Radius", type: "number", initialValue: 5.0, options: {
+        display: "slider",
+        min: 1,
+        max: 30,
+      }
+    },
+    {
+      name: "bendStrength", title: "Bend Strength", type: "number", initialValue: -0.5, options: {
+        display: "slider",
+        min: -15,
+        max: 15,
+      }
+    },
+    {
+      name: "animationSpeed", title: "Animation Speed", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    { name: "interactive", title: " Mouse interactive", type: "boolean", initialValue: true },
+    { name: "linesGradient", title: "Lines Gradient", type: "array", initialValue: ['#5227FF', '#7cff67', '#5227FF'], component: multipleColorSelect, of: "string" },
+  ],
   editableCSS: [
     {
       selector: styles.wrapper,

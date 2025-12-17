@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { registerVevComponent } from "@vev/react";
 import styles from './Particles.module.css';
-import { SilkeBox, SilkeColorPickerButton, SilkeText } from "@vev/silke";
+import { SilkeBox, SilkeColorPickerButton, SilkeText, SilkeTextSmall } from "@vev/silke";
 
 
 interface ParticlesProps {
@@ -212,7 +212,7 @@ const rebuildParticles = (state: GLState, count: number, colorsInput?: string[])
     state.count = 0;
     return;
   }
-  
+
   state.count = validCount;
   const positions = new Float32Array(validCount * 3);
   const randoms = new Float32Array(validCount * 4);
@@ -231,20 +231,20 @@ const rebuildParticles = (state: GLState, count: number, colorsInput?: string[])
     const posIdx = i * 3;
     const randIdx = i * 4;
     const colIdx = i * 3;
-    
+
     if (posIdx + 3 <= positions.length) {
       positions[posIdx] = x * r;
       positions[posIdx + 1] = y * r;
       positions[posIdx + 2] = z * r;
     }
-    
+
     if (randIdx + 4 <= randoms.length) {
       randoms[randIdx] = Math.random();
       randoms[randIdx + 1] = Math.random();
       randoms[randIdx + 2] = Math.random();
       randoms[randIdx + 3] = Math.random();
     }
-    
+
     const col = palette[Math.floor(Math.random() * palette.length)];
     if (colIdx + 3 <= colors.length) {
       colors[colIdx] = col[0];
@@ -418,7 +418,7 @@ const updateModelMatrix = (state: GLState, time: number) => {
 const attachPointerHandlers = (state: GLState) => {
   if (!state.moveParticlesOnHover) return;
   window.addEventListener('pointermove', state.pointerMoveHandler, { passive: true });
- state.container.addEventListener('pointerleave', state.pointerLeaveHandler);
+  state.container.addEventListener('pointerleave', state.pointerLeaveHandler);
 };
 
 const detachPointerHandlers = (state: GLState) => {
@@ -535,10 +535,10 @@ const Particles: React.FC<ParticlesProps> = ({
       projectionMatrix: new Float32Array(16),
       modelMatrix: new Float32Array(16),
       resizeObserver: null,
-      pointerMoveHandler: () => {},
-      pointerLeaveHandler: () => {},
-      start: () => {},
-      stop: () => {},
+      pointerMoveHandler: () => { },
+      pointerLeaveHandler: () => { },
+      start: () => { },
+      stop: () => { },
     };
 
     const resize = () => {
@@ -618,7 +618,7 @@ const Particles: React.FC<ParticlesProps> = ({
     };
 
     glStateRef.current = state;
-    
+
     resize();
     rebuildParticles(state, particleCount, particleColors);
     updateUniforms(state, { particleSpread, particleBaseSize, sizeRandomness, alphaParticles });
@@ -670,46 +670,56 @@ const multipleColorSelect = (props: any) => {
     props.onChange?.(value);
   }
 
-  return <SilkeBox gap="s" vAlign="center" hAlign="start" vPad="s">
-    <SilkeText>Particles Colors</SilkeText>
-    <SilkeBox gap="s" align="center" vPad="s">
-    {value.map((color: string, index: number) => (
-      <SilkeColorPickerButton  value={color} size="s" onChange={(v) => handleChange(v, index)} key={index} /> 
-    ))}
-  </SilkeBox>
-  </SilkeBox>
+  return (
+    <SilkeBox gap="s" vAlign="center" hAlign="start" vPad="s" column>
+      <SilkeTextSmall>Particles Colors</SilkeTextSmall>
+      <SilkeBox>
+        <SilkeBox gap="s" align="center" vPad="s">
+          {value.map((color: string, index: number) => (
+            <SilkeColorPickerButton value={color} size="s" onChange={(v) => handleChange(v, index)} key={index} />
+          ))}
+        </SilkeBox>
+      </SilkeBox>
+    </SilkeBox>
+  )
 }
 
 
 registerVevComponent(Particles, {
   name: "Particles",
   props: [
-    { name: "particleColors", type: "array", initialValue: ["#ffffff", "#ffffff", "#ffffff"], component: multipleColorSelect, of: "string" },
-    { name: "particleCount", type: "number", initialValue: 200, options:{
-      display: "slider",
-      min: 0,
-      max: 1000,
-    } },
-    { name: "particleSpread", type: "number", initialValue: 10, options:{
-      display: "slider",
-      min: 0,
-      max: 100,
-    } },
-    { name: "speed", type: "number", initialValue: 0.1, options:{
-      display: "slider",
-      min: 0,
-      max: 2,
-    } },
-    { name: "particleBaseSize",title: "Base Size", type: "number", initialValue: 100, options:{
-      display: "slider",
-      min: 0,
-      max: 100,
-    } },
-  
-
+    {
+      name: "particleCount", type: "number", initialValue: 200, options: {
+        display: "slider",
+        min: 0,
+        max: 1000,
+      }
+    },
+    {
+      name: "particleSpread", type: "number", initialValue: 10, options: {
+        display: "slider",
+        min: 0,
+        max: 100,
+      }
+    },
+    {
+      name: "speed", type: "number", initialValue: 0.1, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    {
+      name: "particleBaseSize", title: "Base Size", type: "number", initialValue: 100, options: {
+        display: "slider",
+        min: 0,
+        max: 100,
+      }
+    },
     { name: "moveParticlesOnHover", title: "Mouse interaction", type: "boolean", initialValue: false },
-    { name: "alphaParticles",title: "Particles transparency", type: "boolean", initialValue: false },
-    { name: "disableRotation",title: "Disable rotation", type: "boolean", initialValue: false },
+    { name: "alphaParticles", title: "Particles transparency", type: "boolean", initialValue: false },
+    { name: "disableRotation", title: "Disable rotation", type: "boolean", initialValue: false },
+    { name: "particleColors", type: "array", initialValue: ["#ffffff", "#ffffff", "#ffffff"], component: multipleColorSelect, of: "string" },
   ],
   editableCSS: [
     {

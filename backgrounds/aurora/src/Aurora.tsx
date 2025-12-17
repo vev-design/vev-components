@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { registerVevComponent } from '@vev/react';
 import styles from './Aurora.module.css';
-import { SilkeBox, SilkeColorPickerButton } from '@vev/silke';
+import { SilkeBox, SilkeColorPickerButton, SilkeTextSmall } from '@vev/silke';
 
 const VERT = `#version 300 es
 in vec2 position;
@@ -263,7 +263,7 @@ function Aurora({
     const gl = canvas.getContext('webgl2', { alpha: true, antialias: true });
     if (!gl) {
       console.error('WebGL2 not supported');
-      return () => {};
+      return () => { };
     }
     glRef.current = gl;
     gl.enable(gl.BLEND);
@@ -437,39 +437,48 @@ const multipleColorSelect = (props: any) => {
   };
 
   return (
-    <SilkeBox gap="s" align="center" vPad="s">
-      {value.map((color: string, index: number) => (
-        <SilkeColorPickerButton
-          value={color}
-          size="s"
-          onChange={(v) => handleChange(v, index)}
-          key={index}
-        />
-      ))}
+    <SilkeBox column vPad="s">
+      <SilkeTextSmall>Colors</SilkeTextSmall>
+      <SilkeBox gap="s" vPad="s">
+        {value.map((color: string, index: number) => (
+          <SilkeColorPickerButton
+            value={color}
+            size="s"
+            onChange={(v) => handleChange(v, index)}
+            key={index}
+          />
+        ))}
+      </SilkeBox>
     </SilkeBox>
   );
 };
 
 registerVevComponent(Aurora, {
   name: "Aurora",
+  type: 'both',
   props: [
-    { name: "colorStops", type: "array", initialValue: ["#5227FF", "#7cff67", "#5227FF"], component: multipleColorSelect, of: "string" },
-   
-    { name: "blend", type: "number", initialValue: 0.5, options:{
-      display: "slider",
-      min: 0,
-      max: 1,
-    } },
-    { name: "speed", type: "number", initialValue: 1.0, options:{
-      display: "slider",
-      min: 0,
-      max: 2,
-    } },
-    { name: "amplitude", type: "number", initialValue: 1.0, options:{
-      display: "slider",
-      min: 0,
-      max: 2,
-    } },
+    {
+      name: "blend", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "speed", type: "number", initialValue: 1.0, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    {
+      name: "amplitude", type: "number", initialValue: 1.0, options: {
+        display: "slider",
+        min: 0,
+        max: 2,
+      }
+    },
+    { name: "colorStops", type: "array", title: "Colors", initialValue: ["#5227FF", "#7cff67", "#5227FF"], component: multipleColorSelect, of: "string" },
   ],
   editableCSS: [
     {
@@ -477,7 +486,6 @@ registerVevComponent(Aurora, {
       properties: ["background"],
     },
   ],
-  type: 'both',
 });
 
 export default Aurora;

@@ -440,7 +440,7 @@ function Galaxy({
     const gl = canvas.getContext('webgl', { antialias: true, alpha: true });
     if (!gl) {
       console.error('WebGL not supported');
-      return () => {};
+      return () => { };
     }
     glRef.current = gl;
 
@@ -626,61 +626,80 @@ function Galaxy({
 
 registerVevComponent(Galaxy, {
   name: "Galaxy",
-    props: [
-      { name: "mouseInteraction", title: "Mouse Interaction", type: "boolean", initialValue: true },
-      { name: "mouseRepulsion", title: "Mouse Repulsion", type: "boolean", initialValue: true },
-      { name: "density", title: "Density", type: "number", initialValue: 1, options:{
+  props: [
+    {
+      name: "density", title: "Density", type: "number", initialValue: 1, options: {
         display: "slider",
         min: 0,
         max: 3,
-      } },
-      { name: "glowIntensity", title: "Glow Intensity", type: "number", initialValue: 0.3, options:{
+      }
+    },
+    {
+      name: "glowIntensity", title: "Glow Intensity", type: "number", initialValue: 0.3, options: {
         display: "slider",
         min: 0,
         max: 1,
-      } },
-      { name: "saturation", title: "Saturation", type: "number", initialValue: 0.0, options:{
+      }
+    },
+    {
+      name: "saturation", title: "Saturation", type: "number", initialValue: 0.0, options: {
         display: "slider",
         min: 0,
         max: 1,
-      } },
-      { name: "hueShift", title: "Hue Shift", type: "number", initialValue: 140, options:{
+      }
+    },
+    {
+      name: "hueShift", title: "Hue Shift", type: "number", initialValue: 140, options: {
         display: "slider",
         min: 0,
         max: 360,
-      } },
-      { name: "twinkleIntensity", title: "Twinkle Intensity", type: "number", initialValue: 0.3, options:{
+      }
+    },
+    {
+      name: "twinkleIntensity", title: "Twinkle Intensity", type: "number", initialValue: 0.3, options: {
         display: "slider",
         min: 0,
         max: 1,
-      } },
-      { name: "rotationSpeed", title: "Rotation Speed", type: "number", initialValue: 0.1, options:{
+      }
+    },
+    {
+      name: "rotationSpeed", title: "Rotation Speed", type: "number", initialValue: 0.1, options: {
         display: "slider",
         min: 0,
         max: 0.5,
-      } },
-      { name: "repulsionStrength", title: "Repulsion Strength", type: "number", initialValue: 2, options:{
+      }
+    },
+    {
+      name: "repulsionStrength", title: "Repulsion Strength", type: "number", initialValue: 2, options: {
         display: "slider",
         min: 0,
         max: 10,
-      } },
-      { name: "autoCenterRepulsion", title: "Auto Center Repulsion", type: "number", initialValue: 0, options:{
+      }
+    },
+    {
+      name: "autoCenterRepulsion", title: "Auto Center Repulsion", type: "number", initialValue: 0, options: {
         display: "slider",
         min: 0,
         max: 20,
-      } },
-      { name: "starSpeed", title: "Star Speed", type: "number", initialValue: 0.5, options:{
+      }
+    },
+    {
+      name: "starSpeed", title: "Star Speed", type: "number", initialValue: 0.5, options: {
         display: "slider",
         min: 0,
         max: 5,
-      } },
-      { name: "speed", title: "Animation Speed", type: "number", initialValue: 1.0, options:{
+      }
+    },
+    {
+      name: "speed", title: "Animation Speed", type: "number", initialValue: 1.0, options: {
         display: "slider",
         min: 0,
         max: 3,
-      } },
-
-    ],
+      }
+    },
+    { name: "mouseInteraction", title: "Mouse Interaction", type: "boolean", initialValue: true },
+    { name: "mouseRepulsion", title: "Mouse Repulsion", type: "boolean", initialValue: true },
+  ],
   editableCSS: [
     {
       selector: styles.wrapper,

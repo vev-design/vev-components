@@ -409,7 +409,7 @@ const GradientBlinds: React.FC<GradientBlindsProps> = ({
     const gl = canvas.getContext('webgl', { antialias: true, alpha: true });
     if (!gl) {
       console.error('WebGL not supported');
-      return () => {};
+      return () => { };
     }
     glRef.current = gl;
 
@@ -667,7 +667,7 @@ const multipleColorSelect = (props: any) => {
   };
 
   return (
-    <SilkeBox gap="s" vAlign="center" hAlign="start" vPad="s">
+    <SilkeBox gap="s" vAlign="center" hAlign="start" vPad="s" column>
       <SilkeText>Gradient Colors</SilkeText>
       <SilkeBox gap="s" align="center" vPad="s">
         {value.map((color: string, index: number) => (
@@ -686,64 +686,82 @@ const multipleColorSelect = (props: any) => {
 
 registerVevComponent(GradientBlinds, {
   name: "GradientBlinds",
-  props: [ { name: "gradientColors", type: "array", initialValue: ["#FF9FFC", "#5227FF"], component: multipleColorSelect, of: "string" },
-  { name: "shineDirection",title: "Light Direction", type: "select", initialValue: "left", options:{
-    display: "dropdown",
-    items: [
-      { label: "Left", value: "left" },
-      { label: "Right", value: "right" },
-    ],
-  } },
-  { name: "angle",title: "Blinds Angle", type: "number", initialValue: 0, options:{
-    display: "slider",
-    min: 0,
-    max: 360,
-  } },
-  { name: "noise",title: "Noise Amount", type: "number", initialValue: 0.3, options:{
-    display: "slider",
-    min: 0,
-    max: 1,
-  } },
-  { name: "blindCount",title: "Blinds Count", type: "number", initialValue: 16, options:{
-    display: "slider",
-    min: 0,
-    max: 64,
-  } },
-  { name: "blindMinWidth",title: "Blinds Minimum Width", type: "number", initialValue: 60, options:{
-    display: "slider",
-    min: 0,
-    max: 200,
-  } },
-  { name: "spotlightRadius",title: "Spotlight Radius", type: "number", initialValue: 0.5, options:{
-    display: "slider",
-    min: 0,
-    max: 1,
-  } },
-  { name: "distortAmount",title: "Distort Amount", type: "number", initialValue: 0, options:{
-    display: "slider",
-    min: 0,
-    max: 100,
-  } },
-  { name: "mouseDampening", title: "Mouse Dampening", type: "number", initialValue: 0.15, options:{
-    display: "slider",
-    min: 0,
-    max: 1,
-  } },
-
-
-  { name: "mirrorGradient", type: "boolean", initialValue: false },
- 
-  { name: "spotlightSoftness", type: "number", initialValue: 1, options:{
-    display: "slider",
-    min: 0,
-    max: 10,
-  } },
-  { name: "spotlightOpacity", type: "number", initialValue: 1, options:{
-    display: "slider",
-    min: 0,
-    max: 1,
-  } },
- ],
+  props: [
+    {
+      name: "shineDirection", title: "Light Direction", type: "select", initialValue: "left", options: {
+        display: "dropdown",
+        items: [
+          { label: "Left", value: "left" },
+          { label: "Right", value: "right" },
+        ],
+      }
+    },
+    {
+      name: "angle", title: "Blinds Angle", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 360,
+      }
+    },
+    {
+      name: "noise", title: "Noise Amount", type: "number", initialValue: 0.3, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "blindCount", title: "Blinds Count", type: "number", initialValue: 16, options: {
+        display: "slider",
+        min: 0,
+        max: 64,
+      }
+    },
+    {
+      name: "blindMinWidth", title: "Blinds Minimum Width", type: "number", initialValue: 60, options: {
+        display: "slider",
+        min: 0,
+        max: 200,
+      }
+    },
+    {
+      name: "spotlightRadius", title: "Spotlight Radius", type: "number", initialValue: 0.5, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    {
+      name: "distortAmount", title: "Distort Amount", type: "number", initialValue: 0, options: {
+        display: "slider",
+        min: 0,
+        max: 100,
+      }
+    },
+    {
+      name: "mouseDampening", title: "Mouse Dampening", type: "number", initialValue: 0.15, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    { name: "mirrorGradient", type: "boolean", initialValue: false },
+    {
+      name: "spotlightSoftness", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 10,
+      }
+    },
+    {
+      name: "spotlightOpacity", type: "number", initialValue: 1, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
+    { name: "gradientColors", type: "array", initialValue: ["#FF9FFC", "#5227FF"], component: multipleColorSelect, of: "string" }
+  ],
   editableCSS: [
     {
       selector: styles.wrapper,
