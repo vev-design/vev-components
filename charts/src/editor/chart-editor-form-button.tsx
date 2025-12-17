@@ -6,13 +6,12 @@ import { ChartDefinition } from '../types';
 
 interface Props {
   context: SchemaContextModel<ChartDefinition>;
-  value?: Partial<ChartDefinition>;
-  onChange: (value: Partial<ChartDefinition>) => void;
+  value?: Partial<Omit<ChartDefinition, 'data'> & { data: string }>;
+  onChange: (value: Partial<Omit<ChartDefinition, 'data'> & { data: string }>) => void;
 }
 export function ChartEditorFormButton({ context, value, onChange }: Props) {
   const [showModal, setShowModal] = useState(false);
-  console.log('value', value);
-  console.log('context', context);
+
   return (
     <SilkeBox align="center" pad="s">
       {showModal && (
@@ -23,8 +22,21 @@ export function ChartEditorFormButton({ context, value, onChange }: Props) {
             setShowModal(false);
           }}
         >
-          <div className="HqV1e7t2CYrf3zNe7rDZ">
-            <ChartEditorForm value={value} onChange={onChange} />
+          <div className={`pkg-${context.pkg}`}>
+            <ChartEditorForm
+              value={
+                value
+                  ? {
+                      ...value,
+                      data: JSON.parse(value?.data || '[]') as Array<(string | number)[]>,
+                    }
+                  : undefined
+              }
+              onChange={(change) => {
+                onChange({ ...change, data: JSON.stringify(change?.data || []) });
+              }}
+              context={context}
+            />
           </div>
         </SilkeModal>
       )}

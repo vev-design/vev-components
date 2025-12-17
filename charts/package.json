@@ -15,11 +15,11 @@
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
-    "react-datasheet-grid": "^4.11.5",
     "lodash.merge": "^4.6.2",
-    "@vev/silke": "^1.1.2",
+    "lodash.clonedeep": "^4.5.0",
+    "@vev/silke": "^1.1.6",
     "echarts": "^6.0.0",
-    "@vev/react": "^0.3.0",
+    "@vev/react": "^0.3.3",
     "react": "^18.3.1",
     "react-dom": "18.3.1"
   }

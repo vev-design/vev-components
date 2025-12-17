@@ -5,25 +5,20 @@ import {
   TooltipComponent,
   GridComponent,
   DatasetComponent,
-  TransformComponent
+  TransformComponent,
 } from 'echarts/components';
 
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
-import type {
-  ComposeOption,
-} from 'echarts/core';
+import type { ComposeOption } from 'echarts/core';
 
-import type {
-  BarSeriesOption,
-  LineSeriesOption,
-} from 'echarts/charts';
+import type { BarSeriesOption, LineSeriesOption } from 'echarts/charts';
 
 import type {
   TitleComponentOption,
   TooltipComponentOption,
   GridComponentOption,
-  DatasetComponentOption
+  DatasetComponentOption,
 } from 'echarts/components';
 
 type ECOption = ComposeOption<
@@ -44,12 +39,12 @@ echarts.use([
   TransformComponent,
   LabelLayout,
   UniversalTransition,
-  CanvasRenderer
+  CanvasRenderer,
 ]);
 
-import { RefObject, useEffect, useRef } from "react";
+import { RefObject, useEffect, useRef } from 'react';
 
-export function useChart<Opt extends ECOption>(el: RefObject<HTMLElement>, opts: Opt)  {
+export function useChart<Opt extends ECOption>(el: RefObject<HTMLElement>, opts: Opt) {
   const chartRef = useRef<echarts.EChartsType>(null);
 
   useEffect(() => {
@@ -57,36 +52,34 @@ export function useChart<Opt extends ECOption>(el: RefObject<HTMLElement>, opts:
       chartRef.current?.resize();
     }
 
-    if(el.current) {
+    if (el.current) {
       el.current.style.width = '100%';
       el.current.style.height = '100%';
 
       let instance = echarts.init(el.current);
 
-      instance.setOption(opts);
-
-      console.log('instance', instance);
-
       chartRef.current = instance;
       window.addEventListener('resize', resize);
 
-      const observer = new ResizeObserver(entries => {
+      const observer = new ResizeObserver((entries) => {
         instance.resize();
       });
 
       observer.observe(el.current);
-
     }
 
     return () => {
       window.removeEventListener('resize', resize);
       chartRef.current?.dispose();
-    }
+    };
   }, []);
 
   useEffect(() => {
-    if(chartRef.current) {
-      chartRef.current.setOption(opts);
+    if (chartRef.current) {
+      // Use time out to see the animation
+      setTimeout(() => {
+        chartRef.current.setOption(opts);
+      }, 100);
     }
   }, [opts]);
 }

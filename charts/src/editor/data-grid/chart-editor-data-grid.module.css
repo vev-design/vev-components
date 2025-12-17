@@ -1,0 +1,39 @@
+.cell {
+    text-align: right;
+    min-width: 100px;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    padding: 4px;
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    border-radius: 4px;
+}
+
+
+.cell:focus {
+    border: 1px solid #333333;
+    border-radius: 4px;
+    background-color: #3c3c3c;
+}
+
+.cell:hover {
+    background-color: #3c3c3c;
+}
+
+
+.cellHeader {
+    min-width: 100px;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    padding: 4px;
+    border: 1px solid #333333;
+    border-radius: 4px;
+
+    background-color: #252525;
+    font-weight: bold;
+}
+
+.cellHeaderLeft {
+    max-width: 50px;
+    min-width: 50px;
+}

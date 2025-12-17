@@ -5,16 +5,18 @@ import { ChartDefinition } from '../types';
 import { getDefaultChart } from '../helpers/get-default-chart';
 import merge from 'lodash.merge';
 import { ChartEditorData } from './chart-editor-data';
+import { SchemaContextModel } from '@vev/utils';
 
 type Tabs = 'type' | 'data' | 'style';
 
 interface Props {
   value: Partial<ChartDefinition>;
   onChange: (value: Partial<ChartDefinition>) => void;
+  context: SchemaContextModel<ChartDefinition>;
 }
 
-export function ChartEditorForm({ value, onChange }: Props): ReactElement {
-  const [activeTab, setActiveTab] = useState<Tabs>('type');
+export function ChartEditorForm({ value, onChange, context }: Props): ReactElement {
+  const [activeTab, setActiveTab] = useState<Tabs>('data');
   const [actualValue, setActualValue] = useState(() => {
     if (!value) {
       return getDefaultChart();
@@ -57,7 +59,9 @@ export function ChartEditorForm({ value, onChange }: Props): ReactElement {
         />
       </SilkeTabs>
       {activeTab === 'type' && <ChartEditorType value={actualValue} onChange={onChangeChart} />}
-      {activeTab === 'data' && <ChartEditorData value={actualValue} onChange={onChangeChart} />}
+      {activeTab === 'data' && (
+        <ChartEditorData value={actualValue} onChange={onChangeChart} context={context} />
+      )}
     </SilkeBox>
   );
 }
