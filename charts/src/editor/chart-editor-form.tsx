@@ -25,8 +25,9 @@ export function ChartEditorForm({ value, onChange, context }: Props): ReactEleme
   });
 
   function onChangeChart(update: Partial<ChartDefinition>) {
-    const newValue = merge(actualValue, update);
+    const newValue = { ...actualValue, ...update };
     setActualValue(newValue);
+    console.log('newValue', newValue);
     onChange(newValue);
   }
 
@@ -51,7 +52,7 @@ export function ChartEditorForm({ value, onChange, context }: Props): ReactEleme
         />
         <SilkeTab
           flex
-          label="Styling"
+          label="Options & Styling"
           active={activeTab === 'style'}
           onClick={() => {
             setActiveTab('style');

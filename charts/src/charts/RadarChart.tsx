@@ -1,13 +1,15 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
+import { useRef } from 'react';
 import { useChart } from '../hooks/useChart';
+import cloneDeep from 'lodash.merge';
 
 interface Props {
   data: Array<(string | number)[]>;
 }
 
-export function BarChart({ data }: Props) {
+export function RadarChart({ data }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
-
+  console.log('data', data);
   const columnData = useMemo(() => {
     let rawColumns: (string | number)[][] = [];
     const dataLength = data[0].length;
@@ -25,29 +27,29 @@ export function BarChart({ data }: Props) {
     });
   }, [data]);
 
-  console.log('columnData', columnData);
-
-  useChart(elRef, {
+  let opts = {
     animation: true,
     legend: {
       data: columnData.slice(1).map((column) => column.label),
     },
-    title: {
-      text: 'ECharts Getting Started Example',
+    radar: {
+      indicator: columnData[0].data.map((label) => ({ name: label })),
     },
-    tooltip: {},
-    xAxis: {
-      name: `${columnData[0].label}`,
-      type: 'category',
-      data: columnData[0].data,
-    },
-    yAxis: {},
-    series: columnData.slice(1).map((column) => ({
-      name: column.label,
-      type: 'bar',
-      data: column.data,
-    })),
-  });
+    series: [
+      {
+        name: columnData[0].label,
+        type: 'radar',
+        data: columnData.slice(1).map((column) => {
+          return {
+            name: column.label,
+            value: column.data,
+          };
+        }),
+      },
+    ],
+  };
+  console.log('opts', opts);
+  useChart(elRef, opts);
 
   return <div ref={elRef} />;
 }

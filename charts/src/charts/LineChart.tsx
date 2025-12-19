@@ -1,11 +1,13 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
+import { useRef } from 'react';
 import { useChart } from '../hooks/useChart';
+import cloneDeep from 'lodash.merge';
 
 interface Props {
   data: Array<(string | number)[]>;
 }
 
-export function BarChart({ data }: Props) {
+export function LineChart({ data }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
 
   const columnData = useMemo(() => {
@@ -25,13 +27,8 @@ export function BarChart({ data }: Props) {
     });
   }, [data]);
 
-  console.log('columnData', columnData);
-
   useChart(elRef, {
     animation: true,
-    legend: {
-      data: columnData.slice(1).map((column) => column.label),
-    },
     title: {
       text: 'ECharts Getting Started Example',
     },
@@ -41,10 +38,12 @@ export function BarChart({ data }: Props) {
       type: 'category',
       data: columnData[0].data,
     },
-    yAxis: {},
+    yAxis: {
+      type: 'value',
+    },
     series: columnData.slice(1).map((column) => ({
       name: column.label,
-      type: 'bar',
+      type: 'line',
       data: column.data,
     })),
   });

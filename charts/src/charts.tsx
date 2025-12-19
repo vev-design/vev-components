@@ -6,6 +6,9 @@ import { ChartEditorFormButton } from './editor/chart-editor-form-button';
 import { ChartDefinition } from './types';
 import { getDefaultChart } from './helpers/get-default-chart';
 import { InteractionType } from './event-types';
+import { LineChart } from './charts/LineChart';
+import { RadarChart } from './charts/RadarChart';
+import { PieChart } from './charts/PieChart';
 
 type Props = {
   chartDef: Partial<Omit<ChartDefinition, 'data'> & { data: string }>;
@@ -39,6 +42,30 @@ const Charts = ({ chartDef }: Props) => {
     return (
       <div className={styles.wrapper}>
         <BarChart data={activeDataSet} />
+      </div>
+    );
+  }
+
+  if (chartDefActual.type === 'line' && activeDataSet) {
+    return (
+      <div className={styles.wrapper}>
+        <LineChart data={activeDataSet} />
+      </div>
+    );
+  }
+
+  if (chartDefActual.type === 'radar' && activeDataSet) {
+    return (
+      <div className={styles.wrapper}>
+        <RadarChart data={activeDataSet} />
+      </div>
+    );
+  }
+
+  if (chartDefActual.type === 'pie' && activeDataSet) {
+    return (
+      <div className={styles.wrapper}>
+        <PieChart data={activeDataSet} />
       </div>
     );
   }

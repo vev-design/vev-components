@@ -1,18 +1,24 @@
 import * as echarts from 'echarts/core';
-import { BarChart } from 'echarts/charts';
+import { BarChart, LineChart, RadarChart, PieChart } from 'echarts/charts';
 import {
   TitleComponent,
   TooltipComponent,
   GridComponent,
   DatasetComponent,
   TransformComponent,
+  LegendComponent,
 } from 'echarts/components';
 
 import { LabelLayout, UniversalTransition } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { ComposeOption } from 'echarts/core';
 
-import type { BarSeriesOption, LineSeriesOption } from 'echarts/charts';
+import type {
+  BarSeriesOption,
+  LineSeriesOption,
+  RadarSeriesOption,
+  PieSeriesOption,
+} from 'echarts/charts';
 
 import type {
   TitleComponentOption,
@@ -24,19 +30,25 @@ import type {
 type ECOption = ComposeOption<
   | BarSeriesOption
   | LineSeriesOption
+  | RadarSeriesOption
   | TitleComponentOption
   | TooltipComponentOption
   | GridComponentOption
   | DatasetComponentOption
+  | PieSeriesOption
 >;
 
 echarts.use([
+  RadarChart,
+  LineChart,
   BarChart,
+  PieChart,
   TitleComponent,
   TooltipComponent,
   GridComponent,
   DatasetComponent,
   TransformComponent,
+  LegendComponent,
   LabelLayout,
   UniversalTransition,
   CanvasRenderer,
@@ -76,9 +88,10 @@ export function useChart<Opt extends ECOption>(el: RefObject<HTMLElement>, opts:
 
   useEffect(() => {
     if (chartRef.current) {
+      console.log('opts', opts);
       // Use time out to see the animation
       setTimeout(() => {
-        chartRef.current.setOption(opts);
+        chartRef.current.setOption(opts, { notMerge: true, lazyUpdate: true });
       }, 100);
     }
   }, [opts]);

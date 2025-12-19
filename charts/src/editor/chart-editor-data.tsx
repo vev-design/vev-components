@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChartDefinition } from '../types';
+import { ChartData, ChartDefinition } from '../types';
 import { ChartEditorDataGrid } from './data-grid/chart-editor-data-grid';
 import { SchemaContextModel } from '@vev/utils';
 import { SilkeBox, SilkeButton, SilkeTab, SilkeTabs } from '@vev/silke';
@@ -14,9 +14,14 @@ interface Props {
 
 export function ChartEditorData({ value, onChange, context }: Props) {
   const [dataSetIndex, setDataSetIndex] = useState(0);
+  const [hoverTabIndex, setHoverTabIndex] = useState<number>(-1);
 
   const currentDataSet = useMemo(() => {
-    return value.data[dataSetIndex];
+    if (value.data[dataSetIndex]) {
+      return value.data[dataSetIndex];
+    } else {
+      return value.data[0];
+    }
   }, [dataSetIndex, value]);
 
   return (
@@ -26,7 +31,31 @@ export function ChartEditorData({ value, onChange, context }: Props) {
           {value.data.map((data, index) => {
             return (
               <SilkeTab
-                label={`Data set ${index}`}
+                onMouseEnter={() => {
+                  setHoverTabIndex(index);
+                }}
+                onMouseLeave={() => {
+                  setHoverTabIndex(-1);
+                }}
+                label={
+                  <SilkeBox gap="xs">
+                    {`Data set ${index}`}
+                    {hoverTabIndex === index && (
+                      <SilkeButton
+                        kind="ghost"
+                        size="s"
+                        icon="delete"
+                        onClick={() => {
+                          const clonedData = cloneDeep([...value.data]) as ChartData[];
+                          clonedData.splice(index, 1);
+                          let update = { data: [...clonedData] };
+                          console.log('update', update);
+                          onChange(update);
+                        }}
+                      />
+                    )}
+                  </SilkeBox>
+                }
                 active={dataSetIndex === index}
                 onClick={() => setDataSetIndex(index)}
               />
@@ -49,7 +78,6 @@ export function ChartEditorData({ value, onChange, context }: Props) {
         onChange={(newData) => {
           const clonedData = cloneDeep(value) as Partial<ChartDefinition>;
           clonedData.data[dataSetIndex] = newData;
-          console.log('clonedData', clonedData);
           onChange(clonedData);
         }}
         context={context}
