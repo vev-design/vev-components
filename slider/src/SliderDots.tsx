@@ -62,7 +62,8 @@ const SlideshowDots = (props: Props) => {
 };
 
 registerVevComponent(SlideshowDots, {
-  name: 'Slider Dots',
+  name: 'Slider indicators',
+  icon: 'https://cdn.vev.design/assets/dot-circle-regular.svg',
   size: {
     width: 'auto',
     height: 'auto',
@@ -86,10 +87,12 @@ registerVevComponent(SlideshowDots, {
   props: [
     {
       name: 'target',
+      title: 'Target slider',
       description: 'Which slideshow should the dots target',
       type: 'select',
       options: {
         display: 'dropdown',
+        placeholder: 'Select a slider',
         async items(data) {
           return data.content
             ?.filter((e) => SLIDESHOW_TYPE.includes(e.type))
@@ -98,15 +101,20 @@ registerVevComponent(SlideshowDots, {
       },
     },
     {
+      type: 'divider',
+    },
+    {
       name: 'dot',
-      title: 'Dot',
-      description: 'Main component to use for inactive dot',
+      title: 'Inactive indicator',
+      description: 'Main component to use for inactive indicator',
+      placeholder: 'Select a variant',
       type: 'mainComponent',
     },
     {
       name: 'activeDot',
-      title: 'Active dot',
-      description: 'Main component to use for active dot',
+      title: 'Active indicator',
+      description: 'Main component to use for active indicator',
+      placeholder: 'Select a variant',
       type: 'mainComponent',
     },
   ],
