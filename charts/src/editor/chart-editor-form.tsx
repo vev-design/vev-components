@@ -6,8 +6,9 @@ import { getDefaultChart } from '../helpers/get-default-chart';
 import merge from 'lodash.merge';
 import { ChartEditorData } from './chart-editor-data';
 import { SchemaContextModel } from '@vev/utils';
+import { ChartEditorOptions } from './chart-editor-options';
 
-type Tabs = 'type' | 'data' | 'style';
+type Tabs = 'type' | 'data' | 'options';
 
 interface Props {
   value: Partial<ChartDefinition>;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function ChartEditorForm({ value, onChange, context }: Props): ReactElement {
+  console.log('value', value);
   const [activeTab, setActiveTab] = useState<Tabs>('data');
   const [actualValue, setActualValue] = useState(() => {
     if (!value) {
@@ -25,9 +27,9 @@ export function ChartEditorForm({ value, onChange, context }: Props): ReactEleme
   });
 
   function onChangeChart(update: Partial<ChartDefinition>) {
+    console.log('update', update);
     const newValue = { ...actualValue, ...update };
     setActualValue(newValue);
-    console.log('newValue', newValue);
     onChange(newValue);
   }
 
@@ -53,15 +55,18 @@ export function ChartEditorForm({ value, onChange, context }: Props): ReactEleme
         <SilkeTab
           flex
           label="Options & Styling"
-          active={activeTab === 'style'}
+          active={activeTab === 'options'}
           onClick={() => {
-            setActiveTab('style');
+            setActiveTab('options');
           }}
         />
       </SilkeTabs>
       {activeTab === 'type' && <ChartEditorType value={actualValue} onChange={onChangeChart} />}
       {activeTab === 'data' && (
         <ChartEditorData value={actualValue} onChange={onChangeChart} context={context} />
+      )}
+      {activeTab === 'options' && (
+        <ChartEditorOptions value={actualValue} onChange={onChangeChart} />
       )}
     </SilkeBox>
   );

@@ -49,7 +49,6 @@ export function ChartEditorData({ value, onChange, context }: Props) {
                           const clonedData = cloneDeep([...value.data]) as ChartData[];
                           clonedData.splice(index, 1);
                           let update = { data: [...clonedData] };
-                          console.log('update', update);
                           onChange(update);
                         }}
                       />

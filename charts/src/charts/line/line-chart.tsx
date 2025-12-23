@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useRef } from 'react';
-import { useChart } from '../hooks/useChart';
+import { useChart } from '../../hooks/useChart';
 import cloneDeep from 'lodash.merge';
 
 interface Props {

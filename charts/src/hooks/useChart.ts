@@ -27,7 +27,7 @@ import type {
   DatasetComponentOption,
 } from 'echarts/components';
 
-type ECOption = ComposeOption<
+export type ECOption = ComposeOption<
   | BarSeriesOption
   | LineSeriesOption
   | RadarSeriesOption
@@ -88,7 +88,6 @@ export function useChart<Opt extends ECOption>(el: RefObject<HTMLElement>, opts:
 
   useEffect(() => {
     if (chartRef.current) {
-      console.log('opts', opts);
       // Use time out to see the animation
       setTimeout(() => {
         chartRef.current.setOption(opts, { notMerge: true, lazyUpdate: true });

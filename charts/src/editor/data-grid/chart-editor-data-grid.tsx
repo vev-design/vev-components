@@ -21,7 +21,6 @@ export function ChartEditorDataGrid({ value, onChange, context }: Props) {
   }, [data]);
 
   useEffect(() => {
-    console.log('SET value', value);
     setData(value);
   }, [value]);
 

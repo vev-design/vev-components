@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from './charts.module.css';
 import { registerVevComponent, useVevEvent } from '@vev/react';
-import { BarChart } from './charts/BarChart';
 import { ChartEditorFormButton } from './editor/chart-editor-form-button';
 import { ChartDefinition } from './types';
 import { getDefaultChart } from './helpers/get-default-chart';
 import { InteractionType } from './event-types';
-import { LineChart } from './charts/LineChart';
-import { RadarChart } from './charts/RadarChart';
-import { PieChart } from './charts/PieChart';
+import { BarChart } from './charts/bar/bar-chart';
+import { LineChart } from './charts/line/line-chart';
+import { RadarChart } from './charts/radar/radar-chart';
+import { PieChart } from './charts/pie/pie-chart';
 
 type Props = {
   chartDef: Partial<Omit<ChartDefinition, 'data'> & { data: string }>;
@@ -32,6 +32,15 @@ const Charts = ({ chartDef }: Props) => {
     }
   }, [chartDef]);
 
+  useEffect(() => {
+    if (chartDef.options?.raceSets) {
+      console.log(
+        'chartDefActual.data[activeDataSetIndex]',
+        chartDefActual.data[activeDataSetIndex],
+      );
+    }
+  }, [chartDef]);
+
   useVevEvent(InteractionType.SET_DATA_SET, (args: { data_set: number }) => {
     setActiveDataSetIndex(args.data_set);
   });
@@ -41,7 +50,7 @@ const Charts = ({ chartDef }: Props) => {
   if (chartDefActual.type === 'bar' && activeDataSet) {
     return (
       <div className={styles.wrapper}>
-        <BarChart data={activeDataSet} />
+        <BarChart data={activeDataSet} options={chartDef.options} />
       </div>
     );
   }

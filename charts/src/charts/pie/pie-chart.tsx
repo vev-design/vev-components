@@ -1,13 +1,14 @@
-import React, { useMemo, useRef } from 'react';
-import { useChart } from '../hooks/useChart';
+import React, { useMemo } from 'react';
+import { useRef } from 'react';
+import { useChart } from '../../hooks/useChart';
+import cloneDeep from 'lodash.merge';
 
 interface Props {
   data: Array<(string | number)[]>;
 }
 
-export function BarChart({ data }: Props) {
+export function PieChart({ data }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
-
   const columnData = useMemo(() => {
     let rawColumns: (string | number)[][] = [];
     const dataLength = data[0].length;
@@ -25,28 +26,27 @@ export function BarChart({ data }: Props) {
     });
   }, [data]);
 
-  console.log('columnData', columnData);
-
   useChart(elRef, {
     animation: true,
     legend: {
       data: columnData.slice(1).map((column) => column.label),
     },
-    title: {
-      text: 'ECharts Getting Started Example',
+    tooltip: {
+      trigger: 'item',
     },
-    tooltip: {},
-    xAxis: {
-      name: `${columnData[0].label}`,
-      type: 'category',
-      data: columnData[0].data,
-    },
-    yAxis: {},
-    series: columnData.slice(1).map((column) => ({
-      name: column.label,
-      type: 'bar',
-      data: column.data,
-    })),
+    series: [
+      {
+        name: columnData[0].label,
+        type: 'pie',
+        radius: '50%',
+        data: columnData.slice(1).map((column) => {
+          return {
+            name: column.label,
+            value: column.data,
+          };
+        }),
+      },
+    ],
   });
 
   return <div ref={elRef} />;
