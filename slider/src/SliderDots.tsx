@@ -11,6 +11,7 @@ type Props = {
   target: string;
   dot: CustomDot;
   activeDot: CustomDot;
+  padding: number;
 };
 
 const SLIDESHOW_TYPE = ['4m4woXHPJqnEyfmHuuf1_Slideshow', '1QRRiAt1Js1nD0ApT2Ek_Slideshow'];
@@ -28,13 +29,13 @@ const SlideshowDots = (props: Props) => {
   if (!props.target) return <div className={styles.empty}>Select slideshow</div>;
 
   return (
-    <div style={{ textAlign: 'center' }} className={styles.dots}>
-      {[...Array(state?.length || 0).keys()].map((key, i) => {
+    <div style={{ textAlign: 'center', gap: `${props.padding || 0}px` }} className={styles.dots}>
+      {[...Array(state?.length || 0).keys()].map((_, i) => {
         let isActive = i === (state.index || 0);
 
         if (props.dot && !isActive) {
           return (
-            <span key={i} className={styles.customDot} onClick={() => handleClick(i)}>
+            <span key={i} onClick={() => handleClick(i)}>
               <WidgetNode id={props.dot.mainComponent} externalVariant={props.dot.variant} />
             </span>
           );
@@ -42,7 +43,7 @@ const SlideshowDots = (props: Props) => {
 
         if (isActive && props.activeDot) {
           return (
-            <span key={i} className={styles.customDot} onClick={() => handleClick(i)}>
+            <span key={i} onClick={() => handleClick(i)}>
               <WidgetNode
                 id={props.activeDot.mainComponent}
                 externalVariant={props.activeDot.variant}
@@ -116,6 +117,16 @@ registerVevComponent(SlideshowDots, {
       description: 'Main component to use for active indicator',
       placeholder: 'Select a variant',
       type: 'mainComponent',
+    },
+    {
+      name: 'padding',
+      title: 'Padding',
+      description: 'Padding between dots',
+      type: 'number',
+      initialValue: 0,
+      options: {
+        format: 'px',
+      },
     },
   ],
 });

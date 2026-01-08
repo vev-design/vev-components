@@ -19,7 +19,6 @@
   align-items: center;
   display: flex;
   justify-content: center;
-  align-items: center;
   height: 100%;
 }
 
@@ -30,8 +29,4 @@
 
 .selected {
   color: blue;
-}
-
-.customDot {
-    margin: 0.2rem;
 }
