@@ -42,6 +42,7 @@ const Video = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   // Keeps track of the muted state given by interaction events
   const mutedRef = useRef<boolean>(undefined);
+  const queuedPlay = useRef(false);
   // Keeps track of the video has been manually paused
   const pausedRef = useRef(false);
   const stateRef = useRef<{ current: number; maxProgress: number }>({
@@ -50,7 +51,6 @@ const Video = ({
   });
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
-  const videoStarted = useRef(false);
 
 
   const dispatch = useDispatchVevEvent();
@@ -59,7 +59,11 @@ const Video = ({
 
   useVevEvent(VideoInteraction.play, () => {
     pausedRef.current = false;
-    videoRef.current.play();
+    if (videoRef.current.readyState === 4) {
+      videoRef.current.play().then(() => console.log('play success', video?.key), (error) => console.log('play error', video?.key, error));
+    } else {
+      queuedPlay.current = true;
+    }
   });
 
   useVevEvent(VideoInteraction.restart, () => {
@@ -97,6 +101,13 @@ const Video = ({
     mutedRef.current = !mutedRef.current;
     videoRef.current.muted = !videoRef.current.muted;
   });
+
+  const handleCanPlay = () => {
+    if (queuedPlay.current) {
+      videoRef.current.play();
+      queuedPlay.current = false;
+    }
+  };
 
   let fifth = 1;
 
@@ -229,6 +240,7 @@ const Video = ({
         key={video?.sources?.[0]?.url}
         ref={videoRef}
         aria-label={video?.name || ''}
+        onCanPlay={handleCanPlay}
         playsInline
         disableRemotePlayback
         className={videoCl}
