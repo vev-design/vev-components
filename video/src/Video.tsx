@@ -60,7 +60,7 @@ const Video = ({
   useVevEvent(VideoInteraction.play, () => {
     pausedRef.current = false;
     if (videoRef.current.readyState === 4) {
-      videoRef.current.play().then(() => console.log('play success', video?.key), (error) => console.log('play error', video?.key, error));
+      videoRef.current.play();
     } else {
       queuedPlay.current = true;
     }
