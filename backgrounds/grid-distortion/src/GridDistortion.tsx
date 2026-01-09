@@ -53,6 +53,7 @@ const GridDistortion = ({ grid = 15, mouse = 0.1, strength = 0.15, relaxation = 
 
   // Initialize Three.js scene (only once or when grid/image changes)
   useEffect(() => {
+    console.log("initialize", image);
     if (!containerRef.current) return;
 
     const container = containerRef.current;
@@ -86,28 +87,8 @@ const GridDistortion = ({ grid = 15, mouse = 0.1, strength = 0.15, relaxation = 
     };
     uniformsRef.current = uniforms;
 
-    const textureLoader = new THREE.TextureLoader();
-    const imageSrc = image?.url || '';
-    
-    if (imageSrc) {
-      textureLoader.load(imageSrc, texture => {
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.wrapS = THREE.ClampToEdgeWrapping;
-        texture.wrapT = THREE.ClampToEdgeWrapping;
-        uniforms.uTexture.value = texture;
-        
-        // Trigger resize after texture loads
-        if (resizeRafRef.current) {
-          cancelAnimationFrame(resizeRafRef.current);
-        }
-        resizeRafRef.current = requestAnimationFrame(() => {
-          const handleResize = resizeHandlersRef.current;
-          if (handleResize) handleResize();
-        });
-      });
-    }
-
+    // Image loading is handled by separate effect
+    // Initial data texture and geometry setup
     const size = grid;
     const data = new Float32Array(4 * size * size);
     for (let i = 0; i < size * size; i++) {
@@ -241,9 +222,102 @@ const GridDistortion = ({ grid = 15, mouse = 0.1, strength = 0.15, relaxation = 
       dataTextureRef.current = null;
       uniformsRef.current = null;
     };
-  }, [grid, image?.url]);
+  }, []);
 
-  // Optimized resize handler with RAF throttling
+  // Handle image changes separately
+  useEffect(() => {
+    const imageSrc = image?.url || '';
+    const textureLoader = new THREE.TextureLoader();
+    const uniforms = uniformsRef.current;
+    const scene = sceneRef.current;
+
+    if (!uniforms || !scene) return;
+
+    if (imageSrc) {
+
+      if (uniforms.uTexture.value) {
+        uniforms.uTexture.value.dispose();
+      }
+
+      textureLoader.load(imageSrc, texture => {
+
+        if (!uniformsRef.current) {
+          texture.dispose();
+          return;
+        }
+
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        uniformsRef.current.uTexture.value = texture;
+        
+
+        if (resizeRafRef.current) {
+          cancelAnimationFrame(resizeRafRef.current);
+        }
+        resizeRafRef.current = requestAnimationFrame(() => {
+          const handleResize = resizeHandlersRef.current;
+          if (handleResize) handleResize();
+        });
+      });
+    }
+  }, [image]);
+
+  // Handle grid changes - update geometry and data texture smoothly
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const uniforms = uniformsRef.current;
+    const plane = planeRef.current;
+    const oldGeometry = geometryRef.current;
+    const oldDataTexture = dataTextureRef.current;
+
+    if (!scene || !uniforms || !plane) return;
+
+    sizeRef.current = Math.round(grid);
+    const size = Math.round(grid);
+
+
+    const data = new Float32Array(4 * size * size);
+    for (let i = 0; i < size * size; i++) {
+      data[i * 4] = Math.random() * 255 - 125;
+      data[i * 4 + 1] = Math.random() * 255 - 125;
+    }
+
+    const dataTexture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat, THREE.FloatType);
+    dataTexture.needsUpdate = true;
+    uniforms.uDataTexture.value = dataTexture;
+    dataTextureRef.current = dataTexture;
+
+
+    if (oldDataTexture) {
+      oldDataTexture.dispose();
+    }
+
+
+    const geometry = new THREE.PlaneGeometry(1, 1, size - 1, size - 1);
+    geometryRef.current = geometry;
+
+
+    plane.geometry.dispose();
+    plane.geometry = geometry;
+
+ 
+    if (oldGeometry && oldGeometry !== geometry) {
+      oldGeometry.dispose();
+    }
+
+
+    if (resizeRafRef.current) {
+      cancelAnimationFrame(resizeRafRef.current);
+    }
+    resizeRafRef.current = requestAnimationFrame(() => {
+      const handleResize = resizeHandlersRef.current;
+      if (handleResize) handleResize();
+    });
+  }, [grid]);
+
+
   const resizeHandlersRef = useRef(null);
 
   useEffect(() => {
@@ -387,9 +461,9 @@ registerVevComponent(GridDistortion, {
   name: "GridDistortion",
   props: [
     { name: "image", title: "Image", type: "image" },
-    { name: "grid", title: "Grid size", type: "number", initialValue: 15, options: {
+    { name: "grid", title: "Grid size", type: "number", initialValue: 15,  options: {
       display: "slider",
-      min: 0,
+      min: 1,
       max: 200,
     } },
     { name: "mouse", title: "Mouse size", type: "number", initialValue: 0.2, options: {

@@ -94,8 +94,12 @@ function createProgram(gl, vertexSource, fragmentSource) {
 function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.1, mouseReact = true, ...rest }) {
   const ctnDom = useRef(null);
   const mousePos = useRef({ x: 0.5, y: 0.5 });
+  const glRef = useRef(null);
+  const uniformsRef = useRef(null);
+  const handleMouseMoveRef = useRef(null);
   const color = useMemo(() => [red, green, blue], [red, green, blue]);
 
+  // Setup WebGL context, canvas, program, buffers - runs only once
   useEffect(() => {
     const ctn = ctnDom.current;
     if (!ctn) return;
@@ -115,6 +119,8 @@ function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.
         ctn.removeChild(canvas);
       };
     }
+
+    glRef.current = gl;
 
     const program = createProgram(gl, vertexShader, fragmentShader);
     if (!program) {
@@ -151,14 +157,12 @@ function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.
       uAmplitude: gl.getUniformLocation(program, 'uAmplitude'),
       uSpeed: gl.getUniformLocation(program, 'uSpeed'),
     };
+    uniformsRef.current = uniforms;
 
-    const setColor = () => {
-      if (uniforms.uColor) {
-        gl.uniform3f(uniforms.uColor, color[0], color[1], color[2]);
-      }
-    };
-    setColor();
-
+    // Initial uniform values
+    if (uniforms.uColor) {
+      gl.uniform3f(uniforms.uColor, color[0], color[1], color[2]);
+    }
     if (uniforms.uAmplitude) {
       gl.uniform1f(uniforms.uAmplitude, amplitude);
     }
@@ -211,9 +215,10 @@ function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.
         gl.uniform2f(uniforms.uMouse, x, y);
       }
     };
+    handleMouseMoveRef.current = handleMouseMove;
 
     if (mouseReact) {
-        window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mousemove', handleMouseMove);
     }
 
     return () => {
@@ -229,9 +234,49 @@ function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.
       gl.deleteProgram(program);
       ctn.removeChild(canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
+      glRef.current = null;
+      uniformsRef.current = null;
+      handleMouseMoveRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [color, speed, amplitude, mouseReact]);
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    const gl = glRef.current;
+    const uniforms = uniformsRef.current;
+    if (!gl || !uniforms || !uniforms.uColor) return;
+    gl.uniform3f(uniforms.uColor, color[0], color[1], color[2]);
+  }, [color]);
+
+  useEffect(() => {
+    const gl = glRef.current;
+    const uniforms = uniformsRef.current;
+    if (!gl || !uniforms || !uniforms.uSpeed) return;
+    gl.uniform1f(uniforms.uSpeed, speed);
+  }, [speed]);
+
+  useEffect(() => {
+    const gl = glRef.current;
+    const uniforms = uniformsRef.current;
+    if (!gl || !uniforms || !uniforms.uAmplitude) return;
+    gl.uniform1f(uniforms.uAmplitude, amplitude);
+  }, [amplitude]);
+
+  useEffect(() => {
+    const handleMouseMove = handleMouseMoveRef.current;
+    if (!handleMouseMove) return;
+
+    if (mouseReact) {
+      window.addEventListener('mousemove', handleMouseMove);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+    }
+
+    return () => {
+      if (mouseReact) {
+        window.removeEventListener('mousemove', handleMouseMove);
+      }
+    };
+  }, [mouseReact]);
 
   return <div ref={ctnDom} {...rest} data-component="Iridescence" className={styles.iridescenceContainer}  />;
 }
