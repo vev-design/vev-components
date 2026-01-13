@@ -4,8 +4,6 @@ import { useEditorState, useVevEvent, useDispatchVevEvent, useTracking } from '@
 import { getNameFromUrl, isIE, createTracker } from './utils';
 import { VideoEvent, VideoInteraction } from '.';
 
-const isIOS = () =>  /(iPad|iPhone|iPod)/i.test(navigator.userAgent);
-
 type Props = {
   video: {
     key: string;
@@ -268,7 +266,7 @@ const Video = ({
               if (b.format === 'video/ogg') return 1;
               return 0;
             })
-            .map((v, i) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
+            .map((v) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
         <p>{altText || 'Your browser does not support this video'}</p>
       </video>
     </div>
