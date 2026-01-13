@@ -54,16 +54,15 @@ const Video = ({
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
 
-
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
   const dispatchTrackingEvent = useTracking(disableTracking);
 
-  useVevEvent(VideoInteraction.play, () => {
+  useVevEvent(VideoInteraction.play, async () => {
     pausedRef.current = false;
-    if (videoRef.current.readyState === 4) {
-      videoRef.current.play();
-    } else {
+    await videoRef.current.play();
+    // The video for some reason hasn't started. Queue it up to play when onCanPlay is triggered
+    if (videoRef.current.readyState < 2) {
       queuedPlay.current = true;
     }
   });
@@ -106,14 +105,6 @@ const Video = ({
 
   const handleCanPlay = () => {
     if (queuedPlay.current) {
-      videoRef.current.play();
-      queuedPlay.current = false;
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (queuedPlay.current && isIOS()) {
-      videoRef.current.load();
       videoRef.current.play();
       queuedPlay.current = false;
     }
@@ -251,7 +242,6 @@ const Video = ({
         ref={videoRef}
         aria-label={video?.name || ''}
         onCanPlay={handleCanPlay}
-        onLoadedMetadata={handleLoadedMetadata}
         playsInline
         disableRemotePlayback
         className={videoCl}
@@ -278,7 +268,7 @@ const Video = ({
               if (b.format === 'video/ogg') return 1;
               return 0;
             })
-            .map((v) => <source key={v.url} src={isIOS ? v.url + '#t=0.01' : v.url} type={v.format || 'video/mp4'} />)}
+            .map((v, i) => <source key={v.url} src={v.url} type={v.format || 'video/mp4'} />)}
         <p>{altText || 'Your browser does not support this video'}</p>
       </video>
     </div>
