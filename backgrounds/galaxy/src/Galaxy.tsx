@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import styles from './Galaxy.module.css';
 import { registerVevComponent } from '@vev/react';
+import { animationManager } from './AnimationManager';
 
 const vertexShader = `
 attribute vec2 position;
@@ -177,6 +178,7 @@ interface GalaxyProps extends React.HTMLAttributes<HTMLDivElement> {
   autoCenterRepulsion?: number;
   transparent?: boolean;
   opacity?: number;
+  hostRef: React.RefObject<HTMLDivElement>;
 }
 
 type UniformName =
@@ -290,6 +292,7 @@ function Galaxy({
   autoCenterRepulsion = 0,
   transparent = true,
   opacity = 1.0,
+  hostRef,
   ...rest
 }: GalaxyProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -304,7 +307,7 @@ function Galaxy({
     UniformValue
   >);
   const floatTargetsRef = useRef<Partial<Record<UniformName, number>>>({});
-  const animationRef = useRef<number | null>(null);
+  const instanceIdRef = useRef<string>(`galaxy-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`);
   const lastTimeRef = useRef<number>(0);
   const logicalTimeRef = useRef<number>(0);
   const speedRef = useRef<number>(speed);
@@ -315,6 +318,10 @@ function Galaxy({
   const pointerValueRef = useRef<[number, number]>([0.5, 0.5]);
   const pointerActiveTargetRef = useRef<number>(0);
   const pointerActiveRef = useRef<number>(0);
+  const isVisibleRef = useRef<boolean>(true);
+  const lastUniformValuesRef = useRef<Map<UniformName, UniformValue>>(new Map());
+  const wasPausedRef = useRef<boolean>(false);
+  const drawSceneRef = useRef<(() => void) | null>(null);
 
   const applyUniform = useCallback((name: UniformName, value: UniformValue) => {
     const gl = glRef.current;
@@ -375,6 +382,10 @@ function Galaxy({
     if (!mouseInteraction) {
       pointerTargetRef.current = [0.5, 0.5];
       pointerActiveTargetRef.current = 0;
+    }
+    // Update priority based on interaction state
+    if (isVisibleRef.current) {
+      animationManager.setPriority(instanceIdRef.current, mouseInteraction ? 10 : 5);
     }
   }, [mouseInteraction]);
 
@@ -475,8 +486,8 @@ function Galaxy({
       if (!glRef.current) return;
       glRef.current.drawArrays(glRef.current.TRIANGLES, 0, 3);
     };
+    drawSceneRef.current = drawScene;
 
-    // Throttle resize operations to avoid excessive recalculations
     let resizeTimeout: number | null = null;
     const resize = () => {
       if (resizeTimeout) return;
@@ -510,14 +521,7 @@ function Galaxy({
       }, 16); // ~60fps max update rate for mouse
     };
 
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!mouseInteractionRef.current || !canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / Math.max(rect.width, 1);
-      const y = 1 - (event.clientY - rect.top) / Math.max(rect.height, 1);
-      updateMousePosition(x, y, 1);
-    };
-
+ 
     const handlePointerLeave = () => {
       updateMousePosition(0.5, 0.5, 0);
     };
@@ -532,72 +536,50 @@ function Galaxy({
       updateMousePosition(x, y, inside ? 1 : 0);
     };
 
-    canvas.addEventListener('pointermove', handlePointerMove, { passive: true });
     canvas.addEventListener('pointerleave', handlePointerLeave, { passive: true });
-    window.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
+    hostRef.current?.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
 
-    // Adaptive frame rate management
-    let frameSkip = 0;
-    let frameCount = 0;
-    let lastFpsCheck = 0;
-    const targetFps = isLowEndDevice ? 30 : 60;
-    const minFrameTime = 1000 / targetFps;
-    let lastFrameTime = 0;
+    // Animation loop callback - registered with shared AnimationManager
+    const animationCallback = (timestamp: number, delta: number) => {
+      if (!glRef.current || !isVisibleRef.current) return;
 
-    // Track uniform changes to avoid unnecessary updates
-    const lastUniformValues = new Map<UniformName, UniformValue>();
-
-    const loop = (timestamp: number) => {
-      animationRef.current = requestAnimationFrame(loop);
-      
-      // Adaptive frame skipping for low-end devices
-      const elapsed = timestamp - lastFrameTime;
-      if (elapsed < minFrameTime && frameSkip > 0) {
-        frameSkip--;
-        return;
-      }
-      lastFrameTime = timestamp;
-      frameSkip = isLowEndDevice ? 1 : 0; // Skip every other frame on low-end devices
-
-      let delta = 0;
-      if (lastTimeRef.current) {
-        delta = (timestamp - lastTimeRef.current) / 1000;
-      }
-      lastTimeRef.current = timestamp;
-
-      // Performance monitoring - adjust quality if FPS drops
-      frameCount++;
-      if (timestamp - lastFpsCheck > 1000) {
-        const fps = frameCount;
-        frameCount = 0;
-        lastFpsCheck = timestamp;
-        // If FPS is too low, increase frame skipping
-        if (fps < targetFps * 0.7 && frameSkip < 2) {
-          frameSkip++;
-        } else if (fps > targetFps * 0.9 && frameSkip > 0) {
-          frameSkip--;
+      // Handle resume - force update all uniforms on first frame after resume
+      const isResuming = wasPausedRef.current;
+      if (isResuming) {
+        wasPausedRef.current = false;
+        // Force update all uniforms on resume to prevent glitch
+        lastUniformValuesRef.current.clear();
+        // Use a very small, fixed delta on first frame to continue smoothly without jump
+        // This simulates a normal frame interval
+        const resumeDelta = 1 / 60; // ~16ms, one frame
+        if (!disableAnimationRef.current) {
+          logicalTimeRef.current += resumeDelta * speedRef.current;
         }
-      }
-
-      if (!disableAnimationRef.current) {
-        logicalTimeRef.current += delta * speedRef.current;
+      } else {
+        // Normal time advancement (skip if animation disabled)
+        if (!disableAnimationRef.current) {
+          logicalTimeRef.current += delta * speedRef.current;
+        }
       }
 
       const currentTime = logicalTimeRef.current;
       
-      // Only update uniforms if values changed
+      // Always update time uniforms (or if resuming, force update)
       const timeValue = currentTime;
-      if (lastUniformValues.get('uTime') !== timeValue) {
+      const lastTime = lastUniformValuesRef.current.get('uTime');
+      if (isResuming || lastTime !== timeValue) {
         applyUniform('uTime', timeValue);
-        lastUniformValues.set('uTime', timeValue);
+        lastUniformValuesRef.current.set('uTime', timeValue);
       }
       
       const starSpeedValue = (currentTime * starSpeedRef.current) / 10;
-      if (lastUniformValues.get('uStarSpeed') !== starSpeedValue) {
+      const lastStarSpeed = lastUniformValuesRef.current.get('uStarSpeed');
+      if (isResuming || lastStarSpeed !== starSpeedValue) {
         applyUniform('uStarSpeed', starSpeedValue);
-        lastUniformValues.set('uStarSpeed', starSpeedValue);
+        lastUniformValuesRef.current.set('uStarSpeed', starSpeedValue);
       }
 
+      // Smooth mouse interpolation
       const tau = 0.2;
       const factor = delta > 0 ? 1 - Math.exp(-delta / tau) : 1;
       const target = pointerTargetRef.current;
@@ -606,55 +588,141 @@ function Galaxy({
       current[1] += (target[1] - current[1]) * factor;
       pointerValueRef.current = current;
       
-      // Only update mouse uniform if changed significantly
+      // Update mouse uniform (always on resume, or if changed significantly)
       const mouseValue: [number, number] = [current[0], current[1]];
-      const lastMouse = lastUniformValues.get('uMouse') as [number, number] | undefined;
-      if (!lastMouse || Math.abs(mouseValue[0] - lastMouse[0]) > 0.001 || Math.abs(mouseValue[1] - lastMouse[1]) > 0.001) {
+      const lastMouse = lastUniformValuesRef.current.get('uMouse') as [number, number] | undefined;
+      if (isResuming || !lastMouse || Math.abs(mouseValue[0] - lastMouse[0]) > 0.001 || Math.abs(mouseValue[1] - lastMouse[1]) > 0.001) {
         applyUniform('uMouse', mouseValue);
-        lastUniformValues.set('uMouse', mouseValue);
+        lastUniformValuesRef.current.set('uMouse', mouseValue);
       }
 
       pointerActiveRef.current +=
         (pointerActiveTargetRef.current - pointerActiveRef.current) * factor;
       const activeFactor = pointerActiveRef.current;
-      if (lastUniformValues.get('uMouseActiveFactor') !== activeFactor) {
+      const lastActiveFactor = lastUniformValuesRef.current.get('uMouseActiveFactor');
+      if (isResuming || lastActiveFactor !== activeFactor) {
         applyUniform('uMouseActiveFactor', activeFactor);
-        lastUniformValues.set('uMouseActiveFactor', activeFactor);
+        lastUniformValuesRef.current.set('uMouseActiveFactor', activeFactor);
       }
 
+      // Smooth uniform transitions
       FLOAT_SMOOTHED.forEach((name) => {
         const target = floatTargetsRef.current[name];
         if (typeof target !== 'number') return;
         const current = (uniformValuesRef.current[name] as number) ?? target;
+        
+        // On resume, immediately set to target to prevent glitch
+        if (isResuming) {
+          applyUniform(name, target);
+          lastUniformValuesRef.current.set(name, target);
+          return;
+        }
+        
         if (Math.abs(target - current) < 1e-4) {
           if (uniformValuesRef.current[name] !== target) {
             applyUniform(name, target);
-            lastUniformValues.set(name, target);
+            lastUniformValuesRef.current.set(name, target);
           }
           return;
         }
         const blend = Math.min(1, (delta || 0) * 6);
         const next = current + (target - current) * blend;
         applyUniform(name, next);
-        lastUniformValues.set(name, next);
+        lastUniformValuesRef.current.set(name, next);
       });
 
       drawScene();
     };
 
-    animationRef.current = requestAnimationFrame(loop);
+    // Register with shared animation manager
+    // Priority based on visibility and interaction
+    const priority = isVisibleRef.current ? (mouseInteractionRef.current ? 10 : 5) : 0;
+    animationManager.register(instanceIdRef.current, animationCallback, priority);
+
+    // Force immediate redraw with fresh uniforms when resuming (prevents glitch)
+    const forceRedrawOnResume = () => {
+      if (!glRef.current || !isVisibleRef.current) return;
+      
+      // Update resolution in case container size changed while paused
+      if (canvasRef.current) {
+        const rect = container.getBoundingClientRect();
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(1, Math.floor(rect.width * ratio));
+        const height = Math.max(1, Math.floor(rect.height * ratio));
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
+        glRef.current.viewport(0, 0, width, height);
+        applyUniform('uResolution', buildResolution(width, height));
+      }
+      
+      // The animation callback will handle uniform updates on next frame
+      // Just trigger an immediate draw with current state
+      // Use double requestAnimationFrame to ensure it happens after any pending updates
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          animationCallback(0, 10);
+          if (drawSceneRef.current && glRef.current && isVisibleRef.current) {
+            drawSceneRef.current();
+          }
+        });
+      });
+    };
+
+    forceRedrawOnResume();
+
+    // Intersection Observer for better visibility detection
+    // Using rootMargin to trigger slightly before element is fully visible for smoother transitions
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const isVisible = entries[0]?.isIntersecting ?? true;
+        const wasPaused = !isVisibleRef.current && isVisible;
+        isVisibleRef.current = isVisible;
+        if (isVisible) {
+          console.log('isVisible', isVisible);
+          wasPausedRef.current = wasPaused;
+          animationManager.resume(instanceIdRef.current);
+          animationManager.setPriority(instanceIdRef.current, mouseInteractionRef.current ? 10 : 5);
+          // Force immediate redraw to prevent glitch when coming into view
+          if (wasPaused) {
+            console.log('forceRedrawOnResume');
+            forceRedrawOnResume();
+          }
+        } else {
+          animationManager.pause(instanceIdRef.current);
+          animationManager.setPriority(instanceIdRef.current, 0);
+        }
+      },
+      { 
+        threshold: 0.02,
+        // Trigger slightly before element enters viewport for smoother transition
+        rootMargin: '50px'
+      }
+    );
+    intersectionObserver.observe(container);
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  
+      // Unregister from shared animation manager
+      animationManager.unregister(instanceIdRef.current);
+      
+      // Cleanup visibility observers
+      intersectionObserver.disconnect();
+      
+      // Cleanup timeouts
       if (resizeTimeout) clearTimeout(resizeTimeout);
       if (mouseUpdateTimeout) clearTimeout(mouseUpdateTimeout);
+      
+      // Cleanup observers and event listeners
       resizeObserver.disconnect();
-      canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerleave', handlePointerLeave);
-      window.removeEventListener('mousemove', handleWindowMouseMove);
+      hostRef.current?.removeEventListener('mousemove', handleWindowMouseMove);
+      
+      // Cleanup DOM
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
+      
+      // Cleanup WebGL resources
       if (programRef.current && glRef.current) {
         glRef.current.deleteProgram(programRef.current);
       }
@@ -663,10 +731,12 @@ function Galaxy({
       canvasRef.current = null;
       uniformLocationsRef.current = {} as Record<UniformName, WebGLUniformLocation | null>;
       uniformValuesRef.current = {} as Record<UniformName, UniformValue>;
+      lastUniformValuesRef.current.clear();
     };
-  }, [applyUniform, updateVec2Uniform]);
+  }, []);
 
-  return <div ref={containerRef}  {...rest} className={styles.wrapper} />;
+
+  return <div ref={containerRef}   className={styles.wrapper} />;
 }
 
 
