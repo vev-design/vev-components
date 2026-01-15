@@ -1,9 +1,17 @@
 import React, { useCallback } from 'react';
-import { registerVevComponent, useGlobalState, useGlobalStore } from '@vev/react';
+import { registerVevComponent, useGlobalState, useGlobalStore, WidgetNode } from '@vev/react';
 import styles from './Slider.module.css';
+
+interface CustomDot {
+  mainComponent: string;
+  variant?: string;
+}
 
 type Props = {
   target: string;
+  dot: CustomDot;
+  activeDot: CustomDot;
+  padding: number;
 };
 
 const SLIDESHOW_TYPE = ['4m4woXHPJqnEyfmHuuf1_Slideshow', '1QRRiAt1Js1nD0ApT2Ek_Slideshow'];
@@ -21,22 +29,42 @@ const SlideshowDots = (props: Props) => {
   if (!props.target) return <div className={styles.empty}>Select slideshow</div>;
 
   return (
-    <div style={{ textAlign: 'center' }} className={styles.dots}>
-      {[...Array(state?.length || 0).keys()].map((key, i) => (
-        <span
-          key={i}
-          className={i === (state.index || 0) ? styles.selected : ''}
-          onClick={() => handleClick(i)}
-        >
-          •
-        </span>
-      ))}
+    <div style={{ textAlign: 'center', gap: `${props.padding || 0}px` }} className={styles.dots}>
+      {[...Array(state?.length || 0).keys()].map((_, i) => {
+        let isActive = i === (state.index || 0);
+
+        if (props.dot && !isActive) {
+          return (
+            <span key={i} onClick={() => handleClick(i)}>
+              <WidgetNode id={props.dot.mainComponent} externalVariant={props.dot.variant} />
+            </span>
+          );
+        }
+
+        if (isActive && props.activeDot) {
+          return (
+            <span key={i} onClick={() => handleClick(i)}>
+              <WidgetNode
+                id={props.activeDot.mainComponent}
+                externalVariant={props.activeDot.variant}
+              />
+            </span>
+          );
+        }
+
+        return (
+          <span key={i} className={isActive ? styles.selected : ''} onClick={() => handleClick(i)}>
+            •
+          </span>
+        );
+      })}
     </div>
   );
 };
 
 registerVevComponent(SlideshowDots, {
-  name: 'Slider Dots',
+  name: 'Slider indicators',
+  icon: 'https://cdn.vev.design/assets/dot-circle-regular.svg',
   size: {
     width: 'auto',
     height: 'auto',
@@ -60,15 +88,44 @@ registerVevComponent(SlideshowDots, {
   props: [
     {
       name: 'target',
+      title: 'Target slider',
       description: 'Which slideshow should the dots target',
       type: 'select',
       options: {
         display: 'dropdown',
+        placeholder: 'Select a slider',
         async items(data) {
           return data.content
             ?.filter((e) => SLIDESHOW_TYPE.includes(e.type))
             .map((s) => ({ value: s.key, label: s.name }));
         },
+      },
+    },
+    {
+      type: 'divider',
+    },
+    {
+      name: 'dot',
+      title: 'Inactive indicator',
+      description: 'Main component to use for inactive indicator',
+      placeholder: 'Select a variant',
+      type: 'mainComponent',
+    },
+    {
+      name: 'activeDot',
+      title: 'Active indicator',
+      description: 'Main component to use for active indicator',
+      placeholder: 'Select a variant',
+      type: 'mainComponent',
+    },
+    {
+      name: 'padding',
+      title: 'Padding',
+      description: 'Padding between dots',
+      type: 'number',
+      initialValue: 0,
+      options: {
+        format: 'px',
       },
     },
   ],
