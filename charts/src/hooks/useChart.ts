@@ -94,4 +94,6 @@ export function useChart<Opt extends ECOption>(el: RefObject<HTMLElement>, opts:
       }, 100);
     }
   }, [opts]);
+
+  return chartRef;
 }

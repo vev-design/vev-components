@@ -24,20 +24,11 @@ const Charts = ({ chartDef }: Props) => {
 
   const activeDataSet = useMemo(() => {
     return chartDefActual.data[activeDataSetIndex];
-  }, [activeDataSetIndex]);
+  }, [activeDataSetIndex, chartDefActual]);
 
   useEffect(() => {
     if (chartDef) {
       setChartDefActual({ ...chartDef, data: JSON.parse(chartDef.data) });
-    }
-  }, [chartDef]);
-
-  useEffect(() => {
-    if (chartDef.options?.raceSets) {
-      console.log(
-        'chartDefActual.data[activeDataSetIndex]',
-        chartDefActual.data[activeDataSetIndex],
-      );
     }
   }, [chartDef]);
 
@@ -50,7 +41,7 @@ const Charts = ({ chartDef }: Props) => {
   if (chartDefActual.type === 'bar' && activeDataSet) {
     return (
       <div className={styles.wrapper}>
-        <BarChart data={activeDataSet} options={chartDef.options} />
+        <BarChart data={activeDataSet} options={chartDefActual.options} chartDef={chartDefActual} />
       </div>
     );
   }
@@ -91,8 +82,7 @@ registerVevComponent(Charts, {
   props: [
     {
       name: 'chartDef',
-      type: 'array',
-      of: 'string',
+      type: 'object',
       component: ChartEditorFormButton,
     },
   ],
@@ -130,6 +120,10 @@ registerVevComponent(Charts, {
           initialValue: 0,
         },
       ],
+    },
+    {
+      type: InteractionType.START_RACE,
+      description: 'Start data set race',
     },
   ],
   type: 'both',

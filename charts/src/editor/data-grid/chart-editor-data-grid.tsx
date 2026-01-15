@@ -15,7 +15,7 @@ interface Props {
 
 export function ChartEditorDataGrid({ value, onChange, context }: Props) {
   const [data, setData] = useState<ChartData>(value || []);
-  console.log('data', data);
+
   useEffect(() => {
     onChange(data);
   }, [data]);
