@@ -49,7 +49,11 @@ const Charts = ({ chartDef }: Props) => {
   if (chartDefActual.type === 'line' && activeDataSet) {
     return (
       <div className={styles.wrapper}>
-        <LineChart data={activeDataSet} />
+        <LineChart
+          data={activeDataSet}
+          options={chartDefActual.options}
+          chartDef={chartDefActual}
+        />
       </div>
     );
   }

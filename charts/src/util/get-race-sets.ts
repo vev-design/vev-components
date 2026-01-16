@@ -2,9 +2,43 @@ import { ChartDefinition } from '../types';
 import { extractColumnData } from './extract-column-data';
 import { interpolateArray } from './interpolate-array';
 
+type RaceSetDataGroup = {
+  name: string | number;
+  type: 'line' | 'bar' | 'pie' | 'radar';
+  data: number[][];
+};
+
 export function getRaceSets(chartDef: Partial<ChartDefinition>) {
+  const results: RaceSetDataGroup[] = [];
+
+  for (let i = 0; i < chartDef.data[0][0].length - 1; i++) {
+    results.push(getRaceSetDataForGroup(chartDef, i));
+  }
+  console.log('results', results);
+  return {
+    raceSetLength: results[0].data.length,
+    getRaceSet: (index: number) => {
+      return results.map((result) => {
+        return {
+          name: result.name,
+          type: result.type,
+          data: result.data[index],
+        };
+      });
+    },
+  };
+}
+
+function getRaceSetDataForGroup(
+  chartDef: Partial<ChartDefinition>,
+  dataIndex = 0,
+): RaceSetDataGroup {
+  console.log('dataIndex', dataIndex);
+  const columnName = chartDef.data[0][0][dataIndex + 1];
+
   const dataSetData = chartDef.data.map((value) => {
-    return extractColumnData(value)[1].data;
+    let extractColumnData1 = extractColumnData(value);
+    return extractColumnData1[dataIndex + 1].data;
   });
 
   const minimumColumn = dataSetData.reduce((previousValue, currentValue) => {
@@ -22,7 +56,7 @@ export function getRaceSets(chartDef: Partial<ChartDefinition>) {
   }
 
   const interpolatedSets = setGroups.map((set) => {
-    return interpolateArray(set, 5);
+    return interpolateArray(set, 1);
   });
 
   const finishedDataSets: number[][] = [];
@@ -34,5 +68,9 @@ export function getRaceSets(chartDef: Partial<ChartDefinition>) {
     }
   }
 
-  return finishedDataSets;
+  return {
+    name: columnName,
+    type: chartDef.type,
+    data: finishedDataSets,
+  };
 }

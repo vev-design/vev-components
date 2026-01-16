@@ -5,7 +5,7 @@ import { ChartDefinition } from '../types';
 import { getDefaultChart } from '../helpers/get-default-chart';
 import { ChartEditorData } from './chart-editor-data';
 import { SchemaContextModel } from '@vev/utils';
-import { ChartEditorOptionsForm } from './chart-editor-options-form';
+import { ChartEditorOptionsForm } from './options/chart-editor-options-form';
 
 type Tabs = 'type' | 'data' | 'options';
 

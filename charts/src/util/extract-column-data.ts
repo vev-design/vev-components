@@ -6,7 +6,6 @@ export function extractColumnData(data: Array<(string | number)[]>) {
       return row[i];
     });
   }
-
   return rawColumns.map((col) => {
     return {
       label: col[0],

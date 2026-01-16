@@ -14,7 +14,7 @@ import { InteractionType } from '../../event-types';
 import { extractColumnData } from '../../util/extract-column-data';
 import { getRaceSets } from '../../util/get-race-sets';
 
-export type ChartOptions = ComposeOption<
+type BarChartOptions = ComposeOption<
   | BarSeriesOption
   | TitleComponentOption
   | TooltipComponentOption
@@ -25,8 +25,8 @@ export type ChartOptions = ComposeOption<
 function getOpts(
   columnData: { label: string | number; data: (string | number)[] }[],
   options: ChartDefinition['options'],
-): ChartOptions {
-  let opts: ChartOptions = {
+): BarChartOptions {
+  let opts: BarChartOptions = {
     animation: true,
     legend: {
       data: columnData.slice(1).map((column) => column.label),
@@ -77,6 +77,7 @@ export function BarChart({ data, options, chartDef }: Props) {
   }, [data]);
 
   let opts = getOpts(columnData, options);
+
   const chartRef = useChart(elRef, opts);
 
   useVevEvent(InteractionType.START_RACE, () => {
@@ -84,27 +85,36 @@ export function BarChart({ data, options, chartDef }: Props) {
   });
 
   function startRace() {
-    const raceSets = getRaceSets(chartDef);
-    const intervalDuration = options.raceSets.duration / raceSets.length;
-    let setCounter = 0;
-    return setInterval(() => {
-      if (setCounter >= raceSets.length) {
+    const { raceSetLength, getRaceSet } = getRaceSets(chartDef);
+    const intervalDuration = options.raceSets.duration / (raceSetLength - 1);
+    let index = 2;
+
+    // Start animation immediately
+    chartRef.current.setOption({
+      animationDuration: 0,
+      animationDurationUpdate: intervalDuration,
+      animationEasing: 'linear',
+      animationEasingUpdate: 'linear',
+      series: getRaceSet(1),
+    });
+
+    let interval = setInterval(() => {
+      if (index >= raceSetLength) {
+        clearInterval(interval);
         return;
       }
+
       chartRef.current.setOption({
         animationDuration: 0,
         animationDurationUpdate: intervalDuration,
         animationEasing: 'linear',
         animationEasingUpdate: 'linear',
-        series: [
-          {
-            type: 'bar',
-            data: raceSets[setCounter],
-          },
-        ],
+        series: getRaceSet(index),
       });
-      setCounter++;
+      index++;
     }, intervalDuration);
+
+    return interval;
   }
 
   // For race

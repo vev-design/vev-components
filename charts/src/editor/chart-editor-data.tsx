@@ -4,7 +4,6 @@ import { ChartEditorDataGrid } from './data-grid/chart-editor-data-grid';
 import { SchemaContextModel } from '@vev/utils';
 import { SilkeBox, SilkeButton, SilkeTab, SilkeTabs } from '@vev/silke';
 import cloneDeep from 'lodash.merge';
-import { getDefaultChart } from '../helpers/get-default-chart';
 import { readCSV } from './data-grid/paste-csv';
 
 interface Props {
