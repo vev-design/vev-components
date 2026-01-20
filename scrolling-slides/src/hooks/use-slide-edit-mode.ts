@@ -37,7 +37,7 @@ export function useSlideEditMode(
     const element = hostRef.current;
 
     // Only run if we have all requirements and the editor is in the correct state
-    if (!timeline || !element || !activeContentChild) {
+    if (!timeline || !element || !activeContentChild || !disabled) {
       prevStateRef.current = { disabled, activeContentChild };
       return;
     }
@@ -123,12 +123,12 @@ export function useSlideEditMode(
     // Handle initial sync or external updates
     const prevActiveChild = prevStateRef.current.activeContentChild;
     
-    if (!prevActiveChild) {
+    if (!prevActiveChild && !isPreviewingContentChildren) {
       if (!isPreviewingContentChildren) {
         // Initial mount: snap to the preferred slide based on current scroll
         scrollToSlide();
       } else {
-        // Initial mount: snap to the preferred slide based on current scroll
+        // Preview mount: snap to the external active content child
         scrollToSlide(children.indexOf(activeContentChild), true);
       }
     } else if (prevActiveChild !== activeContentChild) {
