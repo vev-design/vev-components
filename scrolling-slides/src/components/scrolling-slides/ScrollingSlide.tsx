@@ -131,7 +131,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
 export default ScrollingSlide;
 
 registerVevComponent(ScrollingSlide, {
-  name: 'Scrolling slides',
+  name: 'Scrollytelling',
   transform: {
     height: 'auto',
   },

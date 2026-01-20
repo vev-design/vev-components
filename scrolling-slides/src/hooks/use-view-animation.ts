@@ -2,15 +2,14 @@ import { useViewport } from '@vev/react';
 import { RefObject, useEffect } from 'react';
 import { calculateScrollAnimationOffset } from '../utils/calculations';
 
-
 export function useViewAnimation(
   ref: RefObject<HTMLElement>,
   keyframes: Keyframe[] | PropertyIndexedKeyframes,
   timeline?: ViewTimeline,
   disable?: boolean,
   options?: KeyframeAnimationOptions,
-  offsetStart = 0,
-  offsetEnd = 1,
+  offsetStart?: number,
+  offsetEnd?: number,
 ) {
   const { scrollHeight, height: windowHeight } = useViewport();
   useEffect(() => {
@@ -24,7 +23,14 @@ export function useViewAnimation(
     // Ensure element is connected to DOM (polyfill needs this for getComputedStyle)
     if (!el.isConnected || !parent) return;
 
-    const { offsetStart, offsetEnd } = calculateScrollAnimationOffset(parent);
+    if (offsetStart === undefined || offsetEnd === undefined) {
+      const { offsetStart: offsetStartCalculated, offsetEnd: offsetEndCalculated } =
+        calculateScrollAnimationOffset(parent);
+      offsetStart = offsetStartCalculated || 0;
+      offsetEnd = offsetEndCalculated || 1;
+    }
+
+    //    const { offsetStart, offsetEnd } = calculateScrollAnimationOffset(parent);
 
     // Calculate percentages (polyfill bug with non-finite values happens internally, not from our values)
     const percentStart = offsetStart * 100;
@@ -51,6 +57,7 @@ export function useViewAnimation(
 
     try {
       const animation = el.animate(keyframes, animationOptions);
+
       return () => {
         try {
           animation.cancel();
