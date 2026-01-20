@@ -458,5 +458,5 @@ registerVevComponent(ScrollingSlide, {
       properties: ['background', 'border', 'filter'],
     },
   ],
-  type: 'standard',
+  type: 'both',
 });
