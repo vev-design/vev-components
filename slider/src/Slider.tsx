@@ -180,7 +180,7 @@ export const Slideshow = (props: Props) => {
   const Comp = render[animation] || Slide;
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} data-slider-model={hostRef?.current?.id || 'no-model'} data-slider-repeat={props?.children?.[0]}>
       {(slides[state?.index] || slides[0]) && (
         <Comp
           {...props}
