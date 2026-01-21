@@ -8,7 +8,7 @@ in vec2 position;
 out vec2 vUv;
 
 void main() {
-  vUv = position * 0.5 + 0.5;
+  vUv = position * 0.5 + 0.54;
   gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
@@ -321,33 +321,7 @@ function Aurora({
     observer.observe(container);
     resize();
 
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const scale = canvasRef.current.width / rect.width || 1;
-      const x = (event.clientX - rect.left) * scale;
-      const y = (rect.height - (event.clientY - rect.top)) * scale;
-      mouseTargetRef.current = [x, y];
-      if (mouseDampeningRef.current <= 0) {
-        applyUniform('uPointer', [x, y]);
-        drawScene();
-      }
-    };
-
-    const handlePointerLeave = () => {
-      if (!canvasRef.current) return;
-      const cx = canvasRef.current.width / 2;
-      const cy = canvasRef.current.height / 2;
-      mouseTargetRef.current = [cx, cy];
-      if (mouseDampeningRef.current <= 0) {
-        applyUniform('uPointer', [cx, cy]);
-        drawScene();
-      }
-    };
-
-    canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerleave', handlePointerLeave);
-
+ 
     const loop = (timestamp: number) => {
       animationRef.current = requestAnimationFrame(loop);
       let delta = 0;
@@ -399,8 +373,6 @@ function Aurora({
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       observer.disconnect();
-      canvas.removeEventListener('pointermove', handlePointerMove);
-      canvas.removeEventListener('pointerleave', handlePointerLeave);
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }

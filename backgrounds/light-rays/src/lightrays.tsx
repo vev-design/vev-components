@@ -588,17 +588,17 @@ registerVevComponent(LightRays, {
     { name: "rayLength", type: "number", initialValue: 3, options:{
       display: "slider",
       min: 0,
-      max: 3,
+      max: 10,
     } },
     { name: "fadeDistance", type: "number", initialValue: 1.0, options:{
       display: "slider",
       min: 0,
-      max: 2,
+      max: 10,
     } },
     { name: "saturation", type: "number", initialValue: 1.0, options:{
       display: "slider",
       min: 0,
-      max: 2,
+      max: 5,
     } },
     { name: "mouseInfluence", type: "number", initialValue: 0.1, options:{
       display: "slider",
