@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import styles from './Galaxy.module.css';
 import { registerVevComponent } from '@vev/react';
+import { animationManager } from './AnimationManager';
 
 const vertexShader = `
 attribute vec2 position;
@@ -21,7 +22,6 @@ uniform vec2 uFocal;
 uniform vec2 uRotation;
 uniform float uStarSpeed;
 uniform float uDensity;
-uniform float uHueShift;
 uniform float uSpeed;
 uniform vec2 uMouse;
 uniform float uGlowIntensity;
@@ -33,6 +33,7 @@ uniform float uRepulsionStrength;
 uniform float uMouseActiveFactor;
 uniform float uAutoCenterRepulsion;
 uniform bool uTransparent;
+uniform float uOpacity;
 
 varying vec2 vUv;
 
@@ -94,21 +95,10 @@ vec3 StarLayer(vec2 uv) {
       float glossLocal = tri(uStarSpeed / (PERIOD * seed + 1.0));
       float flareSize = smoothstep(0.9, 1.0, size) * glossLocal;
 
-      float red = smoothstep(STAR_COLOR_CUTOFF, 1.0, Hash21(si + 1.0)) + STAR_COLOR_CUTOFF;
-      float blu = smoothstep(STAR_COLOR_CUTOFF, 1.0, Hash21(si + 3.0)) + STAR_COLOR_CUTOFF;
-      float grn = min(red, blu) * seed;
-      vec3 base = vec3(red, grn, blu);
-      
-      float hue = atan(base.g - base.r, base.b - base.r) / (2.0 * 3.14159) + 0.5;
-      hue = fract(hue + uHueShift / 360.0);
-      float sat = length(base - vec3(dot(base, vec3(0.299, 0.587, 0.114)))) * uSaturation;
-      float val = max(max(base.r, base.g), base.b);
-      base = hsv2rgb(vec3(hue, sat, val));
-
       vec2 pad = vec2(tris(seed * 34.0 + uTime * uSpeed / 10.0), tris(seed * 38.0 + uTime * uSpeed / 30.0)) - 0.5;
 
       float star = Star(gv - offset - pad, flareSize);
-      vec3 color = base;
+      vec3 color = vec3(1.0);
 
       float twinkle = trisn(uTime * uSpeed + seed * 6.2831) * 0.5 + 1.0;
       twinkle = mix(1.0, twinkle, uTwinkleIntensity);
@@ -161,9 +151,9 @@ void main() {
     float alpha = length(col);
     alpha = smoothstep(0.0, 0.3, alpha);
     alpha = min(alpha, 1.0);
-    gl_FragColor = vec4(col, alpha);
+    gl_FragColor = vec4(col, alpha * uOpacity);
   } else {
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, uOpacity);
   }
 }
 `;
@@ -187,6 +177,8 @@ interface GalaxyProps extends React.HTMLAttributes<HTMLDivElement> {
   repulsionStrength?: number;
   autoCenterRepulsion?: number;
   transparent?: boolean;
+  opacity?: number;
+  hostRef: React.RefObject<HTMLDivElement>;
 }
 
 type UniformName =
@@ -196,7 +188,6 @@ type UniformName =
   | 'uRotation'
   | 'uStarSpeed'
   | 'uDensity'
-  | 'uHueShift'
   | 'uSpeed'
   | 'uMouse'
   | 'uGlowIntensity'
@@ -207,7 +198,8 @@ type UniformName =
   | 'uRepulsionStrength'
   | 'uMouseActiveFactor'
   | 'uAutoCenterRepulsion'
-  | 'uTransparent';
+  | 'uTransparent'
+  | 'uOpacity';
 
 type UniformValue = number | Float32Array | [number, number];
 
@@ -220,7 +212,6 @@ const UNIFORM_META: Record<UniformName, UniformMetaType> = {
   uRotation: 'vec2',
   uStarSpeed: 'float',
   uDensity: 'float',
-  uHueShift: 'float',
   uSpeed: 'float',
   uMouse: 'vec2',
   uGlowIntensity: 'float',
@@ -231,19 +222,20 @@ const UNIFORM_META: Record<UniformName, UniformMetaType> = {
   uRepulsionStrength: 'float',
   uMouseActiveFactor: 'float',
   uAutoCenterRepulsion: 'float',
-  uTransparent: 'int'
+  uTransparent: 'int',
+  uOpacity: 'float'
 };
 
 const FLOAT_SMOOTHED: UniformName[] = [
   'uDensity',
-  'uHueShift',
   'uGlowIntensity',
   'uSaturation',
   'uTwinkleIntensity',
   'uRotationSpeed',
   'uRepulsionStrength',
   'uAutoCenterRepulsion',
-  'uSpeed'
+  'uSpeed',
+  'uOpacity'
 ];
 
 const createShader = (gl: WebGLRenderingContext, type: number, source: string) => {
@@ -299,6 +291,8 @@ function Galaxy({
   rotationSpeed = 0.1,
   autoCenterRepulsion = 0,
   transparent = true,
+  opacity = 1.0,
+  hostRef,
   ...rest
 }: GalaxyProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -313,7 +307,7 @@ function Galaxy({
     UniformValue
   >);
   const floatTargetsRef = useRef<Partial<Record<UniformName, number>>>({});
-  const animationRef = useRef<number | null>(null);
+  const instanceIdRef = useRef<string>(`galaxy-${Math.random().toString(36).substr(2, 9)}-${Date.now()}`);
   const lastTimeRef = useRef<number>(0);
   const logicalTimeRef = useRef<number>(0);
   const speedRef = useRef<number>(speed);
@@ -324,6 +318,10 @@ function Galaxy({
   const pointerValueRef = useRef<[number, number]>([0.5, 0.5]);
   const pointerActiveTargetRef = useRef<number>(0);
   const pointerActiveRef = useRef<number>(0);
+  const isVisibleRef = useRef<boolean>(true);
+  const lastUniformValuesRef = useRef<Map<UniformName, UniformValue>>(new Map());
+  const wasPausedRef = useRef<boolean>(false);
+  const drawSceneRef = useRef<(() => void) | null>(null);
 
   const applyUniform = useCallback((name: UniformName, value: UniformValue) => {
     const gl = glRef.current;
@@ -385,38 +383,15 @@ function Galaxy({
       pointerTargetRef.current = [0.5, 0.5];
       pointerActiveTargetRef.current = 0;
     }
+    // Update priority based on interaction state
+    if (isVisibleRef.current) {
+      animationManager.setPriority(instanceIdRef.current, mouseInteraction ? 10 : 5);
+    }
   }, [mouseInteraction]);
 
-  useEffect(() => {
-    setNumericTarget('uTransparent', transparent ? 1 : 0);
-    const gl = glRef.current;
-    if (!gl) return;
-    if (transparent) {
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      gl.clearColor(0, 0, 0, 0);
-    } else {
-      gl.disable(gl.BLEND);
-      gl.clearColor(0, 0, 0, 1);
-    }
-  }, [transparent, setNumericTarget]);
-
-  useEffect(() => {
-    updateVec2Uniform('uFocal', focal);
-  }, [focal, updateVec2Uniform]);
-
-  useEffect(() => {
-    updateVec2Uniform('uRotation', rotation);
-  }, [rotation, updateVec2Uniform]);
-
-  useEffect(() => {
-    setNumericTarget('uDensity', density);
-  }, [density, setNumericTarget]);
-
-  useEffect(() => {
-    setNumericTarget('uHueShift', hueShift);
-  }, [hueShift, setNumericTarget]);
-
+  useEffect(() => updateVec2Uniform('uFocal', focal), [focal, updateVec2Uniform]);
+  useEffect(() => updateVec2Uniform('uRotation', rotation), [rotation, updateVec2Uniform]);
+  useEffect(() => setNumericTarget('uDensity', density), [density, setNumericTarget]);
   useEffect(() => setNumericTarget('uGlowIntensity', glowIntensity), [glowIntensity, setNumericTarget]);
   useEffect(() => setNumericTarget('uSaturation', saturation), [saturation, setNumericTarget]);
   useEffect(() => setNumericTarget('uTwinkleIntensity', twinkleIntensity), [twinkleIntensity, setNumericTarget]);
@@ -424,6 +399,7 @@ function Galaxy({
   useEffect(() => setNumericTarget('uRepulsionStrength', repulsionStrength), [repulsionStrength, setNumericTarget]);
   useEffect(() => setNumericTarget('uAutoCenterRepulsion', autoCenterRepulsion), [autoCenterRepulsion, setNumericTarget]);
   useEffect(() => setNumericTarget('uMouseRepulsion', mouseRepulsion ? 1 : 0), [mouseRepulsion, setNumericTarget]);
+  useEffect(() => setNumericTarget('uOpacity', opacity), [opacity, setNumericTarget]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -437,7 +413,16 @@ function Galaxy({
     container.appendChild(canvas);
     canvasRef.current = canvas;
 
-    const gl = canvas.getContext('webgl', { antialias: true, alpha: true });
+    // Performance detection: detect low-end devices
+    const isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
+    const maxPixelRatio = isLowEndDevice ? 1.5 : Math.min(window.devicePixelRatio || 1, 2);
+    
+    // Disable antialiasing on low-end devices for better performance
+    const gl = canvas.getContext('webgl', { 
+      antialias: !isLowEndDevice, 
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
     if (!gl) {
       console.error('WebGL not supported');
       return () => { };
@@ -473,8 +458,6 @@ function Galaxy({
     applyUniform('uRotation', toVec2(rotation));
     applyUniform('uDensity', density);
     floatTargetsRef.current.uDensity = density;
-    applyUniform('uHueShift', hueShift);
-    floatTargetsRef.current.uHueShift = hueShift;
     applyUniform('uGlowIntensity', glowIntensity);
     floatTargetsRef.current.uGlowIntensity = glowIntensity;
     applyUniform('uSaturation', saturation);
@@ -494,6 +477,8 @@ function Galaxy({
     floatTargetsRef.current.uSpeed = speed;
     applyUniform('uTransparent', transparent ? 1 : 0);
     floatTargetsRef.current.uTransparent = transparent ? 1 : 0;
+    applyUniform('uOpacity', opacity);
+    floatTargetsRef.current.uOpacity = opacity;
     applyUniform('uMouse', [0.5, 0.5]);
     applyUniform('uMouseActiveFactor', 0);
 
@@ -501,39 +486,44 @@ function Galaxy({
       if (!glRef.current) return;
       glRef.current.drawArrays(glRef.current.TRIANGLES, 0, 3);
     };
+    drawSceneRef.current = drawScene;
 
+    let resizeTimeout: number | null = null;
     const resize = () => {
-      if (!canvasRef.current || !glRef.current) return;
-      const rect = container.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      const width = Math.max(1, Math.floor(rect.width * ratio));
-      const height = Math.max(1, Math.floor(rect.height * ratio));
-      canvas.width = width;
-      canvas.height = height;
-      gl.viewport(0, 0, width, height);
-      applyUniform('uResolution', buildResolution(width, height));
-      drawScene();
+      if (resizeTimeout) return;
+      resizeTimeout = window.setTimeout(() => {
+        resizeTimeout = null;
+        if (!canvasRef.current || !glRef.current) return;
+        const rect = container.getBoundingClientRect();
+        const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
+        const width = Math.max(1, Math.floor(rect.width * ratio));
+        const height = Math.max(1, Math.floor(rect.height * ratio));
+        canvas.width = width;
+        canvas.height = height;
+        gl.viewport(0, 0, width, height);
+        applyUniform('uResolution', buildResolution(width, height));
+        drawScene();
+      }, 100);
     };
 
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
     resize();
 
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!mouseInteractionRef.current || !canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / Math.max(rect.width, 1);
-      const y = 1 - (event.clientY - rect.top) / Math.max(rect.height, 1);
-      pointerTargetRef.current = [x, y];
-      pointerActiveTargetRef.current = 1;
-      if (!mouseInteractionRef.current) {
-        pointerActiveTargetRef.current = 0;
-      }
+    // Throttle mouse move events for better performance
+    let mouseUpdateTimeout: number | null = null;
+    const updateMousePosition = (x: number, y: number, active: number) => {
+      if (mouseUpdateTimeout) return;
+      mouseUpdateTimeout = window.setTimeout(() => {
+        mouseUpdateTimeout = null;
+        pointerTargetRef.current = [x, y];
+        pointerActiveTargetRef.current = active;
+      }, 16); // ~60fps max update rate for mouse
     };
 
+ 
     const handlePointerLeave = () => {
-      pointerTargetRef.current = [0.5, 0.5];
-      pointerActiveTargetRef.current = 0;
+      updateMousePosition(0.5, 0.5, 0);
     };
 
     const handleWindowMouseMove = (event: MouseEvent) => {
@@ -542,31 +532,54 @@ function Galaxy({
       if (!rect.width || !rect.height) return;
       const x = (event.clientX - rect.left) / rect.width;
       const y = 1 - (event.clientY - rect.top) / rect.height;
-      pointerTargetRef.current = [x, y];
       const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;
-      pointerActiveTargetRef.current = inside ? 1 : 0;
+      updateMousePosition(x, y, inside ? 1 : 0);
     };
 
-    canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerleave', handlePointerLeave);
-    window.addEventListener('mousemove', handleWindowMouseMove);
+    canvas.addEventListener('pointerleave', handlePointerLeave, { passive: true });
+    hostRef.current?.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
 
-    const loop = (timestamp: number) => {
-      animationRef.current = requestAnimationFrame(loop);
-      let delta = 0;
-      if (lastTimeRef.current) {
-        delta = (timestamp - lastTimeRef.current) / 1000;
-      }
-      lastTimeRef.current = timestamp;
+    // Animation loop callback - registered with shared AnimationManager
+    const animationCallback = (timestamp: number, delta: number) => {
+      if (!glRef.current || !isVisibleRef.current) return;
 
-      if (!disableAnimationRef.current) {
-        logicalTimeRef.current += delta * speedRef.current;
+      // Handle resume - force update all uniforms on first frame after resume
+      const isResuming = wasPausedRef.current;
+      if (isResuming) {
+        wasPausedRef.current = false;
+        // Force update all uniforms on resume to prevent glitch
+        lastUniformValuesRef.current.clear();
+        // Use a very small, fixed delta on first frame to continue smoothly without jump
+        // This simulates a normal frame interval
+        const resumeDelta = 1 / 60; // ~16ms, one frame
+        if (!disableAnimationRef.current) {
+          logicalTimeRef.current += resumeDelta * speedRef.current;
+        }
+      } else {
+        // Normal time advancement (skip if animation disabled)
+        if (!disableAnimationRef.current) {
+          logicalTimeRef.current += delta * speedRef.current;
+        }
       }
 
       const currentTime = logicalTimeRef.current;
-      applyUniform('uTime', currentTime);
-      applyUniform('uStarSpeed', (currentTime * starSpeedRef.current) / 10);
+      
+      // Always update time uniforms (or if resuming, force update)
+      const timeValue = currentTime;
+      const lastTime = lastUniformValuesRef.current.get('uTime');
+      if (isResuming || lastTime !== timeValue) {
+        applyUniform('uTime', timeValue);
+        lastUniformValuesRef.current.set('uTime', timeValue);
+      }
+      
+      const starSpeedValue = (currentTime * starSpeedRef.current) / 10;
+      const lastStarSpeed = lastUniformValuesRef.current.get('uStarSpeed');
+      if (isResuming || lastStarSpeed !== starSpeedValue) {
+        applyUniform('uStarSpeed', starSpeedValue);
+        lastUniformValuesRef.current.set('uStarSpeed', starSpeedValue);
+      }
 
+      // Smooth mouse interpolation
       const tau = 0.2;
       const factor = delta > 0 ? 1 - Math.exp(-delta / tau) : 1;
       const target = pointerTargetRef.current;
@@ -574,41 +587,142 @@ function Galaxy({
       current[0] += (target[0] - current[0]) * factor;
       current[1] += (target[1] - current[1]) * factor;
       pointerValueRef.current = current;
-      applyUniform('uMouse', current);
+      
+      // Update mouse uniform (always on resume, or if changed significantly)
+      const mouseValue: [number, number] = [current[0], current[1]];
+      const lastMouse = lastUniformValuesRef.current.get('uMouse') as [number, number] | undefined;
+      if (isResuming || !lastMouse || Math.abs(mouseValue[0] - lastMouse[0]) > 0.001 || Math.abs(mouseValue[1] - lastMouse[1]) > 0.001) {
+        applyUniform('uMouse', mouseValue);
+        lastUniformValuesRef.current.set('uMouse', mouseValue);
+      }
 
       pointerActiveRef.current +=
         (pointerActiveTargetRef.current - pointerActiveRef.current) * factor;
-      applyUniform('uMouseActiveFactor', pointerActiveRef.current);
+      const activeFactor = pointerActiveRef.current;
+      const lastActiveFactor = lastUniformValuesRef.current.get('uMouseActiveFactor');
+      if (isResuming || lastActiveFactor !== activeFactor) {
+        applyUniform('uMouseActiveFactor', activeFactor);
+        lastUniformValuesRef.current.set('uMouseActiveFactor', activeFactor);
+      }
 
+      // Smooth uniform transitions
       FLOAT_SMOOTHED.forEach((name) => {
         const target = floatTargetsRef.current[name];
         if (typeof target !== 'number') return;
         const current = (uniformValuesRef.current[name] as number) ?? target;
+        
+        // On resume, immediately set to target to prevent glitch
+        if (isResuming) {
+          applyUniform(name, target);
+          lastUniformValuesRef.current.set(name, target);
+          return;
+        }
+        
         if (Math.abs(target - current) < 1e-4) {
           if (uniformValuesRef.current[name] !== target) {
             applyUniform(name, target);
+            lastUniformValuesRef.current.set(name, target);
           }
           return;
         }
         const blend = Math.min(1, (delta || 0) * 6);
         const next = current + (target - current) * blend;
         applyUniform(name, next);
+        lastUniformValuesRef.current.set(name, next);
       });
 
       drawScene();
     };
 
-    animationRef.current = requestAnimationFrame(loop);
+    // Register with shared animation manager
+    // Priority based on visibility and interaction
+    const priority = isVisibleRef.current ? (mouseInteractionRef.current ? 10 : 5) : 0;
+    animationManager.register(instanceIdRef.current, animationCallback, priority);
+
+    // Force immediate redraw with fresh uniforms when resuming (prevents glitch)
+    const forceRedrawOnResume = () => {
+      if (!glRef.current || !isVisibleRef.current) return;
+      
+      // Update resolution in case container size changed while paused
+      if (canvasRef.current) {
+        const rect = container.getBoundingClientRect();
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(1, Math.floor(rect.width * ratio));
+        const height = Math.max(1, Math.floor(rect.height * ratio));
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
+        glRef.current.viewport(0, 0, width, height);
+        applyUniform('uResolution', buildResolution(width, height));
+      }
+      
+      // The animation callback will handle uniform updates on next frame
+      // Just trigger an immediate draw with current state
+      // Use double requestAnimationFrame to ensure it happens after any pending updates
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          animationCallback(0, 10);
+          if (drawSceneRef.current && glRef.current && isVisibleRef.current) {
+            drawSceneRef.current();
+          }
+        });
+      });
+    };
+
+    forceRedrawOnResume();
+
+    // Intersection Observer for better visibility detection
+    // Using rootMargin to trigger slightly before element is fully visible for smoother transitions
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const isVisible = entries[0]?.isIntersecting ?? true;
+        const wasPaused = !isVisibleRef.current && isVisible;
+        isVisibleRef.current = isVisible;
+        if (isVisible) {
+          console.log('isVisible', isVisible);
+          wasPausedRef.current = wasPaused;
+          animationManager.resume(instanceIdRef.current);
+          animationManager.setPriority(instanceIdRef.current, mouseInteractionRef.current ? 10 : 5);
+          // Force immediate redraw to prevent glitch when coming into view
+          if (wasPaused) {
+            console.log('forceRedrawOnResume');
+            forceRedrawOnResume();
+          }
+        } else {
+          animationManager.pause(instanceIdRef.current);
+          animationManager.setPriority(instanceIdRef.current, 0);
+        }
+      },
+      { 
+        threshold: 0.02,
+        // Trigger slightly before element enters viewport for smoother transition
+        rootMargin: '50px'
+      }
+    );
+    intersectionObserver.observe(container);
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  
+      // Unregister from shared animation manager
+      animationManager.unregister(instanceIdRef.current);
+      
+      // Cleanup visibility observers
+      intersectionObserver.disconnect();
+      
+      // Cleanup timeouts
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      if (mouseUpdateTimeout) clearTimeout(mouseUpdateTimeout);
+      
+      // Cleanup observers and event listeners
       resizeObserver.disconnect();
-      canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerleave', handlePointerLeave);
-      window.removeEventListener('mousemove', handleWindowMouseMove);
+      hostRef.current?.removeEventListener('mousemove', handleWindowMouseMove);
+      
+      // Cleanup DOM
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
+      
+      // Cleanup WebGL resources
       if (programRef.current && glRef.current) {
         glRef.current.deleteProgram(programRef.current);
       }
@@ -617,16 +731,25 @@ function Galaxy({
       canvasRef.current = null;
       uniformLocationsRef.current = {} as Record<UniformName, WebGLUniformLocation | null>;
       uniformValuesRef.current = {} as Record<UniformName, UniformValue>;
+      lastUniformValuesRef.current.clear();
     };
-  }, [applyUniform, updateVec2Uniform]);
+  }, []);
 
-  return <div ref={containerRef}  {...rest} className={styles.wrapper} />;
+
+  return <div ref={containerRef}   className={styles.wrapper} />;
 }
 
 
 registerVevComponent(Galaxy, {
   name: "Galaxy",
   props: [
+    {
+      name: "opacity", title: "Opacity", type: "number", initialValue: 1.0, options: {
+        display: "slider",
+        min: 0,
+        max: 1,
+      }
+    },
     {
       name: "density", title: "Density", type: "number", initialValue: 1, options: {
         display: "slider",
@@ -646,13 +769,6 @@ registerVevComponent(Galaxy, {
         display: "slider",
         min: 0,
         max: 1,
-      }
-    },
-    {
-      name: "hueShift", title: "Hue Shift", type: "number", initialValue: 140, options: {
-        display: "slider",
-        min: 0,
-        max: 360,
       }
     },
     {
