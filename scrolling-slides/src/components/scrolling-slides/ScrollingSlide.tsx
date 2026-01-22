@@ -85,6 +85,11 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
         parent = parent.parentElement;
       }
     }
+    const widgetContainer = hostRef?.current?.querySelector('w');
+    if (widgetContainer) {
+      // Set z-index to 1 to prevent inner slides from covering children
+      widgetContainer.style.zIndex = 1;
+    }
   }, []);
 
   const layout = SLIDE_LAYOUT[type] || 'row';
