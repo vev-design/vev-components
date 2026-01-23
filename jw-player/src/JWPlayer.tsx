@@ -54,7 +54,6 @@ const JWPlayer = ({
   hostRef,
 }: Props) => {
   const videoRef = useRef<HTMLDivElement>(null);
-  console.log('embedUrl', embedUrl);
 
   const { mediaId, playerId } = getVideoUrl(embedUrl);
 
@@ -66,7 +65,6 @@ const JWPlayer = ({
     // Tracking state - scoped to this effect instance
     let passedTenSeconds = false;
     let fifth = 1;
-    let lastTrackedTime = 0;
     let playerInstance: any = null;
     let isMounted = true;
 
@@ -105,11 +103,9 @@ const JWPlayer = ({
           }
 
           // Fire events at every fifth of progress
-          // Only check if we've moved forward significantly to avoid repeated checks
-          if (currentTime > lastTrackedTime + 0.5 && currentTime > (fifth * duration) / 5) {
+          if (currentTime > (fifth * duration) / 5) {
             track('videoProgress', fifth * 20);
             fifth++;
-            lastTrackedTime = currentTime;
           }
         },
       },
@@ -192,8 +188,6 @@ const JWPlayer = ({
     loop,
     displayTitle,
     displayDescription,
-    trackingName,
-    embedUrl,
   ]);
 
   if (!embedUrl) {
@@ -212,6 +206,10 @@ registerVevComponent(JWPlayer, {
       description: 'Embed URL, i.e https://cdn.jwplayer.com/players/rZGxHwOi-mBecVbzv.js',
       type: 'string',
       initialValue: 'https://cdn.jwplayer.com/players/rZGxHwOi-mBecVbzv.js',
+      options: {
+        type: 'text',
+        multiline: true,
+      },
     },
     { name: 'mute', title: 'Mute', type: 'boolean', initialValue: false },
     {
@@ -273,9 +271,7 @@ registerVevComponent(JWPlayer, {
       component: (props) => {
         return (
           <SilkeToastNotification
-            dark
             fluid
-            inline
             kind="information"
             subtitle="JW Player is a custom video player. These settings might differ from your player configuration"
           />
