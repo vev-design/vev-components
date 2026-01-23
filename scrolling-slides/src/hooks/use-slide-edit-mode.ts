@@ -16,6 +16,7 @@ export function useSlideEditMode(
     activeContentChild,
     onRequestActiveContentChange,
     onRequestScrollTop,
+    isPreviewingContentChildren,
   } = useEditorState();
 
   const lastScrollY = useRef<number>(window.scrollY);
@@ -83,11 +84,13 @@ export function useSlideEditMode(
       return Math.max(0, Math.min(children.length - 1, rawIndex));
     };
 
-    const changeSlide = (index: number) => {
+    const changeSlide = (index: number, external?: boolean) => {
       const slideKey = children[index];
       // Update local ref so we know this change originated from here
       prevStateRef.current.activeContentChild = slideKey;
-      callbacksRef.current.onRequestActiveContentChange?.(slideKey);
+      if (!external) {
+        callbacksRef.current.onRequestActiveContentChange?.(slideKey);
+      }
     };
 
     const onScrollAnimationFinished = () => {
@@ -101,8 +104,8 @@ export function useSlideEditMode(
       }, SCROLL_UNLOCK_DELAY);
     };
 
-    const scrollToSlide = (index: number = getSlideIndexFromProgress()) => {
-      changeSlide(index);
+    const scrollToSlide = (index: number = getSlideIndexFromProgress(), external?: boolean) => {
+      changeSlide(index, external);
       
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
 
@@ -120,14 +123,19 @@ export function useSlideEditMode(
     // Handle initial sync or external updates
     const prevActiveChild = prevStateRef.current.activeContentChild;
     
-    if (!prevActiveChild) {
-      // Initial mount: snap to the preferred slide based on current scroll
-      scrollToSlide();
+    if (!prevActiveChild && !isPreviewingContentChildren) {
+      if (!isPreviewingContentChildren) {
+        // Initial mount: snap to the preferred slide based on current scroll
+        scrollToSlide();
+      } else {
+        // Preview mount: snap to the external active content child
+        scrollToSlide(children.indexOf(activeContentChild), true);
+      }
     } else if (prevActiveChild !== activeContentChild) {
       // External update: scroll to the new active child
       const index = children.indexOf(activeContentChild);
       if (index !== -1) {
-        scrollToSlide(index);
+        scrollToSlide(index, true);
       }
     }
 
@@ -146,6 +154,9 @@ export function useSlideEditMode(
       // Update active slide as we scroll
       changeSlide(getSlideIndexFromProgress());
 
+      // Do not snap to the nearest slide if we are previewing content children
+      if (isPreviewingContentChildren) return;
+
       // Debounce snapping to the nearest slide
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       scrollTimeoutRef.current = setTimeout(() => {
@@ -158,5 +169,5 @@ export function useSlideEditMode(
       window.removeEventListener('scroll', handleScroll);
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     };
-  }, [activeContentChild, disabled, children, timeline, hostRef]);
+  }, [activeContentChild, disabled, children, timeline, hostRef, isPreviewingContentChildren]);
 }
