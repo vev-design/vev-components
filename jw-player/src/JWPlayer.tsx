@@ -54,6 +54,7 @@ const JWPlayer = ({
   hostRef,
 }: Props) => {
   const videoRef = useRef<HTMLDivElement>(null);
+  console.log('embedUrl', embedUrl);
 
   const { mediaId, playerId } = getVideoUrl(embedUrl);
 
@@ -61,51 +62,75 @@ const JWPlayer = ({
     Tracking.send('video', 'JW player', action, trackingName || embedUrl, value);
   };
 
-  let passedTenSeconds = false;
-  let fifth = 1;
-  const TRACKING = [
-    {
-      event: 'setupError',
-      callback: ({ message }) => track('setupError', message),
-    },
-    {
-      event: 'autostartNotAllowed',
-      callback: () => track('autostartNotAllowed'),
-    },
-    {
-      event: 'firstFrame',
-      callback: () => track('Play'),
-    },
-    {
-      event: 'time',
-      callback: ({ currentTime, duration }) => {
-        // Fire event at ten seconds
-        if (currentTime > 10 && !passedTenSeconds) {
-          passedTenSeconds = true;
-          track('atTenSeconds');
-        }
-
-        // Fire events at every fifth of progress
-        if (currentTime > (fifth * duration) / 5) {
-          track('videoProgress', fifth * 20);
-          fifth++;
-        }
-      },
-    },
-    {
-      event: 'pause',
-      callback: () => track('Pause'),
-    },
-    {
-      event: 'complete',
-      callback: () => track('Finished'),
-    },
-  ];
-  // End of tracking
-
   useEffect(() => {
+    // Tracking state - scoped to this effect instance
+    let passedTenSeconds = false;
+    let fifth = 1;
+    let lastTrackedTime = 0;
+    let playerInstance: any = null;
+    let isMounted = true;
+
+    // Throttle time event to reduce CPU usage
+    // Only check every 0.5 seconds instead of every frame
+    const THROTTLE_INTERVAL = 500; // milliseconds
+    let lastTimeCheck = 0;
+
+    const TRACKING = [
+      {
+        event: 'setupError',
+        callback: ({ message }) => track('setupError', message),
+      },
+      {
+        event: 'autostartNotAllowed',
+        callback: () => track('autostartNotAllowed'),
+      },
+      {
+        event: 'firstFrame',
+        callback: () => track('Play'),
+      },
+      {
+        event: 'time',
+        callback: ({ currentTime, duration }) => {
+          const now = Date.now();
+          // Throttle: only process every THROTTLE_INTERVAL ms
+          if (now - lastTimeCheck < THROTTLE_INTERVAL) {
+            return;
+          }
+          lastTimeCheck = now;
+
+          // Fire event at ten seconds
+          if (currentTime > 10 && !passedTenSeconds) {
+            passedTenSeconds = true;
+            track('atTenSeconds');
+          }
+
+          // Fire events at every fifth of progress
+          // Only check if we've moved forward significantly to avoid repeated checks
+          if (currentTime > lastTrackedTime + 0.5 && currentTime > (fifth * duration) / 5) {
+            track('videoProgress', fifth * 20);
+            fifth++;
+            lastTrackedTime = currentTime;
+          }
+        },
+      },
+      {
+        event: 'pause',
+        callback: () => track('Pause'),
+      },
+      {
+        event: 'complete',
+        callback: () => track('Finished'),
+      },
+    ];
+    // End of tracking
+
     // Load account key from external resource
     System.import(`https://cdn.jwplayer.com/libraries/${playerId}.js`).then(() => {
+      // Don't set up player if component unmounted
+      if (!isMounted || !videoRef.current) {
+        return;
+      }
+
       const { key } = jwDefaults;
 
       const jwConfig = {
@@ -135,9 +160,28 @@ const JWPlayer = ({
       jwcontainer.className = 'jwcontainer fill';
       videoRef.current.appendChild(jwcontainer);
       const jwElement = hostRef.current.querySelector('.jwcontainer');
-      jwplayer(jwElement).setup(jwConfig);
-      for (const event of TRACKING) jwplayer().on(event.event, event.callback);
+      playerInstance = jwplayer(jwElement).setup(jwConfig);
+      for (const event of TRACKING) playerInstance.on(event.event, event.callback);
     });
+
+    // Cleanup function to prevent memory leaks and multiple instances
+    return () => {
+      isMounted = false;
+      if (playerInstance) {
+        try {
+          // Remove all event listeners
+          for (const event of TRACKING) {
+            playerInstance.off(event.event, event.callback);
+          }
+          // Destroy the player instance
+          playerInstance.remove();
+        } catch (e) {
+          // Ignore errors during cleanup
+          console.warn('Error cleaning up JW Player:', e);
+        }
+        playerInstance = null;
+      }
+    };
   }, [
     playerId,
     mediaId,
@@ -148,6 +192,8 @@ const JWPlayer = ({
     loop,
     displayTitle,
     displayDescription,
+    trackingName,
+    embedUrl,
   ]);
 
   if (!embedUrl) {
