@@ -101,7 +101,7 @@ export const Zoom = ({
             ]
               .filter(Boolean)
               .join(' ')}
-            key={child}
+            key={child + i}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
               opacity: i === move ? 1 : 0,
