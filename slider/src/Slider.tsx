@@ -198,7 +198,7 @@ export const Slideshow = (props: Props) => {
 
 registerVevComponent(Slideshow, {
   name: 'Slider',
-  type: 'standard',
+  type: 'both',
   icon: 'https://cdn.vev.design/assets/slider.svg',
   description:
     'Add a dynamic slider to display diverse design elements, tailor animation, and add Interactions for custom navigation.',
