@@ -52,6 +52,8 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   const { activeContentChild, disabled: editorDisabled } = useEditorState();
   const visible = useVisible(hostRef);
   const disabled = !visible && !activeContentChild;
+  // Force linear easing in editor to be able to calculate the scroll position
+  if (editorDisabled && activeContentChild) settings = { ...settings, easing: 'linear' };
 
   const ref = useRef<HTMLDivElement>(null);
   const timeline = useViewTimeline(ref as React.RefObject<HTMLElement>, disabled);
