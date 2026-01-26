@@ -10,6 +10,7 @@ import {
   FadeSlide,
   MaskSlide,
   RevealSlide,
+  ScrollSlide,
   StackSlide,
 } from './slide';
 
@@ -24,7 +25,7 @@ type Props = {
 
 type Layout = 'row' | 'column' | 'grid';
 const SLIDE_LAYOUT: Record<SlideType, Layout> = {
-  scroll: 'row',
+  scroll: 'grid',
   stack: 'grid',
   fade: 'grid',
   reveal: 'grid',
@@ -33,7 +34,7 @@ const SLIDE_LAYOUT: Record<SlideType, Layout> = {
 };
 
 const SLIDE_COMPONENT: Record<SlideType, React.ComponentType<BaseSlideProps>> = {
-  scroll: BaseSlide,
+  scroll: ScrollSlide,
   stack: StackSlide,
   fade: FadeSlide,
   reveal: RevealSlide,
@@ -59,14 +60,9 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
 
   useViewAnimation(
     ref as React.RefObject<HTMLElement>,
-    // Use margin to make frame calculation in the editor correct when editing slides
-    editorDisabled && activeContentChild
-      ? {
-          marginLeft: ['0', `${(-1 + 1 / children.length) * size.width}px`],
-        }
-      : {
-          translate: ['0 0', `${-100 + 100 / children.length}% 0`],
-        },
+    {
+      translate: ['0 0', `${-100 * (children.length - 1)}% 0`],
+    },
     timeline,
     type !== 'scroll' || disabled,
     {
@@ -85,16 +81,16 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
         parent = parent.parentElement;
       }
     }
-    const widgetContainer = hostRef?.current?.querySelector('w');
+    const widgetContainer = hostRef?.current?.querySelector('w') as HTMLElement;
     if (widgetContainer) {
       // Set z-index to 1 to prevent inner slides from covering children
-      widgetContainer.style.zIndex = 1;
+      widgetContainer.style.zIndex = '1';
     }
   }, []);
 
   const layout = SLIDE_LAYOUT[type] || 'row';
   let cl = `${styles.wrapper} ${styles[layout]}`;
-  if (type === 'scroll' && settings?.reverse) cl += ' ' + styles.reverse;
+  //if (type === 'scroll' && settings?.reverse) cl += ' ' + styles.reverse;
 
   const Comp = SLIDE_COMPONENT[type] || BaseSlide;
   return (
