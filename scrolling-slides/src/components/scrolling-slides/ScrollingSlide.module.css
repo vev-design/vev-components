@@ -29,8 +29,8 @@
 .wrapper {
     display: flex;
     flex-direction: row;
-    overflow: clip;
     width: 100%;
+    
     /* This is to allow auto height of vev container*/
     height:calc(100vh  * var(--slide-count));
     /** If not auto height this will clamp it to be max 100% of container */
@@ -39,11 +39,6 @@
     min-height:max(100%,100px);
 }
 
-@supports not (overflow: clip) {
-    .wrapper {
-        clip-path: inset(0 0 0 0);
-    }
-}
 
 .wrapper.row {
     flex-direction: row;
