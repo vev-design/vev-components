@@ -69,6 +69,7 @@ const JWPlayer = ({
     let fifth = 1;
     let playerInstance: any = null;
     let isMounted = true;
+    let autoplayObserver: IntersectionObserver | null = null;
 
     // Throttle time event to reduce CPU usage
     // Only check every 0.5 seconds instead of every frame
@@ -137,9 +138,15 @@ const JWPlayer = ({
         }
 
         const key = jwDefaults?.key;
+        const rootNode = videoRef.current.getRootNode();
+        const isInShadowDom = rootNode instanceof ShadowRoot;
+        // Browser autoplay policies generally require mute to be enabled.
+        const effectiveMute = Boolean(mute || autoplay);
 
         const jwConfig = {
-          autostart: autoplay ? 'viewable' : false,
+          // JW's built-in "viewable" autostart can fail inside Shadow DOM if it relies on
+          // document-level queries. In that case we handle viewability ourselves below.
+          autostart: autoplay ? (isInShadowDom ? false : 'viewable') : false,
           cast: {
             appid: '00000000',
           },
@@ -148,7 +155,7 @@ const JWPlayer = ({
           displaytitle: displayTitle,
           flashplayer: '//ssl.p.jwpcdn.com/player/v/8.8.4/jwplayer.flash.swf',
           key,
-          mute: true,
+          mute: effectiveMute,
           ph: 3,
           pid: playerId,
           playbackRateControls: false,
@@ -174,6 +181,53 @@ const JWPlayer = ({
 
         playerInstance = jwplayer(jwElement).setup(jwConfig);
         for (const event of TRACKING) playerInstance.on(event.event, event.callback);
+
+        // Ensure mute state matches props (and autoplay safety).
+        if (typeof playerInstance?.setMute === 'function') {
+          playerInstance.setMute(effectiveMute);
+        }
+
+        // Shadow DOM fallback for autoplay=viewable.
+        // Use IntersectionObserver to start playback once the component is meaningfully visible.
+        if (autoplay && isInShadowDom && videoRef.current) {
+          const startPlayback = () => {
+            if (!isMounted || !playerInstance) return;
+            try {
+              // JW supports play(true) to force start; fall back to play() if needed.
+              playerInstance.play(true);
+              return;
+            } catch {
+              // ignore
+            }
+            try {
+              playerInstance.play();
+            } catch {
+              // ignore
+            }
+          };
+
+          if (typeof IntersectionObserver === 'undefined') {
+            // Best-effort fallback.
+            startPlayback();
+          } else {
+            let started = false;
+            autoplayObserver = new IntersectionObserver(
+              (entries) => {
+                const entry = entries[0];
+                if (!entry) return;
+                if (started) return;
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
+                  started = true;
+                  startPlayback();
+                  autoplayObserver?.disconnect();
+                  autoplayObserver = null;
+                }
+              },
+              { threshold: [0, 0.25, 0.5, 0.75, 1] },
+            );
+            autoplayObserver.observe(videoRef.current);
+          }
+        }
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error('[JWPlayer] Failed to load/setup', e);
@@ -183,6 +237,8 @@ const JWPlayer = ({
     // Cleanup function to prevent memory leaks and multiple instances
     return () => {
       isMounted = false;
+      autoplayObserver?.disconnect();
+      autoplayObserver = null;
       if (playerInstance) {
         try {
           // Remove all event listeners
