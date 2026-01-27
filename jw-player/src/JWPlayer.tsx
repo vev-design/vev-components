@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { registerVevComponent, Tracking } from '@vev/react';
+import { registerVevComponent, Tracking, useTracking } from '@vev/react';
 import { SilkeToastNotification } from '@vev/silke';
-import './global.css';
+import { useJwPlayerStyles } from './use-jwplayer-styles';
+import { useJwPlayerLibrary } from './use-jwplayer-library';
+import { createJwPlayerTrackingBindings } from './jw-player-tracking';
 
 type Props = {
   embedUrl: string;
@@ -17,7 +19,6 @@ type Props = {
 };
 
 declare const jwplayer, jwDefaults;
-declare const System;
 
 function getVideoUrl(embedUrl: string) {
   let playerElements: string[];
@@ -29,7 +30,7 @@ function getVideoUrl(embedUrl: string) {
       .split('/');
 
   const last = url && url[url.length - 1];
-  if (last && last.indexOf('-')) {
+  if (last && last.indexOf('-') !== -1) {
     playerElements = last.split('-');
   }
 
@@ -51,123 +52,155 @@ const JWPlayer = ({
   displayDescription = false,
   trackingName = '',
   stretch = 'uniform',
-  hostRef,
+  hostRef: _hostRef,
 }: Props) => {
   const videoRef = useRef<HTMLDivElement>(null);
+  useJwPlayerStyles(videoRef);
+  const dispatchTrackingEvent = useTracking();
 
   const { mediaId, playerId } = getVideoUrl(embedUrl);
+  const { ready: libraryReady } = useJwPlayerLibrary(playerId);
 
   const track = (action: string, value?: any) => {
     Tracking.send('video', 'JW player', action, trackingName || embedUrl, value);
   };
 
   useEffect(() => {
-    // Tracking state - scoped to this effect instance
-    let passedTenSeconds = false;
-    let fifth = 1;
     let playerInstance: any = null;
     let isMounted = true;
+    let autoplayObserver: IntersectionObserver | null = null;
+    const videoName = trackingName || mediaId || embedUrl;
+    const trackingBindings = createJwPlayerTrackingBindings({
+      track,
+      dispatchTrackingEvent,
+      videoUrl: embedUrl,
+      videoName,
+      throttleIntervalMs: 500,
+    });
 
-    // Throttle time event to reduce CPU usage
-    // Only check every 0.5 seconds instead of every frame
-    const THROTTLE_INTERVAL = 500; // milliseconds
-    let lastTimeCheck = 0;
-
-    const TRACKING = [
-      {
-        event: 'setupError',
-        callback: ({ message }) => track('setupError', message),
-      },
-      {
-        event: 'autostartNotAllowed',
-        callback: () => track('autostartNotAllowed'),
-      },
-      {
-        event: 'firstFrame',
-        callback: () => track('Play'),
-      },
-      {
-        event: 'time',
-        callback: ({ currentTime, duration }) => {
-          const now = Date.now();
-          // Throttle: only process every THROTTLE_INTERVAL ms
-          if (now - lastTimeCheck < THROTTLE_INTERVAL) {
-            return;
-          }
-          lastTimeCheck = now;
-
-          // Fire event at ten seconds
-          if (currentTime > 10 && !passedTenSeconds) {
-            passedTenSeconds = true;
-            track('atTenSeconds');
-          }
-
-          // Fire events at every fifth of progress
-          if (currentTime > (fifth * duration) / 5) {
-            track('videoProgress', fifth * 20);
-            fifth++;
-          }
-        },
-      },
-      {
-        event: 'pause',
-        callback: () => track('Pause'),
-      },
-      {
-        event: 'complete',
-        callback: () => track('Finished'),
-      },
-    ];
-    // End of tracking
-
-    // Load account key from external resource
-    System.import(`https://cdn.jwplayer.com/libraries/${playerId}.js`).then(() => {
-      // Don't set up player if component unmounted
-      if (!isMounted || !videoRef.current) {
+    (async () => {
+      if (!playerId || !mediaId) {
+        return;
+      }
+      if (!libraryReady) {
         return;
       }
 
-      const { key } = jwDefaults;
+      try {
+        // Don't set up player if component unmounted
+        if (!isMounted || !videoRef.current) {
+          return;
+        }
 
-      const jwConfig = {
-        autostart: autoplay ? 'viewable' : false,
-        cast: {
-          appid: '00000000',
-        },
-        controls: !!controls,
-        displaydescription: displayDescription,
-        displaytitle: displayTitle,
-        flashplayer: '//ssl.p.jwpcdn.com/player/v/8.8.4/jwplayer.flash.swf',
-        key,
-        mute: true,
-        ph: 3,
-        pid: playerId,
-        playbackRateControls: false,
-        playlist: `//cdn.jwplayer.com/v2/media/${mediaId}?recommendations_playlist_id=irwrDqTZ`,
-        preload: 'metadata',
-        repeat: loop,
-        stagevideo: false,
-        stretching: stretch,
-        width: '100%',
-      };
+        const key = jwDefaults?.key;
+        const rootNode = videoRef.current.getRootNode();
+        const isInShadowDom = rootNode instanceof ShadowRoot;
+        // Browser autoplay policies generally require mute to be enabled.
+        const effectiveMute = Boolean(mute || autoplay);
 
-      videoRef.current.innerHTML = '';
-      const jwcontainer = document.createElement('div');
-      jwcontainer.className = 'jwcontainer fill';
-      videoRef.current.appendChild(jwcontainer);
-      const jwElement = hostRef.current.querySelector('.jwcontainer');
-      playerInstance = jwplayer(jwElement).setup(jwConfig);
-      for (const event of TRACKING) playerInstance.on(event.event, event.callback);
-    });
+        const jwConfig = {
+          // JW's built-in "viewable" autostart can fail inside Shadow DOM if it relies on
+          // document-level queries. In that case we handle viewability ourselves below.
+          autostart: autoplay ? (isInShadowDom ? false : 'viewable') : false,
+          cast: {
+            appid: '00000000',
+          },
+          controls: !!controls,
+          displaydescription: displayDescription,
+          displaytitle: displayTitle,
+          flashplayer: '//ssl.p.jwpcdn.com/player/v/8.8.4/jwplayer.flash.swf',
+          key,
+          mute: effectiveMute,
+          ph: 3,
+          pid: playerId,
+          playbackRateControls: false,
+          playlist: `//cdn.jwplayer.com/v2/media/${mediaId}?recommendations_playlist_id=irwrDqTZ`,
+          preload: 'metadata',
+          repeat: loop,
+          stagevideo: false,
+          stretching: stretch,
+          width: '100%',
+        };
+
+        // Create/attach the player element inside this component's root.
+        // Important for Shadow DOM: don't query from the host (light DOM) for an element
+        // that lives inside the shadow root.
+        videoRef.current.replaceChildren();
+        const jwElement = document.createElement('div');
+        jwElement.className = 'jwcontainer fill';
+        videoRef.current.appendChild(jwElement);
+
+        if (typeof jwplayer === 'undefined') {
+          return;
+        }
+
+        playerInstance = jwplayer(jwElement).setup(jwConfig);
+        for (const binding of trackingBindings) {
+          playerInstance.on(binding.event, binding.callback);
+        }
+
+        // Ensure mute state matches props (and autoplay safety).
+        if (typeof playerInstance?.setMute === 'function') {
+          playerInstance.setMute(effectiveMute);
+        }
+
+        // Shadow DOM fallback for autoplay=viewable.
+        // Use IntersectionObserver to start playback once the component is meaningfully visible.
+        if (autoplay && isInShadowDom && videoRef.current) {
+          const startPlayback = () => {
+            if (!isMounted || !playerInstance) return;
+            try {
+              // JW supports play(true) to force start; fall back to play() if needed.
+              playerInstance.play(true);
+              return;
+            } catch {
+              // ignore
+            }
+            try {
+              playerInstance.play();
+            } catch {
+              // ignore
+            }
+          };
+
+          if (typeof IntersectionObserver === 'undefined') {
+            // Best-effort fallback.
+            startPlayback();
+          } else {
+            let started = false;
+            autoplayObserver = new IntersectionObserver(
+              (entries) => {
+                const entry = entries[0];
+                if (!entry) return;
+                if (started) return;
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
+                  started = true;
+                  startPlayback();
+                  autoplayObserver?.disconnect();
+                  autoplayObserver = null;
+                }
+              },
+              { threshold: [0, 0.25, 0.5, 0.75, 1] },
+            );
+            autoplayObserver.observe(videoRef.current);
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[JWPlayer] Failed to load/setup', e);
+      }
+    })();
 
     // Cleanup function to prevent memory leaks and multiple instances
     return () => {
       isMounted = false;
+      autoplayObserver?.disconnect();
+      autoplayObserver = null;
       if (playerInstance) {
         try {
           // Remove all event listeners
-          for (const event of TRACKING) {
-            playerInstance.off(event.event, event.callback);
+          for (const binding of trackingBindings) {
+            playerInstance.off(binding.event, binding.callback);
           }
           // Destroy the player instance
           playerInstance.remove();
@@ -181,6 +214,7 @@ const JWPlayer = ({
   }, [
     playerId,
     mediaId,
+    libraryReady,
     stretch,
     mute,
     autoplay,
@@ -193,7 +227,7 @@ const JWPlayer = ({
   if (!embedUrl) {
     return <div className="fill placeholder">Please add an embedURL</div>;
   }
-  return <div className="jw-wrapper" ref={videoRef} dangerouslySetInnerHTML={{ __html: '' }} />;
+  return <div className="jw-wrapper" ref={videoRef} />;
 };
 
 registerVevComponent(JWPlayer, {
