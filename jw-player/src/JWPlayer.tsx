@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { registerVevComponent, Tracking } from '@vev/react';
+import { registerVevComponent, Tracking, useTracking } from '@vev/react';
 import { SilkeToastNotification } from '@vev/silke';
 import { useJwPlayerStyles } from './use-jwplayer-styles';
 import { useJwPlayerLibrary } from './use-jwplayer-library';
+import { createJwPlayerTrackingBindings } from './jw-player-tracking';
 
 type Props = {
   embedUrl: string;
@@ -55,6 +56,7 @@ const JWPlayer = ({
 }: Props) => {
   const videoRef = useRef<HTMLDivElement>(null);
   useJwPlayerStyles(videoRef);
+  const dispatchTrackingEvent = useTracking();
 
   const { mediaId, playerId } = getVideoUrl(embedUrl);
   const { ready: libraryReady } = useJwPlayerLibrary(playerId);
@@ -64,64 +66,17 @@ const JWPlayer = ({
   };
 
   useEffect(() => {
-    // Tracking state - scoped to this effect instance
-    let passedTenSeconds = false;
-    let fifth = 1;
     let playerInstance: any = null;
     let isMounted = true;
     let autoplayObserver: IntersectionObserver | null = null;
-
-    // Throttle time event to reduce CPU usage
-    // Only check every 0.5 seconds instead of every frame
-    const THROTTLE_INTERVAL = 500; // milliseconds
-    let lastTimeCheck = 0;
-
-    const TRACKING = [
-      {
-        event: 'setupError',
-        callback: ({ message }) => track('setupError', message),
-      },
-      {
-        event: 'autostartNotAllowed',
-        callback: () => track('autostartNotAllowed'),
-      },
-      {
-        event: 'firstFrame',
-        callback: () => track('Play'),
-      },
-      {
-        event: 'time',
-        callback: ({ currentTime, duration }) => {
-          const now = Date.now();
-          // Throttle: only process every THROTTLE_INTERVAL ms
-          if (now - lastTimeCheck < THROTTLE_INTERVAL) {
-            return;
-          }
-          lastTimeCheck = now;
-
-          // Fire event at ten seconds
-          if (currentTime > 10 && !passedTenSeconds) {
-            passedTenSeconds = true;
-            track('atTenSeconds');
-          }
-
-          // Fire events at every fifth of progress
-          if (currentTime > (fifth * duration) / 5) {
-            track('videoProgress', fifth * 20);
-            fifth++;
-          }
-        },
-      },
-      {
-        event: 'pause',
-        callback: () => track('Pause'),
-      },
-      {
-        event: 'complete',
-        callback: () => track('Finished'),
-      },
-    ];
-    // End of tracking
+    const videoName = trackingName || mediaId || embedUrl;
+    const trackingBindings = createJwPlayerTrackingBindings({
+      track,
+      dispatchTrackingEvent,
+      videoUrl: embedUrl,
+      videoName,
+      throttleIntervalMs: 500,
+    });
 
     (async () => {
       if (!playerId || !mediaId) {
@@ -180,7 +135,9 @@ const JWPlayer = ({
         }
 
         playerInstance = jwplayer(jwElement).setup(jwConfig);
-        for (const event of TRACKING) playerInstance.on(event.event, event.callback);
+        for (const binding of trackingBindings) {
+          playerInstance.on(binding.event, binding.callback);
+        }
 
         // Ensure mute state matches props (and autoplay safety).
         if (typeof playerInstance?.setMute === 'function') {
@@ -242,8 +199,8 @@ const JWPlayer = ({
       if (playerInstance) {
         try {
           // Remove all event listeners
-          for (const event of TRACKING) {
-            playerInstance.off(event.event, event.callback);
+          for (const binding of trackingBindings) {
+            playerInstance.off(binding.event, binding.callback);
           }
           // Destroy the player instance
           playerInstance.remove();
