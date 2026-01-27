@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { registerVevComponent, Tracking } from '@vev/react';
 import { SilkeToastNotification } from '@vev/silke';
-import './global.css';
+import { useJwPlayerStyles } from './use-jwplayer-styles';
+import { useJwPlayerLibrary } from './use-jwplayer-library';
 
 type Props = {
   embedUrl: string;
@@ -17,7 +18,6 @@ type Props = {
 };
 
 declare const jwplayer, jwDefaults;
-declare const System;
 
 function getVideoUrl(embedUrl: string) {
   let playerElements: string[];
@@ -29,7 +29,7 @@ function getVideoUrl(embedUrl: string) {
       .split('/');
 
   const last = url && url[url.length - 1];
-  if (last && last.indexOf('-')) {
+  if (last && last.indexOf('-') !== -1) {
     playerElements = last.split('-');
   }
 
@@ -51,11 +51,13 @@ const JWPlayer = ({
   displayDescription = false,
   trackingName = '',
   stretch = 'uniform',
-  hostRef,
+  hostRef: _hostRef,
 }: Props) => {
   const videoRef = useRef<HTMLDivElement>(null);
+  useJwPlayerStyles(videoRef);
 
   const { mediaId, playerId } = getVideoUrl(embedUrl);
+  const { ready: libraryReady } = useJwPlayerLibrary(playerId);
 
   const track = (action: string, value?: any) => {
     Tracking.send('video', 'JW player', action, trackingName || embedUrl, value);
@@ -120,45 +122,63 @@ const JWPlayer = ({
     ];
     // End of tracking
 
-    // Load account key from external resource
-    System.import(`https://cdn.jwplayer.com/libraries/${playerId}.js`).then(() => {
-      // Don't set up player if component unmounted
-      if (!isMounted || !videoRef.current) {
+    (async () => {
+      if (!playerId || !mediaId) {
+        return;
+      }
+      if (!libraryReady) {
         return;
       }
 
-      const { key } = jwDefaults;
+      try {
+        // Don't set up player if component unmounted
+        if (!isMounted || !videoRef.current) {
+          return;
+        }
 
-      const jwConfig = {
-        autostart: autoplay ? 'viewable' : false,
-        cast: {
-          appid: '00000000',
-        },
-        controls: !!controls,
-        displaydescription: displayDescription,
-        displaytitle: displayTitle,
-        flashplayer: '//ssl.p.jwpcdn.com/player/v/8.8.4/jwplayer.flash.swf',
-        key,
-        mute: true,
-        ph: 3,
-        pid: playerId,
-        playbackRateControls: false,
-        playlist: `//cdn.jwplayer.com/v2/media/${mediaId}?recommendations_playlist_id=irwrDqTZ`,
-        preload: 'metadata',
-        repeat: loop,
-        stagevideo: false,
-        stretching: stretch,
-        width: '100%',
-      };
+        const key = jwDefaults?.key;
 
-      videoRef.current.innerHTML = '';
-      const jwcontainer = document.createElement('div');
-      jwcontainer.className = 'jwcontainer fill';
-      videoRef.current.appendChild(jwcontainer);
-      const jwElement = hostRef.current.querySelector('.jwcontainer');
-      playerInstance = jwplayer(jwElement).setup(jwConfig);
-      for (const event of TRACKING) playerInstance.on(event.event, event.callback);
-    });
+        const jwConfig = {
+          autostart: autoplay ? 'viewable' : false,
+          cast: {
+            appid: '00000000',
+          },
+          controls: !!controls,
+          displaydescription: displayDescription,
+          displaytitle: displayTitle,
+          flashplayer: '//ssl.p.jwpcdn.com/player/v/8.8.4/jwplayer.flash.swf',
+          key,
+          mute: true,
+          ph: 3,
+          pid: playerId,
+          playbackRateControls: false,
+          playlist: `//cdn.jwplayer.com/v2/media/${mediaId}?recommendations_playlist_id=irwrDqTZ`,
+          preload: 'metadata',
+          repeat: loop,
+          stagevideo: false,
+          stretching: stretch,
+          width: '100%',
+        };
+
+        // Create/attach the player element inside this component's root.
+        // Important for Shadow DOM: don't query from the host (light DOM) for an element
+        // that lives inside the shadow root.
+        videoRef.current.replaceChildren();
+        const jwElement = document.createElement('div');
+        jwElement.className = 'jwcontainer fill';
+        videoRef.current.appendChild(jwElement);
+
+        if (typeof jwplayer === 'undefined') {
+          return;
+        }
+
+        playerInstance = jwplayer(jwElement).setup(jwConfig);
+        for (const event of TRACKING) playerInstance.on(event.event, event.callback);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[JWPlayer] Failed to load/setup', e);
+      }
+    })();
 
     // Cleanup function to prevent memory leaks and multiple instances
     return () => {
@@ -181,6 +201,7 @@ const JWPlayer = ({
   }, [
     playerId,
     mediaId,
+    libraryReady,
     stretch,
     mute,
     autoplay,
@@ -193,7 +214,7 @@ const JWPlayer = ({
   if (!embedUrl) {
     return <div className="fill placeholder">Please add an embedURL</div>;
   }
-  return <div className="jw-wrapper" ref={videoRef} dangerouslySetInnerHTML={{ __html: '' }} />;
+  return <div className="jw-wrapper" ref={videoRef} />;
 };
 
 registerVevComponent(JWPlayer, {
