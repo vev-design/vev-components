@@ -1,7 +1,61 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import styles from './Galaxy.module.css';
-import { registerVevComponent } from '@vev/react';
+import { registerVevComponent, useEditorState } from '@vev/react';
 import { animationManager } from './AnimationManager';
+
+// Global cache for instant remounting when scrolling
+const globalCache = {
+  canvas: null as HTMLCanvasElement | null,
+  gl: null as WebGLRenderingContext | null,
+  program: null as WebGLProgram | null,
+  positionBuffer: null as WebGLBuffer | null,
+  inUse: false,
+  initialized: false
+};
+
+// Pre-warm cache on module load for instant first mount
+function initializeCache() {
+  if (globalCache.initialized || typeof document === 'undefined') return;
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.className = styles.canvas;
+
+    const gl = canvas.getContext('webgl', {
+      antialias: false,
+      alpha: true,
+      powerPreference: 'high-performance',
+      depth: false,
+      stencil: false,
+      preserveDrawingBuffer: false
+    });
+
+    if (!gl) return;
+
+    const program = createProgram(gl, vertexShader, fragmentShader);
+    if (!program) return;
+
+    // Create position buffer
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+    globalCache.canvas = canvas;
+    globalCache.gl = gl;
+    globalCache.program = program;
+    globalCache.positionBuffer = positionBuffer;
+    globalCache.initialized = true;
+  } catch (e) {
+    // Silently fail - will create on first mount
+  }
+}
+
+// Initialize cache immediately on module load
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(() => initializeCache(), { timeout: 100 });
+} else {
+  setTimeout(initializeCache, 0);
+}
 
 const vertexShader = `
 attribute vec2 position;
@@ -322,6 +376,11 @@ function Galaxy({
   const lastUniformValuesRef = useRef<Map<UniformName, UniformValue>>(new Map());
   const wasPausedRef = useRef<boolean>(false);
   const drawSceneRef = useRef<(() => void) | null>(null);
+  const mouseListenerAddedRef = useRef<boolean>(false);
+
+  // Detect editor mode to pause heavy operations
+  const editorState = useEditorState();
+  const isEditorMode = editorState?.disabled ?? false;
 
   const applyUniform = useCallback((name: UniformName, value: UniformValue) => {
     const gl = glRef.current;
@@ -401,37 +460,72 @@ function Galaxy({
   useEffect(() => setNumericTarget('uMouseRepulsion', mouseRepulsion ? 1 : 0), [mouseRepulsion, setNumericTarget]);
   useEffect(() => setNumericTarget('uOpacity', opacity), [opacity, setNumericTarget]);
 
-  useEffect(() => {
+  // Use useLayoutEffect for instant rendering before browser paint
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const canvas = document.createElement('canvas');
+    let canvas: HTMLCanvasElement;
+    let gl: WebGLRenderingContext;
+    let program: WebGLProgram;
+    let positionBuffer: WebGLBuffer | null;
+    let isReused = false;
+
+    // Try to reuse cached resources for instant remounting (including first mount)
+    if (globalCache.initialized && globalCache.canvas && globalCache.gl &&
+        globalCache.program && globalCache.positionBuffer && !globalCache.inUse) {
+      canvas = globalCache.canvas;
+      gl = globalCache.gl;
+      program = globalCache.program;
+      positionBuffer = globalCache.positionBuffer;
+      globalCache.inUse = true;
+      isReused = true;
+    } else {
+      // Create new resources only if cache unavailable
+      canvas = document.createElement('canvas');
+      canvas.className = styles.canvas;
+
+      const glContext = canvas.getContext('webgl', {
+        antialias: false, // Disabled for better performance
+        alpha: true,
+        powerPreference: 'high-performance',
+        depth: false,
+        stencil: false,
+        preserveDrawingBuffer: false
+      });
+
+      if (!glContext) {
+        console.error('WebGL not supported');
+        return;
+      }
+      gl = glContext;
+
+      program = createProgram(gl, vertexShader, fragmentShader);
+      programRef.current = program;
+
+      // Create position buffer
+      positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+      // Store in cache for next mount
+      globalCache.canvas = canvas;
+      globalCache.gl = gl;
+      globalCache.program = program;
+      globalCache.positionBuffer = positionBuffer;
+      globalCache.initialized = true;
+      globalCache.inUse = true;
+    }
+
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
-    canvas.className = styles.canvas;
     container.appendChild(canvas);
     canvasRef.current = canvas;
-
-    // Performance detection: detect low-end devices
-    const isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
-    const maxPixelRatio = isLowEndDevice ? 1.5 : Math.min(window.devicePixelRatio || 1, 2);
-    
-    // Disable antialiasing on low-end devices for better performance
-    const gl = canvas.getContext('webgl', { 
-      antialias: !isLowEndDevice, 
-      alpha: true,
-      powerPreference: 'high-performance'
-    });
-    if (!gl) {
-      console.error('WebGL not supported');
-      return () => { };
-    }
     glRef.current = gl;
-
-    const program = createProgram(gl, vertexShader, fragmentShader);
-    gl.useProgram(program);
     programRef.current = program;
+
+    gl.useProgram(program);
 
     if (transparent) {
       gl.enable(gl.BLEND);
@@ -443,9 +537,7 @@ function Galaxy({
     }
 
     const positionLocation = gl.getAttribLocation(program, 'position');
-    const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
@@ -495,7 +587,8 @@ function Galaxy({
         resizeTimeout = null;
         if (!canvasRef.current || !glRef.current) return;
         const rect = container.getBoundingClientRect();
-        const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
+        // Cap at 1.0 DPR for weak devices - prioritize frame rate over resolution
+        const ratio = Math.min(window.devicePixelRatio || 1, 1);
         const width = Math.max(1, Math.floor(rect.width * ratio));
         const height = Math.max(1, Math.floor(rect.height * ratio));
         canvas.width = width;
@@ -536,34 +629,57 @@ function Galaxy({
       updateMousePosition(x, y, inside ? 1 : 0);
     };
 
+    // WebGL context loss/restore handlers
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      animationManager.pause(instanceIdRef.current);
+    };
+
+    const handleContextRestored = () => {
+      console.log('WebGL context restored');
+    };
+
     canvas.addEventListener('pointerleave', handlePointerLeave, { passive: true });
-    hostRef.current?.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
+    canvas.addEventListener('webglcontextlost', handleContextLost);
+    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+
+    // Mouse interaction - track if listener was added
+    if (!isEditorMode) {
+      hostRef.current?.addEventListener('mousemove', handleWindowMouseMove, { passive: true });
+      mouseListenerAddedRef.current = true;
+    }
 
     // Animation loop callback - registered with shared AnimationManager
     const animationCallback = (timestamp: number, delta: number) => {
       if (!glRef.current || !isVisibleRef.current) return;
 
-      // Handle resume - force update all uniforms on first frame after resume
-      const isResuming = wasPausedRef.current;
-      if (isResuming) {
-        wasPausedRef.current = false;
-        // Force update all uniforms on resume to prevent glitch
-        lastUniformValuesRef.current.clear();
-        // Use a very small, fixed delta on first frame to continue smoothly without jump
-        // This simulates a normal frame interval
-        const resumeDelta = 1 / 60; // ~16ms, one frame
-        if (!disableAnimationRef.current) {
-          logicalTimeRef.current += resumeDelta * speedRef.current;
-        }
+      let currentTime: number;
+      let isResuming = false;
+
+      // In editor mode, use static time but keep rendering for prop changes
+      if (isEditorMode) {
+        currentTime = 0.5; // Fixed time for consistent editor preview
       } else {
-        // Normal time advancement (skip if animation disabled)
-        if (!disableAnimationRef.current) {
-          logicalTimeRef.current += delta * speedRef.current;
+        // Handle resume - force update all uniforms on first frame after resume
+        isResuming = wasPausedRef.current;
+        if (isResuming) {
+          wasPausedRef.current = false;
+          // Force update all uniforms on resume to prevent glitch
+          lastUniformValuesRef.current.clear();
+          // Use a very small, fixed delta on first frame to continue smoothly without jump
+          const resumeDelta = 1 / 60; // ~16ms, one frame
+          if (!disableAnimationRef.current) {
+            logicalTimeRef.current += resumeDelta * speedRef.current;
+          }
+        } else {
+          // Normal time advancement (skip if animation disabled)
+          if (!disableAnimationRef.current) {
+            logicalTimeRef.current += delta * speedRef.current;
+          }
         }
+        currentTime = logicalTimeRef.current;
       }
 
-      const currentTime = logicalTimeRef.current;
-      
       // Always update time uniforms (or if resuming, force update)
       const timeValue = currentTime;
       const lastTime = lastUniformValuesRef.current.get('uTime');
@@ -571,7 +687,7 @@ function Galaxy({
         applyUniform('uTime', timeValue);
         lastUniformValuesRef.current.set('uTime', timeValue);
       }
-      
+
       const starSpeedValue = (currentTime * starSpeedRef.current) / 10;
       const lastStarSpeed = lastUniformValuesRef.current.get('uStarSpeed');
       if (isResuming || lastStarSpeed !== starSpeedValue) {
@@ -579,30 +695,33 @@ function Galaxy({
         lastUniformValuesRef.current.set('uStarSpeed', starSpeedValue);
       }
 
-      // Smooth mouse interpolation
-      const tau = 0.2;
-      const factor = delta > 0 ? 1 - Math.exp(-delta / tau) : 1;
-      const target = pointerTargetRef.current;
-      const current = pointerValueRef.current;
-      current[0] += (target[0] - current[0]) * factor;
-      current[1] += (target[1] - current[1]) * factor;
-      pointerValueRef.current = current;
-      
-      // Update mouse uniform (always on resume, or if changed significantly)
-      const mouseValue: [number, number] = [current[0], current[1]];
-      const lastMouse = lastUniformValuesRef.current.get('uMouse') as [number, number] | undefined;
-      if (isResuming || !lastMouse || Math.abs(mouseValue[0] - lastMouse[0]) > 0.001 || Math.abs(mouseValue[1] - lastMouse[1]) > 0.001) {
-        applyUniform('uMouse', mouseValue);
-        lastUniformValuesRef.current.set('uMouse', mouseValue);
-      }
+      // Skip mouse smoothing in editor mode for better performance
+      if (!isEditorMode) {
+        // Smooth mouse interpolation
+        const tau = 0.2;
+        const factor = delta > 0 ? 1 - Math.exp(-delta / tau) : 1;
+        const target = pointerTargetRef.current;
+        const current = pointerValueRef.current;
+        current[0] += (target[0] - current[0]) * factor;
+        current[1] += (target[1] - current[1]) * factor;
+        pointerValueRef.current = current;
 
-      pointerActiveRef.current +=
-        (pointerActiveTargetRef.current - pointerActiveRef.current) * factor;
-      const activeFactor = pointerActiveRef.current;
-      const lastActiveFactor = lastUniformValuesRef.current.get('uMouseActiveFactor');
-      if (isResuming || lastActiveFactor !== activeFactor) {
-        applyUniform('uMouseActiveFactor', activeFactor);
-        lastUniformValuesRef.current.set('uMouseActiveFactor', activeFactor);
+        // Update mouse uniform (always on resume, or if changed significantly)
+        const mouseValue: [number, number] = [current[0], current[1]];
+        const lastMouse = lastUniformValuesRef.current.get('uMouse') as [number, number] | undefined;
+        if (isResuming || !lastMouse || Math.abs(mouseValue[0] - lastMouse[0]) > 0.001 || Math.abs(mouseValue[1] - lastMouse[1]) > 0.001) {
+          applyUniform('uMouse', mouseValue);
+          lastUniformValuesRef.current.set('uMouse', mouseValue);
+        }
+
+        pointerActiveRef.current +=
+          (pointerActiveTargetRef.current - pointerActiveRef.current) * factor;
+        const activeFactor = pointerActiveRef.current;
+        const lastActiveFactor = lastUniformValuesRef.current.get('uMouseActiveFactor');
+        if (isResuming || lastActiveFactor !== activeFactor) {
+          applyUniform('uMouseActiveFactor', activeFactor);
+          lastUniformValuesRef.current.set('uMouseActiveFactor', activeFactor);
+        }
       }
 
       // Smooth uniform transitions
@@ -610,14 +729,14 @@ function Galaxy({
         const target = floatTargetsRef.current[name];
         if (typeof target !== 'number') return;
         const current = (uniformValuesRef.current[name] as number) ?? target;
-        
+
         // On resume, immediately set to target to prevent glitch
         if (isResuming) {
           applyUniform(name, target);
           lastUniformValuesRef.current.set(name, target);
           return;
         }
-        
+
         if (Math.abs(target - current) < 1e-4) {
           if (uniformValuesRef.current[name] !== target) {
             applyUniform(name, target);
@@ -646,7 +765,7 @@ function Galaxy({
       // Update resolution in case container size changed while paused
       if (canvasRef.current) {
         const rect = container.getBoundingClientRect();
-        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const ratio = Math.min(window.devicePixelRatio || 1, 1);
         const width = Math.max(1, Math.floor(rect.width * ratio));
         const height = Math.max(1, Math.floor(rect.height * ratio));
         canvasRef.current.width = width;
@@ -701,31 +820,46 @@ function Galaxy({
     intersectionObserver.observe(container);
 
     return () => {
-  
       // Unregister from shared animation manager
       animationManager.unregister(instanceIdRef.current);
-      
+
       // Cleanup visibility observers
       intersectionObserver.disconnect();
-      
+
       // Cleanup timeouts
       if (resizeTimeout) clearTimeout(resizeTimeout);
       if (mouseUpdateTimeout) clearTimeout(mouseUpdateTimeout);
-      
+
       // Cleanup observers and event listeners
       resizeObserver.disconnect();
       canvas.removeEventListener('pointerleave', handlePointerLeave);
-      hostRef.current?.removeEventListener('mousemove', handleWindowMouseMove);
-      
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
+      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+
+      // Remove mouse listener if it was added
+      if (mouseListenerAddedRef.current) {
+        hostRef.current?.removeEventListener('mousemove', handleWindowMouseMove);
+        mouseListenerAddedRef.current = false;
+      }
+
       // Cleanup DOM
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
-      
-      // Cleanup WebGL resources
-      if (programRef.current && glRef.current) {
-        glRef.current.deleteProgram(programRef.current);
+
+      // If using cached resources, just mark as available - don't delete
+      if (isReused) {
+        globalCache.inUse = false;
+      } else {
+        // Cleanup WebGL resources only if not cached
+        if (positionBuffer && gl.isBuffer(positionBuffer)) {
+          gl.deleteBuffer(positionBuffer);
+        }
+        if (program && gl.isProgram(program)) {
+          gl.deleteProgram(program);
+        }
       }
+
       programRef.current = null;
       glRef.current = null;
       canvasRef.current = null;
@@ -733,7 +867,7 @@ function Galaxy({
       uniformValuesRef.current = {} as Record<UniformName, UniformValue>;
       lastUniformValuesRef.current.clear();
     };
-  }, []);
+  }, [isEditorMode]);
 
 
   return <div ref={containerRef}   className={styles.wrapper} />;

@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./FaultyTerminal.module.css";
-import { registerVevComponent } from "@vev/react";
-import { useEffect, useRef } from 'react';
+import { registerVevComponent, useEditorState } from "@vev/react";
+import { useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { SilkeColorPickerButton } from "@vev/silke";
 
 const vertexShader = `
@@ -62,35 +62,30 @@ mat2 rotate(float angle)
 
 float fbm(vec2 p)
 {
+  // Optimized: reduced from 3 octaves to 2 for weak devices
   p *= 1.1;
   float f = 0.0;
   float amp = 0.5 * uNoiseAmp;
-  
+
   mat2 modify0 = rotate(time * 0.02);
   f += amp * noise(p);
   p = modify0 * p * 2.0;
-  amp *= 0.454545;
-  
+  amp *= 0.5;
+
   mat2 modify1 = rotate(time * 0.02);
   f += amp * noise(p);
-  p = modify1 * p * 2.0;
-  amp *= 0.454545;
-  
-  mat2 modify2 = rotate(time * 0.08);
-  f += amp * noise(p);
-  
+
   return f;
 }
 
 float pattern(vec2 p, out vec2 q, out vec2 r) {
+  // Optimized: simplified pattern with fewer FBM calls for weak devices
   vec2 offset1 = vec2(1.0);
-  vec2 offset0 = vec2(0.0);
   mat2 rot01 = rotate(0.1 * time);
-  mat2 rot1 = rotate(0.1);
-  
+
   q = vec2(fbm(p + offset1), fbm(rot01 * p + offset1));
-  r = vec2(fbm(rot1 * q + offset0), fbm(q + offset0));
-  return fbm(p + r);
+  r = q * 0.5; // Simplified calculation
+  return fbm(p + r * 0.5);
 }
 
 float digit(vec2 p){
@@ -151,10 +146,10 @@ float displace(vec2 look)
 }
 
 vec3 getColor(vec2 p){
-    
+
     float bar = step(mod(p.y + time * 20.0, 1.0), 0.2) * 0.4 + 1.0;
     bar *= uScanlineIntensity;
-    
+
     float displacement = displace(p);
     p.x += displacement;
 
@@ -163,14 +158,13 @@ vec3 getColor(vec2 p){
       p.x += extra;
     }
 
+    // Optimized: reduce from 9 samples to 5 for better performance on weak devices
     float middle = digit(p);
-    
     const float off = 0.002;
-    float sum = digit(p + vec2(-off, -off)) + digit(p + vec2(0.0, -off)) + digit(p + vec2(off, -off)) +
-                digit(p + vec2(-off, 0.0)) + digit(p + vec2(0.0, 0.0)) + digit(p + vec2(off, 0.0)) +
-                digit(p + vec2(-off, off)) + digit(p + vec2(0.0, off)) + digit(p + vec2(off, off));
-    
-    vec3 baseColor = vec3(0.9) * middle + sum * 0.1 * vec3(1.0) * bar;
+    float sum = digit(p + vec2(-off, 0.0)) + digit(p + vec2(off, 0.0)) +
+                digit(p + vec2(0.0, -off)) + digit(p + vec2(0.0, off));
+
+    vec3 baseColor = vec3(0.9) * middle + sum * 0.15 * vec3(1.0) * bar;
     return baseColor;
 }
 
@@ -221,6 +215,82 @@ function hexToRgb(hex: string): [number, number, number] {
   return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
 }
 
+// Global cache for instant remounting when scrolling
+// Stores canvas, context, and compiled program for reuse
+const globalCache = {
+  canvas: null as HTMLCanvasElement | null,
+  gl: null as WebGLRenderingContext | null,
+  program: null as WebGLProgram | null,
+  buffers: null as { position: WebGLBuffer | null; uv: WebGLBuffer | null } | null,
+  inUse: false,
+  initialized: false
+};
+
+// Pre-warm cache on module load for instant first mount
+function initializeCache() {
+  if (globalCache.initialized || typeof document === 'undefined') return;
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.className = styles.canvas;
+
+    const gl = canvas.getContext('webgl', {
+      alpha: false,
+      antialias: false,
+      powerPreference: 'high-performance',
+      depth: false,
+      stencil: false,
+      preserveDrawingBuffer: false,
+      failIfMajorPerformanceCaveat: false
+    });
+
+    if (!gl) return;
+
+    const program = createProgram(gl, vertexShader, fragmentShader);
+    if (!program) return;
+
+    // Create buffers
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1, 1, -1, -1, 1, 1, 1
+    ]), gl.STATIC_DRAW);
+
+    const uvBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      0, 0, 1, 0, 0, 1, 1, 1
+    ]), gl.STATIC_DRAW);
+
+    globalCache.canvas = canvas;
+    globalCache.gl = gl;
+    globalCache.program = program;
+    globalCache.buffers = { position: positionBuffer, uv: uvBuffer };
+    globalCache.initialized = true;
+  } catch (e) {
+    // Silently fail - will create on first mount
+  }
+}
+
+// Initialize cache immediately on module load
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(() => initializeCache(), { timeout: 100 });
+} else {
+  setTimeout(initializeCache, 0);
+}
+
+// Simple shader compilation - no caching for simplicity and reliability
+function compileShaders(gl: WebGLRenderingContext, vertSource: string, fragSource: string) {
+  const vertShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
+  const fragShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
+
+  if (vertShader && fragShader) {
+    return { vertexShader: vertShader, fragmentShader: fragShader };
+  }
+
+  return null;
+}
+
 interface WebGLState {
   gl: WebGLRenderingContext;
   program: WebGLProgram;
@@ -245,23 +315,37 @@ function compileShader(gl: WebGLRenderingContext, source: string, type: number):
 }
 
 function createProgram(gl: WebGLRenderingContext, vertSource: string, fragSource: string): WebGLProgram | null {
-  const vertShader = compileShader(gl, vertSource, gl.VERTEX_SHADER);
-  const fragShader = compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
+  const shaders = compileShaders(gl, vertSource, fragSource);
 
-  if (!vertShader || !fragShader) return null;
+  if (!shaders) return null;
 
   const program = gl.createProgram();
-  if (!program) return null;
+  if (!program) {
+    // Clean up shaders if program creation fails
+    gl.deleteShader(shaders.vertexShader);
+    gl.deleteShader(shaders.fragmentShader);
+    return null;
+  }
 
-  gl.attachShader(program, vertShader);
-  gl.attachShader(program, fragShader);
+  gl.attachShader(program, shaders.vertexShader);
+  gl.attachShader(program, shaders.fragmentShader);
   gl.linkProgram(program);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.error('Program link error:', gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
+    // Clean up shaders on link failure
+    gl.deleteShader(shaders.vertexShader);
+    gl.deleteShader(shaders.fragmentShader);
     return null;
   }
+
+  // After successful linking, shaders can be detached and deleted
+  // The program retains the compiled code
+  gl.detachShader(program, shaders.vertexShader);
+  gl.detachShader(program, shaders.fragmentShader);
+  gl.deleteShader(shaders.vertexShader);
+  gl.deleteShader(shaders.fragmentShader);
 
   return program;
 }
@@ -282,7 +366,7 @@ function FaultyTerminal({
   tint = '#ffffff',
   mouseReact = true,
   mouseStrength = 0.2,
-  dpr = Math.min(window.devicePixelRatio || 1, 2),
+  dpr = 1, // Force 1x resolution for maximum performance on weak devices
   pageLoadAnimation = true,
   brightness = 1,
   className,
@@ -300,8 +384,23 @@ function FaultyTerminal({
   const loadAnimationStartRef = useRef(0);
   const timeOffsetRef = useRef(Math.random() * 100);
   const startTimeRef = useRef(0);
+  const lastUpdateRef = useRef<{[key: string]: any}>({});
+  const mouseListenerAddedRef = useRef(false);
 
-  // Props refs for smooth updates
+  // Detect editor mode to pause heavy operations
+  const editorState = useEditorState();
+  const isEditorMode = editorState?.disabled ?? false;
+
+  // Memoize the processed dither value to avoid recalculation
+  const processedDither = useMemo(() =>
+    typeof dither === 'boolean' ? (dither ? 1 : 0) : dither,
+    [dither]
+  );
+
+  // Memoize tint RGB conversion - expensive operation
+  const tintRgb = useMemo(() => hexToRgb(tint), [tint]);
+
+  // Props refs for smooth updates - initialize once
   const propsRef = useRef({
     scale,
     gridMul,
@@ -313,7 +412,7 @@ function FaultyTerminal({
     flickerAmount,
     noiseAmp,
     chromaticAberration,
-    dither: typeof dither === 'boolean' ? (dither ? 1 : 0) : dither,
+    dither: processedDither,
     curvature,
     tint,
     mouseReact,
@@ -322,7 +421,8 @@ function FaultyTerminal({
     brightness
   });
 
-  useEffect(() => {
+  // Update props ref synchronously
+  useLayoutEffect(() => {
     propsRef.current = {
       scale,
       gridMul,
@@ -334,7 +434,7 @@ function FaultyTerminal({
       flickerAmount,
       noiseAmp,
       chromaticAberration,
-      dither: typeof dither === 'boolean' ? (dither ? 1 : 0) : dither,
+      dither: processedDither,
       curvature,
       tint,
       mouseReact,
@@ -342,44 +442,92 @@ function FaultyTerminal({
       pageLoadAnimation,
       brightness
     };
-  }, [scale, gridMul, digitSize, timeScale, pause, scanlineIntensity, glitchAmount, flickerAmount, noiseAmp, chromaticAberration, dither, curvature, tint, mouseReact, mouseStrength, pageLoadAnimation, brightness]);
+  }, [scale, gridMul, digitSize, timeScale, pause, scanlineIntensity, glitchAmount, flickerAmount, noiseAmp, chromaticAberration, processedDither, curvature, tint, mouseReact, mouseStrength, pageLoadAnimation, brightness]);
 
-  const handleMouseMove = (e: MouseEvent) => {
+  // Memoize mouse handler to avoid recreation
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     const ctn = containerRef.current;
     if (!ctn) return;
     const rect = ctn.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = 1 - (e.clientY - rect.top) / rect.height;
     mouseRef.current = { x, y };
-  };
+  }, []);
 
-  useEffect(() => {
+  // Use useLayoutEffect for instant rendering before browser paint
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const canvas = document.createElement('canvas');
+    let canvas: HTMLCanvasElement;
+    let gl: WebGLRenderingContext;
+    let program: WebGLProgram;
+    let positionBuffer: WebGLBuffer | null;
+    let uvBuffer: WebGLBuffer | null;
+    let isReused = false;
+
+    // Try to reuse cached resources for instant remounting (including first mount)
+    if (globalCache.initialized && globalCache.canvas && globalCache.gl &&
+        globalCache.program && globalCache.buffers && !globalCache.inUse) {
+      canvas = globalCache.canvas;
+      gl = globalCache.gl;
+      program = globalCache.program;
+      positionBuffer = globalCache.buffers.position;
+      uvBuffer = globalCache.buffers.uv;
+      globalCache.inUse = true;
+      isReused = true;
+    } else {
+      // Create new resources only if cache unavailable
+      canvas = document.createElement('canvas');
+      canvas.className = styles.canvas;
+
+      const glContext = canvas.getContext('webgl', {
+        alpha: false,
+        antialias: false,
+        powerPreference: 'high-performance',
+        depth: false,
+        stencil: false,
+        preserveDrawingBuffer: false,
+        failIfMajorPerformanceCaveat: false
+      });
+
+      if (!glContext) {
+        console.error('WebGL not supported');
+        return;
+      }
+      gl = glContext;
+
+      const createdProgram = createProgram(gl, vertexShader, fragmentShader);
+      if (!createdProgram) return;
+      program = createdProgram;
+
+      // Create buffers
+      positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1, -1, 1, -1, -1, 1, 1, 1
+      ]), gl.STATIC_DRAW);
+
+      uvBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        0, 0, 1, 0, 0, 1, 1, 1
+      ]), gl.STATIC_DRAW);
+
+      // Store in cache for next mount
+      globalCache.canvas = canvas;
+      globalCache.gl = gl;
+      globalCache.program = program;
+      globalCache.buffers = { position: positionBuffer, uv: uvBuffer };
+      globalCache.initialized = true;
+      globalCache.inUse = true;
+    }
+
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
-    canvas.className = styles.canvas;
     canvasRef.current = canvas;
     container.appendChild(canvas);
-
-    const gl = canvas.getContext('webgl', {
-      alpha: false,
-      antialias: false,
-      powerPreference: 'high-performance',
-      depth: false,
-      stencil: false
-    });
-
-    if (!gl) {
-      console.error('WebGL not supported');
-      return;
-    }
-
-    const program = createProgram(gl, vertexShader, fragmentShader);
-    if (!program) return;
 
     gl.useProgram(program);
 
@@ -407,25 +555,6 @@ function FaultyTerminal({
       uBrightness: getUniformLocation('uBrightness')
     };
 
-    // Create buffers for fullscreen quad
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      -1, -1,
-      1, -1,
-      -1, 1,
-      1, 1
-    ]), gl.STATIC_DRAW);
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      0, 0,
-      1, 0,
-      0, 1,
-      1, 1
-    ]), gl.STATIC_DRAW);
-
     const state: WebGLState = {
       gl,
       program,
@@ -437,9 +566,22 @@ function FaultyTerminal({
     };
     glStateRef.current = state;
 
-    // Set up attributes
+    // Set up attributes for rendering
     const positionLoc = gl.getAttribLocation(program, 'aPosition');
     const uvLoc = gl.getAttribLocation(program, 'aUv');
+
+    gl.useProgram(program);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.enableVertexAttribArray(positionLoc);
+    gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.enableVertexAttribArray(uvLoc);
+    gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 0, 0);
+
+    // Store attribute locations for cleanup
+    const attributeLocations = { position: positionLoc, uv: uvLoc };
 
     // Set clear color
     gl.clearColor(0, 0, 0, 1);
@@ -447,7 +589,8 @@ function FaultyTerminal({
     const setSize = () => {
       const w = container.clientWidth || 1;
       const h = container.clientHeight || 1;
-      const dprValue = Math.min(window.devicePixelRatio || 1, 2);
+      // Cap at 1.0 DPR for weak devices - prioritize frame rate over resolution
+      const dprValue = Math.min(window.devicePixelRatio || 1, 1);
       canvas.width = w * dprValue;
       canvas.height = h * dprValue;
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -463,12 +606,13 @@ function FaultyTerminal({
       ro.observe(container);
       resizeObserverRef.current = ro;
     } else {
-      container.addEventListener('resize', setSize);
+      // Fallback: listen on window, not container (elements don't fire resize events)
+      window.addEventListener('resize', setSize);
     }
 
     // Set initial uniforms
     const initialProps = propsRef.current;
-    const [tintR, tintG, tintB] = hexToRgb(initialProps.tint);
+    const [tintR, tintG, tintB] = tintRgb;
 
     if (uniforms.uScale) gl.uniform1f(uniforms.uScale, initialProps.scale);
     if (uniforms.uGridMul) gl.uniform2f(uniforms.uGridMul, initialProps.gridMul[0], initialProps.gridMul[1]);
@@ -491,8 +635,28 @@ function FaultyTerminal({
     startTimeRef.current = performance.now();
     loadAnimationStartRef.current = 0;
 
-    // Mouse interaction
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    // WebGL context loss/restore handlers
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+
+    const handleContextRestored = () => {
+      // Context restored - component would need full reinitialization
+      console.log('WebGL context restored');
+    };
+
+    canvas.addEventListener('webglcontextlost', handleContextLost);
+    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+
+    // Mouse interaction - only in preview mode (not in editor)
+    if (!isEditorMode) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      mouseListenerAddedRef.current = true;
+    }
 
     // Animation loop
     const animate = (currentTime: number) => {
@@ -500,28 +664,37 @@ function FaultyTerminal({
 
       const props = propsRef.current;
 
-      if (props.pageLoadAnimation && loadAnimationStartRef.current === 0) {
-        loadAnimationStartRef.current = currentTime;
-      }
+      let elapsed: number;
 
-      let elapsed;
-      if (!props.pause) {
-        elapsed = ((currentTime * 0.001) + timeOffsetRef.current) * props.timeScale;
-        frozenTimeRef.current = elapsed;
+      // In editor mode, use static time but keep rendering for prop changes
+      if (isEditorMode) {
+        elapsed = 0.5; // Fixed time for consistent editor preview
+        if (uniforms.uPageLoadProgress) gl.uniform1f(uniforms.uPageLoadProgress, 1);
       } else {
-        elapsed = frozenTimeRef.current;
+        // Normal animation in preview mode
+        if (props.pageLoadAnimation && loadAnimationStartRef.current === 0) {
+          loadAnimationStartRef.current = currentTime;
+        }
+
+        if (!props.pause) {
+          elapsed = ((currentTime * 0.001) + timeOffsetRef.current) * props.timeScale;
+          frozenTimeRef.current = elapsed;
+        } else {
+          elapsed = frozenTimeRef.current;
+        }
+
+        if (props.pageLoadAnimation && loadAnimationStartRef.current > 0) {
+          const animationDuration = 2000;
+          const animationElapsed = currentTime - loadAnimationStartRef.current;
+          const progress = Math.min(animationElapsed / animationDuration, 1);
+          if (uniforms.uPageLoadProgress) gl.uniform1f(uniforms.uPageLoadProgress, progress);
+        }
       }
 
       if (uniforms.iTime) gl.uniform1f(uniforms.iTime, elapsed);
 
-      if (props.pageLoadAnimation && loadAnimationStartRef.current > 0) {
-        const animationDuration = 2000;
-        const animationElapsed = currentTime - loadAnimationStartRef.current;
-        const progress = Math.min(animationElapsed / animationDuration, 1);
-        if (uniforms.uPageLoadProgress) gl.uniform1f(uniforms.uPageLoadProgress, progress);
-      }
-
-      if (props.mouseReact) {
+      // Skip mouse smoothing in editor mode for better performance
+      if (props.mouseReact && !isEditorMode) {
         const dampingFactor = 0.08;
         const smoothMouse = smoothMouseRef.current;
         const mouse = mouseRef.current;
@@ -530,37 +703,72 @@ function FaultyTerminal({
         if (uniforms.uMouse) gl.uniform2f(uniforms.uMouse, smoothMouse.x, smoothMouse.y);
       }
 
-      // Update props uniforms
-      if (uniforms.uScale) gl.uniform1f(uniforms.uScale, props.scale);
-      if (uniforms.uGridMul) gl.uniform2f(uniforms.uGridMul, props.gridMul[0], props.gridMul[1]);
-      if (uniforms.uDigitSize) gl.uniform1f(uniforms.uDigitSize, props.digitSize);
-      if (uniforms.uScanlineIntensity) gl.uniform1f(uniforms.uScanlineIntensity, props.scanlineIntensity);
-      if (uniforms.uGlitchAmount) gl.uniform1f(uniforms.uGlitchAmount, props.glitchAmount);
-      if (uniforms.uFlickerAmount) gl.uniform1f(uniforms.uFlickerAmount, props.flickerAmount);
-      if (uniforms.uNoiseAmp) gl.uniform1f(uniforms.uNoiseAmp, props.noiseAmp);
-      if (uniforms.uChromaticAberration) gl.uniform1f(uniforms.uChromaticAberration, props.chromaticAberration);
-      if (uniforms.uDither) gl.uniform1f(uniforms.uDither, props.dither);
-      if (uniforms.uCurvature) gl.uniform1f(uniforms.uCurvature, props.curvature);
-      if (uniforms.uMouseStrength) gl.uniform1f(uniforms.uMouseStrength, props.mouseStrength);
-      if (uniforms.uUseMouse) gl.uniform1f(uniforms.uUseMouse, props.mouseReact ? 1 : 0);
-      if (uniforms.uBrightness) gl.uniform1f(uniforms.uBrightness, props.brightness);
+      // Batch uniform updates - only update when props actually change
+      // This significantly reduces CPU overhead on weak devices
+      const lastUpdate = lastUpdateRef.current;
 
-      // Update tint color
-      const [tintR, tintG, tintB] = hexToRgb(props.tint);
-      if (uniforms.uTint) gl.uniform3f(uniforms.uTint, tintR, tintG, tintB);
+      if (lastUpdate.scale !== props.scale) {
+        if (uniforms.uScale) gl.uniform1f(uniforms.uScale, props.scale);
+        lastUpdate.scale = props.scale;
+      }
+      if (lastUpdate.gridMul0 !== props.gridMul[0] || lastUpdate.gridMul1 !== props.gridMul[1]) {
+        if (uniforms.uGridMul) gl.uniform2f(uniforms.uGridMul, props.gridMul[0], props.gridMul[1]);
+        lastUpdate.gridMul0 = props.gridMul[0];
+        lastUpdate.gridMul1 = props.gridMul[1];
+      }
+      if (lastUpdate.digitSize !== props.digitSize) {
+        if (uniforms.uDigitSize) gl.uniform1f(uniforms.uDigitSize, props.digitSize);
+        lastUpdate.digitSize = props.digitSize;
+      }
+      if (lastUpdate.scanlineIntensity !== props.scanlineIntensity) {
+        if (uniforms.uScanlineIntensity) gl.uniform1f(uniforms.uScanlineIntensity, props.scanlineIntensity);
+        lastUpdate.scanlineIntensity = props.scanlineIntensity;
+      }
+      if (lastUpdate.glitchAmount !== props.glitchAmount) {
+        if (uniforms.uGlitchAmount) gl.uniform1f(uniforms.uGlitchAmount, props.glitchAmount);
+        lastUpdate.glitchAmount = props.glitchAmount;
+      }
+      if (lastUpdate.flickerAmount !== props.flickerAmount) {
+        if (uniforms.uFlickerAmount) gl.uniform1f(uniforms.uFlickerAmount, props.flickerAmount);
+        lastUpdate.flickerAmount = props.flickerAmount;
+      }
+      if (lastUpdate.noiseAmp !== props.noiseAmp) {
+        if (uniforms.uNoiseAmp) gl.uniform1f(uniforms.uNoiseAmp, props.noiseAmp);
+        lastUpdate.noiseAmp = props.noiseAmp;
+      }
+      if (lastUpdate.chromaticAberration !== props.chromaticAberration) {
+        if (uniforms.uChromaticAberration) gl.uniform1f(uniforms.uChromaticAberration, props.chromaticAberration);
+        lastUpdate.chromaticAberration = props.chromaticAberration;
+      }
+      if (lastUpdate.dither !== props.dither) {
+        if (uniforms.uDither) gl.uniform1f(uniforms.uDither, props.dither);
+        lastUpdate.dither = props.dither;
+      }
+      if (lastUpdate.curvature !== props.curvature) {
+        if (uniforms.uCurvature) gl.uniform1f(uniforms.uCurvature, props.curvature);
+        lastUpdate.curvature = props.curvature;
+      }
+      if (lastUpdate.mouseStrength !== props.mouseStrength) {
+        if (uniforms.uMouseStrength) gl.uniform1f(uniforms.uMouseStrength, props.mouseStrength);
+        lastUpdate.mouseStrength = props.mouseStrength;
+      }
+      const mouseReactVal = props.mouseReact ? 1 : 0;
+      if (lastUpdate.mouseReact !== mouseReactVal) {
+        if (uniforms.uUseMouse) gl.uniform1f(uniforms.uUseMouse, mouseReactVal);
+        lastUpdate.mouseReact = mouseReactVal;
+      }
+      if (lastUpdate.brightness !== props.brightness) {
+        if (uniforms.uBrightness) gl.uniform1f(uniforms.uBrightness, props.brightness);
+        lastUpdate.brightness = props.brightness;
+      }
+      if (lastUpdate.tint !== props.tint) {
+        const [tintR, tintG, tintB] = hexToRgb(props.tint);
+        if (uniforms.uTint) gl.uniform3f(uniforms.uTint, tintR, tintG, tintB);
+        lastUpdate.tint = props.tint;
+      }
 
-      // Render
+      // Render - vertex attributes and buffers are already set up
       gl.clear(gl.COLOR_BUFFER_BIT);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.enableVertexAttribArray(positionLoc);
-      gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-      gl.enableVertexAttribArray(uvLoc);
-      gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 0, 0);
-
-      gl.useProgram(program);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
       rafRef.current = requestAnimationFrame(animate);
@@ -570,27 +778,63 @@ function FaultyTerminal({
 
     // Cleanup
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-      } else {
-        container.removeEventListener('resize', setSize);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
 
-      window.removeEventListener('mousemove', handleMouseMove);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      } else {
+        // Fallback cleanup: remove from window, not container
+        window.removeEventListener('resize', setSize);
+      }
 
-      if (state.buffers.position) gl.deleteBuffer(state.buffers.position);
-      if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
-      if (program) gl.deleteProgram(program);
+      // Remove WebGL context loss handlers
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
+      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
 
+      // Remove mouse listener if it was added (tracked by ref, not prop)
+      if (mouseListenerAddedRef.current) {
+        window.removeEventListener('mousemove', handleMouseMove);
+        mouseListenerAddedRef.current = false;
+      }
+
+      // Clean up WebGL resources
+      // If using cached resources, just mark as available - don't delete
+      if (isReused) {
+        // Just mark cache as available for next mount
+        globalCache.inUse = false;
+      } else {
+        // Delete resources if not cached
+        if (attributeLocations) {
+          gl.disableVertexAttribArray(attributeLocations.position);
+          gl.disableVertexAttribArray(attributeLocations.uv);
+        }
+
+        // Validate resources before deletion to handle context loss gracefully
+        if (state.buffers.position && gl.isBuffer(state.buffers.position)) {
+          gl.deleteBuffer(state.buffers.position);
+        }
+        if (state.buffers.uv && gl.isBuffer(state.buffers.uv)) {
+          gl.deleteBuffer(state.buffers.uv);
+        }
+        if (program && gl.isProgram(program)) {
+          gl.deleteProgram(program);
+        }
+      }
+
+      // Remove canvas from DOM
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }
 
       loadAnimationStartRef.current = 0;
       timeOffsetRef.current = Math.random() * 100;
+      glStateRef.current = null;
     };
-  }, [dpr]);
+  }, [tintRgb, handleMouseMove, isEditorMode]);
 
   return <div ref={containerRef} style={style} className={`${styles.wrapper}  ${className}`} />;
 }
