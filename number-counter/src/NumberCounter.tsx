@@ -171,14 +171,14 @@ const NumberCounter = ({
     },
     [hasStarted, startedTimestamp],
   );
-  
+
   useEffect(() => {
     if (disabled) return;
     const { start, end } = settings;
     const { delay, autostart } = animation;
     // Resets counter and playState if either start or end is changed through props
     if (previousSettings.current.start !== start || previousSettings.current.end !== end) {
-      previousSettings.current = { start, end, actualDelay: delay * 1000 , autostart };
+      previousSettings.current = { start, end, actualDelay: delay * 1000, autostart };
       setStartedTimestamp(0);
       setCount(start)
       if (autostart) setTimeout(() => setHasStarted(true), actualDelay);
@@ -253,14 +253,17 @@ function styleNumber(
   precision: number,
   localeFormat: boolean,
 ) {
+  // Coerce to number in case a string is passed (e.g., "0" from props)
+  const num = Number(x);
+
   if (localeFormat) {
     return new Intl.NumberFormat(navigator.language, {
       maximumFractionDigits: precision,
       minimumFractionDigits: precision,
-    }).format(x);
+    }).format(num);
   }
 
-  const toFixed = x.toFixed(precision);
+  const toFixed = num.toFixed(precision);
   const parts = toFixed.split('.');
   if (parts.length === 1) {
     return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
