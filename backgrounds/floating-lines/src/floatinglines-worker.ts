@@ -506,7 +506,10 @@ self.onmessage = (e: MessageEvent) => {
       mouseTarget = { x: data.x, y: data.y };
       targetInfluence = 1.0;
       if (parallax) {
-        parallaxTarget = { x: data.parallaxX, y: data.parallaxY };
+        parallaxTarget = {
+          x: ((data.x - data.centerX) / data.width) * parallaxStrength,
+          y: ((data.y - data.centerY) / data.height) * parallaxStrength
+        };
       }
       break;
 

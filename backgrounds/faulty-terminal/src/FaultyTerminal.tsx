@@ -7,6 +7,24 @@ import FaultyTerminalWorker from './faulty-terminal-worker?worker';
 
 const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
   typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
+  
+const MAX_WIDTH = 1440;
+const MAX_HEIGHT = 900;
+
+const getCanvasSize = (rect: DOMRect) => {
+    const dpr = 1;
+    let width = Math.floor(rect.width * dpr);
+    let height = Math.floor(rect.height * dpr);
+  
+    // Cap resolution while maintaining aspect ratio
+    if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+      const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+      width = Math.floor(width * scale);
+      height = Math.floor(height * scale);
+    }
+  
+    return { width, height };
+};
 
 function hexToRgb(hex: string): [number, number, number] {
   let h = hex.replace('#', '').trim();
@@ -121,6 +139,7 @@ function FaultyTerminal({
 
     const canvas = document.createElement('canvas');
     canvas.style.cssText = 'width:100%;height:100%;display:block';
+    canvas.className = styles.canvas;
     container.appendChild(canvas);
 
     let worker: Worker | null = null;
@@ -143,9 +162,9 @@ function FaultyTerminal({
               mouseReact, mouseStrength, pageLoadAnimation, brightness
             }
           });
-          const rect = container.getBoundingClientRect();
-          const dpr = Math.min(window.devicePixelRatio || 1, 1);
-          worker!.postMessage({ type: 'resize', data: { width: Math.floor(rect.width * dpr), height: Math.floor(rect.height * dpr) } });
+
+          const { width, height } = getCanvasSize(container.getBoundingClientRect());
+          worker!.postMessage({ type: 'resize', data: { width, height } });
           worker!.postMessage({ type: 'start' });
         }
       };
@@ -154,9 +173,8 @@ function FaultyTerminal({
     // Resize
     const ro = new ResizeObserver(() => {
       if (!worker) return;
-      const rect = container.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 1);
-      worker.postMessage({ type: 'resize', data: { width: Math.floor(rect.width * dpr), height: Math.floor(rect.height * dpr) } });
+      const { width, height } = getCanvasSize(container.getBoundingClientRect());
+      worker.postMessage({ type: 'resize', data: { width, height } });
     });
     ro.observe(container);
 

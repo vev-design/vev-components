@@ -7,6 +7,24 @@ import FloatingLinesWorker from './floatinglines-worker?worker';
 const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
   typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
 
+const MAX_WIDTH = 1440;
+const MAX_HEIGHT = 900;
+
+const getCanvasSize = (rect: DOMRect) => {
+    const dpr = 1;
+    let width = Math.floor(rect.width * dpr);
+    let height = Math.floor(rect.height * dpr);
+  
+    // Cap resolution while maintaining aspect ratio
+    if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+      const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+      width = Math.floor(width * scale);
+      height = Math.floor(height * scale);
+    }
+  
+    return { width, height };
+};
+
 function FloatingLines({
   linesGradient,
   enabledWaves = ['top', 'middle', 'bottom'],
@@ -75,14 +93,12 @@ function FloatingLines({
           }
         });
 
-        const w = container.clientWidth || 1;
-        const h = container.clientHeight || 1;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const { width, height } = getCanvasSize(container.getBoundingClientRect());
         worker.postMessage({
           type: 'resize',
           data: {
-            width: w * dpr,
-            height: h * dpr
+            width,
+            height
           }
         });
 
@@ -92,14 +108,13 @@ function FloatingLines({
 
     const handleResize = () => {
       if (!workerRef.current || !container) return;
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const { width, height } = getCanvasSize(container.getBoundingClientRect());
       workerRef.current.postMessage({
         type: 'resize',
         data: {
-          width: w * dpr,
-          height: h * dpr
+          width,
+          height
         }
       });
     };
@@ -110,18 +125,20 @@ function FloatingLines({
     const handlePointerMove = (event: PointerEvent) => {
       if (!workerRef.current || !canvasRef.current) return;
       const rect = canvas.getBoundingClientRect();
+      const { width, height } = getCanvasSize(container.getBoundingClientRect());
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const dpr = 1;
       workerRef.current.postMessage({
         type: 'pointer',
         data: {
           x: x * dpr,
-          y: (rect.height - y) * dpr,
-          centerX: rect.width / 2,
-          centerY: rect.height / 2,
-          width: rect.width,
-          height: rect.height
+          y: (height - y) * dpr,
+          centerX: width / 2,
+          centerY: height / 2,
+          width,
+          height
         }
       });
     };

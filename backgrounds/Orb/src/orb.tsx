@@ -6,6 +6,24 @@ import OrbWorker from './orb-worker?worker';
 const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
   typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
 
+const MAX_WIDTH = 1440;
+const MAX_HEIGHT = 900;
+    
+const getCanvasSize = (rect: DOMRect) => {
+        const dpr = 1;
+        let width = Math.floor(rect.width * dpr);
+        let height = Math.floor(rect.height * dpr);
+      
+        // Cap resolution while maintaining aspect ratio
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.floor(width * scale);
+          height = Math.floor(height * scale);
+        }
+      
+        return { width, height };
+};
+
 interface OrbProps {
   hue?: number;
   hoverIntensity?: number;
@@ -52,13 +70,12 @@ function Orb({
           data: { hue, hoverIntensity, rotateOnHover, forceHoverState }
         });
 
-        const rect = container.getBoundingClientRect();
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const { width, height } = getCanvasSize(container.getBoundingClientRect());
         worker.postMessage({
           type: 'resize',
           data: {
-            width: Math.max(1, Math.floor(rect.width * dpr)),
-            height: Math.max(1, Math.floor(rect.height * dpr))
+            width,
+            height
           }
         });
 
@@ -68,13 +85,12 @@ function Orb({
 
     const handleResize = () => {
       if (!workerRef.current || !container) return;
-      const rect = container.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const { width, height } = getCanvasSize(container.getBoundingClientRect());
       workerRef.current.postMessage({
         type: 'resize',
         data: {
-          width: Math.max(1, Math.floor(rect.width * dpr)),
-          height: Math.max(1, Math.floor(rect.height * dpr))
+          width,
+          height
         }
       });
     };

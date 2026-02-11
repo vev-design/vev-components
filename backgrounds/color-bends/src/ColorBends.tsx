@@ -1,11 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './ColorBends.module.css';
 import { registerVevComponent } from "@vev/react";
-import { SilkeBox, SilkeButton, SilkeColorPickerButton, SilkeTextSmall } from '@vev/silke';
+import { SilkeBox, SilkeButton, SilkeColorPickerButton } from '@vev/silke';
 import ColorBendsWorker from './colorbends-worker?worker';
 
 const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
   typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
+
+const MAX_WIDTH = 1440;
+const MAX_HEIGHT = 900;
+
+const getCanvasSize = (rect: DOMRect) => {
+  const dpr = 1;
+  let width = Math.floor(rect.width * dpr);
+  let height = Math.floor(rect.height * dpr);
+
+  // Cap resolution while maintaining aspect ratio
+  if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+    const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+    width = Math.floor(width * scale);
+    height = Math.floor(height * scale);
+  }
+
+  return { width, height };
+};
 
 function ColorBends({
   className,
@@ -70,16 +88,15 @@ function ColorBends({
           }
         });
 
-        const w = container.clientWidth || 1;
-        const h = container.clientHeight || 1;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const { width, height } = getCanvasSize(container.getBoundingClientRect());
+        const dpr = Math.min(window.devicePixelRatio || 1, 1);
         worker.postMessage({
           type: 'resize',
           data: {
-            width: w * dpr,
-            height: h * dpr,
-            cssWidth: w,
-            cssHeight: h
+            width: width * dpr,
+            height: height * dpr,
+            cssWidth: width,
+            cssHeight: height
           }
         });
 
@@ -89,16 +106,16 @@ function ColorBends({
 
     const handleResize = () => {
       if (!workerRef.current || !container) return;
-      const w = container.clientWidth || 1;
-      const h = container.clientHeight || 1;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 1);
+      const { width, height } = getCanvasSize(container.getBoundingClientRect());
       workerRef.current.postMessage({
         type: 'resize',
         data: {
-          width: w * dpr,
-          height: h * dpr,
-          cssWidth: w,
-          cssHeight: h
+          width: width * dpr,
+          height: height * dpr,
+          cssWidth: width,
+          cssHeight: height
         }
       });
     };

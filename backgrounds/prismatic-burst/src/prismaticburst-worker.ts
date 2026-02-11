@@ -332,7 +332,7 @@ function init(offscreen: OffscreenCanvas) {
   canvas = offscreen;
   gl = canvas.getContext('webgl2', {
     alpha: false,
-    antialias: false,
+    antialias: true,
     preserveDrawingBuffer: false,
     powerPreference: 'high-performance',
   });

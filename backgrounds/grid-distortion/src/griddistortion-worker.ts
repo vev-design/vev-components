@@ -16,12 +16,30 @@ const fragmentShader = `
 uniform sampler2D uDataTexture;
 uniform sampler2D uTexture;
 uniform vec4 resolution;
+uniform float uImageAspect;
+uniform float uContainerAspect;
 varying vec2 vUv;
 
 void main() {
-  vec2 uv = vUv;
+  // Flip Y coordinate (WebGL Y=0 is bottom, we want top)
+  vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
+
+  // Calculate cover mode UVs
+  vec2 coverUv = uv;
+  if (uImageAspect > 0.0 && uContainerAspect > 0.0) {
+    if (uContainerAspect > uImageAspect) {
+      // Container is wider - scale height, crop top/bottom
+      float scale = uContainerAspect / uImageAspect;
+      coverUv.y = (uv.y - 0.5) / scale + 0.5;
+    } else {
+      // Container is taller - scale width, crop left/right
+      float scale = uImageAspect / uContainerAspect;
+      coverUv.x = (uv.x - 0.5) / scale + 0.5;
+    }
+  }
+
   vec4 offset = texture2D(uDataTexture, vUv);
-  gl_FragColor = texture2D(uTexture, uv - 0.02 * offset.rg);
+  gl_FragColor = texture2D(uTexture, coverUv - 0.02 * offset.rg);
 }`;
 
 // State
@@ -66,6 +84,8 @@ let uniforms: {
   resolution: { value: THREE.Vector4 };
   uTexture: { value: THREE.Texture | null };
   uDataTexture: { value: THREE.DataTexture | null };
+  uImageAspect: { value: number };
+  uContainerAspect: { value: number };
 } | null = null;
 
 function initRenderer(offscreen: OffscreenCanvas, dpr: number) {
@@ -89,7 +109,9 @@ function initRenderer(offscreen: OffscreenCanvas, dpr: number) {
     time: { value: 0 },
     resolution: { value: new THREE.Vector4() },
     uTexture: { value: null },
-    uDataTexture: { value: null }
+    uDataTexture: { value: null },
+    uImageAspect: { value: 1 },
+    uContainerAspect: { value: 1 }
   };
 
   createDataTexture(gridSize);
@@ -159,6 +181,7 @@ function setImageTexture(imageBitmap: ImageBitmap) {
 
   if (uniforms) {
     uniforms.uTexture.value = imageTexture;
+    uniforms.uImageAspect.value = imageBitmap.width / imageBitmap.height;
   }
 }
 
@@ -184,6 +207,7 @@ function resize(width: number, height: number) {
   camera.updateProjectionMatrix();
 
   uniforms.resolution.value.set(canvasWidth, canvasHeight, 1, 1);
+  uniforms.uContainerAspect.value = containerAspect;
 }
 
 function updateDataTexture() {

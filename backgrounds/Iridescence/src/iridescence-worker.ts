@@ -129,7 +129,7 @@ function animate(ts: number) {
 function init(offscreen: OffscreenCanvas) {
   canvas = offscreen;
   gl = canvas.getContext('webgl', {
-    antialias: false,
+    antialias: true,
     alpha: false,
     powerPreference: 'high-performance',
     depth: false,

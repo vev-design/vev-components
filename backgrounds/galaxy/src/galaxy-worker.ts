@@ -216,7 +216,7 @@ function animate(ts: number) {
 function init(offscreen: OffscreenCanvas, transparent: boolean) {
   canvas = offscreen;
   gl = canvas.getContext('webgl', {
-    antialias: false, alpha: true, powerPreference: 'high-performance',
+    antialias: true, alpha: true, powerPreference: 'high-performance',
     depth: false, stencil: false, preserveDrawingBuffer: false
   });
   if (!gl) return;
