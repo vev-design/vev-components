@@ -52,6 +52,9 @@ const Video = ({
   const { disabled } = useEditorState();
   const loopedAmount = useRef(1);
 
+  // Stable id so effects don't re-run when parent passes a new object reference with same video
+  const videoId = video?.key ?? video?.sources?.[0]?.url ?? '';
+
   const dispatch = useDispatchVevEvent();
   const track = createTracker(disableTracking);
   const dispatchTrackingEvent = useTracking(disableTracking);
@@ -183,7 +186,7 @@ const Video = ({
     };
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
     return () => evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
-  }, [video, loop, track]);
+  }, [videoId, loop, track]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -203,7 +206,7 @@ const Video = ({
 
       if (!pausedRef.current) videoEl.play();
     }
-    
+
 
     if (disabled) {
       mutedRef.current = undefined;
@@ -212,7 +215,7 @@ const Video = ({
       videoEl.load();
       videoEl.pause();
     }
-  }, [disabled, autoplay, video]);
+  }, [disabled, autoplay, videoId]);
 
   const attributes: VideoHTMLAttributes<HTMLVideoElement> = {};
   // if (loop) attributes.loop = true;
@@ -249,16 +252,16 @@ const Video = ({
       >
         {video &&
           video.sources &&
-           video.sources
+          video.sources
             .sort((a, b) => {
-              
+
               if (a.format === b.format) return 0;
               if (a.format === 'video/quicktime') return -1;
               if (b.format === 'video/quicktime') return 1;
-              
+
               if (a.format === 'video/mp4') return -1;
               if (b.format === 'video/mp4') return 1;
-              
+
               if (a.format === 'video/webm') return -1;
               if (b.format === 'video/webm') return 1;
 
