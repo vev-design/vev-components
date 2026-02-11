@@ -253,7 +253,6 @@ function styleNumber(
   precision: number,
   localeFormat: boolean,
 ) {
-  // Coerce to number in case a string is passed (e.g., "0" from props)
   const num = Number(x);
 
   if (localeFormat) {
