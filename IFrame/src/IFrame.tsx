@@ -13,16 +13,6 @@ const getSrc = (src: string) => {
   return src;
 };
 
-const getStyle = (size: { width: number; height: number }, scale: number) => ({
-  height: 0,
-  width: 0,
-  maxHeight: size.height / (scale || 1),
-  maxWidth: size.width / (scale || 1),
-  minHeight: size.height / (scale || 1),
-  minWidth: size.width / (scale || 1),
-  transform: scale && scale !== 1 ? `scale(${scale})` : null,
-});
-
 const IFrame = ({ pageUrl, hostRef, scale = 0 }: Props) => {
   return (
     <div className={styles.wrapper}>
@@ -31,7 +21,7 @@ const IFrame = ({ pageUrl, hostRef, scale = 0 }: Props) => {
         frameBorder={0}
         allowFullScreen
         src={getSrc(pageUrl)}
-        style={getStyle(useSize(hostRef), scale)}
+        style={{ zoom: scale }}
       />
     </div>
   );
