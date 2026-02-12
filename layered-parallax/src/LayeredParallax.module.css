@@ -1,0 +1,73 @@
+.wrapper {
+  --x: 0.5;
+  --y: 0.5;
+  --movement-x: 40;
+  --movement-y: 80;
+  --rotate: 0;
+  --perspective: 0;
+
+  height: 100%;
+  overflow: inherit;
+
+  &.rotate {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+
+    .layer {
+      transform-origin: center center 0;
+      translate: var(--offset-x) var(--offset-y) var(--offset-z);
+      transform: rotateY(calc((var(--x) - 0.5) * 90deg * var(--rotate)))
+        rotateX(calc((var(--x) - 0.5) * 90deg * var(--rotate)));
+      transform-style: preserve-3d;
+    }
+  }
+
+  &:not(.rotate) {
+    .layer {
+      /** Need to use top and left and not translate since it's % based, and translate is based on the element's size */
+      left: var(--offset-x);
+      top: var(--offset-y);
+    }
+  }
+}
+
+.empty {
+  background-color: #eee;
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #909090;
+  font-size: 14px;
+}
+
+.layer {
+  --depth: 0;
+  --width: calc(100% + var(--movement-x) * var(--depth) * 1%);
+  --height: calc(100% + var(--movement-y) * var(--depth) * 1%);
+  --move-y: var(--movement-y) * var(--depth) * (var(--y) - 0.5) * 1%;
+  --move-x: var(--movement-x) * var(--depth) * (var(--x) - 0.5) * 1%;
+  --offset-x: calc(50% - var(--width) / 2 + var(--move-x));
+  --offset-y: calc(50% - var(--height) / 2 + var(--move-y));
+  --offset-z: calc((1 - var(--depth)) * -1px * var(--perspective));
+
+  position: absolute;
+  width: var(--width);
+  height: var(--height);
+
+  will-change: top left transform;
+
+  &.disabled {
+    opacity: 0.3;
+    filter: saturate(0%) contrast(30%);
+  }
+
+  /* &::before {
+    position: absolute;
+    counter-reset: x calc(var(--x) * 1000) y calc(var(--y) * 1000);
+    content: "x:" counter(x) " y:" counter(y);
+    display: block;
+    background: black;
+    color: white;
+  } */
+}
