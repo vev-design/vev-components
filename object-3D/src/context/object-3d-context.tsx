@@ -1,6 +1,7 @@
 import React from 'react';
 import { Camera, Vector3 } from 'three';
 import { InternalHotspot, SavedCameraPosition } from '../types';
+import { ScrollTarget } from '../hooks/use-scroll-progress';
 
 export interface Object3DContextProps {
   modelUrl: string;
@@ -35,6 +36,11 @@ export interface Object3DContextProps {
     play_animation: (cb: (animation: string, loop: boolean, repetitions: number) => void) => void;
   };
   rotationSpeed: number;
+  scrollAnimation?: boolean;
+  scrollTarget?: ScrollTarget;
+  scrollStart?: number;
+  scrollEnd?: number;
+  hostRef?: React.RefObject<HTMLDivElement>;
 }
 
 export const Object3dContext = React.createContext<Object3DContextProps>({

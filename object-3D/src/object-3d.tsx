@@ -60,6 +60,10 @@ export type Props = {
     rotate: boolean;
     rotationSpeed: number;
     reverseSpeed: boolean;
+    scrollAnimation?: boolean;
+    scrollTarget?: 'page' | 'section' | 'element';
+    scrollStart?: number;
+    scrollEnd?: number;
   };
 };
 
@@ -82,6 +86,10 @@ const Object3d = ({
   const animation = animationSettings?.animation;
   const rotate = animationSettings?.rotate;
   const reverseSpeed = animationSettings?.reverseSpeed;
+  const scrollAnimation = animationSettings?.scrollAnimation || false;
+  const scrollTarget = animationSettings?.scrollTarget || 'element';
+  const scrollStart = animationSettings?.scrollStart ?? 0;
+  const scrollEnd = animationSettings?.scrollEnd ?? 100;
   const rotationSpeed =
     animationSettings?.rotationSpeed !== undefined ? animationSettings?.rotationSpeed : 2;
   const actualRotationSpeed = reverseSpeed ? rotationSpeed * -1 : rotationSpeed;
@@ -166,6 +174,11 @@ const Object3d = ({
           zoom,
           controls,
           animation,
+          scrollAnimation,
+          scrollTarget,
+          scrollStart,
+          scrollEnd,
+          hostRef,
           hotspots: internalHotspots,
           disabled,
           schemaOpen,
@@ -322,10 +335,72 @@ export const config: VevManifest = {
           initialValue: 'No animation',
         },
         {
+          name: 'scrollAnimation',
+          title: 'On scroll',
+          description: 'Drive animation progress by scroll position',
+          type: 'boolean',
+          initialValue: false,
+          hidden: (context) =>
+            !context?.value?.animationSettings?.animation ||
+            context?.value?.animationSettings?.animation === 'No animation',
+        },
+        {
+          name: 'scrollTarget',
+          title: 'Run while',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'Target itself is in view', value: 'element' },
+              { label: 'Parent section is in view', value: 'section' },
+              { label: 'Full page is in view', value: 'page' },
+            ],
+            display: 'dropdown',
+          },
+          initialValue: 'element',
+          hidden: (context) =>
+            !context?.value?.animationSettings?.scrollAnimation ||
+            !context?.value?.animationSettings?.animation ||
+            context?.value?.animationSettings?.animation === 'No animation',
+        },
+        {
+          name: 'scrollStart',
+          title: 'Start (%)',
+          description: 'Scroll percentage where animation begins',
+          type: 'number',
+          initialValue: 0,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 100,
+          },
+          hidden: (context) =>
+            !context?.value?.animationSettings?.scrollAnimation ||
+            !context?.value?.animationSettings?.animation ||
+            context?.value?.animationSettings?.animation === 'No animation',
+        },
+        {
+          name: 'scrollEnd',
+          title: 'End (%)',
+          description: 'Scroll percentage where animation ends',
+          type: 'number',
+          initialValue: 100,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 100,
+          },
+          hidden: (context) =>
+            !context?.value?.animationSettings?.scrollAnimation ||
+            !context?.value?.animationSettings?.animation ||
+            context?.value?.animationSettings?.animation === 'No animation',
+        },
+        {
           name: 'rotate',
           title: 'Rotate',
           type: 'boolean',
           initialValue: true,
+          hidden: (context) =>
+            context?.value?.animationSettings?.animation !== 'No animation',
         },
         {
           name: 'rotationSpeed',
@@ -337,14 +412,18 @@ export const config: VevManifest = {
             min: 0,
             max: 20,
           },
-          hidden: (context) => context?.value?.animationSettings?.rotate !== true,
+          hidden: (context) =>
+            context?.value?.animationSettings?.rotate !== true ||
+            context?.value?.animationSettings?.scrollAnimation === true,
         },
         {
           name: 'reverseSpeed',
           title: 'Loop alternate direction',
           type: 'boolean',
           initialValue: false,
-          hidden: (context) => context?.value?.animationSettings?.rotate !== true,
+          hidden: (context) =>
+            context?.value?.animationSettings?.rotate !== true ||
+            context?.value?.animationSettings?.scrollAnimation === true,
         },
       ],
     },

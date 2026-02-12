@@ -50,6 +50,7 @@ export function useSceneSetup(
   const [labelRenderer, setLabelRenderer] = useState<CSS2DRenderer>(null);
   const prevClip = useRef<THREE.AnimationClip>();
   const currentClip = useRef<THREE.AnimationClip>();
+  const clipDurationRef = useRef(0);
   const isPlayingAnimation = useRef(false);
   const [currentModel, setCurrentModel] = useState<THREE.Group | null>(null);
 
@@ -58,6 +59,7 @@ export function useSceneSetup(
 
     const newClip = model.animations.find((clip) => clip.name === animation);
     if (!newClip) return;
+    clipDurationRef.current = newClip.duration;
     if (!currentClip.current) {
       const animationAction = mixer.current.clipAction(newClip);
       animationAction.play();
@@ -265,5 +267,6 @@ export function useSceneSetup(
     mixer: mixer.current,
     labelRenderer,
     currentModel,
+    clipDuration: clipDurationRef,
   };
 }
