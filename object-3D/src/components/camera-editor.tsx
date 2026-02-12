@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
+import { SilkeBox, SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
 import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
 import { Camera } from 'three';
@@ -25,6 +25,7 @@ export function CameraEditor({ context, onChange }: Props) {
     <>
       {modalOpen && (
         <SilkeModal
+          size="large"
           hide={!modalOpen}
           title="Edit initial camera position"
           onClose={() => {
@@ -35,7 +36,7 @@ export function CameraEditor({ context, onChange }: Props) {
         </SilkeModal>
       )}
       <SilkeButton
-        kind="tertiary"
+        kind="secondary"
         size="s"
         style={{ width: '100%' }}
         label="Edit initial camera"
@@ -54,8 +55,8 @@ export function CameraEditModal({
   context: SchemaFieldProps<ObjectField>;
   onChange: (cameraPosition: SavedCameraPosition) => void;
 }) {
-  const currentCamera = useRef<Camera>();
-  const currentControl = useRef<any>();
+  const currentCamera = useRef<Camera>(new Camera());
+  const currentControl = useRef<any>({});
 
   // Convert positions from storage from x,y,z to Vector3
   const [hotspots, _] = useConvertedHotspots(context?.value?.hotspots);
@@ -107,13 +108,13 @@ export function CameraEditModal({
         }}
       >
         <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
-          <div className={styles.hotspotEditor}>
+          <SilkeBox gap="s" vAlign="center">
             <Object3dViewer className={styles.editorViewer} />
             <CameraEditorForm
               saveCameraPosition={saveCameraPosition}
               resetCameraPosition={resetCameraPosition}
             />
-          </div>
+          </SilkeBox>
         </div>
       </Object3DContextProvider>
     </SilkeModalContent>

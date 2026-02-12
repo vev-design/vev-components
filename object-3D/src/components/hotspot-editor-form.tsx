@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
+import { SilkeBox, SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
 import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
 import { Object3dViewer } from './object-3d-viewer';
@@ -25,6 +25,7 @@ export function HotspotEditorForm({ context, onChange }: Props) {
       {modalOpen && (
         <SilkeModal
           hide={!modalOpen}
+          size="large"
           title="Edit hotspots"
           onClose={() => {
             setModalOpen(false);
@@ -34,7 +35,7 @@ export function HotspotEditorForm({ context, onChange }: Props) {
         </SilkeModal>
       )}
       <SilkeButton
-        kind="tertiary"
+        kind="secondary"
         size="s"
         style={{ width: '100%' }}
         label="Edit hotspots"
@@ -98,10 +99,10 @@ export function HotSpotModal({
         }}
       >
         <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
-          <div className={styles.hotspotEditor}>
+          <SilkeBox gap="s" vAlign="center">
             <Object3dViewer className={styles.editorViewer} />
             <HotspotList hotspots={hotspots} deleteHotspot={deleteHotspot} />
-          </div>
+          </SilkeBox>
         </div>
       </Object3DContextProvider>
     </SilkeModalContent>

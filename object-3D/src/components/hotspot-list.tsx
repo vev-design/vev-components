@@ -18,26 +18,29 @@ export function HotspotList({ hotspots, deleteHotspot }: Props) {
 
   return (
     <div className={styles.hotspotList}>
-      <SilkeBox gap="s" column>
+      <SilkeBox gap="l" column>
         <SilkeText>
           Add hotspot(s) on your 3D model by clicking on the target area. Connect the hotspots to
           components on the canvas using Interactions.
         </SilkeText>
-        {sortedHotspots.map((hotspot) => {
-          return (
-            <div key={hotspot.index} className={styles.hotspotListItem}>
-              <div>{`Hotspot ${hotspot.index}`}</div>
-              <SilkeButton
-                size="s"
-                icon="delete"
-                kind="ghost"
-                onClick={() => {
-                  deleteHotspot(hotspot.index);
-                }}
-              />
-            </div>
-          );
-        })}
+
+        <SilkeBox gap="s" column>
+          {sortedHotspots.map((hotspot) => {
+            return (
+              <SilkeBox gap="s" key={hotspot.index}>
+                <div>{`Hotspot ${hotspot.index}`}</div>
+                <SilkeButton
+                  size="s"
+                  icon="delete"
+                  kind="ghost"
+                  onClick={() => {
+                    deleteHotspot(hotspot.index);
+                  }}
+                />
+              </SilkeBox>
+            );
+          })}
+        </SilkeBox>
       </SilkeBox>
     </div>
   );
