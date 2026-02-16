@@ -1,128 +1,29 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { registerVevComponent } from '@vev/react';
 import styles from './Aurora.module.css';
 import { SilkeBox, SilkeColorPickerButton, SilkeTextSmall } from '@vev/silke';
+import AuroraWorker from './aurora-worker?worker';
 
-const VERT = `#version 300 es
-in vec2 position;
-out vec2 vUv;
+const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
+  typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
 
-void main() {
-  vUv = position * 0.5 + 0.54;
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`;
+const MAX_WIDTH = 1440;
+const MAX_HEIGHT = 900;
 
-const FRAG = `#version 300 es
-precision highp float;
+const getCanvasSize = (rect: DOMRect) => {
+  const dpr = 1;
+  let width = Math.floor(rect.width * dpr);
+  let height = Math.floor(rect.height * dpr);
 
-uniform float uTime;
-uniform float uAmplitude;
-uniform vec3 uColorStops[3];
-uniform vec2 uResolution;
-uniform float uBlend;
-uniform vec2 uPointer;
+  // Cap resolution while maintaining aspect ratio
+  if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+    const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+    width = Math.floor(width * scale);
+    height = Math.floor(height * scale);
+  }
 
-in vec2 vUv;
-out vec4 fragColor;
-
-vec3 permute(vec3 x) {
-  return mod(((x * 34.0) + 1.0) * x, 289.0);
-}
-
-float snoise(vec2 v){
-  const vec4 C = vec4(
-      0.211324865405187, 0.366025403784439,
-      -0.577350269189626, 0.024390243902439
-  );
-  vec2 i  = floor(v + dot(v, C.yy));
-  vec2 x0 = v - i + dot(i, C.xx);
-  vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-  vec4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-  i = mod(i, 289.0);
-
-  vec3 p = permute(
-      permute(i.y + vec3(0.0, i1.y, 1.0))
-    + i.x + vec3(0.0, i1.x, 1.0)
-  );
-
-  vec3 m = max(
-      0.5 - vec3(
-          dot(x0, x0),
-          dot(x12.xy, x12.xy),
-          dot(x12.zw, x12.zw)
-      ), 
-      0.0
-  );
-  m = m * m;
-  m = m * m;
-
-  vec3 x = 2.0 * fract(p * C.www) - 1.0;
-  vec3 h = abs(x) - 0.5;
-  vec3 ox = floor(x + 0.5);
-  vec3 a0 = x - ox;
-  m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-
-  vec3 g;
-  g.x  = a0.x  * x0.x  + h.x  * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
-}
-
-struct ColorStop {
-  vec3 color;
-  float position;
+  return { width, height };
 };
-
-#define COLOR_RAMP(colors, factor, finalColor) {              \
-  int index = 0;                                            \
-  for (int i = 0; i < 2; i++) {                               \
-     ColorStop currentColor = colors[i];                    \
-     bool isInBetween = currentColor.position <= factor;    \
-     index = int(mix(float(index), float(i), float(isInBetween))); \
-  }                                                         \
-  ColorStop currentColor = colors[index];                   \
-  ColorStop nextColor = colors[index + 1];                  \
-  float range = nextColor.position - currentColor.position; \
-  float lerpFactor = (factor - currentColor.position) / range; \
-  finalColor = mix(currentColor.color, nextColor.color, lerpFactor); \
-}
-
-void main() {
-  vec2 pointerNdc = uPointer / max(uResolution, vec2(1.0));
-  vec2 parallax = (pointerNdc - 0.5) * vec2(0.08, 0.05);
-  vec2 uv = vUv + parallax;
-
-  ColorStop colors[3];
-  colors[0] = ColorStop(uColorStops[0], 0.0);
-  colors[1] = ColorStop(uColorStops[1], 0.5);
-  colors[2] = ColorStop(uColorStops[2], 1.0);
-
-  vec3 rampColor;
-  COLOR_RAMP(colors, fract(uv.x + 10.0), rampColor);
-
-  float height = snoise(vec2(uv.x * 2.0 + uTime * 0.1, uTime * 0.25)) * 0.5 * uAmplitude;
-  height = exp(height);
-  height = (uv.y * 2.0 - height + 0.2);
-  float intensity = 0.6 * height;
-
-  float midPoint = 0.20;
-  float auroraAlpha = smoothstep(midPoint - uBlend * 0.5, midPoint + uBlend * 0.5, intensity);
-
-  vec3 auroraColor = intensity * rampColor;
-
-  fragColor = vec4(auroraColor * auroraAlpha, auroraAlpha);
-}
-`;
-
-interface AuroraProps {
-  colorStops?: string[];
-  amplitude?: number;
-  blend?: number;
-  time?: number;
-  speed?: number;
-}
 
 const DEFAULT_COLORS = ['#5227FF', '#7cff67', '#5227FF'];
 
@@ -134,257 +35,135 @@ const hexToRGB = (hex: string): [number, number, number] => {
   return [r, g, b];
 };
 
-const UNIFORM_META: Record<string, 'float' | 'vec2' | 'vec3array'> = {
-  uTime: 'float',
-  uAmplitude: 'float',
-  uBlend: 'float',
-  uResolution: 'vec2',
-  uPointer: 'vec2',
-  uColorStops: 'vec3array'
-};
-
 const flattenColorStops = (stops: string[] = DEFAULT_COLORS) => {
   const normalized = stops.slice(0, 3);
   while (normalized.length < 3) normalized.push(normalized[normalized.length - 1] || DEFAULT_COLORS[0]);
   return new Float32Array(normalized.flatMap((color) => hexToRGB(color)));
 };
 
-const createShader = (gl: WebGL2RenderingContext, type: number, source: string) => {
-  const shader = gl.createShader(type);
-  if (!shader) throw new Error('Failed to create shader');
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    const info = gl.getShaderInfoLog(shader);
-    gl.deleteShader(shader);
-    throw new Error(info || 'Unknown shader compile error');
-  }
-  return shader;
-};
-
-const createProgram = (gl: WebGL2RenderingContext, vertex: string, fragment: string) => {
-  const vs = createShader(gl, gl.VERTEX_SHADER, vertex);
-  const fs = createShader(gl, gl.FRAGMENT_SHADER, fragment);
-  const program = gl.createProgram();
-  if (!program) throw new Error('Failed to create program');
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const info = gl.getProgramInfoLog(program);
-    gl.deleteProgram(program);
-    throw new Error(info || 'Unknown program link error');
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
-  return program;
-};
+interface AuroraProps {
+  colorStops?: string[];
+  amplitude?: number;
+  blend?: number;
+  speed?: number;
+  hostRef: React.RefObject<HTMLDivElement>;
+}
 
 function Aurora({
   colorStops = DEFAULT_COLORS,
   amplitude = 1.0,
   blend = 0.5,
-  time,
-  speed = 1.0
+  speed = 1.0,
+  hostRef,
 }: AuroraProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const glRef = useRef<WebGL2RenderingContext | null>(null);
-  const programRef = useRef<WebGLProgram | null>(null);
-  const uniformLocationsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
-  const uniformValuesRef = useRef<Record<string, number | Float32Array | [number, number]>>({});
-  const uniformTargetsRef = useRef<Record<string, number>>({});
-  const colorBufferRef = useRef<Float32Array>(flattenColorStops(colorStops));
-  const animationRef = useRef<number | null>(null);
-  const mouseTargetRef = useRef<[number, number]>([0, 0]);
-  const mouseDampeningRef = useRef<number>(0.2);
-  const lastTimeRef = useRef<number>(0);
-  const logicalTimeRef = useRef<number>(0);
-  const speedRef = useRef<number>(speed);
-  const timeRef = useRef<number | undefined>(time);
+  const workerRef = useRef<Worker | null>(null);
 
-  const updateFloatTarget = useCallback((name: string, value: number) => {
-    uniformTargetsRef.current[name] = value;
-  }, []);
-
-  const applyUniform = useCallback((name: string, value: number | Float32Array | [number, number]) => {
-    const gl = glRef.current;
-    const location = uniformLocationsRef.current[name];
-    if (!gl || !location) return;
-
-    const type = UNIFORM_META[name];
-    if (value instanceof Float32Array) {
-      if (type === 'vec3array') {
-        gl.uniform3fv(location, value);
-      } else if (type === 'vec2') {
-        gl.uniform2fv(location, value);
-      } else {
-        gl.uniform1fv(location, value);
+  // Send props to worker
+  useEffect(() => {
+    workerRef.current?.postMessage({
+      type: 'props',
+      data: {
+        amplitude,
+        blend,
+        speed,
+        colorStops: flattenColorStops(colorStops)
       }
-    } else if (Array.isArray(value)) {
-      gl.uniform2f(location, value[0], value[1]);
-    } else {
-      gl.uniform1f(location, value);
-    }
-    uniformValuesRef.current[name] = value;
+    });
+  }, [colorStops, amplitude, blend, speed]);
+
+  // Mouse listener - poll for hostRef availability
+  useEffect(() => {
+    let mounted = true;
+    let removeListener: (() => void) | null = null;
+
+    const onMouse = (e: MouseEvent) => {
+      if (!workerRef.current) return;
+      const container = containerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1 - (e.clientY - rect.top) / rect.height;
+      workerRef.current.postMessage({ type: 'mouse', data: { x, y } });
+    };
+
+    const trySetup = () => {
+      const host = hostRef.current;
+      if (!host) {
+        if (mounted) requestAnimationFrame(trySetup);
+        return;
+      }
+      host.addEventListener('mousemove', onMouse, { passive: true });
+      removeListener = () => host.removeEventListener('mousemove', onMouse);
+    };
+
+    trySetup();
+
+    return () => {
+      mounted = false;
+      removeListener?.();
+    };
   }, []);
 
-  useEffect(() => {
-    colorBufferRef.current = flattenColorStops(colorStops);
-  }, [colorStops]);
-
-  useEffect(() => {
-    updateFloatTarget('uAmplitude', amplitude);
-  }, [amplitude, updateFloatTarget]);
-
-  useEffect(() => {
-    updateFloatTarget('uBlend', blend);
-  }, [blend, updateFloatTarget]);
-
-  useEffect(() => {
-    speedRef.current = speed;
-  }, [speed]);
-
-  useEffect(() => {
-    timeRef.current = time;
-  }, [time]);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const canvas = document.createElement('canvas');
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.display = 'block';
+    canvas.style.cssText = 'width:100%;height:100%;display:block';
+    canvas.className = styles.canvas;
     container.appendChild(canvas);
-    canvasRef.current = canvas;
 
-    const gl = canvas.getContext('webgl2', { alpha: true, antialias: true });
-    if (!gl) {
-      console.error('WebGL2 not supported');
-      return () => { };
+    let worker: Worker | null = null;
+
+    if (supportsOffscreen) {
+      const offscreen = canvas.transferControlToOffscreen();
+      worker = new AuroraWorker() as Worker;
+      workerRef.current = worker;
+
+      worker.postMessage({ type: 'init', data: { canvas: offscreen } }, [offscreen]);
+
+      worker.onmessage = (e: MessageEvent) => {
+        if (e.data.type === 'ready') {
+          worker!.postMessage({
+            type: 'props',
+            data: {
+              amplitude,
+              blend,
+              speed,
+              colorStops: flattenColorStops(colorStops)
+            }
+          });
+          const rect = container.getBoundingClientRect();
+          worker!.postMessage({ type: 'resize', data: getCanvasSize(rect) });
+          worker!.postMessage({ type: 'start' });
+        }
+      };
     }
-    glRef.current = gl;
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    const program = createProgram(gl, VERT, FRAG);
-    gl.useProgram(program);
-    programRef.current = program;
-
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-    const uniforms = ['uTime', 'uAmplitude', 'uBlend', 'uResolution', 'uPointer', 'uColorStops'];
-    uniforms.forEach((name) => {
-      const locationName = name === 'uColorStops' ? `${name}[0]` : name;
-      uniformLocationsRef.current[name] = gl.getUniformLocation(program, locationName);
-    });
-
-    applyUniform('uAmplitude', amplitude);
-    applyUniform('uBlend', blend);
-    applyUniform('uPointer', [0, 0]);
-    applyUniform('uColorStops', colorBufferRef.current);
-
-    const drawScene = () => {
-      if (!glRef.current || !programRef.current) return;
-      glRef.current.useProgram(programRef.current);
-      glRef.current.drawArrays(glRef.current.TRIANGLES, 0, 3);
-    };
-
-    const resize = () => {
-      if (!canvasRef.current || !glRef.current || !container) return;
+    // Resize
+    const ro = new ResizeObserver(() => {
+      if (!worker) return;
       const rect = container.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      const width = Math.max(1, Math.floor(rect.width * ratio));
-      const height = Math.max(1, Math.floor(rect.height * ratio));
-      canvas.width = width;
-      canvas.height = height;
-      canvas.className = styles.canvas;
-      gl.viewport(0, 0, width, height);
-      applyUniform('uResolution', new Float32Array([width, height]));
-      if (!uniformValuesRef.current.uPointer) {
-        const cx = width / 2;
-        const cy = height / 2;
-        mouseTargetRef.current = [cx, cy];
-        applyUniform('uPointer', [cx, cy]);
-      }
-      drawScene();
-    };
+      worker.postMessage({ type: 'resize', data: getCanvasSize(rect) });
+    });
+    ro.observe(container);
 
-    const observer = new ResizeObserver(resize);
-    observer.observe(container);
-    resize();
-
- 
-    const loop = (timestamp: number) => {
-      animationRef.current = requestAnimationFrame(loop);
-      let delta = 0;
-      if (lastTimeRef.current) {
-        delta = (timestamp - lastTimeRef.current) / 1000;
-      }
-      lastTimeRef.current = timestamp;
-
-      const externalTime = timeRef.current;
-      if (typeof externalTime === 'number') {
-        applyUniform('uTime', externalTime * speedRef.current * 0.1);
-      } else {
-        logicalTimeRef.current += delta;
-        applyUniform('uTime', logicalTimeRef.current * speedRef.current);
-      }
-
-      const damp = mouseDampeningRef.current;
-      if (damp > 0 && delta > 0) {
-        const tau = Math.max(1e-3, damp);
-        const factor = 1 - Math.exp(-delta / tau);
-        const target = mouseTargetRef.current;
-        const current = (uniformValuesRef.current.uPointer as [number, number]) || [target[0], target[1]];
-        const next: [number, number] = [
-          current[0] + (target[0] - current[0]) * factor,
-          current[1] + (target[1] - current[1]) * factor
-        ];
-        applyUniform('uPointer', next);
-      }
-
-      ['uAmplitude', 'uBlend'].forEach((name) => {
-        const target = uniformTargetsRef.current[name];
-        if (target === undefined) return;
-        const current = (uniformValuesRef.current[name] as number) ?? target;
-        if (Math.abs(target - current) < 1e-4) return;
-        const blendFactor = Math.min(1, (delta || 0) * 6);
-        const value = current + (target - current) * blendFactor;
-        applyUniform(name, value);
-      });
-
-      if (colorBufferRef.current !== uniformValuesRef.current.uColorStops) {
-        applyUniform('uColorStops', colorBufferRef.current);
-      }
-
-      drawScene();
-    };
-
-    animationRef.current = requestAnimationFrame(loop);
+    // Visibility
+    const io = new IntersectionObserver(([e]) => {
+      worker?.postMessage({ type: 'visibility', data: { visible: e.isIntersecting } });
+    }, { threshold: 0.02 });
+    io.observe(container);
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      observer.disconnect();
-      if (canvas.parentElement === container) {
-        container.removeChild(canvas);
+      if (worker) {
+        worker.postMessage({ type: 'cleanup' });
+        worker.terminate();
+        workerRef.current = null;
       }
-      if (programRef.current && glRef.current) {
-        glRef.current.deleteProgram(programRef.current);
-      }
-      programRef.current = null;
-      glRef.current = null;
-      canvasRef.current = null;
-      uniformLocationsRef.current = {};
-      uniformValuesRef.current = {};
-      uniformTargetsRef.current = {};
+      ro.disconnect();
+      io.disconnect();
+      container.removeChild(canvas);
     };
   }, []);
 

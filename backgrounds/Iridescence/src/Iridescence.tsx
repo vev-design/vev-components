@@ -1,105 +1,34 @@
-import React,{ useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import styles from './Iridescence.module.css';
 import { registerVevComponent } from '@vev/react';
+import IridescenceWorker from './iridescence-worker?worker';
 
+const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
+  typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
 
-const vertexShader = `
-attribute vec2 uv;
-attribute vec2 position;
-
-varying vec2 vUv;
-
-void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 0, 1);
-}
-`;
-
-const fragmentShader = `
-precision highp float;
-
-uniform float uTime;
-uniform vec3 uColor;
-uniform vec3 uResolution;
-uniform vec2 uMouse;
-uniform float uAmplitude;
-uniform float uSpeed;
-
-varying vec2 vUv;
-
-void main() {
-  float mr = min(uResolution.x, uResolution.y);
-  vec2 uv = (vUv.xy * 2.0 - 1.0) * uResolution.xy / mr;
-
-  uv += (uMouse - vec2(0.5)) * uAmplitude;
-
-  float d = -uTime * 0.5 * uSpeed;
-  float a = 0.0;
-  for (float i = 0.0; i < 8.0; ++i) {
-    a += cos(i - d - a * uv.x);
-    d += sin(uv.y * i + a);
-  }
-  d += uTime * 0.5 * uSpeed;
-  vec3 col = vec3(cos(uv * vec2(d, a)) * 0.6 + 0.4, cos(a + d) * 0.5 + 0.5);
-  col = cos(col * cos(vec3(d, a, 2.5)) * 0.5 + 0.5) * uColor;
-  gl_FragColor = vec4(col, 1.0);
-}
-`;
-
-const TRIANGLE_VERTICES = new Float32Array([
-  -1, -1, 0, 0,
-  3, -1, 2, 0,
-  -1, 3, 0, 2,
-]);
-
-function createShader(gl, type, source) {
-  const shader = gl.createShader(type);
-  if (!shader) {
-    return null;
-  }
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.warn('[Iridescence] Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-function createProgram(gl, vertexSource, fragmentSource) {
-  const vertex = createShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  if (!vertex || !fragment) {
-    return null;
-  }
-  const program = gl.createProgram();
-  if (!program) {
-    return null;
-  }
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  gl.deleteShader(vertex);
-  gl.deleteShader(fragment);
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.warn('[Iridescence] Program link error:', gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
-    return null;
-  }
-  return program;
-}
+  const MAX_WIDTH = 1440;
+  const MAX_HEIGHT = 900;
+    
+const getCanvasSize = (rect: DOMRect) => {
+        const dpr = 1;
+        let width = Math.floor(rect.width * dpr);
+        let height = Math.floor(rect.height * dpr);
+      
+        // Cap resolution while maintaining aspect ratio
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.floor(width * scale);
+          height = Math.floor(height * scale);
+        }
+      
+        return { width, height };
+};
 
 function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.1, mouseReact = true, ...rest }) {
-  const ctnDom = useRef(null);
-  const mousePos = useRef({ x: 0.5, y: 0.5 });
-  const glRef = useRef(null);
-  const uniformsRef = useRef(null);
-  const handleMouseMoveRef = useRef(null);
-  const color = useMemo(() => [red, green, blue], [red, green, blue]);
+  const ctnDom = useRef<HTMLDivElement>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Setup WebGL context, canvas, program, buffers - runs only once
   useEffect(() => {
     const ctn = ctnDom.current;
     if (!ctn) return;
@@ -107,178 +36,116 @@ function Iridescence({ red = 1, green = 1, blue = 1, speed = 1.0, amplitude = 0.
     const canvas = document.createElement('canvas');
     canvas.className = styles.canvas;
     ctn.appendChild(canvas);
+    canvasRef.current = canvas;
 
-    const gl = canvas.getContext('webgl', {
-      antialias: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'high-performance',
-    });
-    if (!gl) {
-      console.warn('[Iridescence] WebGL not supported');
+    if (!supportsOffscreen) {
+      console.warn('[Iridescence] OffscreenCanvas not supported');
       return () => {
         ctn.removeChild(canvas);
       };
     }
 
-    glRef.current = gl;
+    const offscreen = canvas.transferControlToOffscreen();
+    const worker = new IridescenceWorker() as Worker;
+    workerRef.current = worker;
 
-    const program = createProgram(gl, vertexShader, fragmentShader);
-    if (!program) {
-      ctn.removeChild(canvas);
-      return undefined;
-    }
+    worker.postMessage({ type: 'init', data: { canvas: offscreen } }, [offscreen]);
 
-    gl.useProgram(program);
+    worker.onmessage = (e: MessageEvent) => {
+      if (e.data.type === 'ready') {
+        worker.postMessage({
+          type: 'props',
+          data: { red, green, blue, speed, amplitude }
+        });
 
-    const buffer = gl.createBuffer();
-    if (!buffer) {
-      console.warn('[Iridescence] Failed to create buffer');
-      gl.deleteProgram(program);
-      ctn.removeChild(canvas);
-      return undefined;
-    }
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, TRIANGLE_VERTICES, gl.STATIC_DRAW);
+        const { width, height } = getCanvasSize(ctn.getBoundingClientRect());
+        worker.postMessage({
+          type: 'resize',
+          data: {
+            width,
+            height
+          }
+        });
 
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-
-    const stride = 4 * Float32Array.BYTES_PER_ELEMENT;
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, stride, 0);
-    gl.enableVertexAttribArray(uvLocation);
-    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
-
-    const uniforms = {
-      uTime: gl.getUniformLocation(program, 'uTime'),
-      uColor: gl.getUniformLocation(program, 'uColor'),
-      uResolution: gl.getUniformLocation(program, 'uResolution'),
-      uMouse: gl.getUniformLocation(program, 'uMouse'),
-      uAmplitude: gl.getUniformLocation(program, 'uAmplitude'),
-      uSpeed: gl.getUniformLocation(program, 'uSpeed'),
+        worker.postMessage({ type: 'start' });
+      }
     };
-    uniformsRef.current = uniforms;
 
-    // Initial uniform values
-    if (uniforms.uColor) {
-      gl.uniform3f(uniforms.uColor, color[0], color[1], color[2]);
-    }
-    if (uniforms.uAmplitude) {
-      gl.uniform1f(uniforms.uAmplitude, amplitude);
-    }
-    if (uniforms.uSpeed) {
-      gl.uniform1f(uniforms.uSpeed, speed);
-    }
-    if (uniforms.uMouse) {
-      gl.uniform2f(uniforms.uMouse, mousePos.current.x, mousePos.current.y);
-    }
-
-    let rafId = 0;
-
-    const resize = () => {
-      const rect = ctn.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const width = Math.max(1, Math.floor(rect.width * dpr));
-      const height = Math.max(1, Math.floor(rect.height * dpr));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        gl.viewport(0, 0, width, height);
-        if (uniforms.uResolution) {
-          gl.uniform3f(uniforms.uResolution, width, height, width / height);
+    const handleResize = () => {
+      if (!workerRef.current || !ctn) return;
+      const { width, height } = getCanvasSize(ctn.getBoundingClientRect());
+      workerRef.current.postMessage({
+        type: 'resize',
+        data: {
+          width,
+          height
         }
-      }
+      });
     };
 
-    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(handleResize) : null;
     resizeObserver?.observe(ctn);
-    ctn.addEventListener('resize', resize);
-    resize();
 
-    const render = (time) => {
-      rafId = requestAnimationFrame(render);
-      if (uniforms.uTime) {
-        gl.uniform1f(uniforms.uTime, time * 0.001);
-      }
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    };
-    rafId = requestAnimationFrame(render);
-
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!workerRef.current || !ctn) return;
       const rect = ctn.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = 1.0 - (e.clientY - rect.top) / rect.height;
-      mousePos.current = { x, y };
-      if (uniforms.uMouse) {
-        gl.uniform2f(uniforms.uMouse, x, y);
-      }
+      workerRef.current.postMessage({ type: 'mouse', data: { x, y } });
     };
-    handleMouseMoveRef.current = handleMouseMove;
 
     if (mouseReact) {
       window.addEventListener('mousemove', handleMouseMove);
     }
 
     return () => {
-      cancelAnimationFrame(rafId);
+      if (mouseReact) {
+        window.removeEventListener('mousemove', handleMouseMove);
+      }
       resizeObserver?.disconnect();
-      ctn.removeEventListener('resize', resize);
-      if (mouseReact) {
-        window.removeEventListener('mousemove', handleMouseMove);
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: 'cleanup' });
+        workerRef.current.terminate();
+        workerRef.current = null;
       }
-      if (buffer) {
-        gl.deleteBuffer(buffer);
+      if (ctn.contains(canvas)) {
+        ctn.removeChild(canvas);
       }
-      gl.deleteProgram(program);
-      ctn.removeChild(canvas);
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-      glRef.current = null;
-      uniformsRef.current = null;
-      handleMouseMoveRef.current = null;
+      canvasRef.current = null;
     };
-  }, []); // Only run once on mount
+  }, []);
 
+  // Update props when they change
   useEffect(() => {
-    const gl = glRef.current;
-    const uniforms = uniformsRef.current;
-    if (!gl || !uniforms || !uniforms.uColor) return;
-    gl.uniform3f(uniforms.uColor, color[0], color[1], color[2]);
-  }, [color]);
+    if (!workerRef.current) return;
+    workerRef.current.postMessage({
+      type: 'props',
+      data: { red, green, blue, speed, amplitude }
+    });
+  }, [red, green, blue, speed, amplitude]);
 
+  // Handle mouseReact changes
   useEffect(() => {
-    const gl = glRef.current;
-    const uniforms = uniformsRef.current;
-    if (!gl || !uniforms || !uniforms.uSpeed) return;
-    gl.uniform1f(uniforms.uSpeed, speed);
-  }, [speed]);
+    const ctn = ctnDom.current;
+    if (!ctn) return;
 
-  useEffect(() => {
-    const gl = glRef.current;
-    const uniforms = uniformsRef.current;
-    if (!gl || !uniforms || !uniforms.uAmplitude) return;
-    gl.uniform1f(uniforms.uAmplitude, amplitude);
-  }, [amplitude]);
-
-  useEffect(() => {
-    const handleMouseMove = handleMouseMoveRef.current;
-    if (!handleMouseMove) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!workerRef.current) return;
+      const rect = ctn.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height;
+      workerRef.current.postMessage({ type: 'mouse', data: { x, y } });
+    };
 
     if (mouseReact) {
       window.addEventListener('mousemove', handleMouseMove);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-    }
-
-    return () => {
-      if (mouseReact) {
+      return () => {
         window.removeEventListener('mousemove', handleMouseMove);
-      }
-    };
+      };
+    }
   }, [mouseReact]);
 
-  return <div ref={ctnDom} {...rest} data-component="Iridescence" className={styles.iridescenceContainer}  />;
+  return <div ref={ctnDom} {...rest} data-component="Iridescence" className={styles.iridescenceContainer} />;
 }
 
 
