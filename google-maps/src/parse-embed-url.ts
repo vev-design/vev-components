@@ -81,8 +81,8 @@ function parsePbParameter(pb: string): ParsedEmbedUrl {
  */
 export function parseEmbedUrl(input: string): ParsedEmbedUrl | null {
   if (!input) return null;
-
   const url = extractUrl(input);
+  console.log('url', url);
   if (!url) return null;
 
   try {

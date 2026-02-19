@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './GoogleMaps.module.css';
 import { registerVevComponent, useEditorState } from '@vev/react';
-import { SilkeAutocompleteField, SilkeTextField, SilkeBox } from '@vev/silke';
+import { SilkeAutocompleteField } from '@vev/silke';
 import { useGoogleMapsApi } from './use-google-maps-api';
 import { parseEmbedUrl } from './parse-embed-url';
 
@@ -29,7 +29,7 @@ const GoogleMaps = ({
   const { ready, error } = useGoogleMapsApi(API_KEY);
 
   const parsed = useMemo(() => (embedUrl ? parseEmbedUrl(embedUrl) : null), [embedUrl]);
-
+  console.log(parsed);
   const effectiveZoom = Math.max(1, Math.min(21, zoom));
 
   // Initialize map once
@@ -41,7 +41,7 @@ const GoogleMaps = ({
         ? { lat: parsed.lat, lng: parsed.lng }
         : DEFAULT_CENTER;
 
-    const map = new google.maps.Map(mapRef.current, {
+    mapInstanceRef.current = new google.maps.Map(mapRef.current, {
       center,
       zoom: effectiveZoom,
       mapTypeId: type,
@@ -49,8 +49,6 @@ const GoogleMaps = ({
       disableDefaultUI: disabled,
       gestureHandling: disabled ? 'none' : 'auto',
     });
-
-    mapInstanceRef.current = map;
 
     return () => {
       markersRef.current.forEach((m) => (m.map = null));
@@ -163,7 +161,6 @@ const GoogleMaps = ({
   return <div ref={mapRef} className={styles.wrapper} />;
 };
 
-// --- Editor components ---
 
 const MapsAutoComplete = (props: any) => {
   const [predictions, setPredictions] = useState<
@@ -197,7 +194,8 @@ const MapsAutoComplete = (props: any) => {
       label="Address"
       name="address"
       placeholder="Search and select"
-      size="xs"
+      size="s"
+      value={props.value || ''}
       onChange={(value: string) => {
         props.onChange(value);
         setSearch(value);
@@ -211,20 +209,6 @@ const MapsAutoComplete = (props: any) => {
   );
 };
 
-const EmbedUrlField = (props: any) => {
-  return (
-    <SilkeBox column gap="s" fill>
-      <SilkeTextField
-        label="Google Maps Embed URL"
-        size="s"
-        value={props.value || ''}
-        onChange={(value: string) => props.onChange(value)}
-        placeholder="Paste embed URL or <iframe> code"
-      />
-    </SilkeBox>
-  );
-};
-
 registerVevComponent(GoogleMaps, {
   name: 'Google Maps',
   description:
@@ -234,8 +218,9 @@ registerVevComponent(GoogleMaps, {
       title: 'Embed URL',
       name: 'embedUrl',
       type: 'string',
-      description: 'Paste a Google Maps embed URL or <iframe> code to recreate that map',
-      component: EmbedUrlField,
+      placeholder: 'Paste embed URL or <iframe> code',
+      description:
+        'Paste a Google Maps embed URL or iframe code to recreate that map',
     },
     {
       title: 'Address',
