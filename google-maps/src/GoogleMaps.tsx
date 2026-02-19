@@ -1,18 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './GoogleMaps.module.css';
 import { registerVevComponent, useEditorState } from '@vev/react';
 import { SilkeAutocompleteField } from '@vev/silke';
 import { useGoogleMapsApi } from './use-google-maps-api';
-import { parseEmbedUrl } from './parse-embed-url';
+import { extractEmbedSrc, recenterEmbedSrc, extractSearchQuery } from './parse-embed-url';
 
 const API_KEY = 'AIzaSyAkQRDoMLeuxVyX1QvG_JIxo8P7rajLMxo';
 const DEFAULT_CENTER = { lat: 59.913, lng: 10.752 }; // Oslo
+
 
 type Props = {
   address: string;
   zoom: number;
   type: string;
   embedUrl: string;
+  userLocation: boolean;
   hostRef: React.RefObject<HTMLDivElement>;
 };
 
@@ -21,28 +23,109 @@ const GoogleMaps = ({
   zoom = 14,
   type = 'roadmap',
   embedUrl = '',
+  userLocation = false,
 }: Props) => {
+  const embedSrc = embedUrl ? extractEmbedSrc(embedUrl) : null;
+
+  // Embed URL mode
+  if (embedSrc) {
+    return (
+      <EmbedMap
+        embedUrl={embedUrl}
+        embedSrc={embedSrc}
+        userLocation={userLocation}
+      />
+    );
+  }
+
+  // JS API mode
+  return (
+    <JsApiMap
+      address={address}
+      zoom={zoom}
+      type={type}
+      userLocation={userLocation}
+    />
+  );
+};
+
+type EmbedMapProps = {
+  embedUrl: string;
+  embedSrc: string;
+  userLocation: boolean;
+};
+
+const EmbedMap = ({ embedUrl, embedSrc, userLocation }: EmbedMapProps) => {
+  const [src, setSrc] = useState(embedSrc);
+
+  useEffect(() => {
+    if (!userLocation) {
+      setSrc(embedSrc);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Try to get the original search term (e.g., "Pizza" or "Eiffel Tower")
+        const query = extractSearchQuery(embedUrl) || "attractions";
+        console.log('query', query);
+        if (query) {
+          // IMPORTANT: Use /v1/search to keep the icons and sidebar
+          const params = new URLSearchParams({
+            key: API_KEY,
+            q: query, // The magic ingredient for icons
+            center: `${latitude},${longitude}`,
+            zoom: '14',
+          });
+          setSrc(`https://www.google.com/maps/embed/v1/search?${params.toString()}`);
+        } else {
+          // If no query exists, we use /v1/view, but icons will be sparse
+          const params = new URLSearchParams({
+            key: API_KEY,
+            center: `${latitude},${longitude}`,
+            zoom: '14',
+          });
+          setSrc(`https://www.google.com/maps/embed/v1/view?${params.toString()}`);
+        }
+      },
+      () => setSrc(embedSrc)
+    );
+  }, [userLocation, embedUrl, embedSrc]);
+
+  return (
+    <iframe
+      className={styles.wrapper}
+      src={src}
+      style={{ border: 0 }}
+      allowFullScreen
+      loading="lazy"
+    />
+  );
+};
+
+type JsApiMapProps = {
+  address: string;
+  zoom: number;
+  type: string;
+  userLocation: boolean;
+};
+
+const JsApiMap = ({ address, zoom, type, userLocation }: JsApiMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const { disabled } = useEditorState();
   const { ready, error } = useGoogleMapsApi(API_KEY);
 
-  const parsed = useMemo(() => (embedUrl ? parseEmbedUrl(embedUrl) : null), [embedUrl]);
-  console.log(parsed);
   const effectiveZoom = Math.max(1, Math.min(21, zoom));
 
   // Initialize map once
   useEffect(() => {
     if (!ready || !mapRef.current) return;
 
-    const center =
-      parsed?.lat != null && parsed?.lng != null
-        ? { lat: parsed.lat, lng: parsed.lng }
-        : DEFAULT_CENTER;
-
     mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-      center,
+      center: DEFAULT_CENTER,
       zoom: effectiveZoom,
       mapTypeId: type,
       mapId: 'vev-google-maps',
@@ -79,53 +162,20 @@ const GoogleMaps = ({
     });
   }, [disabled]);
 
-  // Handle embed URL center + search
+  // Center on user's location
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !ready || !parsed) return;
+    if (!map || !userLocation || address) return;
 
-    if (parsed.lat != null && parsed.lng != null) {
-      map.setCenter({ lat: parsed.lat, lng: parsed.lng });
-    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {},
+    );
+  }, [userLocation, address, ready]);
 
-    // Clear old markers
-    markersRef.current.forEach((m) => (m.map = null));
-    markersRef.current = [];
-
-    if (parsed.query && !address) {
-      const service = new google.maps.places.PlacesService(map);
-      service.textSearch(
-        {
-          query: parsed.query,
-          location: parsed.lat != null ? { lat: parsed.lat, lng: parsed.lng } : undefined,
-          radius: 50000,
-        },
-        (results, status) => {
-          if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
-
-          const newMarkers = results.map(
-            (place) =>
-              new google.maps.marker.AdvancedMarkerElement({
-                map,
-                position: place.geometry?.location,
-                title: place.name,
-              }),
-          );
-          markersRef.current = newMarkers;
-
-          if (results.length > 1) {
-            const bounds = new google.maps.LatLngBounds();
-            results.forEach((place) => {
-              if (place.geometry?.location) bounds.extend(place.geometry.location);
-            });
-            map.fitBounds(bounds);
-          }
-        },
-      );
-    }
-  }, [parsed, ready, address]);
-
-  // Handle address geocoding (address mode or override)
+  // Handle address geocoding
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !ready || !address) return;
@@ -137,7 +187,6 @@ const GoogleMaps = ({
       const location = results[0].geometry.location;
       map.setCenter(location);
 
-      // Clear old markers
       markersRef.current.forEach((m) => (m.map = null));
       markersRef.current = [];
 
@@ -161,6 +210,7 @@ const GoogleMaps = ({
   return <div ref={mapRef} className={styles.wrapper} />;
 };
 
+// --- Editor components ---
 
 const MapsAutoComplete = (props: any) => {
   const [predictions, setPredictions] = useState<
@@ -195,6 +245,7 @@ const MapsAutoComplete = (props: any) => {
       name="address"
       placeholder="Search and select"
       size="s"
+      onClear={() => props.onChange(undefined)}
       value={props.value || ''}
       onChange={(value: string) => {
         props.onChange(value);
@@ -220,13 +271,17 @@ registerVevComponent(GoogleMaps, {
       type: 'string',
       placeholder: 'Paste embed URL or <iframe> code',
       description:
-        'Paste a Google Maps embed URL or iframe code to recreate that map',
+        'Paste a Google Maps embed URL or iframe code to embed that map directly',
     },
     {
       title: 'Address',
       name: 'address',
       type: 'string',
+      clearProps: ['embedUrl'],
       component: MapsAutoComplete,
+      hidden: (context) => {
+        return context.value.embedUrl;
+      },
     },
     {
       title: 'Zoom',
@@ -237,6 +292,18 @@ registerVevComponent(GoogleMaps, {
         display: 'slider',
         min: 1,
         max: 21,
+      },
+      hidden: (context) => {
+        return context.value.embedUrl;
+      },
+    },
+    {
+      title: 'Use user location',
+      name: 'userLocation',
+      type: 'boolean',
+      initialValue: false,
+      hidden: (context) => {
+        return context.value.embedUrl;
       },
     },
     {
@@ -250,6 +317,9 @@ registerVevComponent(GoogleMaps, {
           { label: 'Default', value: 'roadmap' },
           { label: 'Satellite', value: 'satellite' },
         ],
+      },
+      hidden: (context) => {
+        return context.value.embedUrl;
       },
     },
   ],
