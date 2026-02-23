@@ -5,5 +5,13 @@ export function ScrollSlide(props: BaseSlideProps) {
   const slideCount = props.slideCount;
   const isReverse = props.settings?.reverse;
   const index = isReverse ? slideCount - 1 - props.index : props.index;
-  return <BaseSlide {...props} style={{ ...props.style, translate: `${index * 100}% 0` }} />;
+  return (
+    <BaseSlide
+      {...props}
+      style={{
+        ...props.style,
+        translate: props.disabled ? '0 0' : `${index * 100}% 0`,
+      }}
+    />
+  );
 }
