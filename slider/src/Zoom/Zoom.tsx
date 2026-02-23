@@ -67,7 +67,7 @@ export const Zoom = ({
   if (slides.length === 1) {
     return (
       <div className={styles.wrapper}>
-        <div className={styles.slide}>
+        <div className={[styles.slide, styles.active].join(' ')}>
           <WidgetNode id={currentSlide} />
         </div>
       </div>
