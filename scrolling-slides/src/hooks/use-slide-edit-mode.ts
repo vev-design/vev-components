@@ -37,7 +37,7 @@ export function useSlideEditMode(
     const element = hostRef.current;
 
     // Only run if we have all requirements and the editor is in the correct state
-    if (!timeline || !element || !activeContentChild || !disabled) {
+    if (!timeline || !element || !activeContentChild || !disabled || children.length <= 1) {
       prevStateRef.current = { disabled, activeContentChild };
       return;
     }

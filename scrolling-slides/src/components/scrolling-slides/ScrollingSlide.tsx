@@ -51,9 +51,18 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
 
   const { activeContentChild, disabled: editorDisabled } = useEditorState();
   const visible = useVisible(hostRef);
-  const disabled = !visible && !activeContentChild;
+  const insufficientScroll =
+    typeof document !== 'undefined' && document.body.scrollHeight <= window.innerHeight;
+  const disabled = (!visible && !activeContentChild) || insufficientScroll;
   // Force linear easing in editor to be able to calculate the scroll position
   if (editorDisabled && activeContentChild) settings = { ...settings, easing: 'linear' };
+
+  // When scroll height is insufficient, determine which slide to force-show
+  const forceVisibleIndex = insufficientScroll
+    ? editorDisabled && activeContentChild
+      ? children.indexOf(activeContentChild)
+      : 0
+    : -1;
 
   const ref = useRef<HTMLDivElement>(null);
   const timeline = useViewTimeline(ref as React.RefObject<HTMLElement>, disabled);
@@ -95,6 +104,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   //if (type === 'scroll' && settings?.reverse) cl += ' ' + styles.reverse;
 
   const Comp = SLIDE_COMPONENT[type] || BaseSlide;
+
   return (
     <>
       {editorDisabled && document.body.scrollHeight < window.innerHeight && (
@@ -114,18 +124,22 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
         {type === 'scroll' && isSafariBrowser() && (
           <style>{`.${styles.content} > vev > .__wc vev{will-change:transform;}`}</style>
         )}
-        {children.map((childKey, index) => (
-          <Comp
-            key={childKey}
-            id={childKey}
-            index={index}
-            slideCount={children.length}
-            timeline={timeline}
-            settings={settings}
-            selected={false}
-            transitionOut={settings?.transitionOut}
-          />
-        ))}
+        {children.map((childKey, index) => {
+          if (forceVisibleIndex >= 0 && index !== forceVisibleIndex) return null;
+          return (
+            <Comp
+              key={childKey}
+              id={childKey}
+              index={index}
+              slideCount={children.length}
+              timeline={timeline}
+              settings={settings}
+              selected={false}
+              transitionOut={settings?.transitionOut}
+              disabled={forceVisibleIndex >= 0}
+            />
+          );
+        })}
       </div>
     </>
   );
