@@ -1,0 +1,56 @@
+.wrapper {
+  height: 100%;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  position: absolute;
+  bottom: 100%;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.tab {
+  background-color: transparent;
+  color: #000;
+  border: none;
+  cursor: pointer;
+}
+
+.activeTab {
+  background-color: #000;
+  color: #fff;
+}
+
+.topLeftTab {
+  justify-content: flex-start;
+}
+
+.topCenterTab {
+  justify-content: center;
+}
+
+.topRightTab {
+  justify-content: flex-end;
+}
+
+.bottomLeftTab {
+  justify-content: flex-start;
+}
+
+.bottomCenterTab {
+  justify-content: center;
+}
+
+.bottomRightTab {
+  justify-content: flex-end;
+}
+
+.bottomLeftTab,
+.bottomCenterTab,
+.bottomRightTab {
+  top: 100%;
+  bottom: auto;
+}
