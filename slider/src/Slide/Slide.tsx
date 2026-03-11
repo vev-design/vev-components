@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { WidgetNode } from '@vev/react';
 import { Props } from '../Slider';
-import { isGoingForward, isGoingBackward, getNextSlideIndex, getPrevSlideIndex } from '../utils';
+import {
+  isGoingForward,
+  isGoingBackward,
+  getNextSlideIndex,
+  getPrevSlideIndex,
+  checkIfKeyIsDuplicatedInArray,
+} from '../utils';
 
 import styles from './Slide.module.css';
 
@@ -17,8 +23,8 @@ const getSlideScale = (
     move === -200
       ? Math.abs(centerSlideIndex - index + 1)
       : move === 0
-        ? Math.abs(centerSlideIndex - index - 1)
-        : Math.abs(index - centerSlideIndex);
+      ? Math.abs(centerSlideIndex - index - 1)
+      : Math.abs(index - centerSlideIndex);
   return distance === 0 ? '1' : `${1 - scaleFactor / 100}`;
 };
 
@@ -73,8 +79,6 @@ export const Slide = ({
   useEffect(() => {
     setSlides();
   }, [reverse, slidesToLoad, infinite]);
-
-
 
   useEffect(() => {
     const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
@@ -169,8 +173,4 @@ export const Slide = ({
       </div>
     </div>
   );
-};
-
-const checkIfKeyIsDuplicatedInArray = (arr: string[], key: string) => {
-  return arr.filter((item) => item === key).length > 1;
 };

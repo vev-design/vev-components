@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { WidgetNode } from '@vev/react';
 import { Props } from '../Slider';
-import { isGoingForward, isGoingBackward, getNextSlideIndex, getPrevSlideIndex } from '../utils';
+import {
+  isGoingForward,
+  isGoingBackward,
+  getNextSlideIndex,
+  getPrevSlideIndex,
+  checkIfKeyIsDuplicatedInArray,
+} from '../utils';
 
 import styles from './Zoom.module.css';
 
@@ -94,14 +100,10 @@ export const Zoom = ({
         // If only two slides, and index to prevent duplicate keys
         return (
           <div
-            className={[
-              styles.slide,
-              i === move && styles.active,
-              !isActive && styles.notActive,
-            ]
+            className={[styles.slide, i === move && styles.active, !isActive && styles.notActive]
               .filter(Boolean)
               .join(' ')}
-            key={child + i}
+            key={checkIfKeyIsDuplicatedInArray(currentSlides, child) ? `${child}${i}` : child}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
               opacity: i === move ? 1 : 0,

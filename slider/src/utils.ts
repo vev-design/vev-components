@@ -29,3 +29,7 @@ export const isGoingForward = (
 
 export const isGoingBackward = (index = 0, prevIndex: number, total: number): boolean =>
   index === prevIndex - 1 || (prevIndex === 0 && index === total - 1 && total !== 1);
+
+export const checkIfKeyIsDuplicatedInArray = (arr: string[], key: string) => {
+  return arr.filter((item) => item === key).length > 1;
+};
