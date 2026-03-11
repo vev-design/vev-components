@@ -91,7 +91,8 @@ export const Zoom = ({
       {currentSlides?.map((child: string, i: number) => {
         const isActive = currentSlideIndex === i;
 
-        // If only two slides, and index to prevent duplicate keys
+        // Content-based key so React reuses the DOM element when slides rearrange after transition.
+          // Append '_dup' for the second occurrence when two slides share the same next/prev.
         return (
           <div
             className={[
@@ -101,7 +102,7 @@ export const Zoom = ({
             ]
               .filter(Boolean)
               .join(' ')}
-            key={child + i}
+            key={currentSlides.indexOf(child) === i ? child : child + '_dup'}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
               opacity: i === move ? 1 : 0,
