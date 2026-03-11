@@ -44,8 +44,7 @@ export function LabelOverlayEditor({
       }
 
       const el = imageRef.current;
-      const styleMap = el.computedStyleMap();
-      const objectFit = styleMap.get('object-fit')?.toString() ?? 'fill';
+      const objectFit = getComputedStyle(el).objectFit ?? 'fill';
 
       const containerRect = el.getBoundingClientRect();
       const { naturalWidth, naturalHeight } = el;
