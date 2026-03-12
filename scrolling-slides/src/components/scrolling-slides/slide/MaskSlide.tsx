@@ -11,9 +11,10 @@ const MASK_KEYFRAMES = [
   },
 ];
 
-export function MaskSlide({ settings, ...rest }: BaseSlideProps) {
+export function MaskSlide({ transition, ...rest }: BaseSlideProps) {
+  const s = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
   const clipPath =
-    settings?.maskShape ||
+    s?.maskShape ||
     'circle(calc(var(--slide-offset) * 150%) at calc(var(--mask-x) * 100%) calc(var(--mask-y) * 100%))';
   return (
     <AnimatedSlide
@@ -21,11 +22,11 @@ export function MaskSlide({ settings, ...rest }: BaseSlideProps) {
       style={
         {
           clipPath,
-          '--mask-x': settings?.maskX,
-          '--mask-y': settings?.maskY,
+          '--mask-x': s?.maskX,
+          '--mask-y': s?.maskY,
         } as any
       }
-      settings={settings}
+      transition={transition}
       keyframes={MASK_KEYFRAMES}
     />
   );

@@ -7,12 +7,13 @@ const keyframes = [
   { opacity: '1', scale: '1' },
 ];
 
-export function FadeSlide({ settings, ...rest }: BaseSlideProps) {
+export function FadeSlide({ transition, ...rest }: BaseSlideProps) {
+  const s = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
   return (
     <AnimatedSlide
       {...rest}
-      settings={settings}
-      style={{ '--slide-scale': 1 + (settings?.scale || 0) } as any}
+      transition={transition}
+      style={{ '--slide-scale': 1 + (s?.scale || 0) } as any}
       keyframes={keyframes}
     />
   );
