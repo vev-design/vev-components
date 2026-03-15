@@ -1,4 +1,4 @@
-import { SilkeBox, SilkeButton, SilkeSelectField, SilkeTextSmall } from '@vev/silke';
+import { SilkeAutocompleteField, SilkeBox, SilkeButton, SilkeSelectField, SilkeTextSmall } from '@vev/silke';
 import React from 'react';
 
 type TransitionPreset = {
@@ -17,21 +17,60 @@ type TransitionCategory = {
 // Categories with their variants
 export const TRANSITION_CATEGORIES: TransitionCategory[] = [
   {
-    label: 'Scroll',
+    label: 'Horizontal scroll',
     value: 'scroll',
     variants: [
       { label: 'Default', value: 'scroll', type: 'scroll' },
       { label: 'Reverse', value: 'scroll-reverse', type: 'scroll', settings: { reverse: true } },
       { label: 'Zoom', value: 'scroll-zoom', type: 'scroll', settings: { zoomScroll: true } },
-      { label: 'Zoom reverse', value: 'scroll-zoom-reverse', type: 'scroll', settings: { zoomScroll: true, reverse: true } },
+      {
+        label: 'Zoom reverse',
+        value: 'scroll-zoom-reverse',
+        type: 'scroll',
+        settings: { zoomScroll: true, reverse: true },
+      },
+      { label: 'Blur', value: 'scroll-blur', type: 'scroll', settings: { blurScroll: true } },
+      { label: 'Blur reverse', value: 'scroll-blur-reverse', type: 'scroll', settings: { blurScroll: true, reverse: true } },
     ],
   },
   {
-    label: 'Fade',
+    label: 'Fade in',
     value: 'fade',
     variants: [
       { label: 'Default', value: 'fade', type: 'fade' },
-      { label: 'With zoom', value: 'fade-zoom', type: 'fade', settings: { scale: 0.1 } },
+      { label: 'With fade out', value: 'fade-in-out', type: 'fade', settings: { fadeOut: true } },
+      { label: 'Small zoom', value: 'fade-zoom-small', type: 'fade', settings: { scale: 0.05 } },
+      { label: 'Small zoom + fade out', value: 'fade-zoom-small-in-out', type: 'fade', settings: { scale: 0.05, fadeOut: true } },
+      { label: 'Medium zoom', value: 'fade-zoom', type: 'fade', settings: { scale: 0.15 } },
+      { label: 'Medium zoom + fade out', value: 'fade-zoom-in-out', type: 'fade', settings: { scale: 0.15, fadeOut: true } },
+      { label: 'Large zoom', value: 'fade-zoom-large', type: 'fade', settings: { scale: 0.5 } },
+      { label: 'Large zoom + fade out', value: 'fade-zoom-large-in-out', type: 'fade', settings: { scale: 0.5, fadeOut: true } },
+      { label: 'Extreme zoom', value: 'fade-zoom-extreme', type: 'fade', settings: { scale: 1.5 } },
+      { label: 'Extreme zoom + fade out', value: 'fade-zoom-extreme-in-out', type: 'fade', settings: { scale: 1.5, fadeOut: true } },
+      { label: 'Blur', value: 'fade-blur', type: 'fade', settings: { blur: 40 } },
+      { label: 'Blur + fade out', value: 'fade-blur-in-out', type: 'fade', settings: { blur: 40, fadeOut: true } },
+      { label: 'Blur zoom', value: 'fade-blur-zoom', type: 'fade', settings: { blur: 40, scale: 0.15 } },
+      { label: 'Blur zoom + fade out', value: 'fade-blur-zoom-in-out', type: 'fade', settings: { blur: 40, scale: 0.15, fadeOut: true } },
+    ],
+  },
+  {
+    label: 'Fade out',
+    value: 'fade-out',
+    variants: [
+      { label: 'Default', value: 'fade-out', type: 'fade', settings: { fadeDirection: 'out' } },
+      { label: 'With fade in', value: 'fade-out-in', type: 'fade', settings: { fadeDirection: 'out', fadeOut: true } },
+      { label: 'Small zoom', value: 'fade-out-zoom-small', type: 'fade', settings: { fadeDirection: 'out', scale: 0.05 } },
+      { label: 'Small zoom + fade in', value: 'fade-out-zoom-small-in', type: 'fade', settings: { fadeDirection: 'out', scale: 0.05, fadeOut: true } },
+      { label: 'Medium zoom', value: 'fade-out-zoom', type: 'fade', settings: { fadeDirection: 'out', scale: 0.15 } },
+      { label: 'Medium zoom + fade in', value: 'fade-out-zoom-in', type: 'fade', settings: { fadeDirection: 'out', scale: 0.15, fadeOut: true } },
+      { label: 'Large zoom', value: 'fade-out-zoom-large', type: 'fade', settings: { fadeDirection: 'out', scale: 0.5 } },
+      { label: 'Large zoom + fade in', value: 'fade-out-zoom-large-in', type: 'fade', settings: { fadeDirection: 'out', scale: 0.5, fadeOut: true } },
+      { label: 'Extreme zoom', value: 'fade-out-zoom-extreme', type: 'fade', settings: { fadeDirection: 'out', scale: 1.5 } },
+      { label: 'Extreme zoom + fade in', value: 'fade-out-zoom-extreme-in', type: 'fade', settings: { fadeDirection: 'out', scale: 1.5, fadeOut: true } },
+      { label: 'Blur', value: 'fade-out-blur', type: 'fade', settings: { fadeDirection: 'out', blur: 40 } },
+      { label: 'Blur + fade in', value: 'fade-out-blur-in', type: 'fade', settings: { fadeDirection: 'out', blur: 40, fadeOut: true } },
+      { label: 'Blur zoom', value: 'fade-out-blur-zoom', type: 'fade', settings: { fadeDirection: 'out', blur: 40, scale: 0.15 } },
+      { label: 'Blur zoom + fade in', value: 'fade-out-blur-zoom-in', type: 'fade', settings: { fadeDirection: 'out', blur: 40, scale: 0.15, fadeOut: true } },
     ],
   },
   {
@@ -88,7 +127,12 @@ export const TRANSITION_CATEGORIES: TransitionCategory[] = [
       { label: 'Up', value: 'stack', type: 'stack' },
       { label: 'Down', value: 'stack-down', type: 'stack', settings: { stackDirection: 'down' } },
       { label: 'Left', value: 'stack-left', type: 'stack', settings: { stackDirection: 'left' } },
-      { label: 'Right', value: 'stack-right', type: 'stack', settings: { stackDirection: 'right' } },
+      {
+        label: 'Right',
+        value: 'stack-right',
+        type: 'stack',
+        settings: { stackDirection: 'right' },
+      },
     ],
   },
   {
@@ -144,7 +188,9 @@ export const TRANSITION_CATEGORIES: TransitionCategory[] = [
 ];
 
 // Flat list of all presets (for resolvePreset and backwards compat)
-export const TRANSITION_PRESETS: TransitionPreset[] = TRANSITION_CATEGORIES.flatMap((c) => c.variants);
+export const TRANSITION_PRESETS: TransitionPreset[] = TRANSITION_CATEGORIES.flatMap(
+  (c) => c.variants,
+);
 
 const PRESET_MAP = new Map(TRANSITION_PRESETS.map((p) => [p.value, p]));
 
@@ -156,7 +202,10 @@ for (const cat of TRANSITION_CATEGORIES) {
   }
 }
 
-export function resolvePreset(presetValue: string): { type: string; settings: { [key: string]: any } } {
+export function resolvePreset(presetValue: string): {
+  type: string;
+  settings: { [key: string]: any };
+} {
   const preset = PRESET_MAP.get(presetValue);
   if (preset) {
     return { type: preset.type, settings: preset.settings || {} };
@@ -165,29 +214,30 @@ export function resolvePreset(presetValue: string): { type: string; settings: { 
   return { type: presetValue || 'scroll', settings: {} };
 }
 
-// Category select items
-const CATEGORY_ITEMS = TRANSITION_CATEGORIES.map((c) => ({ label: c.label, value: c.value }));
-const OVERRIDE_CATEGORY_ITEMS = [{ label: 'Default', value: '' }, ...CATEGORY_ITEMS];
-
-// Get variant items for a category
-function getVariantItems(categoryValue: string) {
-  const cat = TRANSITION_CATEGORIES.find((c) => c.value === categoryValue);
-  return cat?.variants.map((v) => ({ label: v.label, value: v.value })) || [];
+// Build flat autocomplete items with groupLabel for category grouping
+function buildAutocompleteItems(includeDefault?: boolean) {
+  const items: { label: string; value: string; groupLabel?: string }[] = [];
+  if (includeDefault) {
+    items.push({ label: 'Default', value: '' });
+  }
+  // Top-level shortcuts: first variant of each category, no groupLabel
+  for (const cat of TRANSITION_CATEGORIES) {
+    const first = cat.variants[0];
+    if (first) {
+      items.push({ label: cat.label, value: first.value });
+    }
+  }
+  // All variants grouped by category, prefixed with category name
+  for (const cat of TRANSITION_CATEGORIES) {
+    for (const v of cat.variants) {
+      items.push({ label: `${cat.label} — ${v.label}`, value: v.value, groupLabel: cat.label });
+    }
+  }
+  return items;
 }
 
-function getOverrideVariantItems(categoryValue: string) {
-  return [{ label: 'Default', value: '' }, ...getVariantItems(categoryValue)];
-}
-
-// Get default variant for a category (first variant)
-function getDefaultVariant(categoryValue: string): string {
-  const cat = TRANSITION_CATEGORIES.find((c) => c.value === categoryValue);
-  return cat?.variants[0]?.value || '';
-}
-
-function getCategoryForPreset(presetValue: string): string {
-  return PRESET_TO_CATEGORY.get(presetValue) || '';
-}
+const AUTOCOMPLETE_ITEMS = buildAutocompleteItems();
+const OVERRIDE_AUTOCOMPLETE_ITEMS = buildAutocompleteItems(true);
 
 export const SPEED_OPTIONS: { label: string; value: string }[] = [
   { label: 'Smooth', value: 'linear' },
@@ -204,7 +254,7 @@ export type TransitionOverride = {
   speed?: string;
 };
 
-// --- Default transition picker (category + variant) ---
+// --- Default transition picker (single autocomplete) ---
 
 type TransitionPickerProps = {
   value: string;
@@ -212,31 +262,15 @@ type TransitionPickerProps = {
 };
 
 export function TransitionPicker({ value, onChange }: TransitionPickerProps) {
-  const category = getCategoryForPreset(value) || 'scroll';
-  const variants = getVariantItems(category);
-  const hasVariants = variants.length > 1;
-
-  const handleCategoryChange = (cat: string) => {
-    onChange(getDefaultVariant(cat));
-  };
-
   return (
-    <SilkeBox gap="xs">
-      <SilkeSelectField
-        label="Transition"
-        value={category}
-        items={CATEGORY_ITEMS}
-        onChange={handleCategoryChange}
-      />
-      {hasVariants && (
-        <SilkeSelectField
-          label="Variant"
-          value={value}
-          items={variants}
-          onChange={onChange}
-        />
-      )}
-    </SilkeBox>
+    <SilkeAutocompleteField
+      label="Transition"
+      value={value || 'scroll'}
+      items={AUTOCOMPLETE_ITEMS as any}
+      onChange={onChange}
+      disableSearch={false}
+      minChars={0}
+    />
   );
 }
 
@@ -260,15 +294,9 @@ export function TransitionField({ value, numberOfSlides, onChange }: TransitionF
     return next;
   };
 
-  const handleCategoryChange = (index: number, cat: string) => {
+  const handleTransitionChange = (index: number, preset: string) => {
     const next = ensureLength(overrides, index);
-    next[index] = { ...next[index], type: cat ? getDefaultVariant(cat) : '' };
-    onChange(next);
-  };
-
-  const handleVariantChange = (index: number, variant: string) => {
-    const next = ensureLength(overrides, index);
-    next[index] = { ...next[index], type: variant };
+    next[index] = { ...next[index], type: preset };
     onChange(next);
   };
 
@@ -291,9 +319,6 @@ export function TransitionField({ value, numberOfSlides, onChange }: TransitionF
       {Array.from({ length: transitionCount }, (_, i) => {
         const override = overrides[i];
         const isOverridden = !!override?.type || !!override?.speed;
-        const category = override?.type ? getCategoryForPreset(override.type) : '';
-        const variants = category ? getOverrideVariantItems(category) : [];
-        const hasVariants = variants.length > 2; // more than just "Default" + one variant
 
         return (
           <SilkeBox key={i} column gap="xs" pad="s" bg="surface-1" rounded="small">
@@ -303,22 +328,14 @@ export function TransitionField({ value, numberOfSlides, onChange }: TransitionF
                 <SilkeButton icon="redo" size="s" kind="ghost" onClick={() => handleReset(i)} />
               )}
             </SilkeBox>
-            <SilkeBox gap="xs" vAlign="end">
-              <SilkeSelectField
-                label="Transition"
-                value={category}
-                items={OVERRIDE_CATEGORY_ITEMS}
-                onChange={(v: string) => handleCategoryChange(i, v)}
-              />
-              {hasVariants && (
-                <SilkeSelectField
-                  label="Variant"
-                  value={override?.type || ''}
-                  items={variants}
-                  onChange={(v: string) => handleVariantChange(i, v)}
-                />
-              )}
-            </SilkeBox>
+            <SilkeAutocompleteField
+              label="Transition"
+              value={override?.type || ''}
+              items={OVERRIDE_AUTOCOMPLETE_ITEMS as any}
+              onChange={(v: string) => handleTransitionChange(i, v)}
+              disableSearch={false}
+              minChars={0}
+            />
             <SilkeSelectField
               label="Speed"
               value={override?.speed || ''}

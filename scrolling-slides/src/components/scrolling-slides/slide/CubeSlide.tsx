@@ -17,7 +17,8 @@ export function CubeSlide({
   const { ownsIn, ownsOut } = transition;
 
   const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
-  const speed = (ownsIn ? transition.transitionIn?.speed : transition.transitionOut?.speed) ?? 'linear';
+  const inSpeed = transition.transitionIn?.speed || 'linear';
+  const outSpeed = transition.transitionOut?.speed || 'linear';
 
   const isVertical = phaseSettings?.cubeDirection === 'vertical';
   const half = isVertical ? '50cqb' : '50cqi';
@@ -28,12 +29,15 @@ export function CubeSlide({
   const cubeTransform = (angle: string) =>
     `translateZ(-${half}) ${axis}(${angle}) translateZ(${half})`;
 
-  // Build keyframes from owned phases
+  // Build keyframes with per-segment easing so adjacent slides stay in sync
   const keyframes: Keyframe[] = [];
   if (ownsIn && index > 0) {
-    keyframes.push({ transform: cubeTransform(inAngle) });
+    keyframes.push({ transform: cubeTransform(inAngle), easing: inSpeed });
   }
-  keyframes.push({ transform: cubeTransform('0deg') });
+  keyframes.push({
+    transform: cubeTransform('0deg'),
+    ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
+  });
   if (ownsOut && index < transitionCount) {
     keyframes.push({ transform: cubeTransform(outAngle) });
   }
@@ -51,7 +55,7 @@ export function CubeSlide({
     keyframes,
     timeline,
     selected || disabled,
-    { easing: speed },
+    undefined,
     fromOffset,
     toOffset,
   );

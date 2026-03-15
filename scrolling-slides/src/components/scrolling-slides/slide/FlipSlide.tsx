@@ -17,19 +17,23 @@ export function FlipSlide({
   const { ownsIn, ownsOut } = transition;
 
   const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
-  const speed = (ownsIn ? transition.transitionIn?.speed : transition.transitionOut?.speed) ?? 'linear';
+  const inSpeed = transition.transitionIn?.speed || 'linear';
+  const outSpeed = transition.transitionOut?.speed || 'linear';
 
   const isVertical = phaseSettings?.flipDirection === 'vertical';
   const axis = isVertical ? 'rotateX' : 'rotateY';
   const inAngle = isVertical ? '180deg' : '-180deg';
   const outAngle = isVertical ? '-180deg' : '180deg';
 
-  // Build keyframes from owned phases
+  // Build keyframes with per-segment easing so adjacent slides stay in sync
   const keyframes: Keyframe[] = [];
   if (ownsIn && index > 0) {
-    keyframes.push({ transform: `perspective(1200px) ${axis}(${inAngle})` });
+    keyframes.push({ transform: `perspective(1200px) ${axis}(${inAngle})`, easing: inSpeed });
   }
-  keyframes.push({ transform: `perspective(1200px) ${axis}(0deg)` });
+  keyframes.push({
+    transform: `perspective(1200px) ${axis}(0deg)`,
+    ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
+  });
   if (ownsOut && index < transitionCount) {
     keyframes.push({ transform: `perspective(1200px) ${axis}(${outAngle})` });
   }
@@ -47,7 +51,7 @@ export function FlipSlide({
     keyframes,
     timeline,
     selected || disabled,
-    { easing: speed },
+    undefined,
     fromOffset,
     toOffset,
   );

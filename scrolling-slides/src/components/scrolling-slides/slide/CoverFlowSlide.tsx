@@ -28,14 +28,18 @@ export function CoverFlowSlide({
   const transitionCount = slideCount - 1;
   const { ownsIn, ownsOut } = transition;
 
-  const speed = (ownsIn ? transition.transitionIn?.speed : transition.transitionOut?.speed) ?? 'linear';
+  const inSpeed = transition.transitionIn?.speed || 'linear';
+  const outSpeed = transition.transitionOut?.speed || 'linear';
 
-  // Build keyframes from owned phases
+  // Build keyframes with per-segment easing so adjacent slides stay in sync
   const keyframes: Keyframe[] = [];
   if (ownsIn && index > 0) {
-    keyframes.push({ transform: inTransform });
+    keyframes.push({ transform: inTransform, easing: inSpeed });
   }
-  keyframes.push({ transform: centerTransform });
+  keyframes.push({
+    transform: centerTransform,
+    ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
+  });
   if (ownsOut && index < transitionCount) {
     keyframes.push({ transform: outTransform });
   }
@@ -53,7 +57,7 @@ export function CoverFlowSlide({
     keyframes,
     timeline,
     selected || disabled,
-    { easing: speed },
+    undefined,
     fromOffset,
     toOffset,
   );

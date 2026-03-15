@@ -133,18 +133,19 @@ const ScrollingSlide = ({ children, type, defaultSpeed, overrideTransition, host
   // Build a fully resolved transition for each gap (between slide i and i+1)
   const resolveGap = (gapIndex: number): TransitionPhase => {
     const override = overrideTransition?.[gapIndex];
+    const overrideSpeed = override?.speed || defaultSpeed || 'linear';
     if (override?.type && override.type !== '') {
       const resolved = resolvePreset(override.type);
       return {
         type: resolved.type as SlideType,
         settings: resolved.settings,
-        speed: override.speed || defaultSpeed || 'linear',
+        speed: overrideSpeed,
       };
     }
     return {
       type: slideType,
       settings: defaultSettings,
-      speed: defaultSpeed || 'linear',
+      speed: overrideSpeed,
     };
   };
 

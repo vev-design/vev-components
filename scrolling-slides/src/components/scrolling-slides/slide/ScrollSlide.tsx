@@ -17,15 +17,20 @@ export function ScrollSlide({
   const { ownsIn, ownsOut } = transition;
 
   const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
-  const speed = (ownsIn ? transition.transitionIn?.speed : transition.transitionOut?.speed) ?? 'linear';
+  const inSpeed = transition.transitionIn?.speed || 'linear';
+  const outSpeed = transition.transitionOut?.speed || 'linear';
 
   const isReverse = !!phaseSettings?.reverse;
   const zoomScroll = !!phaseSettings?.zoomScroll;
+  const blurScroll = !!phaseSettings?.blurScroll;
   const enterFrom = isReverse ? '-100%' : '100%';
   const exitTo = isReverse ? '100%' : '-100%';
   const sc = 'scale(0.85)';
+  const blurAmount = 'blur(20px)';
+  const blurNone = 'blur(0px)';
 
   // Build keyframes from owned phases
+  // Easing is applied per-keyframe segment so adjacent slides stay in sync
   const keyframes: Keyframe[] = [];
   if (zoomScroll) {
     // Zoom happens in 20% at each edge, scroll takes the remaining 80%
@@ -33,28 +38,42 @@ export function ScrollSlide({
     const hasOut = ownsOut && index < transitionCount;
 
     if (hasIn && hasOut) {
-      keyframes.push({ transform: `translateX(${enterFrom}) ${sc}`, offset: 0 });
+      keyframes.push({ transform: `translateX(${enterFrom}) ${sc}`, offset: 0, easing: inSpeed });
       keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.4 });
-      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 0.5 });
+      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 0.5, easing: outSpeed });
       keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.6 });
       keyframes.push({ transform: `translateX(${exitTo}) ${sc}`, offset: 1 });
     } else if (hasIn) {
-      keyframes.push({ transform: `translateX(${enterFrom}) ${sc}`, offset: 0 });
+      keyframes.push({ transform: `translateX(${enterFrom}) ${sc}`, offset: 0, easing: inSpeed });
       keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.8 });
       keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 1 });
     } else if (hasOut) {
-      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 0 });
+      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 0, easing: outSpeed });
       keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.2 });
       keyframes.push({ transform: `translateX(${exitTo}) ${sc}`, offset: 1 });
     } else {
       keyframes.push({ transform: 'translateX(0%)' });
       keyframes.push({ transform: 'translateX(0%)' });
     }
+  } else if (blurScroll) {
+    // Blur transitions smoothly across the full scroll
+    if (ownsIn && index > 0) {
+      keyframes.push({ transform: `translateX(${enterFrom})`, filter: blurAmount, easing: inSpeed });
+    }
+    keyframes.push({
+      transform: 'translateX(0%)',
+      filter: blurNone,
+      ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
+    });
+    if (ownsOut && index < transitionCount) {
+      keyframes.push({ transform: `translateX(${exitTo})`, filter: blurAmount });
+    }
+    if (keyframes.length === 1) keyframes.push(keyframes[0]);
   } else {
     if (ownsIn && index > 0) {
-      keyframes.push({ transform: `translateX(${enterFrom})` });
+      keyframes.push({ transform: `translateX(${enterFrom})`, easing: inSpeed });
     }
-    keyframes.push({ transform: 'translateX(0%)' });
+    keyframes.push({ transform: 'translateX(0%)', ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}) });
     if (ownsOut && index < transitionCount) {
       keyframes.push({ transform: `translateX(${exitTo})` });
     }
@@ -73,7 +92,7 @@ export function ScrollSlide({
     keyframes,
     timeline,
     selected || disabled,
-    { easing: speed },
+    undefined,
     fromOffset,
     toOffset,
   );
@@ -91,7 +110,10 @@ export function ScrollSlide({
       style={{
         ...style,
         ...(!disabled && ownsIn && index > 0
-          ? { transform: zoomScroll ? `translateX(${enterFrom}) ${sc}` : `translateX(${enterFrom})` }
+          ? {
+              transform: zoomScroll ? `translateX(${enterFrom}) ${sc}` : `translateX(${enterFrom})`,
+              ...(blurScroll ? { filter: blurAmount } : {}),
+            }
           : {}),
       }}
     />

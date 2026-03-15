@@ -24,37 +24,51 @@ export function AnimatedSlide({
   const { ownsIn, ownsOut } = transition;
 
   const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
-  const speed = (ownsIn ? transition.transitionIn?.speed : transition.transitionOut?.speed)
+  const inSpeed = transition.transitionIn?.speed
+    ?? phaseSettings?.speed ?? phaseSettings?.easing ?? 'linear';
+  const outSpeed = transition.transitionOut?.speed
     ?? phaseSettings?.speed ?? phaseSettings?.easing ?? 'linear';
 
   let fromOffset = (index - 1) / transitionCount;
   let toOffset = index / transitionCount;
   const offsetRange = toOffset - fromOffset;
   let disableAnimation = index === 0;
+  // Track which easing to apply per-keyframe
+  let phaseEasing = inSpeed;
 
   if (keyframesOut) {
     // Two-phase animation (in + out on same element)
     if (index === 0) {
       disableAnimation = !ownsOut;
       if (ownsOut) keyframes = keyframesOut;
+      phaseEasing = outSpeed;
       fromOffset = 0;
       toOffset = 1 / transitionCount;
     } else if (index === transitionCount) {
       disableAnimation = !ownsIn;
+      phaseEasing = inSpeed;
       fromOffset = (index - 1) / transitionCount;
       toOffset = 1;
     } else if (ownsIn && ownsOut) {
       disableAnimation = false;
-      keyframes = [...keyframes, ...keyframesOut];
+      // Apply per-keyframe easing: inSpeed on in-keyframes, outSpeed on out-keyframes
+      const inWithEasing = keyframes.map((kf) => ({ ...kf, easing: inSpeed }));
+      const outWithEasing = keyframesOut.map((kf, i) =>
+        i < keyframesOut.length - 1 ? { ...kf, easing: outSpeed } : { ...kf },
+      );
+      keyframes = [...inWithEasing, ...outWithEasing];
+      phaseEasing = undefined as any; // Already set per-keyframe
       fromOffset = (index - 1) / transitionCount;
       toOffset = (index + 1) / transitionCount;
     } else if (ownsOut) {
       disableAnimation = false;
       keyframes = keyframesOut;
+      phaseEasing = outSpeed;
       fromOffset = index / transitionCount;
       toOffset = (index + 1) / transitionCount;
     } else if (ownsIn) {
       disableAnimation = false;
+      phaseEasing = inSpeed;
       fromOffset = (index - 1) / transitionCount;
       toOffset = index / transitionCount;
     } else {
@@ -65,6 +79,7 @@ export function AnimatedSlide({
     if (phaseSettings?.reverse) {
       disableAnimation = index === slideCount - 1;
       keyframes = keyframes.slice().reverse();
+      phaseEasing = outSpeed;
       fromOffset = index / transitionCount;
       toOffset = (index + 1) / transitionCount;
     }
@@ -72,6 +87,13 @@ export function AnimatedSlide({
     if (!ownsIn && index !== 0) {
       disableAnimation = true;
     }
+  }
+
+  // Apply per-keyframe easing if not already set per-keyframe
+  if (phaseEasing) {
+    keyframes = keyframes.map((kf, i) =>
+      i < keyframes.length - 1 ? { ...kf, easing: phaseEasing } : { ...kf },
+    );
   }
 
   if (phaseSettings?.offsetStart) {
@@ -84,7 +106,7 @@ export function AnimatedSlide({
     keyframes,
     timeline,
     selected || disableAnimation,
-    { easing: speed },
+    undefined,
     fromOffset,
     toOffset,
   );
