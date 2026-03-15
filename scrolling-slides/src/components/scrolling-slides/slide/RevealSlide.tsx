@@ -11,15 +11,16 @@ const REVEAL_KEYFRAMES = [
   },
 ];
 
-export function RevealSlide({ settings, ...rest }: BaseSlideProps) {
+export function RevealSlide({ transition, ...rest }: BaseSlideProps) {
+  const s = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
   const direction =
-    settings?.revealDirection ||
+    s?.revealDirection ||
     'polygon(0 0, calc(var(--slide-offset) * 100%) 0, calc(var(--slide-offset) * 100%) 100%, 0% 100%)';
   return (
     <AnimatedSlide
       {...rest}
       style={{ clipPath: direction } as any}
-      settings={settings}
+      transition={transition}
       keyframes={REVEAL_KEYFRAMES}
     />
   );

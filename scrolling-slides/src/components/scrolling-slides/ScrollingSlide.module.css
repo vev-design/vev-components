@@ -30,7 +30,8 @@
     display: flex;
     flex-direction: row;
     width: 100%;
-    
+    container-type: inline-size;
+
     /* This is to allow auto height of vev container*/
     height:calc(100vh  * var(--slide-count));
     /** If not auto height this will clamp it to be max 100% of container */
@@ -81,6 +82,7 @@
     min-height:100px;
     max-height: min(100%,100vh);
     max-width: min(100vw, 100%);
+    container-type: inline-size;
     /* max-height: min(100vh, 100%); */
 }
 

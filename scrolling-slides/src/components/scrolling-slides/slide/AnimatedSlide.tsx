@@ -1,10 +1,10 @@
 import React, { useRef } from 'react';
 import { useViewAnimation } from '../../../hooks';
-import styles from '../ScrollingSlide.module.css';
 import { BaseSlide, BaseSlideProps } from './BaseSlide';
 
 type AnimatedSlideProps = BaseSlideProps & {
   keyframes: Keyframe[];
+  keyframesOut?: Keyframe[];
 };
 
 export function AnimatedSlide({
@@ -13,41 +13,91 @@ export function AnimatedSlide({
   index,
   slideCount,
   timeline,
-  settings,
   disabled,
   keyframes,
+  keyframesOut,
   style,
-  transitionOut,
+  transition,
 }: AnimatedSlideProps) {
   const ref = useRef<HTMLDivElement>(null);
-  let cl = styles.content;
-  if (selected) cl += ' ' + styles.selected;
   const transitionCount = slideCount - 1;
+  const { ownsIn, ownsOut } = transition;
+
+  const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
+  const inSpeed = transition.transitionIn?.speed
+    ?? phaseSettings?.speed ?? phaseSettings?.easing ?? 'linear';
+  const outSpeed = transition.transitionOut?.speed
+    ?? phaseSettings?.speed ?? phaseSettings?.easing ?? 'linear';
+
   let fromOffset = (index - 1) / transitionCount;
   let toOffset = index / transitionCount;
   const offsetRange = toOffset - fromOffset;
   let disableAnimation = index === 0;
-  if (settings?.reverse) {
-    disableAnimation = index === slideCount - 1;
-    keyframes = keyframes.slice().reverse();
+  // Track which easing to apply per-keyframe
+  let phaseEasing = inSpeed;
 
-    fromOffset = index / transitionCount;
-    toOffset = (index + 1) / transitionCount;
-  }
-
-  if (transitionOut && index < transitionCount) {
-    disableAnimation = false;
-    toOffset = (index + 1) / transitionCount;
+  if (keyframesOut) {
+    // Two-phase animation (in + out on same element)
     if (index === 0) {
-      fromOffset = fromOffset + (toOffset - fromOffset) / 2;
+      disableAnimation = !ownsOut;
+      if (ownsOut) keyframes = keyframesOut;
+      phaseEasing = outSpeed;
+      fromOffset = 0;
+      toOffset = 1 / transitionCount;
+    } else if (index === transitionCount) {
+      disableAnimation = !ownsIn;
+      phaseEasing = inSpeed;
+      fromOffset = (index - 1) / transitionCount;
+      toOffset = 1;
+    } else if (ownsIn && ownsOut) {
+      disableAnimation = false;
+      // Apply per-keyframe easing: inSpeed on in-keyframes, outSpeed on out-keyframes
+      const inWithEasing = keyframes.map((kf) => ({ ...kf, easing: inSpeed }));
+      const outWithEasing = keyframesOut.map((kf, i) =>
+        i < keyframesOut.length - 1 ? { ...kf, easing: outSpeed } : { ...kf },
+      );
+      keyframes = [...inWithEasing, ...outWithEasing];
+      phaseEasing = undefined as any; // Already set per-keyframe
+      fromOffset = (index - 1) / transitionCount;
+      toOffset = (index + 1) / transitionCount;
+    } else if (ownsOut) {
+      disableAnimation = false;
+      keyframes = keyframesOut;
+      phaseEasing = outSpeed;
+      fromOffset = index / transitionCount;
+      toOffset = (index + 1) / transitionCount;
+    } else if (ownsIn) {
+      disableAnimation = false;
+      phaseEasing = inSpeed;
+      fromOffset = (index - 1) / transitionCount;
+      toOffset = index / transitionCount;
+    } else {
+      disableAnimation = true;
+    }
+  } else {
+    // Single-phase animation (in only)
+    if (phaseSettings?.reverse) {
+      disableAnimation = index === slideCount - 1;
       keyframes = keyframes.slice().reverse();
-    } else if (index < transitionCount) {
-      keyframes = [...keyframes, ...keyframes.slice().reverse()];
+      phaseEasing = outSpeed;
+      fromOffset = index / transitionCount;
+      toOffset = (index + 1) / transitionCount;
+    }
+
+    if (!ownsIn && index !== 0) {
+      disableAnimation = true;
     }
   }
 
-  if (settings?.offsetStart) {
-    const offsetSize = offsetRange * settings.offsetStart;
+  // Apply per-keyframe easing if not already set per-keyframe
+  if (phaseEasing) {
+    keyframes = keyframes.map((kf, i) =>
+      i < keyframes.length - 1 ? { ...kf, easing: phaseEasing } : { ...kf },
+    );
+  }
+
+  if (phaseSettings?.offsetStart) {
+    const offsetSize = offsetRange * phaseSettings.offsetStart;
     fromOffset = Math.max(0, Math.min(1, fromOffset - offsetSize));
   }
 
@@ -56,12 +106,11 @@ export function AnimatedSlide({
     keyframes,
     timeline,
     selected || disableAnimation,
-    {
-      easing: settings?.easing || 'linear',
-    },
+    undefined,
     fromOffset,
     toOffset,
   );
+
   return (
     <BaseSlide
       ref={ref}
@@ -70,11 +119,11 @@ export function AnimatedSlide({
       index={index}
       slideCount={slideCount}
       timeline={timeline}
-      settings={settings}
       disabled={disabled}
+      transition={transition}
       style={{
         ...style,
-        ...(!disabled && index !== 0 ? (keyframes[0] as any) : {}),
+        ...(!disabled && index !== 0 && ownsIn ? (keyframes[0] as any) : {}),
       }}
     />
   );
