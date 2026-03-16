@@ -1,26 +1,54 @@
 import { registerVevComponent, useEditorState, useSize, useVisible } from '@vev/react';
 import React, { useEffect, useRef } from 'react';
-import { useSlideEditMode, useViewAnimation, useViewTimeline } from '../../hooks';
+import { useSlideEditMode, useViewTimeline } from '../../hooks';
 import styles from './ScrollingSlide.module.css';
-import { ScrollingSlideTypeField } from './fields/ScrollingSlideTypeField';
 import {
   BaseSlide,
   BaseSlideProps,
+  SlideTransitionModel,
+  TransitionPhase,
+  CoverFlowSlide,
+  CubeSlide,
   CustomSlide,
   FadeSlide,
+  FlipSlide,
   MaskSlide,
+  NoneSlide,
   RevealSlide,
   ScrollSlide,
   StackSlide,
+  SwingSlide,
+  ZoomSlide,
 } from './slide';
+import {
+  TransitionField,
+  TransitionPicker,
+  TransitionOverride,
+  TransitionValue,
+  SPEED_OPTIONS,
+  resolveTransition,
+} from '../fields/Transition';
 
-export type SlideType = 'fade' | 'reveal' | 'scroll' | 'stack' | 'mask' | 'custom';
+export type SlideType =
+  | 'fade'
+  | 'reveal'
+  | 'scroll'
+  | 'stack'
+  | 'mask'
+  | 'custom'
+  | 'none'
+  | 'flip'
+  | 'cube'
+  | 'coverflow'
+  | 'swing'
+  | 'zoom';
 
 type Props = {
   children: string[];
   hostRef: React.RefObject<HTMLDivElement>;
-  type: SlideType;
-  settings?: { [key: string]: any };
+  type: SlideType | TransitionValue;
+  defaultSpeed?: string;
+  overrideTransition?: TransitionOverride[];
 };
 
 type Layout = 'row' | 'column' | 'grid';
@@ -31,6 +59,12 @@ const SLIDE_LAYOUT: Record<SlideType, Layout> = {
   reveal: 'grid',
   mask: 'grid',
   custom: 'grid',
+  none: 'grid',
+  flip: 'grid',
+  cube: 'grid',
+  coverflow: 'grid',
+  swing: 'grid',
+  zoom: 'grid',
 };
 
 const SLIDE_COMPONENT: Record<SlideType, React.ComponentType<BaseSlideProps>> = {
@@ -40,14 +74,23 @@ const SLIDE_COMPONENT: Record<SlideType, React.ComponentType<BaseSlideProps>> = 
   reveal: RevealSlide,
   mask: MaskSlide,
   custom: CustomSlide,
+  none: NoneSlide,
+  flip: FlipSlide,
+  cube: CubeSlide,
+  coverflow: CoverFlowSlide,
+  swing: SwingSlide,
+  zoom: ZoomSlide,
 };
 
-function isSafariBrowser() {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-}
-
-const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
+const ScrollingSlide = ({ children = [], type, defaultSpeed, overrideTransition, hostRef }: Props) => {
   if (!type) type = 'scroll';
+
+  // Resolve TransitionValue or plain string into slide type + settings
+  const tv: TransitionValue =
+    typeof type === 'string' ? { primary: type } : (type || { primary: 'scroll' });
+  const resolved = resolveTransition(tv.primary || 'scroll', tv.effects);
+  const slideType = (resolved.type || 'scroll') as SlideType;
+  const defaultSettings = resolved.settings || {};
 
   const { activeContentChild, disabled: editorDisabled } = useEditorState();
   const visible = useVisible(hostRef);
@@ -55,7 +98,7 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
     typeof document !== 'undefined' && document.body.scrollHeight <= window.innerHeight;
   const disabled = (!visible && !activeContentChild) || insufficientScroll;
   // Force linear easing in editor to be able to calculate the scroll position
-  if (editorDisabled && activeContentChild) settings = { ...settings, easing: 'linear' };
+  if (editorDisabled && activeContentChild) defaultSpeed = 'linear';
 
   // When scroll height is insufficient, determine which slide to force-show
   const forceVisibleIndex = insufficientScroll
@@ -69,18 +112,6 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
   const size = useSize(ref);
   useSlideEditMode(hostRef, children, timeline);
 
-  useViewAnimation(
-    ref as React.RefObject<HTMLElement>,
-    {
-      translate: ['0 0', `${-100 * (children.length - 1)}% 0`],
-    },
-    timeline,
-    type !== 'scroll' || disabled,
-    {
-      direction: settings?.reverse ? 'reverse' : undefined,
-      easing: settings?.easing,
-    },
-  );
   useEffect(() => {
     const root = ref.current?.getRootNode() as ShadowRoot;
     if (root?.host) {
@@ -99,11 +130,44 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
     }
   }, []);
 
-  const layout = SLIDE_LAYOUT[type] || 'row';
+  const layout = SLIDE_LAYOUT[slideType] || 'row';
   let cl = `${styles.wrapper} ${styles[layout]}`;
-  //if (type === 'scroll' && settings?.reverse) cl += ' ' + styles.reverse;
 
-  const Comp = SLIDE_COMPONENT[type] || BaseSlide;
+  // Build a fully resolved transition for each gap (between slide i and i+1)
+  const resolveGap = (gapIndex: number): TransitionPhase => {
+    const override = overrideTransition?.[gapIndex];
+    const overrideSpeed = override?.speed || defaultSpeed || 'linear';
+    if (override?.type && override.type !== '') {
+      const overrideResolved = resolveTransition(override.type, override.effects);
+      return {
+        type: overrideResolved.type as SlideType,
+        settings: overrideResolved.settings,
+        speed: overrideSpeed,
+      };
+    }
+    return {
+      type: slideType,
+      settings: defaultSettings,
+      speed: overrideSpeed,
+    };
+  };
+
+  // Build transition model for each slide
+  const buildModel = (index: number): SlideTransitionModel => {
+    const transitionCount = children.length - 1;
+    const transitionIn = index > 0 ? resolveGap(index - 1) : null;
+    const transitionOut = index < transitionCount ? resolveGap(index) : null;
+
+    // Pick the component type: prefer in-transition, fall back to out
+    const compType = (transitionIn?.type ?? transitionOut?.type ?? slideType) as SlideType;
+
+    // ownsIn: this component handles the in-animation
+    const ownsIn = !transitionIn || transitionIn.type === compType;
+    // ownsOut: this component handles the out-animation
+    const ownsOut = !transitionOut || transitionOut.type === compType;
+
+    return { transitionIn, transitionOut, ownsIn, ownsOut };
+  };
 
   return (
     <>
@@ -118,14 +182,18 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
         style={
           {
             '--slide-count': children.length,
+            perspective: '1200px',
+            transformStyle: 'preserve-3d',
           } as any
         }
       >
-        {type === 'scroll' && isSafariBrowser() && (
-          <style>{`.${styles.content} > vev > .__wc vev{will-change:transform;}`}</style>
-        )}
         {children.map((childKey, index) => {
           if (forceVisibleIndex >= 0 && index !== forceVisibleIndex) return null;
+          const model = buildModel(index);
+          const compType = (model.transitionIn?.type ??
+            model.transitionOut?.type ??
+            slideType) as SlideType;
+          const Comp = SLIDE_COMPONENT[compType] || BaseSlide;
           return (
             <Comp
               key={childKey}
@@ -133,10 +201,9 @@ const ScrollingSlide = ({ children, type, settings, hostRef }: Props) => {
               index={index}
               slideCount={children.length}
               timeline={timeline}
-              settings={settings}
               selected={false}
-              transitionOut={settings?.transitionOut}
               disabled={forceVisibleIndex >= 0}
+              transition={model}
             />
           );
         })}
@@ -154,316 +221,37 @@ registerVevComponent(ScrollingSlide, {
   },
   props: [
     {
-      type: 'select',
+      type: 'string',
       name: 'type',
+      title: 'Default transition',
       initialValue: 'scroll',
-      component: ScrollingSlideTypeField,
+      component: ({ value, onChange }) => (
+        <TransitionPicker value={value || 'scroll'} onChange={onChange as any} />
+      ),
+    },
+    {
+      type: 'select',
+      name: 'defaultSpeed',
+      title: 'Default speed',
+      initialValue: 'linear',
       options: {
         display: 'dropdown',
-        items: [
-          {
-            label: 'Scroll',
-            value: 'scroll',
-          },
-          {
-            label: 'Fade',
-            value: 'fade',
-          },
-          {
-            label: 'Reveal',
-            value: 'reveal',
-          },
-          {
-            label: 'Stack',
-            value: 'stack',
-          },
-          {
-            label: 'Mask',
-            value: 'mask',
-          },
-          {
-            label: 'Scale',
-            value: 'scale',
-          },
-        ],
+        items: SPEED_OPTIONS,
       },
     },
     {
-      type: 'object',
-      name: 'settings',
-
-      fields: [
-        {
-          type: 'boolean',
-          name: 'reverse',
-        },
-        {
-          type: 'boolean',
-          hidden: (context) => context.value?.type === 'scroll',
-          name: 'transitionOut',
-        },
-        {
-          type: 'number',
-          title: 'Overlap transitions',
-          name: 'offsetStart',
-          initialValue: 0,
-          options: {
-            format: '%',
-            min: 0,
-            max: 100,
-            scale: 100,
-          },
-        },
-        {
-          type: 'select',
-          name: 'easing',
-          initialValue: 'linear',
-          options: {
-            display: 'autocomplete',
-            items: [
-              {
-                label: 'linear',
-                value: 'linear',
-              },
-              { label: 'ease', value: 'ease' },
-              {
-                label: 'ease-in',
-                value: 'ease-in',
-              },
-              {
-                label: 'ease-out',
-                value: 'ease-out',
-              },
-              {
-                label: 'ease-in-out',
-                value: 'ease-in-out',
-              },
-              {
-                label: 'ease-in-quad',
-                value: 'cubic-bezier(0.550, 0.085, 0.680, 0.530)',
-              },
-              {
-                label: 'ease-in-cubic',
-                value: 'cubic-bezier(0.550, 0.055, 0.675, 0.190)',
-              },
-              {
-                label: 'ease-in-quart',
-                value: 'cubic-bezier(0.895, 0.030, 0.685, 0.220)',
-              },
-              {
-                label: 'ease-in-quint',
-                value: 'cubic-bezier(0.755, 0.050, 0.855, 0.060)',
-              },
-              {
-                label: 'ease-in-sine',
-                value: 'cubic-bezier(0.470, 0.000, 0.745, 0.715)',
-              },
-              {
-                label: 'ease-in-expo',
-                value: 'cubic-bezier(0.950, 0.050, 0.795, 0.035)',
-              },
-              {
-                label: 'ease-in-circ',
-                value: 'cubic-bezier(0.600, 0.040, 0.980, 0.335)',
-              },
-              {
-                label: 'ease-in-back',
-                value: 'cubic-bezier(0.600, -0.280, 0.735, 0.045)',
-              },
-              {
-                label: 'ease-out-quad',
-                value: 'cubic-bezier(0.250, 0.460, 0.450, 0.940)',
-              },
-              {
-                label: 'ease-out-cubic',
-                value: 'cubic-bezier(0.215, 0.610, 0.355, 1.000)',
-              },
-              {
-                label: 'ease-out-quart',
-                value: 'cubic-bezier(0.165, 0.840, 0.440, 1.000)',
-              },
-              {
-                label: 'ease-out-quint',
-                value: 'cubic-bezier(0.230, 1.000, 0.320, 1.000)',
-              },
-              {
-                label: 'ease-out-sine',
-                value: 'cubic-bezier(0.390, 0.575, 0.565, 1.000)',
-              },
-              {
-                label: 'ease-out-expo',
-                value: 'cubic-bezier(0.190, 1.000, 0.220, 1.000)',
-              },
-              {
-                label: 'ease-out-circ',
-                value: 'cubic-bezier(0.075, 0.820, 0.165, 1.000)',
-              },
-              {
-                label: 'ease-out-back',
-                value: 'cubic-bezier(0.175, 0.885, 0.320, 1.275)',
-              },
-              {
-                label: 'ease-in-out-quad',
-                value: 'cubic-bezier(0.455, 0.030, 0.515, 0.955)',
-              },
-              {
-                label: 'ease-in-out-cubic',
-                value: 'cubic-bezier(0.645, 0.045, 0.355, 1.000)',
-              },
-              {
-                label: 'ease-in-out-quart',
-                value: 'cubic-bezier(0.770, 0.000, 0.175, 1.000)',
-              },
-              {
-                label: 'ease-in-out-quint',
-                value: 'cubic-bezier(0.860, 0.000, 0.070, 1.000)',
-              },
-              {
-                label: 'ease-in-out-sine',
-                value: 'cubic-bezier(0.445, 0.050, 0.550, 0.950)',
-              },
-              {
-                label: 'ease-in-out-expo',
-                value: 'cubic-bezier(1.000, 0.000, 0.000, 1.000)',
-              },
-              {
-                label: 'ease-in-out-circ',
-                value: 'cubic-bezier(0.785, 0.135, 0.150, 0.860)',
-              },
-              {
-                label: 'ease-in-out-back',
-                value: 'cubic-bezier(0.680, -0.550, 0.265, 1.550)',
-              },
-            ],
-          },
-        },
-        {
-          type: 'number',
-          name: 'scale',
-          title: 'Scale Factor',
-          hidden: (context) => context.value?.type !== 'fade',
-          options: {
-            format: '%',
-            scale: 100,
-          },
-        },
-        {
-          type: 'select',
-          name: 'maskShape',
-          initialValue:
-            'circle(calc(var(--slide-offset) * 150%) at calc(var(--mask-x) * 100%) calc(var(--mask-y) * 100%))',
-          hidden: (context) => context.value?.type !== 'mask',
-          options: {
-            items: [
-              {
-                label: 'Circle',
-                value:
-                  'circle(calc(var(--slide-offset) * 150%) at calc(var(--mask-x) * 100%) calc(var(--mask-y) * 100%))',
-              },
-              {
-                label: 'Rectangle',
-                value:
-                  'inset(calc(var(--mask-y) * (1 - var(--slide-offset)) * 100% ) calc((1 - var(--mask-x)) * (1 - var(--slide-offset)) * 100% ) calc((1 - var(--mask-y)) * (1 - var(--slide-offset)) * 100% ) calc(var(--mask-x) * (1 - var(--slide-offset)) * 100% ))',
-              },
-            ],
-          },
-        },
-        {
-          type: 'number',
-          name: 'maskX',
-          title: 'Mask Origin X',
-          initialValue: 0.5,
-          hidden: (context) => context.value?.type !== 'mask',
-          options: {
-            format: '%',
-            min: 0,
-            max: 1,
-            scale: 100,
-          },
-        },
-        {
-          type: 'number',
-          name: 'maskY',
-          title: 'Mask Origin Y',
-          initialValue: 0.5,
-          hidden: (context) => context.value?.type !== 'mask',
-          options: {
-            format: '%',
-            min: 0,
-            max: 1,
-            scale: 100,
-          },
-        },
-        {
-          type: 'select',
-          name: 'stackDirection',
-          initialValue: 'vertical',
-          hidden: (context) => context.value?.type !== 'stack',
-          title: 'Direction',
-          options: {
-            items: [
-              {
-                label: 'Vertical',
-                value: 'vertical',
-              },
-              {
-                label: 'Horizontal',
-                value: 'horizontal',
-              },
-            ],
-          },
-        },
-        {
-          type: 'select',
-          name: 'revealDirection',
-          hidden: (context) => context.value?.type !== 'reveal',
-          title: 'Direction',
-          initialValue:
-            'polygon(0 0, calc( 100% * var(--slide-offset)) 0, calc( 100% * var(--slide-offset)) 100%, 0% 100%)',
-          options: {
-            items: [
-              {
-                label: 'From left',
-                value:
-                  'polygon(0 0, calc( 100% * var(--slide-offset)) 0, calc( 100% * var(--slide-offset)) 100%, 0% 100%)',
-              },
-              {
-                label: 'From top',
-                value:
-                  'polygon(0 0, 100% 0, 100% calc(var(--slide-offset) * 100%), 0% calc(var(--slide-offset) * 100%))',
-              },
-              {
-                label: 'From top left',
-                value:
-                  'polygon(-100% -100%, calc((25% + 100% * var(--slide-offset) / 2) * 4) -100%, -100% calc((25% + 100% * var(--slide-offset) / 2) * 4))',
-              },
-              {
-                label: 'From top right',
-                value:
-                  'polygon(100% -100%, 100% calc((25% + 100% * var(--slide-offset) / 2) * 4), -100% calc((25% + 100% * var(--slide-offset) / 2) * 4))',
-              },
-            ],
-          },
-        },
-        {
-          type: 'array',
-          name: 'keyframes',
-          title: 'Custom Keyframes',
-          hidden: (context) => context.value?.type !== 'custom',
-          initialValue: [{ style: 'opacity:0;' }, { style: 'opacity:1;' }],
-          of: [
-            {
-              name: 'style',
-              title: 'CSS Styles',
-              type: 'string',
-              options: {
-                type: 'text',
-                multiline: true,
-              },
-            },
-          ],
-        },
-      ],
+      type: 'array',
+      name: 'overrideTransition',
+      component: ({ value, onChange, context }) => {
+        return (
+          <TransitionField
+            value={value as any}
+            numberOfSlides={context.value?.children?.length || 0}
+            onChange={onChange}
+          />
+        );
+      },
+      of: [{ type: 'string', name: 'type' }],
     },
   ],
   children: {
