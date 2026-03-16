@@ -21,81 +21,75 @@ export function ScrollSlide({
   const outSpeed = transition.transitionOut?.speed || 'linear';
 
   const isReverse = !!phaseSettings?.reverse;
-  const zoomScroll = !!phaseSettings?.zoomScroll;
-  const blurScroll = !!phaseSettings?.blurScroll;
+  const zoomAmount = typeof phaseSettings?.zoomScroll === 'number' ? phaseSettings.zoomScroll : 0;
+  const blurPx = typeof phaseSettings?.blurScroll === 'number' ? phaseSettings.blurScroll : 0;
   const enterFrom = isReverse ? '-100%' : '100%';
   const exitTo = isReverse ? '100%' : '-100%';
-  const sc = 'scale(0.85)';
-  const blurAmount = 'blur(20px)';
-  const blurNone = 'blur(0px)';
 
-  // Build keyframes from owned phases
-  // Easing is applied per-keyframe segment so adjacent slides stay in sync
+  const hasIn = ownsIn && index > 0;
+  const hasOut = ownsOut && index < transitionCount;
+
+  // Helper to build transform + filter strings
+  const sc = zoomAmount > 0 ? `scale(${1 / (1 + zoomAmount)})` : '';
+  const tfm = (translate: string, scaled: boolean) =>
+    `translateX(${translate})${scaled && sc ? ` ${sc}` : ''}`;
+  const blur = (on: boolean) => (blurPx > 0 ? `blur(${on ? blurPx : 0}px)` : undefined);
+
   const keyframes: Keyframe[] = [];
-  if (zoomScroll) {
-    // Zoom happens in 20% at each edge, scroll takes the remaining 80%
-    const hasIn = ownsIn && index > 0;
-    const hasOut = ownsOut && index < transitionCount;
 
+  if (zoomAmount > 0) {
+    // Zoom effect: scale happens in the 20% edges, full size in the middle
     if (hasIn && hasOut) {
-      keyframes.push({ transform: `translateX(${enterFrom}) ${sc}`, offset: 0, easing: inSpeed });
-      keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.4 });
-      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 0.5, easing: outSpeed });
-      keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.6 });
-      keyframes.push({ transform: `translateX(${exitTo}) ${sc}`, offset: 1 });
+      keyframes.push({ transform: tfm(enterFrom, true), filter: blur(true), offset: 0, easing: inSpeed });
+      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.4 });
+      keyframes.push({ transform: tfm('0%', false), filter: blur(false), offset: 0.5, easing: outSpeed });
+      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.6 });
+      keyframes.push({ transform: tfm(exitTo, true), filter: blur(true), offset: 1 });
     } else if (hasIn) {
-      keyframes.push({ transform: `translateX(${enterFrom}) ${sc}`, offset: 0, easing: inSpeed });
-      keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.8 });
-      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 1 });
+      keyframes.push({ transform: tfm(enterFrom, true), filter: blur(true), offset: 0, easing: inSpeed });
+      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.8 });
+      keyframes.push({ transform: tfm('0%', false), filter: blur(false), offset: 1 });
     } else if (hasOut) {
-      keyframes.push({ transform: 'translateX(0%) scale(1)', offset: 0, easing: outSpeed });
-      keyframes.push({ transform: `translateX(0%) ${sc}`, offset: 0.2 });
-      keyframes.push({ transform: `translateX(${exitTo}) ${sc}`, offset: 1 });
+      keyframes.push({ transform: tfm('0%', false), filter: blur(false), offset: 0, easing: outSpeed });
+      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.2 });
+      keyframes.push({ transform: tfm(exitTo, true), filter: blur(true), offset: 1 });
     } else {
-      keyframes.push({ transform: 'translateX(0%)' });
-      keyframes.push({ transform: 'translateX(0%)' });
+      keyframes.push({ transform: tfm('0%', false) });
+      keyframes.push({ transform: tfm('0%', false) });
     }
-  } else if (blurScroll) {
-    // Blur transitions smoothly across the full scroll
-    if (ownsIn && index > 0) {
-      keyframes.push({ transform: `translateX(${enterFrom})`, filter: blurAmount, easing: inSpeed });
+  } else {
+    // Simple scroll (with optional blur across full range)
+    if (hasIn) {
+      keyframes.push({ transform: tfm(enterFrom, false), filter: blur(true), easing: inSpeed });
     }
     keyframes.push({
-      transform: 'translateX(0%)',
-      filter: blurNone,
-      ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
+      transform: tfm('0%', false),
+      filter: blur(false),
+      ...(hasOut ? { easing: outSpeed } : {}),
     });
-    if (ownsOut && index < transitionCount) {
-      keyframes.push({ transform: `translateX(${exitTo})`, filter: blurAmount });
-    }
-    if (keyframes.length === 1) keyframes.push(keyframes[0]);
-  } else {
-    if (ownsIn && index > 0) {
-      keyframes.push({ transform: `translateX(${enterFrom})`, easing: inSpeed });
-    }
-    keyframes.push({ transform: 'translateX(0%)', ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}) });
-    if (ownsOut && index < transitionCount) {
-      keyframes.push({ transform: `translateX(${exitTo})` });
+    if (hasOut) {
+      keyframes.push({ transform: tfm(exitTo, false), filter: blur(true) });
     }
     if (keyframes.length === 1) keyframes.push(keyframes[0]);
   }
 
   // Compute offset range from owned phases
-  let fromOffset = ownsIn && index > 0 ? (index - 1) / transitionCount : index / transitionCount;
-  let toOffset = ownsOut && index < transitionCount ? (index + 1) / transitionCount : index / transitionCount;
+  let fromOffset = hasIn ? (index - 1) / transitionCount : index / transitionCount;
+  let toOffset = hasOut ? (index + 1) / transitionCount : index / transitionCount;
   if (index === 0) fromOffset = 0;
   if (index === transitionCount) toOffset = 1;
   if (fromOffset === toOffset) toOffset = fromOffset;
 
-  useViewAnimation(
-    ref,
-    keyframes,
-    timeline,
-    selected || disabled,
-    undefined,
-    fromOffset,
-    toOffset,
-  );
+  useViewAnimation(ref, keyframes, timeline, selected || disabled, undefined, fromOffset, toOffset);
+
+  // Initial style before animation kicks in
+  const initialStyle: React.CSSProperties =
+    !disabled && hasIn
+      ? {
+          transform: tfm(enterFrom, zoomAmount > 0),
+          ...(blurPx > 0 ? { filter: `blur(${blurPx}px)` } : {}),
+        }
+      : {};
 
   return (
     <BaseSlide
@@ -107,15 +101,7 @@ export function ScrollSlide({
       timeline={timeline}
       disabled={disabled}
       transition={transition}
-      style={{
-        ...style,
-        ...(!disabled && ownsIn && index > 0
-          ? {
-              transform: zoomScroll ? `translateX(${enterFrom}) ${sc}` : `translateX(${enterFrom})`,
-              ...(blurScroll ? { filter: blurAmount } : {}),
-            }
-          : {}),
-      }}
+      style={{ ...style, ...initialStyle }}
     />
   );
 }

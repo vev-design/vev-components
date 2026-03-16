@@ -24,8 +24,9 @@ import {
   TransitionField,
   TransitionPicker,
   TransitionOverride,
+  TransitionValue,
   SPEED_OPTIONS,
-  resolvePreset,
+  resolveTransition,
 } from '../fields/Transition';
 
 export type SlideType =
@@ -45,7 +46,7 @@ export type SlideType =
 type Props = {
   children: string[];
   hostRef: React.RefObject<HTMLDivElement>;
-  type: SlideType;
+  type: SlideType | TransitionValue;
   defaultSpeed?: string;
   overrideTransition?: TransitionOverride[];
 };
@@ -81,13 +82,15 @@ const SLIDE_COMPONENT: Record<SlideType, React.ComponentType<BaseSlideProps>> = 
   zoom: ZoomSlide,
 };
 
-const ScrollingSlide = ({ children, type, defaultSpeed, overrideTransition, hostRef }: Props) => {
+const ScrollingSlide = ({ children = [], type, defaultSpeed, overrideTransition, hostRef }: Props) => {
   if (!type) type = 'scroll';
 
-  // Resolve preset into slide type + preset settings
-  const resolved = resolvePreset(type);
-  const slideType = resolved.type as SlideType;
-  const defaultSettings = resolved.settings;
+  // Resolve TransitionValue or plain string into slide type + settings
+  const tv: TransitionValue =
+    typeof type === 'string' ? { primary: type } : (type || { primary: 'scroll' });
+  const resolved = resolveTransition(tv.primary || 'scroll', tv.effects);
+  const slideType = (resolved.type || 'scroll') as SlideType;
+  const defaultSettings = resolved.settings || {};
 
   const { activeContentChild, disabled: editorDisabled } = useEditorState();
   const visible = useVisible(hostRef);
@@ -135,10 +138,10 @@ const ScrollingSlide = ({ children, type, defaultSpeed, overrideTransition, host
     const override = overrideTransition?.[gapIndex];
     const overrideSpeed = override?.speed || defaultSpeed || 'linear';
     if (override?.type && override.type !== '') {
-      const resolved = resolvePreset(override.type);
+      const overrideResolved = resolveTransition(override.type, override.effects);
       return {
-        type: resolved.type as SlideType,
-        settings: resolved.settings,
+        type: overrideResolved.type as SlideType,
+        settings: overrideResolved.settings,
         speed: overrideSpeed,
       };
     }
@@ -223,7 +226,7 @@ registerVevComponent(ScrollingSlide, {
       title: 'Default transition',
       initialValue: 'scroll',
       component: ({ value, onChange }) => (
-        <TransitionPicker value={value || 'scroll'} onChange={onChange} />
+        <TransitionPicker value={value || 'scroll'} onChange={onChange as any} />
       ),
     },
     {
