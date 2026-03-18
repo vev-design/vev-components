@@ -1,0 +1,90 @@
+/* ── Combined preview ─────────────────────────────────────── */
+
+.preview {
+  position: relative;
+  height: 80px;
+  border-radius: 6px;
+  background: var(--silke-color-neutral-20, #f0f0f0);
+  overflow: hidden;
+}
+
+.previewInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewLayer {
+  position: absolute;
+  border-radius: 4px;
+  border: 2px solid;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.previewLabel {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.8;
+  top: 3px;
+  left: 5px;
+  pointer-events: none;
+}
+
+/* ── Layer card ───────────────────────────────────────────── */
+
+.card {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.layerDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cardBody {
+  padding: 2px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sliderLabel {
+  font-size: 11px;
+  color: var(--silke-color-neutral-70, #666);
+  min-width: 54px;
+  flex-shrink: 0;
+}
+
+.sliderTrack {
+  flex: 1;
+  min-width: 0;
+}
+
+.speedReadout {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--silke-color-neutral-70, #666);
+  min-width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
