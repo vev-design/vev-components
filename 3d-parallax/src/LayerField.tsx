@@ -1,42 +1,42 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import {
   SilkeBox,
   SilkeSlider,
   SilkeTextSmall,
   SilkeTextMicro,
   SilkeButton,
-} from '@vev/silke';
-import s from './LayerField.module.css';
+} from "@vev/silke";
+import s from "./LayerField.module.css";
+
+// ─── Types & constants ──────────────────────────────────────────────────────
 
 export type LayerSettings = {
   speed: number;
 };
 
 const LAYER_COLORS = [
-  '#6366f1',
-  '#f59e0b',
-  '#10b981',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-  '#f97316',
+  "#6366f1", "#f59e0b", "#10b981", "#ef4444",
+  "#8b5cf6", "#ec4899", "#14b8a6", "#f97316",
 ];
 
+const SPEED_MIN = -2;
+const SPEED_MAX = 2;
+const SPEED_SNAP_THRESHOLD = 0.1;
+const PREVIEW_CYCLE_MS = 3000;
+const PREVIEW_MAX_SHIFT_PX = 12;
+
+// ─── Utilities ──────────────────────────────────────────────────────────────
+
 function formatSpeed(speed: number): string {
-  if (speed === 0) return '0\u00d7';
-  const sign = speed > 0 ? '+' : '';
-  // Show one decimal, drop trailing zero
-  const val = Math.abs(speed).toFixed(1).replace(/\.0$/, '');
-  return `${sign}${speed < 0 ? '-' : ''}${val}\u00d7`;
+  if (speed === 0) return "0\u00d7";
+  const abs = Math.abs(speed).toFixed(1).replace(/\.0$/, "");
+  return `${speed > 0 ? "+" : "\u2212"}${abs}\u00d7`;
 }
 
-// Calculate default speed for a layer based on its position in the stack.
-// Layer 0 (furthest back) gets the most movement, last layer (front) gets 0.
+/** Default speed for a layer: back layers (index 0) move most, front layers least. */
 export function defaultSpeedForLayer(index: number, count: number): number {
   if (count <= 1) return 0;
-  const t = 1 - index / (count - 1);
-  return Math.round(t * 15) / 10; // 0 to 1.5
+  return Math.round((1 - index / (count - 1)) * 15) / 10;
 }
 
 function getDefaults(count: number): LayerSettings[] {
@@ -50,7 +50,19 @@ function isDefaultSettings(layers: LayerSettings[], count: number): boolean {
   return layers.every((l, i) => (l.speed ?? 0) === defaults[i].speed);
 }
 
-// ─── Combined preview showing all layers ────────────────────────────────────
+/** Map speed range to 0–1 slider value */
+function speedToSlider(speed: number): number {
+  return (speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
+}
+
+/** Map 0–1 slider value to speed, with snap-to-zero */
+function sliderToSpeed(v: number): number {
+  let speed = v * (SPEED_MAX - SPEED_MIN) + SPEED_MIN;
+  if (Math.abs(speed) < SPEED_SNAP_THRESHOLD) speed = 0;
+  return Math.round(speed * 10) / 10;
+}
+
+// ─── Preview ────────────────────────────────────────────────────────────────
 
 function LayerPreview({
   layers,
@@ -64,15 +76,13 @@ function LayerPreview({
   onReset: () => void;
 }) {
   const [angle, setAngle] = useState(0);
-  const rafRef = useRef<number>(0);
-  const startRef = useRef<number>(0);
+  const rafRef = useRef(0);
+  const startRef = useRef(0);
 
   useEffect(() => {
     startRef.current = performance.now();
     const animate = (now: number) => {
-      // Full rotation over 3 seconds
-      const t = (now - startRef.current) / 3000;
-      setAngle(t * Math.PI * 2);
+      setAngle(((now - startRef.current) / PREVIEW_CYCLE_MS) * Math.PI * 2);
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
@@ -80,13 +90,11 @@ function LayerPreview({
   }, []);
 
   const count = layers.length;
-  // Layer 0 (back) is smallest, last layer (front) is largest
-  const minW = 46;
-  const maxW = 70;
-  const minH = 26;
-  const maxH = 40;
-  const growW = count > 1 ? (maxW - minW) / (count - 1) : 0;
-  const growH = count > 1 ? (maxH - minH) / (count - 1) : 0;
+  const minSize = { w: 46, h: 26 };
+  const maxSize = { w: 70, h: 40 };
+  const stepW = count > 1 ? (maxSize.w - minSize.w) / (count - 1) : 0;
+  const stepH = count > 1 ? (maxSize.h - minSize.h) / (count - 1) : 0;
+  const isMouse = mode === "mouse";
 
   return (
     <div>
@@ -94,44 +102,48 @@ function LayerPreview({
         <div className={s.previewInner}>
           {layers.map((layer, i) => {
             const color = LAYER_COLORS[i % LAYER_COLORS.length];
-            const w = minW + i * growW;
-            const h = minH + i * growH;
             const speed = layer.speed ?? 0;
-            const maxShift = 12;
-            const shiftX = mode === 'mouse' ? speed * Math.cos(angle) * maxShift : 0;
-            const shiftY = speed * Math.sin(angle) * maxShift;
+            const shiftX = isMouse ? speed * Math.cos(angle) * PREVIEW_MAX_SHIFT_PX : 0;
+            const shiftY = speed * Math.sin(angle) * PREVIEW_MAX_SHIFT_PX;
 
             return (
               <div
                 key={i}
                 className={s.previewLayer}
                 style={{
-                  width: w,
-                  height: h,
+                  width: minSize.w + i * stepW,
+                  height: minSize.h + i * stepH,
                   borderColor: color,
                   background: `${color}18`,
                   zIndex: i,
                   transform: `translate(${shiftX}px, ${shiftY}px)`,
-                  transition: 'none',
                 }}
               >
-                <span className={s.previewLabel} style={{ color }}>{i + 1}</span>
+                <span className={s.previewLabel} style={{ color }}>
+                  {i + 1}
+                </span>
               </div>
             );
           })}
         </div>
       </div>
-      <SilkeBox vAlign="center" gap="xs" style={{ justifyContent: 'center', padding: '4px 0 0' }}>
+      <SilkeBox
+        vAlign="center"
+        gap="xs"
+        style={{ justifyContent: "center", padding: "4px 0 0" }}
+      >
         <SilkeTextMicro color="neutral-50">
           Layers move at different speeds to create depth
         </SilkeTextMicro>
-        {hasChanges && <SilkeButton icon="redo" size="s" kind="ghost" onClick={onReset} />}
+        {hasChanges && (
+          <SilkeButton icon="redo" size="s" kind="ghost" onClick={onReset} />
+        )}
       </SilkeBox>
     </div>
   );
 }
 
-// ─── Individual layer card ──────────────────────────────────────────────────
+// ─── Layer card ─────────────────────────────────────────────────────────────
 
 function LayerCard({
   index,
@@ -143,16 +155,12 @@ function LayerCard({
   index: number;
   totalCount: number;
   settings: LayerSettings;
-  onChange: (patch: Partial<LayerSettings>) => void;
+  onChange: (speed: number) => void;
   onReset: () => void;
 }) {
   const speed = settings.speed ?? 0;
-  const defSpeed = defaultSpeedForLayer(index, totalCount);
-  const isModified = speed !== defSpeed;
+  const isModified = speed !== defaultSpeedForLayer(index, totalCount);
   const color = LAYER_COLORS[index % LAYER_COLORS.length];
-
-  // Map speed (-2 to 2) → slider (0 to 1) where 0.5 = no movement
-  const sliderValue = (speed + 2) / 4;
 
   return (
     <SilkeBox column className={s.card} bg="surface-1" rounded="small">
@@ -161,20 +169,17 @@ function LayerCard({
         <SilkeTextSmall weight="strong" style={{ flex: 1 }}>
           Layer {index + 1}
         </SilkeTextSmall>
-        {isModified && <SilkeButton icon="redo" size="s" kind="ghost" onClick={onReset} />}
+        {isModified && (
+          <SilkeButton icon="redo" size="s" kind="ghost" onClick={onReset} />
+        )}
       </div>
       <div className={s.cardBody}>
         <div className={s.sliderRow}>
           <span className={s.sliderLabel}>Speed</span>
           <div className={s.sliderTrack}>
             <SilkeSlider
-              value={sliderValue}
-              onChange={(v: number) => {
-                // Map slider (0-1) → speed (-2 to 2), snap to 0 near center
-                let newSpeed = v * 4 - 2;
-                if (Math.abs(newSpeed) < 0.1) newSpeed = 0;
-                onChange({ speed: Math.round(newSpeed * 10) / 10 });
-              }}
+              value={speedToSlider(speed)}
+              onChange={(v: number) => onChange(sliderToSpeed(v))}
             />
           </div>
           <span className={s.speedReadout}>{formatSpeed(speed)}</span>
@@ -193,44 +198,48 @@ type LayerFieldProps = {
   onChange: (value: LayerSettings[]) => void;
 };
 
-export function LayerField({ value, numberOfLayers, mode, onChange }: LayerFieldProps) {
-  const settings = Array.isArray(value) ? value : [];
-
+export function LayerField({
+  value,
+  numberOfLayers,
+  mode,
+  onChange,
+}: LayerFieldProps) {
   if (numberOfLayers <= 0) return null;
 
   const defaults = getDefaults(numberOfLayers);
-  const allLayers = Array.from(
+  const layers = Array.from(
     { length: numberOfLayers },
-    (_, i) => settings[i] || defaults[i],
+    (_, i) => (Array.isArray(value) ? value : [])[i] || defaults[i]
   );
-  const hasChanges = !isDefaultSettings(allLayers, numberOfLayers);
+  const hasChanges = !isDefaultSettings(layers, numberOfLayers);
 
-  const update = (index: number, patch: Partial<LayerSettings>) => {
-    const next = [...allLayers];
-    next[index] = { ...next[index], ...patch };
+  const updateSpeed = (index: number, speed: number) => {
+    const next = [...layers];
+    next[index] = { speed };
     onChange(next);
   };
 
   const resetLayer = (index: number) => {
-    const next = [...allLayers];
+    const next = [...layers];
     next[index] = defaults[index];
     onChange(next);
   };
 
-  const resetAll = () => {
-    onChange(defaults);
-  };
-
   return (
     <SilkeBox column gap="s">
-      <LayerPreview layers={allLayers} mode={mode} hasChanges={hasChanges} onReset={resetAll} />
-      {allLayers.map((layer, i) => (
+      <LayerPreview
+        layers={layers}
+        mode={mode}
+        hasChanges={hasChanges}
+        onReset={() => onChange(defaults)}
+      />
+      {layers.map((layer, i) => (
         <LayerCard
           key={i}
           index={i}
           totalCount={numberOfLayers}
           settings={layer}
-          onChange={(patch) => update(i, patch)}
+          onChange={(speed) => updateSpeed(i, speed)}
           onReset={() => resetLayer(i)}
         />
       ))}

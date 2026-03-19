@@ -13,6 +13,15 @@ type Props = {
   layerSettings?: LayerSettings[];
 };
 
+const MAX_DISPLACEMENT_PX = 50;
+const PREVIEW_DEBOUNCE_MS = 150;
+const PREVIEW_DURATION_MS = 2000;
+const INACTIVE_LAYER_OPACITY = 0.2;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 function getLayerSpeed(
   layerSettings: LayerSettings[] | undefined,
   index: number,
@@ -23,17 +32,27 @@ function getLayerSpeed(
   );
 }
 
-const PREVIEW_DEBOUNCE_MS = 150;
-const PREVIEW_DURATION_MS = 2000;
+function calculateAutoScale(
+  speed: number,
+  mode: ParallaxMode,
+  wrapperWidth: number,
+  wrapperHeight: number
+): number {
+  const absSpeed = Math.abs(speed);
+  const maxMoveX = mode === "mouse" ? absSpeed * MAX_DISPLACEMENT_PX : 0;
+  const maxMoveY = absSpeed * MAX_DISPLACEMENT_PX;
+  const scaleX = wrapperWidth > 0 ? 1 + (maxMoveX * 2) / wrapperWidth : 1;
+  const scaleY = wrapperHeight > 0 ? 1 + (maxMoveY * 2) / wrapperHeight : 1;
+  return Math.max(scaleX, scaleY);
+}
 
-// Attempt smooth ease-in-out by remapping linear t through a sine curve
-function easeInOut(t: number): number {
+/** Sine-based easing for a full 0→1→0 cycle */
+function easeFullCycle(t: number): number {
   return 0.5 - 0.5 * Math.cos(t * Math.PI * 2);
 }
 
 const Parallax3D = ({
   children = [],
-  hostRef,
   mode = "scroll",
   autoScale = true,
   layerSettings,
@@ -41,8 +60,8 @@ const Parallax3D = ({
   const { disabled: editorDisabled, activeContentChild } = useEditorState();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const animationRef = useRef<number | null>(null);
-  const previewDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewRafRef = useRef<number | null>(null);
   const previewCancelledRef = useRef(false);
 
@@ -53,7 +72,6 @@ const Parallax3D = ({
         const el = layerRefs.current[index];
         if (!el) return;
 
-        // Skip the actively edited layer — keep it at identity transform
         if (
           editorDisabled &&
           activeContentChild &&
@@ -64,46 +82,33 @@ const Parallax3D = ({
         }
 
         const speed = getLayerSpeed(layerSettings, index, children.length);
-        // Scroll mode: vertical only. Mouse mode: both axes.
-        const maxPx = 50;
-        const moveX = mode === "mouse" ? speed * normalizedX * maxPx : 0;
-        const moveY = speed * normalizedY * maxPx;
+        const moveX =
+          mode === "mouse" ? speed * normalizedX * MAX_DISPLACEMENT_PX : 0;
+        const moveY = speed * normalizedY * MAX_DISPLACEMENT_PX;
 
-        if (autoScale && wrapper && Math.abs(speed) > 0) {
-          // Scale up just enough so edges stay hidden at max displacement
-          const maxMoveX = mode === "mouse" ? Math.abs(speed) * maxPx : 0;
-          const maxMoveY = Math.abs(speed) * maxPx;
-          const scaleX =
-            wrapper.offsetWidth > 0
-              ? 1 + (maxMoveX * 2) / wrapper.offsetWidth
-              : 1;
-          const scaleY =
-            wrapper.offsetHeight > 0
-              ? 1 + (maxMoveY * 2) / wrapper.offsetHeight
-              : 1;
-          const scale = Math.max(scaleX, scaleY);
+        if (autoScale && wrapper && speed !== 0) {
+          const scale = calculateAutoScale(
+            speed,
+            mode,
+            wrapper.offsetWidth,
+            wrapper.offsetHeight
+          );
           el.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) scale(${scale})`;
         } else {
           el.style.transform = `translate3d(${moveX}px, ${moveY}px, 0)`;
         }
       });
     },
-    [
-      children,
-      layerSettings,
-      mode,
-      autoScale,
-      editorDisabled,
-      activeContentChild,
-    ]
+    [children, layerSettings, mode, autoScale, editorDisabled, activeContentChild]
   );
 
-  // Cancel any running editor preview animation
+  // ── Editor preview animation ──────────────────────────────────────────────
+
   const cancelPreview = useCallback(() => {
     previewCancelledRef.current = true;
-    if (previewDebounceRef.current !== null) {
-      clearTimeout(previewDebounceRef.current);
-      previewDebounceRef.current = null;
+    if (previewTimerRef.current !== null) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
     }
     if (previewRafRef.current !== null) {
       cancelAnimationFrame(previewRafRef.current);
@@ -111,38 +116,32 @@ const Parallax3D = ({
     }
   }, []);
 
-  // Editor preview: animate from max → center → min → center when settings change
   useEffect(() => {
     if (!editorDisabled) return;
 
     cancelPreview();
     previewCancelledRef.current = false;
 
-    previewDebounceRef.current = setTimeout(() => {
-      previewDebounceRef.current = null;
+    previewTimerRef.current = setTimeout(() => {
+      previewTimerRef.current = null;
       const start = performance.now();
 
       const tick = (now: number) => {
         if (previewCancelledRef.current) return;
 
-        const elapsed = now - start;
-        const t = Math.min(elapsed / PREVIEW_DURATION_MS, 1);
+        const t = Math.min((now - start) / PREVIEW_DURATION_MS, 1);
         const angle = t * Math.PI * 2;
 
         if (mode === "mouse") {
-          // Circular motion: cos/sin offset by 90° for X/Y
           applyTransform(Math.cos(angle), Math.sin(angle));
         } else {
-          // Scroll mode: vertical sweep with ease-in-out
-          const eased = easeInOut(t);
-          applyTransform(0, 1 - 2 * eased);
+          applyTransform(0, 1 - 2 * easeFullCycle(t));
         }
 
         if (t < 1) {
           previewRafRef.current = requestAnimationFrame(tick);
         } else {
           previewRafRef.current = null;
-          // Reset to neutral
           applyTransform(0, 0);
         }
       };
@@ -153,50 +152,43 @@ const Parallax3D = ({
     return cancelPreview;
   }, [editorDisabled, layerSettings, mode, applyTransform, cancelPreview]);
 
-  // Mouse-based parallax
+  // ── Live parallax ─────────────────────────────────────────────────────────
+
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       const wrapper = wrapperRef.current;
       if (!wrapper || mode !== "mouse") return;
 
       const rect = wrapper.getBoundingClientRect();
-      const centerX = Math.max(
-        -1,
-        Math.min(1, -((e.clientX - rect.left) / rect.width - 0.5) * 2)
-      );
-      const centerY = Math.max(
-        -1,
-        Math.min(1, -((e.clientY - rect.top) / rect.height - 0.5) * 2)
-      );
+      const x = clamp(-((e.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1);
+      const y = clamp(-((e.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1);
 
-      applyTransform(centerX, centerY);
+      applyTransform(x, y);
     },
     [mode, applyTransform]
   );
 
-  // Scroll-based parallax
   const updateScrollParallax = useCallback(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper || mode !== "scroll") return;
 
     const rect = wrapper.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
+    const viewportCenter = window.innerHeight / 2;
     const elementCenter = rect.top + rect.height / 2;
-    const viewportCenter = viewportHeight / 2;
-    const progress = Math.max(
+    const progress = clamp(
+      ((viewportCenter - elementCenter) / window.innerHeight) * 2,
       -1,
-      Math.min(1, ((viewportCenter - elementCenter) / viewportHeight) * 2)
+      1
     );
 
     applyTransform(0, progress);
   }, [mode, applyTransform]);
 
-  // Scroll handler with rAF throttling
   const handleScroll = useCallback(() => {
-    if (animationRef.current !== null) return;
-    animationRef.current = requestAnimationFrame(() => {
+    if (scrollRafRef.current !== null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
       updateScrollParallax();
-      animationRef.current = null;
+      scrollRafRef.current = null;
     });
   }, [updateScrollParallax]);
 
@@ -208,23 +200,19 @@ const Parallax3D = ({
       return () => window.removeEventListener("mousemove", handleMouseMove);
     }
 
-    if (mode === "scroll") {
-      updateScrollParallax();
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
-        if (animationRef.current !== null) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      };
-    }
-  }, [
-    mode,
-    handleMouseMove,
-    handleScroll,
-    updateScrollParallax,
-    editorDisabled,
-  ]);
+    updateScrollParallax();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, [mode, handleMouseMove, handleScroll, updateScrollParallax, editorDisabled]);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  const isEditing = editorDisabled && !!activeContentChild;
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
@@ -237,12 +225,9 @@ const Parallax3D = ({
           }}
           style={{
             zIndex: index,
-            opacity:
-              editorDisabled && activeContentChild
-                ? childKey === activeContentChild
-                  ? 1
-                  : 0.2
-                : 1,
+            opacity: isEditing
+              ? childKey === activeContentChild ? 1 : INACTIVE_LAYER_OPACITY
+              : 1,
             transition: "opacity 0.2s ease",
           }}
         >
@@ -256,10 +241,8 @@ const Parallax3D = ({
 export default Parallax3D;
 
 registerVevComponent(Parallax3D, {
-  name: "3D Parallax",
-  transform: {
-    height: "auto",
-  },
+  name: "Layered Parallax",
+  transform: { height: "auto" },
   props: [
     {
       type: "select",
@@ -286,22 +269,18 @@ registerVevComponent(Parallax3D, {
       type: "array",
       name: "layerSettings",
       title: "Layer settings",
-      component: ({ value, onChange, context }) => {
-        return (
-          <LayerField
-            value={value as any}
-            numberOfLayers={context.value?.children?.length || 0}
-            mode={context.value?.mode || "scroll"}
-            onChange={onChange}
-          />
-        );
-      },
+      component: ({ value, onChange, context }) => (
+        <LayerField
+          value={value as any}
+          numberOfLayers={context.value?.children?.length || 0}
+          mode={context.value?.mode || "scroll"}
+          onChange={onChange}
+        />
+      ),
       of: [{ type: "string", name: "speed" }],
     },
   ],
-  children: {
-    name: "Layer",
-  },
+  children: { name: "Layer" },
   editableCSS: [
     {
       selector: styles.wrapper,

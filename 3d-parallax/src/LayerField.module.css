@@ -1,4 +1,4 @@
-/* ── Combined preview ─────────────────────────────────────── */
+/* ── Preview ──────────────────────────────────────────────── */
 
 .preview {
   position: relative;
@@ -20,14 +20,12 @@
   position: absolute;
   border-radius: 4px;
   border: 2px solid;
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .previewLabel {
   position: absolute;
   font-size: 9px;
   font-weight: 600;
-  color: inherit;
   opacity: 0.8;
   top: 3px;
   left: 5px;
