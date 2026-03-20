@@ -5,11 +5,14 @@ import { LayerField, LayerSettings, defaultSpeedForLayer } from "./LayerField";
 
 type ParallaxMode = "scroll" | "mouse";
 
+type Smoothing = "none" | "low" | "medium" | "high";
+
 type Props = {
   children: string[];
   hostRef: React.RefObject<HTMLDivElement>;
   mode: ParallaxMode;
   autoScale: boolean;
+  smoothing: Smoothing;
   layerSettings?: LayerSettings[];
 };
 
@@ -17,6 +20,17 @@ const MAX_DISPLACEMENT_PX = 50;
 const PREVIEW_DEBOUNCE_MS = 150;
 const PREVIEW_DURATION_MS = 2000;
 const INACTIVE_LAYER_OPACITY = 0.2;
+
+/** Lerp factor per frame at 60fps. Lower = smoother/floatier. */
+const SMOOTHING_FACTORS: Record<Smoothing, number> = {
+  none: 1,
+  low: 0.15,
+  medium: 0.08,
+  high: 0.035,
+};
+
+/** Threshold below which we snap to target to avoid infinite micro-lerps */
+const LERP_EPSILON = 0.001;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -55,18 +69,23 @@ const Parallax3D = ({
   children = [],
   mode = "scroll",
   autoScale = true,
+  smoothing = "none",
   layerSettings,
 }: Props) => {
   const { disabled: editorDisabled, activeContentChild } = useEditorState();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const scrollRafRef = useRef<number | null>(null);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewRafRef = useRef<number | null>(null);
   const previewCancelledRef = useRef(false);
 
-  const applyTransform = useCallback(
-    (normalizedX: number, normalizedY: number) => {
+  // Smoothing state: target position (set by input), current position (lerped toward target)
+  const targetRef = useRef({ x: 0, y: 0 });
+  const currentRef = useRef({ x: 0, y: 0 });
+  const smoothRafRef = useRef<number | null>(null);
+
+  const renderTransform = useCallback(
+    (x: number, y: number) => {
       const wrapper = wrapperRef.current;
       children.forEach((childKey, index) => {
         const el = layerRefs.current[index];
@@ -82,9 +101,8 @@ const Parallax3D = ({
         }
 
         const speed = getLayerSpeed(layerSettings, index, children.length);
-        const moveX =
-          mode === "mouse" ? speed * normalizedX * MAX_DISPLACEMENT_PX : 0;
-        const moveY = speed * normalizedY * MAX_DISPLACEMENT_PX;
+        const moveX = mode === "mouse" ? speed * x * MAX_DISPLACEMENT_PX : 0;
+        const moveY = speed * y * MAX_DISPLACEMENT_PX;
 
         if (autoScale && wrapper && speed !== 0) {
           const scale = calculateAutoScale(
@@ -99,8 +117,69 @@ const Parallax3D = ({
         }
       });
     },
-    [children, layerSettings, mode, autoScale, editorDisabled, activeContentChild]
+    [
+      children,
+      layerSettings,
+      mode,
+      autoScale,
+      editorDisabled,
+      activeContentChild,
+    ]
   );
+
+  // Start or continue the smoothing rAF loop
+  const startSmoothLoop = useCallback(() => {
+    if (smoothRafRef.current !== null) return;
+
+    const tick = () => {
+      const factor = SMOOTHING_FACTORS[smoothing] || 1;
+      const cur = currentRef.current;
+      const tgt = targetRef.current;
+      const dx = tgt.x - cur.x;
+      const dy = tgt.y - cur.y;
+
+      if (Math.abs(dx) < LERP_EPSILON && Math.abs(dy) < LERP_EPSILON) {
+        // Snap to target and stop loop
+        cur.x = tgt.x;
+        cur.y = tgt.y;
+        renderTransform(cur.x, cur.y);
+        smoothRafRef.current = null;
+        return;
+      }
+
+      cur.x += dx * factor;
+      cur.y += dy * factor;
+      renderTransform(cur.x, cur.y);
+      smoothRafRef.current = requestAnimationFrame(tick);
+    };
+
+    smoothRafRef.current = requestAnimationFrame(tick);
+  }, [smoothing, renderTransform]);
+
+  /** Set the parallax target. With smoothing=none, applies immediately. */
+  const setTarget = useCallback(
+    (x: number, y: number) => {
+      targetRef.current = { x, y };
+
+      if (smoothing === "none") {
+        currentRef.current = { x, y };
+        renderTransform(x, y);
+      } else {
+        startSmoothLoop();
+      }
+    },
+    [smoothing, renderTransform, startSmoothLoop]
+  );
+
+  // Clean up smoothing loop on unmount or when smoothing changes
+  useEffect(() => {
+    return () => {
+      if (smoothRafRef.current !== null) {
+        cancelAnimationFrame(smoothRafRef.current);
+        smoothRafRef.current = null;
+      }
+    };
+  }, [smoothing]);
 
   // ── Editor preview animation ──────────────────────────────────────────────
 
@@ -133,16 +212,17 @@ const Parallax3D = ({
         const angle = t * Math.PI * 2;
 
         if (mode === "mouse") {
-          applyTransform(Math.cos(angle), Math.sin(angle));
+          // Preview bypasses smoothing — directly renders for crisp preview
+          renderTransform(Math.cos(angle), Math.sin(angle));
         } else {
-          applyTransform(0, 1 - 2 * easeFullCycle(t));
+          renderTransform(0, 1 - 2 * easeFullCycle(t));
         }
 
         if (t < 1) {
           previewRafRef.current = requestAnimationFrame(tick);
         } else {
           previewRafRef.current = null;
-          applyTransform(0, 0);
+          renderTransform(0, 0);
         }
       };
 
@@ -150,7 +230,7 @@ const Parallax3D = ({
     }, PREVIEW_DEBOUNCE_MS);
 
     return cancelPreview;
-  }, [editorDisabled, layerSettings, mode, applyTransform, cancelPreview]);
+  }, [editorDisabled, layerSettings, mode, renderTransform, cancelPreview]);
 
   // ── Live parallax ─────────────────────────────────────────────────────────
 
@@ -163,9 +243,9 @@ const Parallax3D = ({
       const x = clamp(-((e.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1);
       const y = clamp(-((e.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1);
 
-      applyTransform(x, y);
+      setTarget(x, y);
     },
-    [mode, applyTransform]
+    [mode, setTarget]
   );
 
   const updateScrollParallax = useCallback(() => {
@@ -181,16 +261,22 @@ const Parallax3D = ({
       1
     );
 
-    applyTransform(0, progress);
-  }, [mode, applyTransform]);
+    setTarget(0, progress);
+  }, [mode, setTarget]);
 
   const handleScroll = useCallback(() => {
-    if (scrollRafRef.current !== null) return;
-    scrollRafRef.current = requestAnimationFrame(() => {
+    if (smoothing !== "none") {
+      // With smoothing, just update the target on every scroll — the rAF loop handles rendering
       updateScrollParallax();
-      scrollRafRef.current = null;
+      return;
+    }
+    // Without smoothing, throttle via rAF as before
+    if (smoothRafRef.current !== null) return;
+    smoothRafRef.current = requestAnimationFrame(() => {
+      updateScrollParallax();
+      smoothRafRef.current = null;
     });
-  }, [updateScrollParallax]);
+  }, [smoothing, updateScrollParallax]);
 
   useEffect(() => {
     if (editorDisabled) return;
@@ -204,11 +290,18 @@ const Parallax3D = ({
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (scrollRafRef.current !== null) {
-        cancelAnimationFrame(scrollRafRef.current);
+      if (smoothRafRef.current !== null) {
+        cancelAnimationFrame(smoothRafRef.current);
+        smoothRafRef.current = null;
       }
     };
-  }, [mode, handleMouseMove, handleScroll, updateScrollParallax, editorDisabled]);
+  }, [
+    mode,
+    handleMouseMove,
+    handleScroll,
+    updateScrollParallax,
+    editorDisabled,
+  ]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -226,7 +319,9 @@ const Parallax3D = ({
           style={{
             zIndex: index,
             opacity: isEditing
-              ? childKey === activeContentChild ? 1 : INACTIVE_LAYER_OPACITY
+              ? childKey === activeContentChild
+                ? 1
+                : INACTIVE_LAYER_OPACITY
               : 1,
             transition: "opacity 0.2s ease",
           }}
@@ -254,6 +349,21 @@ registerVevComponent(Parallax3D, {
         items: [
           { label: "Scroll", value: "scroll" },
           { label: "Mouse", value: "mouse" },
+        ],
+      },
+    },
+    {
+      type: "select",
+      name: "smoothing",
+      title: "Movement smoothing",
+      initialValue: "medium",
+      options: {
+        display: "dropdown",
+        items: [
+          { label: "None", value: "none" },
+          { label: "Low", value: "low" },
+          { label: "Medium", value: "medium" },
+          { label: "High", value: "high" },
         ],
       },
     },
