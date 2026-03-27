@@ -82,12 +82,18 @@ const SLIDE_COMPONENT: Record<SlideType, React.ComponentType<BaseSlideProps>> = 
   zoom: ZoomSlide,
 };
 
-const ScrollingSlide = ({ children = [], type, defaultSpeed, overrideTransition, hostRef }: Props) => {
+const ScrollingSlide = ({
+  children = [],
+  type,
+  defaultSpeed,
+  overrideTransition,
+  hostRef,
+}: Props) => {
   if (!type) type = 'scroll';
 
   // Resolve TransitionValue or plain string into slide type + settings
   const tv: TransitionValue =
-    typeof type === 'string' ? { primary: type } : (type || { primary: 'scroll' });
+    typeof type === 'string' ? { primary: type } : type || { primary: 'scroll' };
   const resolved = resolveTransition(tv.primary || 'scroll', tv.effects);
   const slideType = (resolved.type || 'scroll') as SlideType;
   const defaultSettings = resolved.settings || {};
