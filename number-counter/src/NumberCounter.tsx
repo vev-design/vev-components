@@ -180,7 +180,7 @@ const NumberCounter = ({
     if (previousSettings.current.start !== start || previousSettings.current.end !== end) {
       previousSettings.current = { start, end, actualDelay: delay * 1000, autostart };
       setStartedTimestamp(0);
-      setCount(start)
+      setCount(start);
       if (autostart) setTimeout(() => setHasStarted(true), actualDelay);
     }
   }, [settings, animation, disabled]);
@@ -287,8 +287,20 @@ registerVevComponent(NumberCounter, {
         runWhenVisible: false,
       },
       fields: [
-        { title: 'Start', name: 'start', type: 'number', initialValue: 1 },
-        { title: 'End', name: 'end', type: 'number', initialValue: 100 },
+        {
+          title: 'Start',
+          name: 'start',
+          type: 'number',
+          initialValue: 1,
+          options: { precision: 10 },
+        },
+        {
+          title: 'End',
+          name: 'end',
+          type: 'number',
+          initialValue: 100,
+          options: { precision: 10 },
+        },
         {
           title: 'Prefix',
           description: 'Shows at the start of the component',
@@ -325,6 +337,7 @@ registerVevComponent(NumberCounter, {
           initialValue: 5,
           options: {
             format: 's',
+            precision: 1,
           },
         },
         {
