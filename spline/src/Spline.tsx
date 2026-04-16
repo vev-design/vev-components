@@ -9,8 +9,10 @@ type Props = {
 };
 
 const Spline = ({
-  sceneUrl = 'https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode',
+  sceneUrl = 'https://my.spline.design/rememberallrobot-23zeqwLLpIJ9odgcbxzxrvw3/',
 }: Props) => {
+  if (!sceneUrl || !sceneUrl.length) return null;
+
   if (sceneUrl.includes('my.spline.design')) {
     return (
       <iframe
