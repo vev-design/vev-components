@@ -115,7 +115,6 @@ const ScrollingSlide = ({
 
   const ref = useRef<HTMLDivElement>(null);
   const timeline = useViewTimeline(ref as React.RefObject<HTMLElement>, disabled);
-  const size = useSize(ref);
   useSlideEditMode(hostRef, children, timeline);
 
   useEffect(() => {
@@ -239,7 +238,7 @@ registerVevComponent(ScrollingSlide, {
       type: 'select',
       name: 'defaultSpeed',
       title: 'Default speed',
-      initialValue: 'linear',
+      initialValue: 'cubic-bezier(0.7, 0, 0.3, 1)',
       options: {
         display: 'dropdown',
         items: SPEED_OPTIONS,

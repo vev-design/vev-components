@@ -164,9 +164,26 @@ export function useSlideEditMode(
       }, SCROLL_DEBOUNCE);
     };
 
+    const handleResize = () => {
+      if (isScrollingRef.current) return;
+      const index = children.indexOf(activeContentChild);
+      if (index === -1) return;
+
+      // Recalculate positions after resize
+      const { offsetStart: os, offsetEnd: oe, startPosition: sp, endPosition: ep } =
+        calculateScrollAnimationOffset(element);
+      const sr = ep - sp;
+      const targetScrollY = sp + (index * sr) / (children.length - 1);
+
+      isScrollingRef.current = true;
+      callbacksRef.current.onRequestScrollTop?.(targetScrollY, 0, onScrollAnimationFinished);
+    };
+
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     };
   }, [activeContentChild, disabled, children, timeline, hostRef, isPreviewingContentChildren]);
