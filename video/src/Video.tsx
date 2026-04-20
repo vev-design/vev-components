@@ -4,6 +4,8 @@ import { useEditorState, useVevEvent, useDispatchVevEvent, useTracking } from '@
 import { getNameFromUrl, isIE, createTracker } from './utils';
 import { VideoEvent, VideoInteraction } from '.';
 
+const VIDEO_PLAYBACK_EVENT = '@@vev.video.playback';
+
 type Props = {
   video: {
     key: string;
@@ -24,6 +26,7 @@ type Props = {
   preload: 'auto' | 'metadata' | 'none';
   section?: boolean;
   altText?: string;
+  stopOnOtherPlay?: boolean;
 };
 
 const Video = ({
@@ -38,6 +41,7 @@ const Video = ({
   autoplay = false,
   section = false,
   altText,
+  stopOnOtherPlay = false,
 }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   // Keeps track of the muted state given by interaction events
@@ -148,6 +152,9 @@ const Video = ({
           stateRef.current.maxProgress = stateRef.current.maxProgress;
           break;
         case 'play':
+          window.dispatchEvent(
+            new CustomEvent(VIDEO_PLAYBACK_EVENT, { detail: { source: videoEl } }),
+          );
           dispatchTrackingEvent('VEV_VIDEO_PLAY', {
             videoUrl: video.url,
             videoName: video.name,
@@ -184,6 +191,19 @@ const Video = ({
     evs.forEach((e) => videoEl && videoEl.addEventListener(e, onEv, false));
     return () => evs.forEach((e) => videoEl && videoEl.removeEventListener(e, onEv));
   }, [video, loop, track]);
+
+  useEffect(() => {
+    if (!stopOnOtherPlay) return;
+    const onPlayback = (e: Event) => {
+      const source = (e as CustomEvent).detail?.source;
+      if (source && source !== videoRef.current) {
+        pausedRef.current = true;
+        videoRef.current?.pause();
+      }
+    };
+    window.addEventListener(VIDEO_PLAYBACK_EVENT, onPlayback);
+    return () => window.removeEventListener(VIDEO_PLAYBACK_EVENT, onPlayback);
+  }, [stopOnOtherPlay]);
 
   useEffect(() => {
     const videoEl = videoRef.current;
