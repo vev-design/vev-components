@@ -29,6 +29,12 @@ registerVevComponent(Video, {
     { name: 'controls', type: 'boolean', initialValue: true },
     { name: 'autoplay', type: 'boolean', initialValue: true },
     { name: 'loop', type: 'boolean' },
+    {
+      name: 'stopOnOtherPlay',
+      type: 'boolean',
+      title: 'Stop on other play',
+      description: 'Stop playback when another video starts playing',
+    },
     { name: 'disableTracking', type: 'boolean' },
     {
       name: 'altText',
