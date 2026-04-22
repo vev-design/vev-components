@@ -82,12 +82,18 @@ const SLIDE_COMPONENT: Record<SlideType, React.ComponentType<BaseSlideProps>> = 
   zoom: ZoomSlide,
 };
 
-const ScrollingSlide = ({ children = [], type, defaultSpeed, overrideTransition, hostRef }: Props) => {
+const ScrollingSlide = ({
+  children = [],
+  type,
+  defaultSpeed,
+  overrideTransition,
+  hostRef,
+}: Props) => {
   if (!type) type = 'scroll';
 
   // Resolve TransitionValue or plain string into slide type + settings
   const tv: TransitionValue =
-    typeof type === 'string' ? { primary: type } : (type || { primary: 'scroll' });
+    typeof type === 'string' ? { primary: type } : type || { primary: 'scroll' };
   const resolved = resolveTransition(tv.primary || 'scroll', tv.effects);
   const slideType = (resolved.type || 'scroll') as SlideType;
   const defaultSettings = resolved.settings || {};
@@ -109,7 +115,6 @@ const ScrollingSlide = ({ children = [], type, defaultSpeed, overrideTransition,
 
   const ref = useRef<HTMLDivElement>(null);
   const timeline = useViewTimeline(ref as React.RefObject<HTMLElement>, disabled);
-  const size = useSize(ref);
   useSlideEditMode(hostRef, children, timeline);
 
   useEffect(() => {
@@ -233,7 +238,7 @@ registerVevComponent(ScrollingSlide, {
       type: 'select',
       name: 'defaultSpeed',
       title: 'Default speed',
-      initialValue: 'linear',
+      initialValue: 'cubic-bezier(0.7, 0, 0.3, 1)',
       options: {
         display: 'dropdown',
         items: SPEED_OPTIONS,

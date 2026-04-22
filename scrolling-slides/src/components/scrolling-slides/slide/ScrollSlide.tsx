@@ -14,7 +14,6 @@ export function ScrollSlide({
 }: BaseSlideProps) {
   const ref = useRef<HTMLDivElement>(null);
   const transitionCount = slideCount - 1;
-  const { ownsIn, ownsOut } = transition;
 
   const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
   const inSpeed = transition.transitionIn?.speed || 'linear';
@@ -23,71 +22,57 @@ export function ScrollSlide({
   const isReverse = !!phaseSettings?.reverse;
   const zoomAmount = typeof phaseSettings?.zoomScroll === 'number' ? phaseSettings.zoomScroll : 0;
   const blurPx = typeof phaseSettings?.blurScroll === 'number' ? phaseSettings.blurScroll : 0;
-  const enterFrom = isReverse ? '-100%' : '100%';
-  const exitTo = isReverse ? '100%' : '-100%';
+  const direction = isReverse ? -1 : 1;
 
-  const hasIn = ownsIn && index > 0;
-  const hasOut = ownsOut && index < transitionCount;
+  // Container-translate model: every slide runs across the full scroll range in
+  // perfect lockstep, as if a strip containing all slides were translating as a
+  // single unit. At timeline offset t, the virtual container is at
+  // translateX(-t*(N-1)*100%), so slide i sits at (i - t*(N-1))*100%.
+  //
+  // Keyframes are placed at each gap boundary k (offset = k/(N-1)). The easing
+  // between gaps is driven by the adjacent-gap speed we know about (inSpeed for
+  // gap index-1, outSpeed for gap index). Remote gaps fall back to linear, which
+  // is visually irrelevant because this slide is off-screen during those gaps.
+  const scaleStr = zoomAmount > 0 ? ` scale(${1 / (1 + zoomAmount)})` : '';
+  const blurOn = blurPx > 0 ? `blur(${blurPx}px)` : undefined;
+  const blurOff = blurPx > 0 ? 'blur(0px)' : undefined;
 
-  // Helper to build transform + filter strings
-  const sc = zoomAmount > 0 ? `scale(${1 / (1 + zoomAmount)})` : '';
-  const tfm = (translate: string, scaled: boolean) =>
-    `translateX(${translate})${scaled && sc ? ` ${sc}` : ''}`;
-  const blur = (on: boolean) => (blurPx > 0 ? `blur(${on ? blurPx : 0}px)` : undefined);
+  const buildKeyframe = (k: number): Keyframe => {
+    const offset = transitionCount === 0 ? 0 : k / transitionCount;
+    const translate = (index - k) * 100 * direction;
+    const centered = k === index;
+    const kf: Keyframe = {
+      transform: `translateX(${translate}%)${!centered ? scaleStr : ''}`,
+      offset,
+    };
+    if (blurPx > 0) kf.filter = centered ? blurOff : blurOn;
+    return kf;
+  };
 
   const keyframes: Keyframe[] = [];
-
-  if (zoomAmount > 0) {
-    // Zoom effect: scale happens in the 20% edges, full size in the middle
-    if (hasIn && hasOut) {
-      keyframes.push({ transform: tfm(enterFrom, true), filter: blur(true), offset: 0, easing: inSpeed });
-      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.4 });
-      keyframes.push({ transform: tfm('0%', false), filter: blur(false), offset: 0.5, easing: outSpeed });
-      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.6 });
-      keyframes.push({ transform: tfm(exitTo, true), filter: blur(true), offset: 1 });
-    } else if (hasIn) {
-      keyframes.push({ transform: tfm(enterFrom, true), filter: blur(true), offset: 0, easing: inSpeed });
-      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.8 });
-      keyframes.push({ transform: tfm('0%', false), filter: blur(false), offset: 1 });
-    } else if (hasOut) {
-      keyframes.push({ transform: tfm('0%', false), filter: blur(false), offset: 0, easing: outSpeed });
-      keyframes.push({ transform: tfm('0%', true), filter: blur(true), offset: 0.2 });
-      keyframes.push({ transform: tfm(exitTo, true), filter: blur(true), offset: 1 });
-    } else {
-      keyframes.push({ transform: tfm('0%', false) });
-      keyframes.push({ transform: tfm('0%', false) });
-    }
+  if (transitionCount === 0) {
+    const kf = buildKeyframe(0);
+    keyframes.push(kf, { ...kf });
   } else {
-    // Simple scroll (with optional blur across full range)
-    if (hasIn) {
-      keyframes.push({ transform: tfm(enterFrom, false), filter: blur(true), easing: inSpeed });
+    for (let k = 0; k <= transitionCount; k++) {
+      const kf = buildKeyframe(k);
+      if (k < transitionCount) {
+        // Easing applies from this keyframe to the next. Use our own speeds at
+        // the gaps we "own" (adjacent to this slide); linear elsewhere.
+        kf.easing = k === index - 1 ? inSpeed : k === index ? outSpeed : 'linear';
+      }
+      keyframes.push(kf);
     }
-    keyframes.push({
-      transform: tfm('0%', false),
-      filter: blur(false),
-      ...(hasOut ? { easing: outSpeed } : {}),
-    });
-    if (hasOut) {
-      keyframes.push({ transform: tfm(exitTo, false), filter: blur(true) });
-    }
-    if (keyframes.length === 1) keyframes.push(keyframes[0]);
   }
 
-  // Compute offset range from owned phases
-  let fromOffset = hasIn ? (index - 1) / transitionCount : index / transitionCount;
-  let toOffset = hasOut ? (index + 1) / transitionCount : index / transitionCount;
-  if (index === 0) fromOffset = 0;
-  if (index === transitionCount) toOffset = 1;
-  if (fromOffset === toOffset) toOffset = fromOffset;
+  useViewAnimation(ref, keyframes, timeline, selected || disabled, undefined, 0, 1);
 
-  useViewAnimation(ref, keyframes, timeline, selected || disabled, undefined, fromOffset, toOffset);
-
-  // Initial style before animation kicks in
+  // Initial inline style: position slide at its starting offset in the strip.
   const initialStyle: React.CSSProperties =
-    !disabled && hasIn
+    !disabled && transitionCount > 0
       ? {
-          transform: tfm(enterFrom, zoomAmount > 0),
-          ...(blurPx > 0 ? { filter: `blur(${blurPx}px)` } : {}),
+          transform: `translateX(${index * 100 * direction}%)${index !== 0 ? scaleStr : ''}`,
+          ...(blurPx > 0 && index !== 0 ? { filter: `blur(${blurPx}px)` } : {}),
         }
       : {};
 

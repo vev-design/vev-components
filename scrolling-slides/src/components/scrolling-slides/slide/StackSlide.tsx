@@ -2,11 +2,11 @@ import React from 'react';
 import { AnimatedSlide } from './AnimatedSlide';
 import { BaseSlideProps } from './BaseSlide';
 
-const KEYFRAMES: Record<string, Keyframe[]> = {
-  up: [{ transform: 'translateY(100%)' }, { transform: 'translateY(0%)' }],
-  down: [{ transform: 'translateY(-100%)' }, { transform: 'translateY(0%)' }],
-  left: [{ transform: 'translateX(100%)' }, { transform: 'translateX(0%)' }],
-  right: [{ transform: 'translateX(-100%)' }, { transform: 'translateX(0%)' }],
+const TRANSLATE: Record<string, [string, string]> = {
+  up: ['translateY(100%)', 'translateY(0%)'],
+  down: ['translateY(-100%)', 'translateY(0%)'],
+  left: ['translateX(100%)', 'translateX(0%)'],
+  right: ['translateX(-100%)', 'translateX(0%)'],
 };
 
 export function StackSlide({ transition, ...rest }: BaseSlideProps) {
@@ -15,11 +15,28 @@ export function StackSlide({ transition, ...rest }: BaseSlideProps) {
   let dir = s?.stackDirection || 'up';
   if (dir === 'horizontal') dir = 'left';
   if (dir === 'vertical') dir = 'up';
+
+  const blur = s?.blur || 0;
+  const zoom = s?.scale || 0;
+  const zoomIn = 1 + zoom;
+  const [tFrom, tTo] = TRANSLATE[dir] || TRANSLATE.up;
+
+  const keyframes: Keyframe[] = [
+    {
+      transform: `${tFrom}${zoom ? ` scale(${zoomIn})` : ''}`,
+      ...(blur ? { filter: `blur(${blur}px)` } : {}),
+    },
+    {
+      transform: tTo,
+      ...(blur ? { filter: 'blur(0px)' } : {}),
+    },
+  ];
+
   return (
     <AnimatedSlide
       {...rest}
       transition={transition}
-      keyframes={KEYFRAMES[dir] || KEYFRAMES.up}
+      keyframes={keyframes}
     />
   );
 }

@@ -56,20 +56,28 @@ export function useViewAnimation(
     const containStartScroll = Math.min(rootOffset, rootOffset + containDist);
     const containEndScroll = Math.max(rootOffset, rootOffset + containDist);
 
-    const nearTop = containDist > 0
-      ? rootOffset > 0 && rootOffset < windowHeight
-      : containStartScroll < 0;
-    const nearBottom = containDist > 0
-      ? (scrollHeight - (rootOffset + parentHeight)) > 0 &&
-        (scrollHeight - (rootOffset + parentHeight)) < windowHeight
-      : containEndScroll > maxScroll && maxScroll > 0;
+    const nearTop =
+      containDist > 0 ? rootOffset > 0 && rootOffset < windowHeight : containStartScroll < 0;
+    const nearBottom =
+      containDist > 0
+        ? scrollHeight - (rootOffset + parentHeight) > 0 &&
+          scrollHeight - (rootOffset + parentHeight) < windowHeight
+        : containEndScroll > maxScroll && maxScroll > 0;
 
-    if ((nearTop || nearBottom) && containStartScroll !== containEndScroll) {
+    if (
+      (nearTop || nearBottom) &&
+      parentHeight < window.innerHeight &&
+      containStartScroll !== containEndScroll
+    ) {
       const effectiveScrollStart = nearTop
-        ? (containDist > 0 ? 0 : Math.max(0, containStartScroll))
+        ? containDist > 0
+          ? 0
+          : Math.max(0, containStartScroll)
         : containStartScroll;
       const effectiveScrollEnd = nearBottom
-        ? (containDist > 0 ? maxScroll : Math.min(maxScroll, containEndScroll))
+        ? containDist > 0
+          ? maxScroll
+          : Math.min(maxScroll, containEndScroll)
         : containEndScroll;
       const effectiveRange = effectiveScrollEnd - effectiveScrollStart;
 
@@ -93,7 +101,6 @@ export function useViewAnimation(
     // Calculate percentages
     const percentStart = offsetStart * 100;
     const percentEnd = offsetEnd * 100;
-
     // Type assertion needed because rangeStart/rangeEnd are not yet in KeyframeAnimationOptions types
     const animationOptions = {
       fill: 'both' as const,

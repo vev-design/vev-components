@@ -16,32 +16,63 @@ export function CubeSlide({
   const transitionCount = slideCount - 1;
   const { ownsIn, ownsOut } = transition;
 
-  const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
+  const inSettings = transition.transitionIn?.settings;
+  const outSettings = transition.transitionOut?.settings;
   const inSpeed = transition.transitionIn?.speed || 'linear';
   const outSpeed = transition.transitionOut?.speed || 'linear';
 
-  const isVertical = phaseSettings?.cubeDirection === 'vertical';
-  const half = isVertical ? '50cqb' : '50cqi';
-  const axis = isVertical ? 'rotateX' : 'rotateY';
-  const inAngle = isVertical ? '-90deg' : '90deg';
-  const outAngle = isVertical ? '90deg' : '-90deg';
+  // Resolve direction per-phase so overrides only affect their own gap
+  const isVerticalIn = inSettings?.cubeDirection === 'vertical';
+  const isVerticalOut = outSettings?.cubeDirection === 'vertical';
 
-  const cubeTransform = (angle: string) =>
-    `translateZ(-${half}) ${axis}(${angle}) translateZ(${half})`;
+  // Check if in and out use different axes (e.g. horizontal default + vertical override)
+  const mixedAxes = isVerticalIn !== isVerticalOut
+    && ownsIn && ownsOut && index > 0 && index < transitionCount;
 
-  // Build keyframes with per-segment easing so adjacent slides stay in sync
-  const keyframes: Keyframe[] = [];
-  if (ownsIn && index > 0) {
-    keyframes.push({ transform: cubeTransform(inAngle), easing: inSpeed });
+  let keyframes: Keyframe[];
+  let initialTransform: string;
+
+  if (mixedAxes) {
+    // Combined transform with both axes for consistent keyframe interpolation
+    const cubeTransform = (xRot: string, yRot: string) =>
+      `translateZ(-50cqb) rotateX(${xRot}) translateZ(50cqb) translateZ(-50cqi) rotateY(${yRot}) translateZ(50cqi)`;
+
+    const inXRot = isVerticalIn ? '-90deg' : '0deg';
+    const inYRot = isVerticalIn ? '0deg' : '90deg';
+    const outXRot = isVerticalOut ? '90deg' : '0deg';
+    const outYRot = isVerticalOut ? '0deg' : '-90deg';
+
+    keyframes = [
+      { transform: cubeTransform(inXRot, inYRot), easing: inSpeed },
+      { transform: cubeTransform('0deg', '0deg'), easing: outSpeed },
+      { transform: cubeTransform(outXRot, outYRot) },
+    ];
+    initialTransform = cubeTransform(inXRot, inYRot);
+  } else {
+    // Single axis — original behavior
+    const isVertical = ownsIn && index > 0 ? isVerticalIn : isVerticalOut;
+    const half = isVertical ? '50cqb' : '50cqi';
+    const axis = isVertical ? 'rotateX' : 'rotateY';
+    const inAngle = isVertical ? '-90deg' : '90deg';
+    const outAngle = isVertical ? '90deg' : '-90deg';
+
+    const cubeTransform = (angle: string) =>
+      `translateZ(-${half}) ${axis}(${angle}) translateZ(${half})`;
+
+    keyframes = [];
+    if (ownsIn && index > 0) {
+      keyframes.push({ transform: cubeTransform(inAngle), easing: inSpeed });
+    }
+    keyframes.push({
+      transform: cubeTransform('0deg'),
+      ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
+    });
+    if (ownsOut && index < transitionCount) {
+      keyframes.push({ transform: cubeTransform(outAngle) });
+    }
+    if (keyframes.length === 1) keyframes.push(keyframes[0]);
+    initialTransform = cubeTransform(inAngle);
   }
-  keyframes.push({
-    transform: cubeTransform('0deg'),
-    ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
-  });
-  if (ownsOut && index < transitionCount) {
-    keyframes.push({ transform: cubeTransform(outAngle) });
-  }
-  if (keyframes.length === 1) keyframes.push(keyframes[0]);
 
   // Compute offset range from owned phases
   let fromOffset = ownsIn && index > 0 ? (index - 1) / transitionCount : index / transitionCount;
@@ -74,7 +105,7 @@ export function CubeSlide({
         ...style,
         backfaceVisibility: 'hidden',
         ...(!disabled && ownsIn && index > 0
-          ? { transform: cubeTransform(inAngle) }
+          ? { transform: initialTransform }
           : {}),
       }}
     />

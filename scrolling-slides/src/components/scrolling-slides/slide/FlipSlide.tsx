@@ -16,26 +16,35 @@ export function FlipSlide({
   const transitionCount = slideCount - 1;
   const { ownsIn, ownsOut } = transition;
 
-  const phaseSettings = transition.transitionIn?.settings ?? transition.transitionOut?.settings;
+  const inSettings = transition.transitionIn?.settings;
+  const outSettings = transition.transitionOut?.settings;
   const inSpeed = transition.transitionIn?.speed || 'linear';
   const outSpeed = transition.transitionOut?.speed || 'linear';
 
-  const isVertical = phaseSettings?.flipDirection === 'vertical';
-  const axis = isVertical ? 'rotateX' : 'rotateY';
-  const inAngle = isVertical ? '180deg' : '-180deg';
-  const outAngle = isVertical ? '-180deg' : '180deg';
+  // Resolve direction per-phase so overrides only affect their own gap
+  const isVerticalIn = inSettings?.flipDirection === 'vertical';
+  const isVerticalOut = outSettings?.flipDirection === 'vertical';
+
+  // Use both axes in all keyframes for consistent interpolation
+  const flipTransform = (x: string, y: string) =>
+    `perspective(1200px) rotateX(${x}) rotateY(${y})`;
+
+  const inX = isVerticalIn ? '180deg' : '0deg';
+  const inY = isVerticalIn ? '0deg' : '-180deg';
+  const outX = isVerticalOut ? '-180deg' : '0deg';
+  const outY = isVerticalOut ? '0deg' : '180deg';
 
   // Build keyframes with per-segment easing so adjacent slides stay in sync
   const keyframes: Keyframe[] = [];
   if (ownsIn && index > 0) {
-    keyframes.push({ transform: `perspective(1200px) ${axis}(${inAngle})`, easing: inSpeed });
+    keyframes.push({ transform: flipTransform(inX, inY), easing: inSpeed });
   }
   keyframes.push({
-    transform: `perspective(1200px) ${axis}(0deg)`,
+    transform: flipTransform('0deg', '0deg'),
     ...(ownsOut && index < transitionCount ? { easing: outSpeed } : {}),
   });
   if (ownsOut && index < transitionCount) {
-    keyframes.push({ transform: `perspective(1200px) ${axis}(${outAngle})` });
+    keyframes.push({ transform: flipTransform(outX, outY) });
   }
   if (keyframes.length === 1) keyframes.push(keyframes[0]);
 
@@ -70,7 +79,7 @@ export function FlipSlide({
         ...style,
         backfaceVisibility: 'hidden',
         ...(!disabled && ownsIn && index > 0
-          ? { transform: `perspective(1200px) ${axis}(${inAngle})` }
+          ? { transform: flipTransform(inX, inY) }
           : {}),
       }}
     />
