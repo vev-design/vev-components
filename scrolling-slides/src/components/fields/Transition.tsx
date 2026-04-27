@@ -141,6 +141,7 @@ const SETTINGS_CONFIG: Record<string, SettingsConfig> = {
           { label: 'From right', value: 'right' },
           { label: 'From left', value: 'left' },
           { label: 'From top', value: 'top' },
+          { label: 'From bottom', value: 'bottom' },
           { label: 'From top left', value: 'top-left' },
           { label: 'From top right', value: 'top-right' },
         ],
@@ -285,8 +286,12 @@ export const BLUR_AMOUNT_MAP: Record<string, number> = {
 };
 
 const REVEAL_CLIP_PATHS: Record<string, string> = {
+  right:
+    'polygon(calc(100% - 100% * var(--slide-offset)) 0, 100% 0, 100% 100%, calc(100% - 100% * var(--slide-offset)) 100%)',
   left: 'polygon(0 0, calc(100% * var(--slide-offset)) 0, calc(100% * var(--slide-offset)) 100%, 0% 100%)',
   top: 'polygon(0 0, 100% 0, 100% calc(var(--slide-offset) * 100%), 0% calc(var(--slide-offset) * 100%))',
+  bottom:
+    'polygon(0 calc(100% - var(--slide-offset) * 100%), 100% calc(100% - var(--slide-offset) * 100%), 100% 100%, 0 100%)',
   'top-left':
     'polygon(-100% -100%, calc((25% + 100% * var(--slide-offset) / 2) * 4) -100%, -100% calc((25% + 100% * var(--slide-offset) / 2) * 4))',
   'top-right':
