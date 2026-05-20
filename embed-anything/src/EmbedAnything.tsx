@@ -9,6 +9,7 @@ type Props = {
   isStatic: boolean;
   allowScroll: boolean;
   showOverflow: boolean;
+  fillContainer: boolean;
   hostRef: React.MutableRefObject<HTMLDivElement>;
 };
 
@@ -37,6 +38,7 @@ function EmbedAnything({
   isStatic = false,
   renderOnVisible = false,
   showOverflow = false,
+  fillContainer = false,
   hostRef,
 }: Props) {
   const { disabled } = useEditorState();
@@ -53,7 +55,8 @@ function EmbedAnything({
     );
   }
 
-  if (encapsulate) return <EmbedIframe html={html} showOverflow={showOverflow} />;
+  if (encapsulate)
+    return <EmbedIframe html={html} showOverflow={showOverflow} fillContainer={fillContainer} />;
   if (isStatic)
     return <StaticHTML html={html} allowScroll={allowScroll} showOverflow={showOverflow} />;
 
@@ -68,12 +71,22 @@ function EmbedAnything({
   );
 }
 
-function EmbedIframe({ html, showOverflow }: { html: string; showOverflow: boolean }) {
+function EmbedIframe({
+  html,
+  showOverflow,
+  fillContainer,
+}: {
+  html: string;
+  showOverflow: boolean;
+  fillContainer: boolean;
+}) {
   const { key: messageFrom } = useModel() || { key: 'none' };
   const iframeRef = useRef(null);
-  const [iframeHeight, setIframeHeight] = useState('auto');
+  const [iframeHeight, setIframeHeight] = useState<string | number>('auto');
 
   useEffect(() => {
+    if (fillContainer) return;
+
     function handleIframeMessage(event) {
       if (event.data.iframeHeight && event.data.messageFrom === messageFrom) {
         setIframeHeight(`${event.data.iframeHeight}px`);
@@ -84,56 +97,76 @@ function EmbedIframe({ html, showOverflow }: { html: string; showOverflow: boole
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, []);
+  }, [fillContainer, messageFrom]);
 
   function handleIframeLoad() {
+    if (fillContainer) return;
     const iframeDocument = iframeRef.current.contentDocument;
     const iframeBody = iframeDocument.body;
     const newHeight = iframeBody.scrollHeight;
     setIframeHeight(newHeight);
   }
 
+  const fillSrcDoc = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>html,body{margin:0;padding:0;height:100%;width:100%;${
+        showOverflow ? '' : 'overflow:hidden;'
+      }}</style>
+    </head>
+    <body>
+      ${html}
+    </body>
+    </html>`;
+
+  const autoSrcDoc = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>html,body{margin:0;padding:0;height:auto;${
+        showOverflow ? '' : 'overflow:hidden;'
+      }}</style>
+    </head>
+    <body>
+     <script>
+        let prevHeight = 0;
+        function postHeight() {
+          const height = document.body.scrollHeight;
+          if(prevHeight !== height){
+            prevHeight = height;
+            window.parent.postMessage({ iframeHeight: height, messageFrom: '${messageFrom}' }, '*');
+          }
+        }
+
+        window.addEventListener('resize', postHeight);
+
+        const observer = new ResizeObserver(postHeight);
+        observer.observe(document.body);
+        postHeight();
+        setInterval(postHeight,500);
+      </script>
+      ${html}
+    </body>
+    </html>`;
+
   return (
     <iframe
       className={styles.wrapper}
       data-show-overflow={showOverflow}
       ref={iframeRef}
-      title="Auto-resizing iframe"
-      srcDoc={`<!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>html,body{margin:0;padding:0;height:auto;${showOverflow ? '' : 'overflow:hidden;'}}</style>
-      </head>
-      <body>
-       <script>
-          let prevHeight = 0;
-          function postHeight() {
-            const height = document.body.scrollHeight;
-            if(prevHeight !== height){
-              prevHeight = height;
-              window.parent.postMessage({ iframeHeight: height, messageFrom: '${messageFrom}' }, '*');
-            }
-          }
-
-          window.addEventListener('resize', postHeight);
-
-          const observer = new ResizeObserver(postHeight);
-          observer.observe(document.body);
-          postHeight();
-          setInterval(postHeight,500);
-        </script>
-        ${html}
-       
-      </body>
-      </html>`}
+      title={fillContainer ? 'Fill-container iframe' : 'Auto-resizing iframe'}
+      srcDoc={fillContainer ? fillSrcDoc : autoSrcDoc}
       style={{
-        height: iframeHeight,
+        height: fillContainer ? '100%' : iframeHeight,
         width: '100%',
         background: 'transparent',
         border: 'none',
+        display: 'block',
       }}
       onLoad={handleIframeLoad}
     />
@@ -256,6 +289,13 @@ registerVevComponent(EmbedAnything, {
       hidden: (context) => {
         return context.value.allowScroll;
       },
+    },
+    {
+      title: 'Fill container',
+      name: 'fillContainer',
+      type: 'boolean',
+      description: 'Embed will fill the container no matter what size it is',
+      initialValue: false,
     },
   ],
   editableCSS: [
