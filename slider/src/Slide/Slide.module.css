@@ -10,6 +10,12 @@
   grid-area: 1/1;
 }
 
+.animated {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .slide {
   width: 100%;
   margin: 0;

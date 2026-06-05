@@ -127,7 +127,7 @@ export const Slide = ({
       }}
     >
       <div
-        className={styles.wrapper}
+        className={`${styles.wrapper} ${styles.animated}`}
         style={{
           transform: `translate${moveDirection}(${move}%)`,
           transition: `transform ${transitionSpeed}ms ${easing || 'ease'}`,
