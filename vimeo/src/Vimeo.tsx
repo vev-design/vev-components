@@ -140,14 +140,15 @@ const Vimeo = ({
   const fill = settings.fill || false;
 
   useVevEvent(Interaction.PLAY, async () => {
-    await playerRef.current.play();
+    await playerRef.current?.play();
   });
 
   useVevEvent(Interaction.PAUSE, () => {
-    playerRef.current.pause();
+    playerRef.current?.pause();
   });
 
   useVevEvent(Interaction.TOGGLE_PLAY, async () => {
+    if (!playerRef.current) return;
     if (await playerRef.current.getPaused()) {
       playerRef.current.play();
     } else {
@@ -156,14 +157,15 @@ const Vimeo = ({
   });
 
   useVevEvent(Interaction.MUTE, () => {
-    playerRef.current.setMuted(true);
+    playerRef.current?.setMuted(true);
   });
 
   useVevEvent(Interaction.UNMUTE, () => {
-    playerRef.current.setMuted(false);
+    playerRef.current?.setMuted(false);
   });
 
   useVevEvent(Interaction.TOGGLE_SOUND, async () => {
+    if (!playerRef.current) return;
     if (await playerRef.current.getMuted()) {
       playerRef.current.setMuted(false);
     } else {
@@ -193,7 +195,7 @@ const Vimeo = ({
   useEffect(() => {
     try {
       if (iframeRef.current) {
-        const iframe = document.querySelector('iframe');
+        const iframe = iframeRef.current;
         const player = new Player(iframe);
 
         if (fill) {
@@ -231,6 +233,11 @@ const Vimeo = ({
             dispatchTracking('VEV_VIDEO_PROGRESS', currentSec);
           }
         });
+
+        return () => {
+          player.destroy().catch(() => { });
+          playerRef.current = null;
+        };
       }
     } catch (e) { }
   }, [iframeRef, fill]);
