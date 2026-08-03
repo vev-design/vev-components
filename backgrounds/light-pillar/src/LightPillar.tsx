@@ -114,25 +114,33 @@ const LightPillar = ({
     const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(handleResize) : null;
     resizeObserver?.observe(container);
 
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!workerRef.current || !container) return;
-      const rect = container.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      workerRef.current.postMessage({ type: 'mouse', data: { x, y } });
-    };
+    // Pause rendering when the component is scrolled off-screen or the tab is hidden.
+    const intersectionObserver = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(
+          (entries) => {
+            const entry = entries[0];
+            const visible = !!entry && entry.isIntersecting;
+            workerRef.current?.postMessage({
+              type: 'visibility',
+              data: { visible: visible && !document.hidden },
+            });
+          },
+          { threshold: [0, 0.01] }
+        )
+      : null;
+    intersectionObserver?.observe(container);
 
-    const handleMouseLeave = () => {
-      if (!workerRef.current) return;
-      workerRef.current.postMessage({ type: 'mouseLeave' });
+    const handleVisibilityChange = () => {
+      workerRef.current?.postMessage({
+        type: 'visibility',
+        data: { visible: !document.hidden },
+      });
     };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    container.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      intersectionObserver?.disconnect();
       resizeObserver?.disconnect();
       if (workerRef.current) {
         workerRef.current.postMessage({ type: 'cleanup' });
@@ -145,6 +153,34 @@ const LightPillar = ({
       canvasRef.current = null;
     };
   }, []);
+
+  // Mouse tracking only matters when interactivity is on — avoid window-wide
+  // mousemove traffic (and worker postMessages) otherwise.
+  useEffect(() => {
+    if (!interactive) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!workerRef.current) return;
+      const rect = container.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      workerRef.current.postMessage({ type: 'mouse', data: { x, y } });
+    };
+
+    const handleMouseLeave = () => {
+      workerRef.current?.postMessage({ type: 'mouseLeave' });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    container.addEventListener('mouseleave', handleMouseLeave, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [interactive]);
 
   // Update props when they change
   useEffect(() => {
