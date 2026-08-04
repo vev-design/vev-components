@@ -111,18 +111,30 @@ const Lottie = ({
     hostRef,
   ]);
 
-  useVevEvent(Interactions.PLAY, () => {
-    if (lottieRef.current) {
-      lottieRef.current.setDirection(1);
-      lottieRef.current?.play();
+  // Start (or restart) playback in the given direction.
+  // When a non-looping animation finishes, the player parks the playhead on the
+  // last frame and enters the 'completed' state. Calling play() again from there
+  // does nothing (the player only auto-restarts reverse playback), so we manually
+  // seek back to the start to make repeated Play interactions work.
+  const startPlayback = (direction: 1 | -1) => {
+    const player = lottieRef.current;
+    if (!player) return;
+
+    player.setDirection(direction);
+
+    if (player.currentState === 'completed') {
+      player.goToAndPlay(direction === -1 ? player.totalFrames : 0, true);
+    } else {
+      player.play();
     }
+  };
+
+  useVevEvent(Interactions.PLAY, () => {
+    startPlayback(1);
   });
 
   useVevEvent(Interactions.PLAY_REVERSE, () => {
-    if (lottieRef.current) {
-      lottieRef.current.setDirection(-1);
-      lottieRef.current?.play();
-    }
+    startPlayback(-1);
   });
 
   useVevEvent(Interactions.PAUSE, () => {
@@ -133,10 +145,10 @@ const Lottie = ({
 
   useVevEvent(Interactions.TOGGLE, () => {
     if (lottieRef.current) {
-      if (lottieRef.current.currentState === 'paused') {
-        lottieRef.current?.play();
+      if (lottieRef.current.currentState === 'playing') {
+        lottieRef.current.pause();
       } else {
-        lottieRef.current?.pause();
+        startPlayback(1);
       }
     }
   });
