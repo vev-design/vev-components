@@ -17,7 +17,9 @@ import {
   DotLottiePlayer,
   PlayerEvents,
 } from '@dotlottie/react-player';
-import '@dotlottie/react-player/dist/index.css';
+// Vendored copy of '@dotlottie/react-player/dist/index.css' with the bundled
+// Karla @font-face removed so the Vev CLI build doesn't fail resolving the font.
+import './dotlottie-player.css';
 
 import styles from './Lottie.module.css';
 import { Events, Interactions } from './events';
