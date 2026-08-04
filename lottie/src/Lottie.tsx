@@ -113,22 +113,19 @@ const Lottie = ({
     hostRef,
   ]);
 
-  // Start (or restart) playback in the given direction.
-  // When a non-looping animation finishes, the player parks the playhead on the
-  // last frame and enters the 'completed' state. Calling play() again from there
-  // does nothing (the player only auto-restarts reverse playback), so we manually
-  // seek back to the start to make repeated Play interactions work.
+  // Always (re)start playback from the beginning of the given direction.
+  //
+  // Once a non-looping animation finishes, its playhead is parked at the end
+  // frame. Calling the player's play() from there does nothing, which is why the
+  // Play interaction appeared to "only play once". By seeking back to the start
+  // frame and playing, the Play / Play reverse interactions can be triggered
+  // repeatedly and play every time.
   const startPlayback = (direction: 1 | -1) => {
     const player = lottieRef.current;
     if (!player) return;
 
     player.setDirection(direction);
-
-    if (player.currentState === 'completed') {
-      player.goToAndPlay(direction === -1 ? player.totalFrames : 0, true);
-    } else {
-      player.play();
-    }
+    player.goToAndPlay(direction === -1 ? player.totalFrames : 0, true);
   };
 
   useVevEvent(Interactions.PLAY, () => {
@@ -140,25 +137,32 @@ const Lottie = ({
   });
 
   useVevEvent(Interactions.PAUSE, () => {
-    if (lottieRef.current) {
-      lottieRef.current.pause();
-    }
+    lottieRef.current?.pause();
   });
 
   useVevEvent(Interactions.TOGGLE, () => {
-    if (lottieRef.current) {
-      if (lottieRef.current.currentState === 'playing') {
-        lottieRef.current.pause();
-      } else {
-        startPlayback(1);
-      }
+    const player = lottieRef.current;
+    if (!player) return;
+
+    if (player.currentState === 'playing') {
+      player.pause();
+      return;
+    }
+
+    // Resume when paused mid-way, but restart when the playhead is parked at
+    // either end (finished) — otherwise play() would do nothing.
+    const total = player.totalFrames;
+    const { frame } = player.getState();
+
+    if (total && (frame <= 0 || frame >= total - 1)) {
+      player.goToAndPlay(player.direction === -1 ? total : 0, true);
+    } else {
+      player.play();
     }
   });
 
   useVevEvent(Interactions.RESET_ANIMATION, () => {
-    if (lottieRef.current) {
-      lottieRef.current?.goToAndStop(0);
-    }
+    lottieRef.current?.goToAndStop(0);
   });
 
   // Fetch json data when file url changes
