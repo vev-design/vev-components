@@ -14,7 +14,7 @@
     "typescript-plugin-css-modules": "^3.4.0"
   },
   "dependencies": {
-    "@dotlottie/react-player": "^1.6.19",
+    "@lottiefiles/dotlottie-react": "^0.19.12",
     "@vev/react": "^0.1.8",
     "@vev/silke": "^1.0.24",
     "lottie-colorify": "^0.8.0",

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   registerVevComponent,
   useDispatchVevEvent,
@@ -8,18 +8,11 @@ import {
   useViewport,
 } from '@vev/react';
 import { colorify, getColors } from 'lottie-colorify';
+import { DotLottie, DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { File, LottieColorReplacement } from './types';
 import defaultAnimation from './constants/defaultAnimation';
 import ColorPicker from './components/ColorPicker';
-import {
-  Controls,
-  DotLottieCommonPlayer,
-  DotLottiePlayer,
-  PlayerEvents,
-} from '@dotlottie/react-player';
-// Vendored copy of '@dotlottie/react-player/dist/index.css' with the bundled
-// Karla @font-face removed so the Vev CLI build doesn't fail resolving the font.
-import './dotlottie-player.css';
+import Controls from './components/Controls';
 
 import styles from './Lottie.module.css';
 import { Events, Interactions } from './events';
@@ -61,7 +54,11 @@ const Lottie = ({
   scrollTimelineWidget,
   hostRef,
 }: Props) => {
-  const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
+  // Keep the instance both in a ref (for interaction handlers, which need the
+  // latest value without re-subscribing) and in state (so <Controls> can react
+  // to it becoming available).
+  const lottieRef = useRef<DotLottie | null>(null);
+  const [dotLottie, setDotLottie] = useState<DotLottie | null>(null);
   const dispatchVevEvent = useDispatchVevEvent();
   const isJSON = (file?.url && file?.type === 'application/json') || !file?.url;
   const [json, setJson] = useState<null | Record<string, unknown>>(null);
@@ -72,9 +69,14 @@ const Lottie = ({
 
   const scrollTop = useScrollTop();
 
+  const handleDotLottieRef = useCallback((instance: DotLottie | null) => {
+    lottieRef.current = instance;
+    setDotLottie(instance);
+  }, []);
+
   useEffect(() => {
     if (scroll) {
-      if (lottieRef.current) {
+      if (lottieRef.current && lottieRef.current.totalFrames) {
         let progress = 0;
         const { totalFrames } = lottieRef.current;
 
@@ -98,7 +100,7 @@ const Lottie = ({
 
         progress = clampProgress(progress);
 
-        lottieRef.current.goToAndStop(Math.min(totalFrames * progress, totalFrames * 0.99), true);
+        lottieRef.current.setFrame(Math.min(totalFrames * progress, totalFrames * 0.99));
       }
     }
   }, [
@@ -114,52 +116,77 @@ const Lottie = ({
   ]);
 
   // Start (or restart) playback in the given direction.
-  // When a non-looping animation finishes, the player parks the playhead on the
-  // last frame and enters the 'completed' state. Calling play() again from there
-  // does nothing (the player only auto-restarts reverse playback), so we manually
-  // seek back to the start to make repeated Play interactions work.
-  const startPlayback = (direction: 1 | -1) => {
+  // When a non-looping animation finishes, the playhead is parked on the last
+  // frame. Calling play() from there does nothing, so we seek back to the start
+  // frame first to make repeated Play interactions replay the animation, while
+  // still resuming normally when paused mid-way.
+  const startPlayback = (mode: 'forward' | 'reverse') => {
     const player = lottieRef.current;
     if (!player) return;
 
-    player.setDirection(direction);
+    player.setMode(mode);
 
-    if (player.currentState === 'completed') {
-      player.goToAndPlay(direction === -1 ? player.totalFrames : 0, true);
-    } else {
-      player.play();
+    if (player.isPlaying) return;
+
+    const atEnd = player.currentFrame >= player.totalFrames - 1;
+    const atStart = player.currentFrame <= 0;
+
+    if (mode === 'forward' && atEnd) {
+      player.setFrame(0);
+    } else if (mode === 'reverse' && atStart) {
+      player.setFrame(player.totalFrames - 1);
     }
+
+    player.play();
   };
 
   useVevEvent(Interactions.PLAY, () => {
-    startPlayback(1);
+    startPlayback('forward');
   });
 
   useVevEvent(Interactions.PLAY_REVERSE, () => {
-    startPlayback(-1);
+    startPlayback('reverse');
   });
 
   useVevEvent(Interactions.PAUSE, () => {
-    if (lottieRef.current) {
-      lottieRef.current.pause();
-    }
+    lottieRef.current?.pause();
   });
 
   useVevEvent(Interactions.TOGGLE, () => {
-    if (lottieRef.current) {
-      if (lottieRef.current.currentState === 'playing') {
-        lottieRef.current.pause();
-      } else {
-        startPlayback(1);
-      }
+    const player = lottieRef.current;
+    if (!player) return;
+    if (player.isPlaying) {
+      player.pause();
+    } else {
+      startPlayback('forward');
     }
   });
 
   useVevEvent(Interactions.RESET_ANIMATION, () => {
-    if (lottieRef.current) {
-      lottieRef.current?.goToAndStop(0);
-    }
+    lottieRef.current?.stop();
   });
+
+  // Forward player lifecycle events to Vev.
+  useEffect(() => {
+    if (!dotLottie) return undefined;
+
+    const onPlay = () => dispatchVevEvent(Events.PLAY);
+    const onPause = () => dispatchVevEvent(Events.PAUSE);
+    const onComplete = () => dispatchVevEvent(Events.COMPLETE);
+    const onLoop = () => dispatchVevEvent(Events.LOOP_COMPLETED);
+
+    dotLottie.addEventListener('play', onPlay);
+    dotLottie.addEventListener('pause', onPause);
+    dotLottie.addEventListener('complete', onComplete);
+    dotLottie.addEventListener('loop', onLoop);
+
+    return () => {
+      dotLottie.removeEventListener('play', onPlay);
+      dotLottie.removeEventListener('pause', onPause);
+      dotLottie.removeEventListener('complete', onComplete);
+      dotLottie.removeEventListener('loop', onLoop);
+    };
+  }, [dotLottie, dispatchVevEvent]);
 
   // Fetch json data when file url changes
   useEffect(() => {
@@ -191,30 +218,21 @@ const Lottie = ({
     colorsChanged && isJSON && fetchJson();
   }, [colorsChanged, file]);
 
+  // The colorified animation (JSON files) is passed inline via `data`, while
+  // `.lottie`/remote files are loaded by URL via `src`.
+  const useInlineData = isJSON && json;
+
   return (
-    <div key={`id-${scroll}-${autoplay}-${disabled}`}>
-      <DotLottiePlayer
-        src={isJSON && json ? json : path}
-        ref={lottieRef}
+    <div key={`id-${scroll}-${autoplay}-${disabled}`} className={styles.wrapper}>
+      <DotLottieReact
+        className={styles.canvas}
+        dotLottieRefCallback={handleDotLottieRef}
+        {...(useInlineData ? { data: json as Record<string, unknown> } : { src: path })}
         autoplay={scroll ? false : autoplay}
         loop={scroll ? false : loop}
         speed={speed}
-        className={styles.wrapper}
-        onEvent={(event: PlayerEvents) => {
-          const events = {
-            [PlayerEvents.Play]: Events.PLAY,
-            [PlayerEvents.Pause]: Events.PAUSE,
-            [PlayerEvents.Complete]: Events.COMPLETE,
-            [PlayerEvents.LoopComplete]: Events.LOOP_COMPLETED,
-          };
-
-          if (Object.keys(events).includes(event)) {
-            dispatchVevEvent(events[event as keyof typeof events]);
-          }
-        }}
-      >
-        {!hideControls && <Controls />}
-      </DotLottiePlayer>
+      />
+      {!hideControls && <Controls dotLottie={dotLottie} />}
     </div>
   );
 };
