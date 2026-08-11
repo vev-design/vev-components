@@ -17,7 +17,9 @@ import {
   DotLottiePlayer,
   PlayerEvents,
 } from '@dotlottie/react-player';
-import '@dotlottie/react-player/dist/index.css';
+// Vendored copy of '@dotlottie/react-player/dist/index.css' with the bundled
+// Karla @font-face removed so the Vev CLI build doesn't fail resolving the font.
+import './dotlottie-player.css';
 
 import styles from './Lottie.module.css';
 import { Events, Interactions } from './events';
@@ -111,40 +113,56 @@ const Lottie = ({
     hostRef,
   ]);
 
+  // Always (re)start playback from the beginning of the given direction.
+  //
+  // Once a non-looping animation finishes, its playhead is parked at the end
+  // frame. Calling the player's play() from there does nothing, which is why the
+  // Play interaction appeared to "only play once". By seeking back to the start
+  // frame and playing, the Play / Play reverse interactions can be triggered
+  // repeatedly and play every time.
+  const startPlayback = (direction: 1 | -1) => {
+    const player = lottieRef.current;
+    if (!player) return;
+
+    player.setDirection(direction);
+    player.goToAndPlay(direction === -1 ? player.totalFrames : 0, true);
+  };
+
   useVevEvent(Interactions.PLAY, () => {
-    if (lottieRef.current) {
-      lottieRef.current.setDirection(1);
-      lottieRef.current?.play();
-    }
+    startPlayback(1);
   });
 
   useVevEvent(Interactions.PLAY_REVERSE, () => {
-    if (lottieRef.current) {
-      lottieRef.current.setDirection(-1);
-      lottieRef.current?.play();
-    }
+    startPlayback(-1);
   });
 
   useVevEvent(Interactions.PAUSE, () => {
-    if (lottieRef.current) {
-      lottieRef.current.pause();
-    }
+    lottieRef.current?.pause();
   });
 
   useVevEvent(Interactions.TOGGLE, () => {
-    if (lottieRef.current) {
-      if (lottieRef.current.currentState === 'paused') {
-        lottieRef.current?.play();
-      } else {
-        lottieRef.current?.pause();
-      }
+    const player = lottieRef.current;
+    if (!player) return;
+
+    if (player.currentState === 'playing') {
+      player.pause();
+      return;
+    }
+
+    // Resume when paused mid-way, but restart when the playhead is parked at
+    // either end (finished) — otherwise play() would do nothing.
+    const total = player.totalFrames;
+    const { frame } = player.getState();
+
+    if (total && (frame <= 0 || frame >= total - 1)) {
+      player.goToAndPlay(player.direction === -1 ? total : 0, true);
+    } else {
+      player.play();
     }
   });
 
   useVevEvent(Interactions.RESET_ANIMATION, () => {
-    if (lottieRef.current) {
-      lottieRef.current?.goToAndStop(0);
-    }
+    lottieRef.current?.goToAndStop(0);
   });
 
   // Fetch json data when file url changes
