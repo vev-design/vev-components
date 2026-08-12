@@ -133,8 +133,34 @@ function ColorBends({
 
     window.addEventListener('pointermove', handlePointerMove);
 
+    // Pause rendering when the component is scrolled off-screen or the tab is hidden.
+    const intersectionObserver = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(
+          (entries) => {
+            const entry = entries[0];
+            const visible = !!entry && entry.isIntersecting;
+            workerRef.current?.postMessage({
+              type: 'visibility',
+              data: { visible: visible && !document.hidden },
+            });
+          },
+          { threshold: [0, 0.01] }
+        )
+      : null;
+    intersectionObserver?.observe(container);
+
+    const handleVisibilityChange = () => {
+      workerRef.current?.postMessage({
+        type: 'visibility',
+        data: { visible: !document.hidden },
+      });
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      intersectionObserver?.disconnect();
       resizeObserver?.disconnect();
       if (workerRef.current) {
         workerRef.current.postMessage({ type: 'cleanup' });

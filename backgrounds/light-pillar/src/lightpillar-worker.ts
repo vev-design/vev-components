@@ -11,7 +11,7 @@ void main() {
 `;
 
 const fragmentShader = `
-precision highp float;
+precision mediump float;
 uniform float uTime;
 uniform vec2 uResolution;
 uniform vec2 uMouse;
@@ -94,7 +94,7 @@ void main() {
 
   vec3 color = vec3(0.0);
 
-  for(float i = 0.0; i < 100.0; i++) {
+  for(float i = 0.0; i < 64.0; i++) {
     vec3 pos = origin + direction * depth;
     pos.xz *= rotX;
 
@@ -110,7 +110,7 @@ void main() {
     fieldDistance = abs(fieldDistance) * 0.15 + 0.01;
 
     vec3 gradient = mix(uBottomColor, uTopColor, smoothstep(15.0, -15.0, pos.y));
-    color += gradient * pow(1.0 / fieldDistance, 1.0);
+    color += gradient / fieldDistance;
 
     if(fieldDistance < EPSILON || depth > maxDepth) break;
     depth += fieldDistance;
@@ -157,8 +157,13 @@ let locs: {
 } = {} as any;
 
 let running = false;
+let isVisible = true;
 let time = 0;
 let lastTs = 0;
+
+// Cap the render loop to ~60fps so high-refresh (120/144Hz) displays don't pay double.
+const FRAME_MS = 1000 / 60;
+let lastFrame = 0;
 
 // Props
 let topColor: [number, number, number] = [0.32, 0.15, 1];
@@ -214,23 +219,10 @@ const createProgram_ = (): WebGLProgram | null => {
   return p;
 };
 
-function animate(ts: number) {
-  if (!running) return;
-  requestAnimationFrame(animate);
+// Uniforms that only change when props change — uploaded from the `props`
+// handler (and once at init), not re-sent every frame.
+function applyStaticUniforms() {
   if (!gl) return;
-
-  const delta = lastTs ? (ts - lastTs) / 1000 : 1 / 60;
-  lastTs = ts;
-  time += delta * rotationSpeed;
-
-  // Smooth mouse
-  const smoothing = 0.1;
-  mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * smoothing;
-  mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * smoothing;
-
-  // Update uniforms
-  if (locs.uTime) gl.uniform1f(locs.uTime, time);
-  if (locs.uMouse) gl.uniform2f(locs.uMouse, mouseCurrent.x, mouseCurrent.y);
   if (locs.uTopColor) gl.uniform3f(locs.uTopColor, topColor[0], topColor[1], topColor[2]);
   if (locs.uBottomColor) gl.uniform3f(locs.uBottomColor, bottomColor[0], bottomColor[1], bottomColor[2]);
   if (locs.uIntensity) gl.uniform1f(locs.uIntensity, intensity);
@@ -240,6 +232,30 @@ function animate(ts: number) {
   if (locs.uPillarHeight) gl.uniform1f(locs.uPillarHeight, pillarHeight);
   if (locs.uNoiseIntensity) gl.uniform1f(locs.uNoiseIntensity, noiseIntensity);
   if (locs.uPillarRotation) gl.uniform1f(locs.uPillarRotation, pillarRotation);
+}
+
+function animate(ts: number) {
+  if (!running || !isVisible) return;
+  requestAnimationFrame(animate);
+  if (!gl) return;
+
+  // ~60fps cap
+  if (ts - lastFrame < FRAME_MS - 0.5) return;
+  lastFrame = ts;
+
+  // Clamp delta so returning from a stall/pause doesn't jump the animation.
+  const delta = lastTs ? Math.min((ts - lastTs) / 1000, 1 / 30) : 1 / 60;
+  lastTs = ts;
+  time += delta * rotationSpeed;
+
+  // Per-frame uniforms only
+  if (locs.uTime) gl.uniform1f(locs.uTime, time);
+  if (interactive) {
+    const smoothing = 0.1;
+    mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * smoothing;
+    mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * smoothing;
+    if (locs.uMouse) gl.uniform2f(locs.uMouse, mouseCurrent.x, mouseCurrent.y);
+  }
 
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -249,7 +265,7 @@ function init(offscreen: OffscreenCanvas) {
   canvas = offscreen;
   gl = canvas.getContext('webgl', {
     alpha: true,
-    antialias: true,
+    antialias: false,
     powerPreference: 'high-performance',
     depth: false,
     stencil: false,
@@ -301,6 +317,8 @@ function init(offscreen: OffscreenCanvas) {
     uPillarRotation: gl.getUniformLocation(program, 'uPillarRotation'),
   };
 
+  applyStaticUniforms();
+
   self.postMessage({ type: 'ready' });
 }
 
@@ -316,12 +334,26 @@ self.onmessage = (e: MessageEvent) => {
       if (!running) {
         running = true;
         lastTs = 0;
+        lastFrame = 0;
         requestAnimationFrame(animate);
       }
       break;
 
     case 'stop':
       running = false;
+      break;
+
+    case 'visibility':
+      if (typeof data?.visible === 'boolean') {
+        const wasVisible = isVisible;
+        isVisible = data.visible;
+        // Resume the loop when we become visible again while running.
+        if (isVisible && !wasVisible && running) {
+          lastTs = 0;
+          lastFrame = 0;
+          requestAnimationFrame(animate);
+        }
+      }
       break;
 
     case 'resize':
@@ -354,6 +386,7 @@ self.onmessage = (e: MessageEvent) => {
       if (typeof data.pillarHeight === 'number') pillarHeight = data.pillarHeight;
       if (typeof data.noiseIntensity === 'number') noiseIntensity = data.noiseIntensity;
       if (typeof data.pillarRotation === 'number') pillarRotation = data.pillarRotation;
+      applyStaticUniforms();
       break;
 
     case 'cleanup':

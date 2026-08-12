@@ -4,7 +4,7 @@ const MAX_COLORS = 8;
 
 const frag = `
 #define MAX_COLORS ${MAX_COLORS}
-precision highp float;
+precision mediump float;
 uniform vec2 uCanvas;
 uniform float uTime;
 uniform float uSpeed;
@@ -121,10 +121,19 @@ let locs: {
 } = {} as any;
 
 let running = false;
+let isVisible = true;
 let time = 0;
 let lastTs = 0;
 let width = 1;
 let height = 1;
+
+// Cap the render loop to ~60fps so high-refresh (120/144Hz) displays don't pay double.
+const FRAME_MS = 1000 / 60;
+let lastFrame = 0;
+
+// Parsed color cache — rebuilt only when the `colors` prop changes, not per frame.
+const colorVecs = new Float32Array(MAX_COLORS * 3);
+let colorCount = 0;
 
 // Prop values
 let speed = 0.2;
@@ -182,42 +191,11 @@ const createProgram_ = (): WebGLProgram | null => {
   return p;
 };
 
-function animate(ts: number) {
-  if (!running) return;
-  requestAnimationFrame(animate);
-  if (!gl) return;
-
-  const delta = lastTs ? (ts - lastTs) / 1000 : 1 / 60;
-  lastTs = ts;
-  time += delta;
-
-  // Smooth pointer
-  const amt = Math.min(1, delta * 8);
-  pointerCurrent.x += (pointerTarget.x - pointerCurrent.x) * amt;
-  pointerCurrent.y += (pointerTarget.y - pointerCurrent.y) * amt;
-
-  // Update uniforms
-  if (locs.uTime) gl.uniform1f(locs.uTime, time);
-  if (locs.uSpeed) gl.uniform1f(locs.uSpeed, speed);
-  if (locs.uScale) gl.uniform1f(locs.uScale, scale);
-  if (locs.uFrequency) gl.uniform1f(locs.uFrequency, frequency);
-  if (locs.uWarpStrength) gl.uniform1f(locs.uWarpStrength, warpStrength);
-  if (locs.uMouseInfluence) gl.uniform1f(locs.uMouseInfluence, mouseInfluence);
-  if (locs.uParallax) gl.uniform1f(locs.uParallax, parallax);
-  if (locs.uNoise) gl.uniform1f(locs.uNoise, noise);
-  if (locs.uTransparent) gl.uniform1i(locs.uTransparent, transparent ? 1 : 0);
-  if (locs.uPointer) gl.uniform2f(locs.uPointer, pointerCurrent.x, pointerCurrent.y);
-
-  // Update rotation
-  const deg = (rotation % 360) + autoRotate * time;
-  const rad = (deg * Math.PI) / 180;
-  const c = Math.cos(rad);
-  const s = Math.sin(rad);
-  if (locs.uRot) gl.uniform2f(locs.uRot, c, s);
-
-  // Update colors
+// Parse the `colors` prop into the cached float array. Called only from the
+// `props` handler, not per frame.
+function parseColors() {
   const colorArray = colors.filter(Boolean).slice(0, MAX_COLORS);
-  const colorVecs: number[] = [];
+  colorCount = colorArray.length;
   for (let i = 0; i < MAX_COLORS; i++) {
     if (i < colorArray.length) {
       const hex = colorArray[i].replace('#', '').trim();
@@ -232,13 +210,60 @@ function animate(ts: number) {
           parseInt(hex.slice(2, 4), 16),
           parseInt(hex.slice(4, 6), 16)
         ];
-      colorVecs.push(v[0] / 255, v[1] / 255, v[2] / 255);
+      colorVecs[i * 3] = v[0] / 255;
+      colorVecs[i * 3 + 1] = v[1] / 255;
+      colorVecs[i * 3 + 2] = v[2] / 255;
     } else {
-      colorVecs.push(0, 0, 0);
+      colorVecs[i * 3] = 0;
+      colorVecs[i * 3 + 1] = 0;
+      colorVecs[i * 3 + 2] = 0;
     }
   }
+}
+
+// Uniforms that only change when props change — uploaded from the `props`
+// handler (and once at init), not re-sent every frame.
+function applyStaticUniforms() {
+  if (!gl) return;
+  if (locs.uSpeed) gl.uniform1f(locs.uSpeed, speed);
+  if (locs.uScale) gl.uniform1f(locs.uScale, scale);
+  if (locs.uFrequency) gl.uniform1f(locs.uFrequency, frequency);
+  if (locs.uWarpStrength) gl.uniform1f(locs.uWarpStrength, warpStrength);
+  if (locs.uMouseInfluence) gl.uniform1f(locs.uMouseInfluence, mouseInfluence);
+  if (locs.uParallax) gl.uniform1f(locs.uParallax, parallax);
+  if (locs.uNoise) gl.uniform1f(locs.uNoise, noise);
+  if (locs.uTransparent) gl.uniform1i(locs.uTransparent, transparent ? 1 : 0);
   if (locs.uColors) gl.uniform3fv(locs.uColors, colorVecs);
-  if (locs.uColorCount) gl.uniform1i(locs.uColorCount, colorArray.length);
+  if (locs.uColorCount) gl.uniform1i(locs.uColorCount, colorCount);
+}
+
+function animate(ts: number) {
+  if (!running || !isVisible) return;
+  requestAnimationFrame(animate);
+  if (!gl) return;
+
+  // ~60fps cap
+  if (ts - lastFrame < FRAME_MS - 0.5) return;
+  lastFrame = ts;
+
+  // Clamp delta so returning from a stall/pause doesn't jump the animation.
+  const delta = lastTs ? Math.min((ts - lastTs) / 1000, 1 / 30) : 1 / 60;
+  lastTs = ts;
+  time += delta;
+
+  // Smooth pointer
+  const amt = Math.min(1, delta * 8);
+  pointerCurrent.x += (pointerTarget.x - pointerCurrent.x) * amt;
+  pointerCurrent.y += (pointerTarget.y - pointerCurrent.y) * amt;
+
+  // Per-frame uniforms only
+  if (locs.uTime) gl.uniform1f(locs.uTime, time);
+  if (locs.uPointer) gl.uniform2f(locs.uPointer, pointerCurrent.x, pointerCurrent.y);
+
+  // Rotation depends on time when autoRotate != 0, so it stays per-frame.
+  const deg = (rotation % 360) + autoRotate * time;
+  const rad = (deg * Math.PI) / 180;
+  if (locs.uRot) gl.uniform2f(locs.uRot, Math.cos(rad), Math.sin(rad));
 
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -248,7 +273,7 @@ function init(offscreen: OffscreenCanvas) {
   canvas = offscreen;
   gl = canvas.getContext('webgl', {
     alpha: true,
-    antialias: true,
+    antialias: false,
     powerPreference: 'high-performance',
     premultipliedAlpha: true,
     depth: false,
@@ -302,6 +327,9 @@ function init(offscreen: OffscreenCanvas) {
 
   gl.clearColor(0, 0, 0, transparent ? 0 : 1);
 
+  parseColors();
+  applyStaticUniforms();
+
   self.postMessage({ type: 'ready' });
 }
 
@@ -317,12 +345,26 @@ self.onmessage = (e: MessageEvent) => {
       if (!running) {
         running = true;
         lastTs = 0;
+        lastFrame = 0;
         requestAnimationFrame(animate);
       }
       break;
 
     case 'stop':
       running = false;
+      break;
+
+    case 'visibility':
+      if (typeof data?.visible === 'boolean') {
+        const wasVisible = isVisible;
+        isVisible = data.visible;
+        // Resume the loop when we become visible again while running.
+        if (isVisible && !wasVisible && running) {
+          lastTs = 0;
+          lastFrame = 0;
+          requestAnimationFrame(animate);
+        }
+      }
       break;
 
     case 'resize':
@@ -356,7 +398,11 @@ self.onmessage = (e: MessageEvent) => {
         transparent = data.transparent;
         if (gl) gl.clearColor(0, 0, 0, transparent ? 0 : 1);
       }
-      if (Array.isArray(data.colors)) colors = data.colors;
+      if (Array.isArray(data.colors)) {
+        colors = data.colors;
+        parseColors();
+      }
+      applyStaticUniforms();
       break;
 
     case 'cleanup':
