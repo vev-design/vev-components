@@ -1,5 +1,7 @@
 // LightPillar WebGL Worker - Renders on OffscreenCanvas in a separate thread
 
+import { createQualityGovernor, getRenderSize, Size } from './quality';
+
 const vertexShader = `
 attribute vec2 aPosition;
 attribute vec2 aUv;
@@ -27,9 +29,12 @@ uniform float uPillarRotation;
 varying vec2 vUv;
 
 const float PI = 3.141592653589793;
-const float EPSILON = 0.001;
 const float E = 2.71828182845904523536;
 const float HALF = 0.5;
+
+// exp() saturates mediump floats above ~11, and tanh() of an infinite input is
+// NaN, which shows up as black blocks on GPUs where mediump really is fp16.
+const float MAX_TANH_INPUT = 3.0;
 
 float tanh(float x) {
   float exp2x = exp(2.0 * x);
@@ -95,6 +100,8 @@ void main() {
   vec3 color = vec3(0.0);
 
   for(float i = 0.0; i < 64.0; i++) {
+    if(depth > maxDepth) break;
+
     vec3 pos = origin + direction * depth;
     pos.xz *= rotX;
 
@@ -112,12 +119,11 @@ void main() {
     vec3 gradient = mix(uBottomColor, uTopColor, smoothstep(15.0, -15.0, pos.y));
     color += gradient / fieldDistance;
 
-    if(fieldDistance < EPSILON || depth > maxDepth) break;
     depth += fieldDistance;
   }
 
   float widthNormalization = uPillarWidth / 3.0;
-  vec3 scaledColor = color * uGlowAmount / widthNormalization;
+  vec3 scaledColor = min(color * uGlowAmount / widthNormalization, vec3(MAX_TANH_INPUT));
   color = vec3(tanh(scaledColor.r), tanh(scaledColor.g), tanh(scaledColor.b));
 
   float rnd = noise(gl_FragCoord.xy);
@@ -158,12 +164,26 @@ let locs: {
 
 let running = false;
 let isVisible = true;
+let contextLost = false;
+let contextLossCount = 0;
+// Set when the visitor asked for reduced motion: a single frame is rendered and
+// the loop never starts.
+let staticMode = false;
 let time = 0;
 let lastTs = 0;
-
-// Cap the render loop to ~60fps so high-refresh (120/144Hz) displays don't pay double.
-const FRAME_MS = 1000 / 60;
 let lastFrame = 0;
+
+// Exactly one animation frame may ever be pending. Without this, a `visibility`
+// message pair arriving in the same frame as an already-scheduled callback
+// leaves two self-scheduling loops alive, and each further pair doubles them.
+let frameHandle: number | null = null;
+
+const governor = createQualityGovernor();
+
+// CSS size of the element. The rendered pixel size is derived from it so the
+// quality tier can change resolution without another round trip.
+let cssSize: Size = { width: 1, height: 1 };
+let renderSize: Size = { width: 0, height: 0 };
 
 // Props
 let topColor: [number, number, number] = [0.32, 0.15, 1];
@@ -234,21 +254,39 @@ function applyStaticUniforms() {
   if (locs.uPillarRotation) gl.uniform1f(locs.uPillarRotation, pillarRotation);
 }
 
-function animate(ts: number) {
-  if (!running || !isVisible) return;
-  requestAnimationFrame(animate);
+// Resizing the drawing buffer reallocates it on the GPU, so only do it when the
+// size actually changes.
+function applyRenderSize() {
+  if (!canvas || !gl) return;
+  const next = getRenderSize(cssSize, governor.state().scale, pillarWidth);
+  if (next.width === renderSize.width && next.height === renderSize.height) return;
+
+  renderSize = next;
+  canvas.width = next.width;
+  canvas.height = next.height;
+  gl.viewport(0, 0, next.width, next.height);
+  if (locs.uResolution) gl.uniform2f(locs.uResolution, next.width, next.height);
+}
+
+function publishQuality() {
+  const state = governor.state();
+  self.postMessage({ type: 'quality', data: { ...state, ...renderSize } });
+}
+
+const cancelFrame = () => {
+  if (frameHandle === null) return;
+  cancelAnimationFrame(frameHandle);
+  frameHandle = null;
+};
+
+const scheduleFrame = () => {
+  if (frameHandle !== null || !gl || contextLost || !running || !isVisible) return;
+  frameHandle = requestAnimationFrame(onFrame);
+};
+
+function draw() {
   if (!gl) return;
 
-  // ~60fps cap
-  if (ts - lastFrame < FRAME_MS - 0.5) return;
-  lastFrame = ts;
-
-  // Clamp delta so returning from a stall/pause doesn't jump the animation.
-  const delta = lastTs ? Math.min((ts - lastTs) / 1000, 1 / 30) : 1 / 60;
-  lastTs = ts;
-  time += delta * rotationSpeed;
-
-  // Per-frame uniforms only
   if (locs.uTime) gl.uniform1f(locs.uTime, time);
   if (interactive) {
     const smoothing = 0.1;
@@ -261,25 +299,53 @@ function animate(ts: number) {
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-function init(offscreen: OffscreenCanvas) {
-  canvas = offscreen;
-  gl = canvas.getContext('webgl', {
-    alpha: true,
-    antialias: false,
-    powerPreference: 'high-performance',
-    depth: false,
-    stencil: false,
-    preserveDrawingBuffer: false
-  });
+function onFrame(ts: number) {
+  frameHandle = null;
+  if (!gl || contextLost || !running || !isVisible) return;
 
-  if (!gl) return;
+  // Reduced motion, or the governor gave up on animating: render the current
+  // state once and leave it on screen.
+  if (staticMode || governor.state().frozen) {
+    draw();
+    return;
+  }
+
+  scheduleFrame();
+
+  const interval = lastFrame ? ts - lastFrame : 0;
+  if (interval && interval < 1000 / governor.state().targetFps - 0.5) return;
+  lastFrame = ts;
+
+  // Clamp delta so returning from a stall/pause doesn't jump the animation.
+  const delta = lastTs ? Math.min((ts - lastTs) / 1000, 1 / 30) : 1 / 60;
+  lastTs = ts;
+  time += delta * rotationSpeed;
+
+  draw();
+
+  if (!interval || !governor.sample(interval)) return;
+
+  const state = governor.state();
+  applyRenderSize();
+  publishQuality();
+  if (state.frozen) cancelFrame();
+}
+
+function resumeLoop() {
+  lastTs = 0;
+  lastFrame = 0;
+  scheduleFrame();
+}
+
+function setupGl(): boolean {
+  if (!gl) return false;
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(0, 0, 0, 0);
 
   program = createProgram_();
-  if (!program) return;
+  if (!program) return false;
 
   gl.useProgram(program);
 
@@ -318,6 +384,50 @@ function init(offscreen: OffscreenCanvas) {
   };
 
   applyStaticUniforms();
+  renderSize = { width: 0, height: 0 };
+  applyRenderSize();
+  return true;
+}
+
+// A lost context means the GPU driver reset, which on this shader means it was
+// overloaded. Come back at the cheapest tier, and stop animating if it happens
+// again rather than risk taking the tab down with us.
+function handleContextLost(event: Event) {
+  event.preventDefault();
+  contextLost = true;
+  contextLossCount += 1;
+  cancelFrame();
+  publishQuality();
+}
+
+function handleContextRestored() {
+  contextLost = false;
+  if (contextLossCount > 1) governor.freeze();
+  else governor.collapse();
+
+  if (!setupGl()) return;
+  publishQuality();
+  resumeLoop();
+}
+
+function init(offscreen: OffscreenCanvas) {
+  canvas = offscreen;
+  gl = canvas.getContext('webgl', {
+    alpha: true,
+    antialias: false,
+    powerPreference: 'high-performance',
+    depth: false,
+    stencil: false,
+    preserveDrawingBuffer: false
+  });
+
+  if (!gl) return;
+
+  const target = canvas as unknown as EventTarget;
+  target.addEventListener('webglcontextlost', handleContextLost as EventListener);
+  target.addEventListener('webglcontextrestored', handleContextRestored as EventListener);
+
+  if (!setupGl()) return;
 
   self.postMessage({ type: 'ready' });
 }
@@ -333,37 +443,39 @@ self.onmessage = (e: MessageEvent) => {
     case 'start':
       if (!running) {
         running = true;
-        lastTs = 0;
-        lastFrame = 0;
-        requestAnimationFrame(animate);
+        resumeLoop();
       }
       break;
 
     case 'stop':
       running = false;
+      cancelFrame();
       break;
 
     case 'visibility':
       if (typeof data?.visible === 'boolean') {
-        const wasVisible = isVisible;
         isVisible = data.visible;
-        // Resume the loop when we become visible again while running.
-        if (isVisible && !wasVisible && running) {
-          lastTs = 0;
-          lastFrame = 0;
-          requestAnimationFrame(animate);
+        if (isVisible) {
+          if (running) resumeLoop();
+        } else {
+          cancelFrame();
         }
       }
       break;
 
+    case 'motion':
+      if (typeof data?.reduced === 'boolean' && data.reduced !== staticMode) {
+        staticMode = data.reduced;
+        if (staticMode) cancelFrame();
+        scheduleFrame();
+      }
+      break;
+
     case 'resize':
-      if (canvas && gl) {
-        canvas.width = data.width;
-        canvas.height = data.height;
-        gl.viewport(0, 0, data.width, data.height);
-        if (locs.uResolution) {
-          gl.uniform2f(locs.uResolution, data.width, data.height);
-        }
+      if (typeof data?.cssWidth === 'number' && typeof data?.cssHeight === 'number') {
+        cssSize = { width: data.cssWidth, height: data.cssHeight };
+        applyRenderSize();
+        scheduleFrame();
       }
       break;
 
@@ -387,14 +499,24 @@ self.onmessage = (e: MessageEvent) => {
       if (typeof data.noiseIntensity === 'number') noiseIntensity = data.noiseIntensity;
       if (typeof data.pillarRotation === 'number') pillarRotation = data.pillarRotation;
       applyStaticUniforms();
+      // The pixel budget depends on pillarWidth.
+      applyRenderSize();
+      scheduleFrame();
       break;
 
     case 'cleanup':
       running = false;
+      cancelFrame();
+      if (canvas) {
+        const target = canvas as unknown as EventTarget;
+        target.removeEventListener('webglcontextlost', handleContextLost as EventListener);
+        target.removeEventListener('webglcontextrestored', handleContextRestored as EventListener);
+      }
       if (gl) {
         if (positionBuffer) gl.deleteBuffer(positionBuffer);
         if (uvBuffer) gl.deleteBuffer(uvBuffer);
         if (program) gl.deleteProgram(program);
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
       }
       gl = null;
       canvas = null;
