@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './EmbedAnything.module.css';
 import { registerVevComponent, useEditorState, useModel, useVisible } from '@vev/react';
 
@@ -81,30 +81,43 @@ function EmbedIframe({
   fillContainer: boolean;
 }) {
   const { key: messageFrom } = useModel() || { key: 'none' };
-  const iframeRef = useRef(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeHeight, setIframeHeight] = useState<string | number>('auto');
+
+  // srcDoc is same-origin, so we can always measure the embed ourselves.
+  const measureIframe = useCallback(() => {
+    const height = iframeRef.current?.contentDocument?.body?.scrollHeight;
+    if (height) setIframeHeight(`${height}px`);
+  }, []);
 
   useEffect(() => {
     if (fillContainer) return;
 
-    function handleIframeMessage(event) {
-      if (event.data.iframeHeight && event.data.messageFrom === messageFrom) {
+    function handleIframeMessage(event: MessageEvent) {
+      if (event.data?.iframeHeight && event.data.messageFrom === messageFrom) {
         setIframeHeight(`${event.data.iframeHeight}px`);
       }
     }
 
     window.addEventListener('message', handleIframeMessage);
+
+    // The iframe is server-rendered with its srcDoc inline, so it often finishes
+    // loading — and posts its height — before we hydrate and attach the listener
+    // above. Both the `load` event and that first message are then lost, and since
+    // the embed only re-posts when its height *changes*, the iframe stays stuck at
+    // the 150px default forever. Measure it directly and ask it to re-post, so a
+    // height reported before hydration is recovered either way.
+    measureIframe();
+    iframeRef.current?.contentWindow?.postMessage({ requestHeight: true, messageFrom }, '*');
+
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [fillContainer, messageFrom]);
+  }, [fillContainer, measureIframe, messageFrom]);
 
   function handleIframeLoad() {
     if (fillContainer) return;
-    const iframeDocument = iframeRef.current.contentDocument;
-    const iframeBody = iframeDocument.body;
-    const newHeight = iframeBody.scrollHeight;
-    setIframeHeight(newHeight);
+    measureIframe();
   }
 
   const fillSrcDoc = `<!DOCTYPE html>
@@ -135,19 +148,25 @@ function EmbedIframe({
     <body>
      <script>
         let prevHeight = 0;
+        function sendHeight() {
+          prevHeight = document.body.scrollHeight;
+          window.parent.postMessage({ iframeHeight: prevHeight, messageFrom: '${messageFrom}' }, '*');
+        }
         function postHeight() {
-          const height = document.body.scrollHeight;
-          if(prevHeight !== height){
-            prevHeight = height;
-            window.parent.postMessage({ iframeHeight: height, messageFrom: '${messageFrom}' }, '*');
-          }
+          if(prevHeight !== document.body.scrollHeight) sendHeight();
         }
 
         window.addEventListener('resize', postHeight);
 
+        // The parent may hydrate after we have already posted our height, in which
+        // case it missed the message. Re-send on request, bypassing the dedupe.
+        window.addEventListener('message', function (event) {
+          if(event.data && event.data.requestHeight && event.data.messageFrom === '${messageFrom}') sendHeight();
+        });
+
         const observer = new ResizeObserver(postHeight);
         observer.observe(document.body);
-        postHeight();
+        sendHeight();
         setInterval(postHeight,500);
       </script>
       ${html}
