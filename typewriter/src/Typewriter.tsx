@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './Typewriter.module.css';
-import { useEditorState, useVevEvent } from '@vev/react';
+import { useEditorState, useVevEvent, useVisible } from '@vev/react';
 import { TypewriterInteraction } from './index';
 
 type Props = {
@@ -10,11 +10,22 @@ type Props = {
   timer: number;
   loop: boolean;
   pauseOnStart: boolean;
+  startOnView: boolean;
+  hostRef: React.RefObject<HTMLDivElement>;
 };
 
-const Typewriter = ({ before, after, words, timer, loop, pauseOnStart }: Props) => {
+const Typewriter = ({
+  before,
+  after,
+  words,
+  timer,
+  loop,
+  pauseOnStart,
+  startOnView,
+  hostRef,
+}: Props) => {
   const [WRITE, SHOW, ERASE, WAIT] = [0, 1, 2, 3];
-  const lastTime = useRef(null);
+  const lastTime = useRef<() => void>(null);
   const [frame, setFrame] = useState(0);
   const [state, setState] = useState(WRITE);
   const [textViewLength, setTextViewLength] = useState(0);
@@ -22,20 +33,39 @@ const Typewriter = ({ before, after, words, timer, loop, pauseOnStart }: Props) 
   const [row, setRow] = useState(0);
   const { disabled } = useEditorState();
 
+  // The editor canvas always animates, so designers can see the effect.
+  const waitForView = startOnView && !disabled;
+  const isVisible = useVisible(waitForView ? hostRef : false);
+  const [hasEnteredView, setHasEnteredView] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  // The animation only ticks when it is not paused and the view gate is open.
+  const running = !paused && (!waitForView || hasEnteredView);
+
+  useEffect(() => {
+    if (isVisible) setHasEnteredView(true);
+  }, [isVisible]);
+
   useVevEvent(TypewriterInteraction.play, () => {
-    if (textViewLength > words[row].length) {
+    // An explicit trigger overrides the "start when in view" gate.
+    setHasEnteredView(true);
+    // Restart when the animation already finished with loop off.
+    if (!loop && state === ERASE) {
       resetTypewriter();
+      setState(WRITE);
     }
-    setState(WRITE);
+    setPaused(false);
   });
 
   useVevEvent(TypewriterInteraction.pause, () => {
-    setState(WAIT);
+    setPaused(true);
   });
 
   useVevEvent(TypewriterInteraction.restart, () => {
+    setHasEnteredView(true);
     resetTypewriter();
     setState(WRITE);
+    setPaused(false);
   });
 
   const resetTypewriter = () => {
@@ -51,22 +81,23 @@ const Typewriter = ({ before, after, words, timer, loop, pauseOnStart }: Props) 
 
   useEffect(() => {
     resetTypewriter();
-    if (pauseOnStart && !disabled) {
-      setState(WAIT);
-    } else {
-      setState(WRITE);
-    }
+    setState(WRITE);
+    setPaused(pauseOnStart && !disabled);
+  }, [timer, disabled, pauseOnStart]);
 
+  useEffect(() => {
+    if (!running) return;
     const interval = setInterval(() => {
-      lastTime.current();
+      lastTime.current?.();
     }, timer);
     return () => {
       clearInterval(interval);
     };
-  }, [timer, disabled, pauseOnStart]);
+  }, [running, timer]);
 
   function update() {
-    const text = words[row];
+    // The row can point past the end after the word list shrinks.
+    const text = words[row] || '';
     if (state === WRITE) {
       if (frame % 5 === 0) {
         setTextViewLength(textViewLength + 1);
