@@ -39,8 +39,18 @@ registerVevComponent(Typewriter, {
       },
     },
     {
+      name: "startOnView",
+      title: "Start when in view",
+      description:
+        "Hold the animation until the element scrolls into the viewport, then start it.",
+      type: "boolean",
+      initialValue: false,
+    },
+    {
       name: "pauseOnStart",
       title: "Pause on start",
+      description:
+        "Hold the animation until a Play or Restart interaction triggers it.",
       type: "boolean",
       initialValue: false,
     },
