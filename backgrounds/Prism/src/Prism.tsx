@@ -38,7 +38,6 @@ type PrismProps = {
   hoverStrength?: number;
   inertia?: number;
   bloom?: number;
-  suspendWhenOffscreen?: boolean;
   timeScale?: number;
 };
 
@@ -56,7 +55,6 @@ const Prism: React.FC<PrismProps> = ({
   hoverStrength = 2,
   inertia = 0.05,
   bloom = 1,
-  suspendWhenOffscreen = false,
   timeScale = 0.5
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -156,9 +154,11 @@ const Prism: React.FC<PrismProps> = ({
     window.addEventListener('mouseleave', handlePointerLeave);
     window.addEventListener('blur', handlePointerLeave);
 
-    // Visibility observer for suspend when offscreen
+    // Pause rendering while offscreen, unconditionally, matching the other
+    // backgrounds. `suspendWhenOffscreen` was never a registered editor prop,
+    // so it was always false and this observer never ran.
     let intersectionObserver: IntersectionObserver | null = null;
-    if (suspendWhenOffscreen && typeof IntersectionObserver !== 'undefined') {
+    if (typeof IntersectionObserver !== 'undefined') {
       intersectionObserver = new IntersectionObserver((entries) => {
         const visible = entries.some((entry) => entry.isIntersecting);
         workerRef.current?.postMessage({ type: 'visibility', data: { visible } });

@@ -23,7 +23,7 @@ type Props = {
 const HTML5Audio = (props: Props) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const {audioUrl, audioUrlLink, settings} = props;
-  const showControls = settings?.showControls || true;
+  const showControls = settings?.showControls ?? true;
   const loop = settings?.loop || false;
   const autoplay = settings?.autoplay || false;
   const {disabled} = useEditorState();

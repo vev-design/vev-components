@@ -221,6 +221,7 @@ let running = false;
 let accumTime = 0;
 let lastTime = 0;
 let paused = false;
+let visible = true;
 
 // Props
 let intensity = 2;
@@ -307,6 +308,10 @@ function animate(now: number) {
 
   const dt = Math.max(0, now - lastTime) * 0.001;
   lastTime = now;
+
+  // Keep the clock current but skip the draw while offscreen, so resuming does
+  // not jump the animation forward by the hidden interval.
+  if (!visible) return;
 
   if (!paused) {
     accumTime += dt;
@@ -412,6 +417,10 @@ self.onmessage = (e: MessageEvent) => {
 
     case 'stop':
       running = false;
+      break;
+
+    case 'visibility':
+      visible = data.visible !== false;
       break;
 
     case 'resize':

@@ -157,7 +157,7 @@ function Button({ ...props }: Props) {
         (res, curr) => ({ ...res, [curr.data.key]: curr.data.value }),
         {},
       );
-      const url = props.submit.httpRequest + serialize({ ...defaultValues, ...formState });
+      const url = props.submit.httpRequest.url + serialize({ ...defaultValues, ...formState });
       return window.open(url);
     }
 
@@ -357,7 +357,7 @@ registerVevComponent(Button, {
               name: 'newTab',
               title: 'Open as link',
               hidden({ value }) {
-                return value?.submit?.htmlRequest?.method !== 'GET';
+                return value?.submit?.httpRequest?.method !== 'GET';
               },
             },
             {
