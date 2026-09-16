@@ -156,6 +156,8 @@ let locs: {
 } = {} as any;
 
 let running = false;
+let visible = true;
+let hiddenAt = 0;
 let startTime = 0;
 let dpr = 1;
 
@@ -293,7 +295,7 @@ const updateDerivedUniforms = () => {
 function animate(now: number) {
   if (!running) return;
   requestAnimationFrame(animate);
-  if (!gl) return;
+  if (!gl || !visible) return;
 
   const elapsed = (now - startTime) * 0.001;
 
@@ -397,6 +399,21 @@ self.onmessage = (e: MessageEvent) => {
     case 'stop':
       running = false;
       break;
+
+    case 'visibility': {
+      const nextVisible = data.visible !== false;
+      if (nextVisible === visible) break;
+      visible = nextVisible;
+      if (!visible) {
+        hiddenAt = performance.now();
+      } else if (hiddenAt) {
+        // `elapsed` is measured from startTime, so shift it past the offscreen
+        // interval instead of letting the animation jump forward on return.
+        startTime += performance.now() - hiddenAt;
+        hiddenAt = 0;
+      }
+      break;
+    }
 
     case 'resize':
       if (canvas && gl) {
