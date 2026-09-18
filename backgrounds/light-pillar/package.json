@@ -5,13 +5,15 @@
   "scripts": {
     "login": "vev login",
     "init": "vev init",
-    "start": "vev start"
+    "start": "vev start",
+    "test": "vitest run"
   },
   "license": "MIT",
   "devDependencies": {
     "@types/react": "latest",
     "prettier": "2.7.0",
-    "typescript-plugin-css-modules": "^5.0.1"
+    "typescript-plugin-css-modules": "^5.0.1",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@vev/react": "latest",

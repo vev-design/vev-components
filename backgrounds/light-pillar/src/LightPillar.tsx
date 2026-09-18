@@ -8,23 +8,12 @@ import LightPillarWorker from './lightpillar-worker?worker';
 const supportsOffscreen = typeof OffscreenCanvas !== 'undefined' &&
   typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
 
-const MAX_WIDTH = 1440;
-const MAX_HEIGHT = 900;
-    
-const getCanvasSize = (rect: DOMRect) => {
-        const dpr = 1;
-        let width = Math.floor(rect.width * dpr);
-        let height = Math.floor(rect.height * dpr);
-      
-        // Cap resolution while maintaining aspect ratio
-        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-          const scale = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
-          width = Math.floor(width * scale);
-          height = Math.floor(height * scale);
-        }
-      
-        return { width, height };
-};
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia(REDUCED_MOTION_QUERY).matches
+    : false;
 
 const LightPillar = ({
   topColor = '#5227FF',
@@ -68,78 +57,110 @@ const LightPillar = ({
 
     worker.postMessage({ type: 'init', data: { canvas: offscreen } }, [offscreen]);
 
-    worker.onmessage = (e: MessageEvent) => {
-      if (e.data.type === 'ready') {
-        worker.postMessage({
-          type: 'props',
-          data: {
-            topColor,
-            bottomColor,
-            intensity,
-            rotationSpeed,
-            interactive,
-            glowAmount,
-            pillarWidth,
-            pillarHeight,
-            noiseIntensity,
-            pillarRotation
-          }
-        });
+    // The worker derives its drawing buffer size from the CSS size, so it can
+    // change resolution on its own when it needs to shed load.
+    let lastWidth = -1;
+    let lastHeight = -1;
 
-        const { width, height } = getCanvasSize(container.getBoundingClientRect());
-        worker.postMessage({
-          type: 'resize',
-          data: {
-            width,
-            height
-          }
-        });
-
-        worker.postMessage({ type: 'start' });
-      }
+    const postSize = () => {
+      if (!workerRef.current) return;
+      const rect = container.getBoundingClientRect();
+      const cssWidth = Math.round(rect.width);
+      const cssHeight = Math.round(rect.height);
+      if (cssWidth === lastWidth && cssHeight === lastHeight) return;
+      lastWidth = cssWidth;
+      lastHeight = cssHeight;
+      workerRef.current.postMessage({ type: 'resize', data: { cssWidth, cssHeight } });
     };
 
-    const handleResize = () => {
-      if (!workerRef.current || !container) return;
-      const { width, height } = getCanvasSize(container.getBoundingClientRect());
-      workerRef.current.postMessage({
-        type: 'resize',
-        data: {
-          width,
-          height
+    let warnedFrozen = false;
+
+    worker.onmessage = (e: MessageEvent) => {
+      if (e.data.type === 'quality') {
+        if (e.data.data?.frozen && !warnedFrozen) {
+          warnedFrozen = true;
+          console.warn(
+            '[LightPillar] This device cannot render the effect smoothly, so the animation was paused to keep the page responsive.'
+          );
         }
+        return;
+      }
+
+      if (e.data.type !== 'ready') return;
+
+      worker.postMessage({
+        type: 'props',
+        data: {
+          topColor,
+          bottomColor,
+          intensity,
+          rotationSpeed,
+          interactive,
+          glowAmount,
+          pillarWidth,
+          pillarHeight,
+          noiseIntensity,
+          pillarRotation
+        }
+      });
+
+      postSize();
+      worker.postMessage({ type: 'motion', data: { reduced: prefersReducedMotion() } });
+      worker.postMessage({ type: 'start' });
+    };
+
+    // ResizeObserver can fire every frame while an element is being dragged in
+    // the editor, and every size change reallocates the drawing buffer.
+    let resizeFrame: number | null = null;
+    const handleResize = () => {
+      if (resizeFrame !== null) return;
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = null;
+        postSize();
       });
     };
 
     const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(handleResize) : null;
     resizeObserver?.observe(container);
 
-    // Pause rendering when the component is scrolled off-screen or the tab is hidden.
+    // Pause rendering when the component is scrolled off-screen or the tab is
+    // hidden. Both conditions are tracked so neither can resume the other.
+    let onScreen = true;
+
+    const postVisibility = () => {
+      workerRef.current?.postMessage({
+        type: 'visibility',
+        data: { visible: onScreen && !document.hidden },
+      });
+    };
+
     const intersectionObserver = typeof IntersectionObserver !== 'undefined'
       ? new IntersectionObserver(
           (entries) => {
-            const entry = entries[0];
-            const visible = !!entry && entry.isIntersecting;
-            workerRef.current?.postMessage({
-              type: 'visibility',
-              data: { visible: visible && !document.hidden },
-            });
+            const entry = entries[entries.length - 1];
+            if (!entry) return;
+            onScreen = entry.isIntersecting;
+            postVisibility();
           },
           { threshold: [0, 0.01] }
         )
       : null;
     intersectionObserver?.observe(container);
 
-    const handleVisibilityChange = () => {
-      workerRef.current?.postMessage({
-        type: 'visibility',
-        data: { visible: !document.hidden },
-      });
+    document.addEventListener('visibilitychange', postVisibility);
+
+    const motionQuery = typeof window.matchMedia === 'function'
+      ? window.matchMedia(REDUCED_MOTION_QUERY)
+      : null;
+    const handleMotionChange = (event: MediaQueryListEvent) => {
+      workerRef.current?.postMessage({ type: 'motion', data: { reduced: event.matches } });
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    motionQuery?.addEventListener('change', handleMotionChange);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+      motionQuery?.removeEventListener('change', handleMotionChange);
+      document.removeEventListener('visibilitychange', postVisibility);
       intersectionObserver?.disconnect();
       resizeObserver?.disconnect();
       if (workerRef.current) {
