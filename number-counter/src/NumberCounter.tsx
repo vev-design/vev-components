@@ -462,6 +462,10 @@ registerVevComponent(NumberCounter, {
       properties: ['margin', 'padding'],
     },
   ],
+  size: {
+    height: 'auto',
+    width: 300,
+  },
   type: 'standard',
 });
 
