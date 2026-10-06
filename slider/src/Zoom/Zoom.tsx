@@ -8,6 +8,7 @@ import {
   getPrevSlideIndex,
   checkIfKeyIsDuplicatedInArray,
 } from '../utils';
+import { useTransitionEnd } from '../use-transition-end';
 
 import styles from './Zoom.module.css';
 
@@ -46,6 +47,12 @@ export const Zoom = ({
     );
   }, [nextSlide, currentSlide, prevSlide]);
 
+  const transition = useTransitionEnd(() => {
+    setSlides();
+    setMove(1);
+    transitionEnd();
+  });
+
   useEffect(() => {
     const isJumping = prevIndex.current - index > 1 || index - prevIndex.current > 1;
 
@@ -62,11 +69,13 @@ export const Zoom = ({
     if (isGoingForward(index, prevIndex.current, slides.length, infinite, action)) {
       prevIndex.current = index;
       reverse ? setMove(0) : setMove(2);
+      transition.start(transitionSpeed);
     }
 
     if (isGoingBackward(index, prevIndex.current, slides.length)) {
       prevIndex.current = index;
       reverse ? setMove(2) : setMove(0);
+      transition.start(transitionSpeed);
     }
   }, [index, prevIndex, speed]);
 
@@ -87,11 +96,7 @@ export const Zoom = ({
         transition: `transform ${transitionSpeed}ms ${easing || 'ease'}`,
       }}
       onTransitionEnd={(e) => {
-        if (e.propertyName === 'opacity') {
-          setSlides();
-          setMove(1);
-          transitionEnd();
-        }
+        if (e.propertyName === 'opacity') transition.end();
       }}
     >
       {currentSlides?.map((child: string, i: number) => {

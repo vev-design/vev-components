@@ -8,6 +8,7 @@ import {
   getPrevSlideIndex,
   checkIfKeyIsDuplicatedInArray,
 } from '../utils';
+import { useTransitionEnd } from '../use-transition-end';
 
 import styles from './Slide.module.css';
 
@@ -76,6 +77,13 @@ export const Slide = ({
     setCurrentSlides(reverse ? slideKeys.reverse() : slideKeys);
   }, [reverse, slidesToLoad, infinite, index]);
 
+  const transition = useTransitionEnd(() => {
+    setTransitionSpeed(0);
+    setMove(-100);
+    setSlides();
+    transitionEnd();
+  });
+
   useEffect(() => {
     setSlides();
   }, [reverse, slidesToLoad, infinite]);
@@ -86,11 +94,13 @@ export const Slide = ({
     const moveLeft = () => {
       setTransitionSpeed(speed || 1);
       setMove(-200);
+      transition.start(speed || 1);
     };
 
     const moveRight = () => {
       setTransitionSpeed(speed || 1);
       setMove(0);
+      transition.start(speed || 1);
     };
 
     if (isGoingForward(index, prevIndex.current, slides.length, infinite, action)) {
@@ -133,12 +143,7 @@ export const Slide = ({
           transition: `transform ${transitionSpeed}ms ${easing || 'ease'}`,
         }}
         onTransitionEnd={(e) => {
-          if (e.propertyName === 'transform') {
-            setTransitionSpeed(0);
-            setMove(-100);
-            setSlides();
-            transitionEnd();
-          }
+          if (e.propertyName === 'transform') transition.end();
         }}
       >
         {currentSlides?.map((child: string, i: number) => {
