@@ -235,13 +235,17 @@ const NumberCounter = ({
     once,
   ]);
 
+  const displayedValue =
+    prefix + styleNumber(count, separator, decimalSeparator, precision, localeFormat) + postfix;
+  const accessibleValue =
+    prefix + styleNumber(end, separator, decimalSeparator, precision, localeFormat) + postfix;
+
   return (
     <div className={styles.wrapper}>
-      <div className={styles.counter}>
-        {prefix +
-          styleNumber(count, separator, decimalSeparator, precision, localeFormat) +
-          postfix}
+      <div aria-hidden="true" className={styles.counter}>
+        {displayedValue}
       </div>
+      <span className={styles.srOnly}>{accessibleValue}</span>
     </div>
   );
 };
