@@ -13,11 +13,34 @@ interface Props {
     mainComponent: string;
     variant?: string;
   };
+  /** Child frame keys of the component. A label popup only renders if its frame is still a child. */
+  popups: string[];
+  /** The child frame open on the editor canvas */
+  activePopup?: string;
 }
 
-export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }: Props) {
+export function LabelOverlay({
+  labels,
+  imageRef,
+  showLabelIndex,
+  customHotspot,
+  popups,
+  activePopup,
+}: Props) {
   const labelRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
+  const [openIndex, setOpenIndex] = useState<number>(-1);
+
+  const renderPopup = (label: Label) => {
+    if (!label.popup || !popups.includes(label.popup)) return null;
+    const isOpen = activePopup ? activePopup === label.popup : openIndex === label.index;
+    if (!isOpen) return null;
+    return (
+      <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
+        <WidgetNode id={label.popup} />
+      </div>
+    );
+  };
   const [rendered, setRendered] = useState<{
     width: number;
     height: number;
@@ -127,6 +150,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
                 }}
                 key={label.index}
                 onClick={() => {
+                  setOpenIndex(openIndex === label.index ? -1 : label.index);
                   dispatchVevEvent(EventTypes.LABEL_CLICKED, {
                     [EventTypes.LABEL_CLICKED]: label.index + 1,
                   });
@@ -141,6 +165,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
                 {label.caption && hoverIndex === label.index && (
                   <div className={styles.captionWrapper}>{label.caption}</div>
                 )}
+                {renderPopup(label)}
               </div>
             );
           })}
@@ -168,6 +193,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
               }}
               key={label.index}
               onClick={() => {
+                setOpenIndex(openIndex === label.index ? -1 : label.index);
                 dispatchVevEvent(EventTypes.LABEL_CLICKED, {
                   [EventTypes.LABEL_CLICKED]: label.index + 1,
                 });
@@ -182,6 +208,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
               {label.caption && hoverIndex === label.index && (
                 <div className={styles.captionWrapper}>{label.caption}</div>
               )}
+              {renderPopup(label)}
             </div>
           );
         })}

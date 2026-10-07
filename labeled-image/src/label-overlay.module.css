@@ -40,3 +40,14 @@
     display: flex;
     justify-content: center;
 }
+
+.popup {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    width: 300px;
+    height: 200px;
+    cursor: auto;
+}

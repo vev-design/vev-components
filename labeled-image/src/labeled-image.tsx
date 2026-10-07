@@ -11,11 +11,12 @@ type Props = {
   image: { key: string; url: string };
   labels: Label[];
   customHotspot: string;
+  children?: string[];
 };
 
-const LabeledImage = ({ image, labels, customHotspot }: Props) => {
+const LabeledImage = ({ image, labels, customHotspot, children }: Props) => {
   const imageRef: React.RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
-  const { selected, disabled } = useEditorState();
+  const { selected, disabled, activeContentChild } = useEditorState();
   const interactionsOpen = useGlobalStore((state) => {
     return state.rightPanelTab === 'addons';
   }, []);
@@ -33,6 +34,8 @@ const LabeledImage = ({ image, labels, customHotspot }: Props) => {
         labels={labels}
         imageRef={imageRef}
         showLabelIndex={showNumbers}
+        popups={children || []}
+        activePopup={disabled ? activeContentChild : undefined}
       />
       <img ref={imageRef} src={image.url} className={styles.image} />
     </div>
@@ -41,6 +44,9 @@ const LabeledImage = ({ image, labels, customHotspot }: Props) => {
 
 registerVevComponent(LabeledImage, {
   name: 'LabeledImage',
+  children: {
+    name: 'Popup',
+  },
   emptyState: {
     action: 'OPEN_PROPERTIES',
     linkText: 'Select',
@@ -105,6 +111,11 @@ registerVevComponent(LabeledImage, {
       title: 'Image',
       selector: styles.image,
       properties: ['object-fit'],
+    },
+    {
+      title: 'Popup',
+      selector: overlayStyles.popup,
+      properties: ['width', 'height', 'background', 'border', 'border-radius', 'box-shadow'],
     },
     {
       title: 'Hotspot',
