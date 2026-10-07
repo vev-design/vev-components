@@ -1,7 +1,7 @@
 import React from 'react';
 import { registerVevComponent } from '@vev/react';
 import Object3D, { Props, config, HotspotComponent } from './object-3d';
-import { VevManifest, VevProps } from '@vev/utils';
+import type { VevManifest, VevProps } from '@vev/utils';
 
 type OldProps = {
   hostRef: React.RefObject<HTMLDivElement>;
@@ -68,7 +68,7 @@ const convertToLegacySchema = (props: VevManifest['props']): VevProps[] => {
       };
     }
 
-    if (prop.name === 'posterUrl') {
+    if (prop.name === 'poster') {
       return {
         ...prop,
         name: 'posterURL',

@@ -1,65 +1,62 @@
-import { useContext, useEffect } from 'react';
-import { PerspectiveCamera, Raycaster, Scene, Vector2 } from 'three';
+import { useContext, useEffect, useRef } from 'react';
+import { Group, PerspectiveCamera, Raycaster, Vector2 } from 'three';
 import { Object3dContext } from '../context/object-3d-context';
 // @ts-expect-error - no types
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
+// A mouse move larger than this is a drag, not a click
 const DELTA = 5;
 
+/**
+ * In the hotspot editor: a click on the model adds a hotspot at that point.
+ */
 export function useHotspotListener(
-  css2DRef: CSS2DObject | undefined,
+  labelRenderer: CSS2DRenderer | undefined,
   camera: PerspectiveCamera | undefined,
-  scene: Scene | undefined,
+  pivot: Group | undefined,
 ) {
-  const { height, width, addHotSpot, editMode } = useContext(Object3dContext);
-  const sceneChildren = scene && scene.children;
+  const { addHotSpot, editMode } = useContext(Object3dContext);
+  const addHotSpotRef = useRef(addHotSpot);
+  addHotSpotRef.current = addHotSpot;
+
   useEffect(() => {
-    if (!addHotSpot || !camera || !css2DRef || !scene.children) {
-      return;
-    }
+    if (!editMode || !labelRenderer || !camera || !pivot) return;
 
+    const element: HTMLElement = labelRenderer.domElement;
     const raycaster = new Raycaster();
-    const mouse = new Vector2();
-    let mouseMoveDelta = [0, 0];
+    const pointer = new Vector2();
+    let mouseDown = [0, 0];
+    let downOnHotspot = false;
 
-    function onMouseDown(event: PointerEvent) {
-      mouseMoveDelta = [event.pageX, event.pageY];
+    // Capture phase: OrbitControls captures the pointer on pointerdown, so later events
+    // no longer target the hotspot under the cursor
+    function onPointerDown(event: PointerEvent) {
+      mouseDown = [event.clientX, event.clientY];
+      downOnHotspot = !!(event.target as HTMLElement).closest('.vev-object-3d-hotspot');
     }
 
-    function onMouseUp(event: PointerEvent) {
-      event.preventDefault();
+    function onMouseUp(event: MouseEvent) {
+      if (!addHotSpotRef.current || downOnHotspot) return;
 
-      const diffX = Math.abs(event.pageX - mouseMoveDelta[0]);
-      const diffY = Math.abs(event.pageY - mouseMoveDelta[1]);
+      const diffX = Math.abs(event.clientX - mouseDown[0]);
+      const diffY = Math.abs(event.clientY - mouseDown[1]);
+      if (diffX >= DELTA || diffY >= DELTA) return;
 
-      if (diffX < DELTA && diffY < DELTA) {
-        const canvasBounds = css2DRef.domElement.getBoundingClientRect();
+      const bounds = element.getBoundingClientRect();
+      pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+      pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
 
-        mouse.x = ((event.clientX - canvasBounds.left) / width) * 2 - 1;
-        mouse.y = -((event.clientY - canvasBounds.top) / height) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects(sceneChildren, true);
-        if (intersects.length) {
-          let modelIndex = 0;
-          let modelIntersection = intersects[modelIndex];
-          while (modelIntersection.object.name === 'intersection_sphere') {
-            modelIndex++;
-            modelIntersection = intersects[modelIndex];
-          }
-          addHotSpot(modelIntersection.point);
-        }
-      }
+      const [hit] = raycaster.intersectObject(pivot, true);
+      if (hit) addHotSpotRef.current(pivot.worldToLocal(hit.point.clone()));
     }
 
-    if (editMode && css2DRef) {
-      css2DRef.domElement.addEventListener('mousedown', onMouseDown);
-      css2DRef.domElement.addEventListener('mouseup', onMouseUp);
-    }
+    element.addEventListener('pointerdown', onPointerDown, true);
+    element.addEventListener('mouseup', onMouseUp);
+
     return () => {
-      if (editMode && css2DRef) {
-        if (css2DRef) css2DRef.domElement.removeEventListener('mousedown', onMouseDown);
-        if (css2DRef) css2DRef.domElement.removeEventListener('mouseUp', onMouseUp);
-      }
+      element.removeEventListener('pointerdown', onPointerDown, true);
+      element.removeEventListener('mouseup', onMouseUp);
     };
-  }, [addHotSpot, camera, css2DRef, editMode, height, width, sceneChildren]);
+  }, [editMode, labelRenderer, camera, pivot]);
 }

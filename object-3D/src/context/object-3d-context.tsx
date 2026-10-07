@@ -40,6 +40,17 @@ export interface Object3DContextProps {
   scrollTarget?: ScrollTarget;
   scrollStart?: number;
   scrollEnd?: number;
+  scrollRotate?: boolean;
+  scrollRotateAmount?: number;
+  tilt?: boolean;
+  exposure?: number;
+  showBackground?: boolean;
+  backgroundBlur?: number;
+  groundShadow?: boolean;
+  shadowOpacity?: number;
+  hotspotZoom?: boolean;
+  onModelLoaded?: () => void;
+  onAnimationFinished?: (animation: string) => void;
   hostRef?: React.RefObject<HTMLDivElement>;
 }
 

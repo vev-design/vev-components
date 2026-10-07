@@ -5,7 +5,6 @@ import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '..
 import { Object3dViewer } from './object-3d-viewer';
 import { HotspotList } from './hotspot-list';
 import styles from '../object-3d.module.css';
-import { sortBy } from 'lodash';
 import { StorageHotspot } from '../types';
 import { useConvertedHotspots } from '../hooks/use-converted-hotspots';
 import { ObjectField, SchemaFieldProps } from '@vev/react';
@@ -62,7 +61,7 @@ export function HotSpotModal({
   const deleteHotspot = useCallback(
     (index: number) => {
       const newHotspots = hotspots.filter((hotspot) => hotspot.index !== index);
-      const sortedHotspots = sortBy(newHotspots, 'index');
+      const sortedHotspots = [...newHotspots].sort((a, b) => a.index - b.index);
       sortedHotspots.forEach((hotspot, index) => {
         hotspot.index = index + 1;
       });

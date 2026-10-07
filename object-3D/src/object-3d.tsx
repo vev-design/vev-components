@@ -16,7 +16,7 @@ import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
 import { SilkeBox } from '@vev/silke';
-import { VevManifest } from '@vev/utils';
+import type { VevManifest } from '@vev/utils';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
@@ -40,7 +40,7 @@ export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
 export const FAR = 100;
 
-type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
+type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5' | 'custom';
 
 function noop() {
   return;
@@ -49,7 +49,18 @@ function noop() {
 export type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
-  settings: { lighting: LightingOptions; controls: boolean; zoom: boolean };
+  settings: {
+    lighting: LightingOptions;
+    customHdri?: { url: string };
+    exposure?: number;
+    background?: boolean;
+    backgroundBlur?: number;
+    shadow?: boolean;
+    shadowOpacity?: number;
+    controls: boolean;
+    zoom: boolean;
+    hotspotZoom?: boolean;
+  };
   poster: { url: string };
   hotspots_camera?: {
     hotspots: StorageHotspot[];
@@ -64,6 +75,9 @@ export type Props = {
     scrollTarget?: 'page' | 'section' | 'element';
     scrollStart?: number;
     scrollEnd?: number;
+    scrollRotate?: boolean;
+    scrollRotateAmount?: number;
+    tilt?: boolean;
   };
 };
 
@@ -80,6 +94,10 @@ const Object3d = ({
   // Initial values
   const initialCamera = hotspots_camera?.initialCamera;
   const lighting = settings?.lighting || 'hdri1';
+  const hdri =
+    lighting === 'custom'
+      ? settings?.customHdri?.url || LIGHTING.hdri1
+      : LIGHTING[lighting] || LIGHTING.hdri1;
   const controls = settings?.controls || false;
   const zoom = settings?.zoom || false;
   const hotspots = hotspots_camera?.hotspots;
@@ -90,6 +108,9 @@ const Object3d = ({
   const scrollTarget = animationSettings?.scrollTarget || 'element';
   const scrollStart = animationSettings?.scrollStart ?? 0;
   const scrollEnd = animationSettings?.scrollEnd ?? 100;
+  const scrollRotate = animationSettings?.scrollRotate || false;
+  const scrollRotateAmount = animationSettings?.scrollRotateAmount ?? 360;
+  const tilt = animationSettings?.tilt || false;
   const rotationSpeed =
     animationSettings?.rotationSpeed !== undefined ? animationSettings?.rotationSpeed : 2;
   const actualRotationSpeed = reverseSpeed ? rotationSpeed * -1 : rotationSpeed;
@@ -157,7 +178,7 @@ const Object3d = ({
   });
 
   return (
-    <div className={styles.wrapper}>
+    <div>
       <Object3DContextProvider
         values={{
           editMode: false,
@@ -168,7 +189,13 @@ const Object3d = ({
           fov: FOV,
           aspect: ASPECT,
           near: NEAR,
-          hdri: LIGHTING[lighting],
+          hdri,
+          exposure: (settings?.exposure ?? 100) / 100,
+          showBackground: settings?.background || false,
+          backgroundBlur: (settings?.backgroundBlur ?? 0) / 100,
+          groundShadow: settings?.shadow || false,
+          shadowOpacity: (settings?.shadowOpacity ?? 50) / 100,
+          hotspotZoom: settings?.hotspotZoom || false,
           rotate,
           rotationSpeed: actualRotationSpeed,
           zoom,
@@ -178,6 +205,9 @@ const Object3d = ({
           scrollTarget,
           scrollStart,
           scrollEnd,
+          scrollRotate,
+          scrollRotateAmount,
+          tilt,
           hostRef,
           hotspots: internalHotspots,
           disabled,
@@ -204,6 +234,14 @@ const Object3d = ({
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
               [EventTypes.HOTSPOT_CLICKED]: index,
+            });
+          },
+          onModelLoaded: () => {
+            dispatchVevEvent(EventTypes.MODEL_LOADED);
+          },
+          onAnimationFinished: (name: string) => {
+            dispatchVevEvent(EventTypes.ANIMATION_FINISHED, {
+              [EventTypes.ANIMATION_FINISHED]: name,
             });
           },
         }}
@@ -243,6 +281,14 @@ export const HotspotComponent = (context) => {
     </>
   );
 };
+
+const hasAnimation = (context) =>
+  !!context?.value?.animationSettings?.animation &&
+  context.value.animationSettings.animation !== NO_ANIMATION;
+
+const usesScroll = (context) =>
+  (context?.value?.animationSettings?.scrollAnimation === true && hasAnimation(context)) ||
+  context?.value?.animationSettings?.scrollRotate === true;
 
 export const config: VevManifest = {
   name: 'Object3D',
@@ -293,10 +339,66 @@ export const config: VevManifest = {
               { label: 'Streetlights, dark', value: 'hdri3' },
               { label: 'Natural lights', value: 'hdri4' },
               { label: 'Dim', value: 'hdri5' },
+              { label: 'Custom (upload .hdr)', value: 'custom' },
             ],
             display: 'dropdown',
           },
           initialValue: 'hdri1',
+        },
+        {
+          name: 'customHdri',
+          title: 'HDR file',
+          description: 'Equirectangular .hdr image',
+          type: 'upload',
+          accept: '.hdr',
+          hidden: (context) => context?.value?.settings?.lighting !== 'custom',
+        },
+        {
+          name: 'exposure',
+          title: 'Exposure (%)',
+          type: 'number',
+          initialValue: 100,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 300,
+          },
+        },
+        {
+          name: 'background',
+          title: 'Show lighting as background',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'backgroundBlur',
+          title: 'Background blur (%)',
+          type: 'number',
+          initialValue: 0,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 100,
+          },
+          hidden: (context) => context?.value?.settings?.background !== true,
+        },
+        {
+          name: 'shadow',
+          title: 'Ground shadow',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'shadowOpacity',
+          title: 'Shadow opacity (%)',
+          type: 'number',
+          initialValue: 50,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 100,
+          },
+          hidden: (context) => context?.value?.settings?.shadow !== true,
         },
         {
           name: 'controls',
@@ -309,6 +411,13 @@ export const config: VevManifest = {
           name: 'zoom',
           title: 'Zoom',
           description: 'Allow user to zoom model',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'hotspotZoom',
+          title: 'Zoom to hotspot',
+          description: 'Move the camera closer when a hotspot is focused',
           type: 'boolean',
           initialValue: false,
         },
@@ -325,7 +434,10 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(context.value?.modelUrl?.url);
+              // The legacy widget stores the model as `modelURL`
+              const animations = await getAnimations(
+                context.value?.modelUrl?.url ?? context.value?.modelURL?.url,
+              );
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });
@@ -340,9 +452,7 @@ export const config: VevManifest = {
           description: 'Drive animation progress by scroll position',
           type: 'boolean',
           initialValue: false,
-          hidden: (context) =>
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !hasAnimation(context),
         },
         {
           name: 'scrollTarget',
@@ -357,10 +467,7 @@ export const config: VevManifest = {
             display: 'dropdown',
           },
           initialValue: 'element',
-          hidden: (context) =>
-            !context?.value?.animationSettings?.scrollAnimation ||
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !usesScroll(context),
         },
         {
           name: 'scrollStart',
@@ -373,10 +480,7 @@ export const config: VevManifest = {
             min: 0,
             max: 100,
           },
-          hidden: (context) =>
-            !context?.value?.animationSettings?.scrollAnimation ||
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !usesScroll(context),
         },
         {
           name: 'scrollEnd',
@@ -389,18 +493,41 @@ export const config: VevManifest = {
             min: 0,
             max: 100,
           },
-          hidden: (context) =>
-            !context?.value?.animationSettings?.scrollAnimation ||
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !usesScroll(context),
+        },
+        {
+          name: 'scrollRotate',
+          title: 'Rotate on scroll',
+          description: 'Turn the model as the page scrolls',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'scrollRotateAmount',
+          title: 'Scroll rotation',
+          type: 'number',
+          initialValue: 360,
+          options: {
+            display: 'slider',
+            min: -720,
+            max: 720,
+            format: 'deg',
+          },
+          hidden: (context) => context?.value?.animationSettings?.scrollRotate !== true,
+        },
+        {
+          name: 'tilt',
+          title: 'Follow pointer',
+          description: 'Tilt the model toward the mouse pointer',
+          type: 'boolean',
+          initialValue: false,
         },
         {
           name: 'rotate',
           title: 'Rotate',
           type: 'boolean',
           initialValue: true,
-          hidden: (context) =>
-            context?.value?.animationSettings?.animation !== 'No animation',
+          hidden: (context) => context?.value?.animationSettings?.animation !== 'No animation',
         },
         {
           name: 'rotationSpeed',
@@ -440,6 +567,21 @@ export const config: VevManifest = {
         },
       ],
     },
+    {
+      type: EventTypes.MODEL_LOADED,
+      description: 'On model loaded',
+    },
+    {
+      type: EventTypes.ANIMATION_FINISHED,
+      description: 'On animation finished',
+      args: [
+        {
+          name: EventTypes.ANIMATION_FINISHED,
+          description: 'Name of the animation that finished',
+          type: 'string',
+        },
+      ],
+    },
   ],
   interactions: [
     {
@@ -470,7 +612,8 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(context.value?.widgetForm?.modelUrl?.url);
+              const form = context.value?.widgetForm;
+              const animations = await getAnimations(form?.modelUrl?.url ?? form?.modelURL?.url);
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });

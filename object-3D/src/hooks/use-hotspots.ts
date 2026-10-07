@@ -1,105 +1,138 @@
 import { useContext, useEffect, useRef } from 'react';
-import { Camera, Mesh, MeshBasicMaterial, Scene, SphereGeometry, Spherical, Vector3 } from 'three';
+import { Camera, Group, Vector3 } from 'three';
 // @ts-expect-error - no types
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { Group as TweenGroup } from '@tweenjs/tween.js';
 import { Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
 import { InternalHotspot } from '../types';
-import TWEEN from '@tweenjs/tween.js';
-import { animateCameraSpherical } from '../util/animate-camera-spherical';
+import { animateCamera } from '../util/animate-camera';
 
 export interface CanvasHotspot {
-  element: HTMLDivElement;
+  element: HTMLButtonElement;
   sceneObject: CSS2DObject;
-  intersectionSphere: Mesh;
   hotspot: InternalHotspot;
+  dimmed: boolean;
 }
 
-function zoomHotspot(camera: Camera, storageHotspot: InternalHotspot, controls: any) {
-  const from = camera.position.clone();
-  const to = new Vector3(
-    storageHotspot.position.x,
-    storageHotspot.position.y,
-    storageHotspot.position.z,
-  );
-  animateCameraSpherical(from, to, camera, controls);
-}
+// With "Zoom to hotspot", the camera stops at this multiple of the hotspot's distance from the center
+const HOTSPOT_ZOOM_DISTANCE = 1.6;
 
-export function useHotspots(scene: Scene | undefined, camera: Camera | undefined, controls: any) {
-  const { hotspots, editMode, hotspotClicked, eventCallbacks } = useContext(Object3dContext);
+export function useHotspots(
+  pivot: Group | undefined,
+  camera: Camera | undefined,
+  controls: any,
+  tweens: TweenGroup | undefined,
+  invalidate: () => void,
+) {
+  const { hotspots, editMode, hotspotClicked, eventCallbacks, hotspotZoom } =
+    useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
 
+  // The DOM listeners live longer than one render. They read the current values from here.
+  const latest = useRef({ camera, controls, tweens, hotspotZoom, hotspotClicked });
+  latest.current = { camera, controls, tweens, hotspotZoom, hotspotClicked };
+
+  function focusHotspot(canvasHotspot: CanvasHotspot) {
+    const { camera, controls, tweens, hotspotZoom } = latest.current;
+    if (!camera || !controls || !tweens) return;
+
+    const target: Vector3 = controls.target.clone();
+    const direction = canvasHotspot.sceneObject.getWorldPosition(new Vector3()).sub(target);
+    const hotspotDistance = direction.length();
+    if (hotspotDistance === 0) return;
+
+    const currentDistance = camera.position.distanceTo(target);
+    const distance = hotspotZoom
+      ? Math.min(
+          currentDistance,
+          Math.max(hotspotDistance * HOTSPOT_ZOOM_DISTANCE, controls.minDistance),
+        )
+      : currentDistance;
+
+    const position = direction.normalize().multiplyScalar(distance).add(target);
+    animateCamera(tweens, camera, controls, position, target);
+  }
+
+  function selectHotspot(canvasHotspot: CanvasHotspot) {
+    focusHotspot(canvasHotspot);
+    const { hotspotClicked } = latest.current;
+    if (hotspotClicked) hotspotClicked(canvasHotspot.hotspot.index);
+  }
+
+  // Runs on every render, so the callback always sees the current hotspots
   useEffect(() => {
-    if (eventCallbacks) {
-      eventCallbacks.click_hotspot((index: number) => {
-        const internalHotspot = hotspots.find((hotspot) => {
-          return hotspot.index === index;
-        });
-        if (internalHotspot) {
-          zoomHotspot(camera, internalHotspot, controls);
-          hotspotClicked(index);
-        }
-      });
-    }
-  }, [eventCallbacks]);
+    if (!eventCallbacks) return;
+    eventCallbacks.click_hotspot((index: number) => {
+      const canvasHotspot = hotspotMap.current.find((item) => item.hotspot.index === index);
+      if (canvasHotspot) selectHotspot(canvasHotspot);
+    });
+  });
 
   useEffect(() => {
-    if (scene) {
-      hotspotMap.current.forEach((hotspot) => {
-        scene.remove(hotspot.sceneObject);
-        scene.remove(hotspot.intersectionSphere);
-        hotspot.element.parentElement.remove();
-      });
+    if (!pivot) return;
+
+    const created = hotspots.map((storageHotspot) => {
+      const outer = document.createElement('div');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = `${storageHotspot.index}`;
+      button.className = `${styles.hotspot} vev-object-3d-hotspot`;
+      button.setAttribute('aria-label', `Hotspot ${storageHotspot.index}`);
+      outer.appendChild(button);
+
+      const sceneObject = new CSS2DObject(outer);
+      sceneObject.position.copy(storageHotspot.position);
+      sceneObject.layers.set(1);
+      pivot.add(sceneObject);
+
+      const canvasHotspot: CanvasHotspot = {
+        element: button,
+        sceneObject,
+        hotspot: storageHotspot,
+        dimmed: false,
+      };
+
+      if (editMode) {
+        button.tabIndex = -1;
+      } else {
+        // Keep OrbitControls from capturing the pointer, which would move the click off the button
+        button.addEventListener('pointerdown', (event) => event.stopPropagation());
+        button.addEventListener('click', () => selectHotspot(canvasHotspot));
+      }
+
+      return canvasHotspot;
+    });
+
+    hotspotMap.current = created;
+    invalidate();
+
+    return () => {
+      // CSS2DObject removes its element from the DOM when it leaves the scene
+      created.forEach((canvasHotspot) => pivot.remove(canvasHotspot.sceneObject));
       hotspotMap.current = [];
-
-      hotspots.forEach((storageHotspot) => {
-        const outer = document.createElement('div');
-        const innerElem = document.createElement('div');
-
-        outer.appendChild(innerElem);
-        innerElem.innerText = `${storageHotspot.index}`;
-        innerElem.className = `${styles.hotspot} vev-object-3d-hotspot`;
-        const sceneObject = new CSS2DObject(outer);
-        sceneObject.position.set(
-          storageHotspot.position.x,
-          storageHotspot.position.y,
-          storageHotspot.position.z,
-        );
-        scene.add(sceneObject);
-        sceneObject.layers.set(1);
-
-        if (!editMode) {
-          innerElem.addEventListener('pointerdown', () => {
-            zoomHotspot(camera, storageHotspot, controls);
-            if (hotspotClicked) hotspotClicked(storageHotspot.index);
-          });
-        }
-
-        // Add a transparent sphere used for determining if the hotspot is visible or not
-        const geometry = new SphereGeometry(0.1, 32, 16);
-        const material = new MeshBasicMaterial({
-          color: 0xffff00,
-          opacity: 0,
-          transparent: true,
-        });
-        const sphere = new Mesh(geometry, material);
-        sphere.position.set(
-          storageHotspot.position.x,
-          storageHotspot.position.y,
-          storageHotspot.position.z,
-        );
-        sphere.name = 'intersection_sphere';
-        scene.add(sphere);
-
-        hotspotMap.current.push({
-          intersectionSphere: sphere,
-          element: innerElem,
-          sceneObject,
-          hotspot: storageHotspot,
-        });
-      });
-    }
-  }, [hotspots, scene]);
+      invalidate();
+    };
+  }, [hotspots, pivot, editMode]);
 
   return hotspotMap;
+}
+
+const forward = new Vector3();
+const position = new Vector3();
+
+/**
+ * Dims the hotspots on the far side of the model.
+ * This is an angle test against the camera direction. It does not detect occlusion by geometry.
+ */
+export function updateHotspotVisibility(hotspots: CanvasHotspot[], camera: Camera) {
+  camera.getWorldDirection(forward);
+  hotspots.forEach((canvasHotspot) => {
+    canvasHotspot.sceneObject.getWorldPosition(position);
+    const dimmed = position.dot(forward) > 0;
+    if (dimmed !== canvasHotspot.dimmed) {
+      canvasHotspot.dimmed = dimmed;
+      canvasHotspot.element.style.opacity = dimmed ? '0.1' : '1';
+    }
+  });
 }

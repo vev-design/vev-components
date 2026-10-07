@@ -4,79 +4,97 @@ Guidance for Claude Code when working in this component. See the repo root `CLAU
 
 ## What this component is
 
-A three.js `.glb`/`.gltf` model viewer with orbit controls, HDRI lighting presets, clickable 3D hotspots, GLTF animation playback, and optional scroll-driven animation. 1,970 lines across 23 files.
+A three.js `.glb`/`.gltf` model viewer with orbit controls, HDRI lighting (presets or uploaded `.hdr`), clickable 3D hotspots, GLTF animation playback, scroll-driven animation and rotation, pointer tilt, and an optional ground shadow.
 
 - Vev key: `trQ35DZLjAWC0nWJxVvB`
-- Deps: `three`, `@tweenjs/tween.js`, `@vev/silke`, `@vev/utils`
+- Deps: `three` (pinned to 0.155.x by the caret), `@tweenjs/tween.js`, `@vev/silke`, `@vev/utils` (types only)
 - Entry: `src/object-3d.tsx` — exports the shared `config: VevManifest`, which `legacy-support.tsx` reuses.
+
+`react-dom` is pinned to `^18` in `package.json` only to satisfy `@vev/silke`'s peer dependency. Without it, `npm install` resolves `react-dom@19`, fails with `ERESOLVE`, and the CI deploy breaks.
 
 ## Two registered components from one package
 
 `src/object-3d.tsx` registers **"Object3D"**. `src/legacy-support.tsx` separately registers **"Object3D legacy"** with `overrideKey: 'threeModel'`, wrapping the same viewer behind the pre-rename prop names (`modelURL`, `posterURL`, flat `hotspots`).
 
-Nothing imports `legacy-support.tsx` — the Vev CLI discovers every `registerVevComponent` call under `src/`. Deleting the file silently unregisters the legacy widget for existing published pages, so do not treat it as dead code.
-
-**Known bug in the legacy path:** `convertToLegacySchema` renames `posterUrl` → `posterURL`, but the prop in `config` is actually named `poster` (`src/object-3d.tsx:259`). The rename never matches, so the legacy editor writes to `poster` while `mapOldProps` reads `props.posterURL?.url` — the legacy poster image is always `undefined`. Any change to prop names in `config` must be mirrored in `convertToLegacySchema`.
+Nothing imports `legacy-support.tsx` — the Vev CLI discovers every `registerVevComponent` call under `src/`. Deleting the file silently unregisters the legacy widget for existing published pages, so do not treat it as dead code. `convertToLegacySchema` renames props by name; any rename in `config.props` must be mirrored there.
 
 ## Architecture
 
 ```
 Object3d (src/object-3d.tsx)
   └─ Object3DContextProvider          # all state passes through context, not props
-      └─ Object3dViewer               # owns the canvas + the rAF loop
-          ├─ useModel(url, onProgress)        GLTF load
-          ├─ useSceneSetup(...)               renderer, scene, camera, controls, mixer
-          ├─ useCenterModel(...)              frame the model
-          ├─ useScrollProgress(hostRef, ...)  scroll → ref (no re-render)
+      └─ Object3dViewer               # owns the canvas, the render loop, loading UI
+          ├─ useInView ×2                     loop gate (in view) + lazy-load gate (400px margin, latched)
+          ├─ useSceneSetup(...)               renderer, scene, pivot, camera, controls, tween group
+          ├─ useModel(url, renderer, near)    GLTF load (Draco/Meshopt/KTX2 via util/gltf-loader.ts)
+          ├─ useSceneModel(pivot, gltf)       add/center/dispose model, mixer, playAnimation
+          ├─ useCenterModel(...)              frame the camera, store the "home" camera for Reset
+          ├─ useEnvironment(...)              HDRI → PMREM env map, optional background
+          ├─ useGroundShadow(...)             ShadowMaterial floor + zero-intensity shadow light
           ├─ useHotspotListener(...)          editor: click to place a hotspot
-          ├─ useHotspots(...)                 CSS2D hotspot elements
+          ├─ useHotspots(...)                 CSS2D hotspot <button>s, focus/zoom
+          ├─ useScrollProgress / usePointerTilt   refs, no re-render
           └─ useAnimationFrame(cb, enabled)   the single render loop
 ```
 
-Hotspots are **not** 3D objects. They are DOM nodes positioned by three's `CSS2DRenderer`, whose `domElement` is prepended next to the canvas (`use-scene-setup.ts:148-151`). That is also the element `OrbitControls` binds to — not the canvas. Changing the DOM order there breaks pointer input.
+The model and the hotspots are children of `pivot`, not of the scene. Scroll rotation and pointer tilt rotate the pivot, so hotspots stay attached to the model. New hotspot positions are stored in pivot-local space (`pivot.worldToLocal`).
+
+Hotspots are **not** 3D objects. They are DOM `<button>`s positioned by three's `CSS2DRenderer`. Its element (`.labels`) is absolutely positioned on top of the canvas and is also the element `OrbitControls` binds to — not the canvas. Keep it above the canvas, or pointer input breaks. The poster and loading bar above it have `pointer-events: none`.
 
 ## The render loop
 
-One `useAnimationFrame` in `object-3d-viewer.tsx:87-122` drives everything: `controls.update()`, both renderers, the animation mixer, and `TWEEN.update()`.
+The scene renders **on demand**. `invalidate()` (created in the viewer, passed to every hook) marks the frame dirty. Each loop tick calls `controls.update()`, `tweens.update()`, and the mixer, and renders only if something changed: a controls `change` event, a running tween, a running animation, scroll/tilt pivot movement, or `invalidate()`.
 
-It is gated on `!disabled || schemaOpen` — so the scene renders live on the published page, and in the editor **only while the properties panel is open**. A static canvas in the editor with the panel closed is expected behaviour, not a bug.
+The loop runs only while `(!disabled || schemaOpen) && inView`. When it is off (editor canvas with the panel closed, or off screen), `invalidate()` schedules a single rAF render instead, so the editor still shows a correct static frame.
 
-`useAnimationFrame` is a local reimplementation. The comment at `hooks/use-animation-frame.ts:5` explains why: this component runs in both the editor and the viewer, and the viewer-provided hook is not available in the editor.
+`useAnimationFrame` is a local reimplementation (the viewer-provided hook is not available in the editor). It clamps `delta` to 0.1 s so a pause does not make animations jump.
 
 ## Camera, animation, and interactions
 
-Vev interactions cannot call into the three.js scene directly, so the component uses an imperative callback registry. `object-3d.tsx:98-110` holds a `useRef` of five no-op functions; `useSceneSetup` replaces them via `eventCallbacks.*(cb)` (`use-scene-setup.ts:95-118`); `useVevEvent` handlers then invoke whatever is currently registered.
+Vev interactions cannot call into the three.js scene directly, so the component uses an imperative callback registry. `object-3d.tsx` holds a `useRef` of five no-op functions; the hooks replace them via `eventCallbacks.*(cb)` on **every render** (effects without deps), so the callbacks never see stale state.
 
-Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA`, `PLAY_ANIMATION`. One event out: `HOTSPOT_CLICKED` with the hotspot index.
+Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA`, `PLAY_ANIMATION`. Events out: `HOTSPOT_CLICKED` (index), `MODEL_LOADED`, `ANIMATION_FINISHED` (clip name).
 
-`playAnimation` (`use-scene-setup.ts:57-93`) cross-fades over 0.2s. Non-looping clips get `setDuration(1.4)` — a hard-coded override that ignores the clip's real length — and register a `finished` listener that fades back to the previous clip. That listener is added on **every** non-looping call and never removed, so repeated `PLAY_ANIMATION` interactions accumulate listeners on the mixer.
+- Camera moves go through `util/animate-camera.ts`, which orbits around `controls.target` (shortest way round) instead of moving in a straight line through the model. Each instance has its own tween group.
+- `RESET_CAMERA` returns to `home` — the saved initial camera, or the auto-framed position.
+- Auto-rotate pauses while the user drags and resumes 2 s after release. It is off under `prefers-reduced-motion`.
+- `playAnimation` (`use-scene-model.ts`) cross-fades over 0.2 s. A one-shot clip (`loop: false`) plays `repetitions` times at its real length, clamps, and fades back to the last looping clip. One `finished` listener per mixer handles this. "No animation" (or any unknown name) fades the current clip out.
+- **Scroll-driven animation** replaces `mixer.update(delta)` with `mixer.setTime(...)`. The time is clamped to `duration - 0.001`: at exactly `duration`, a `LoopRepeat` action wraps back to frame 0.
 
-**Scroll-driven animation** replaces `mixer.update(delta)` with `mixer.setTime(progress * clipDuration)` (`object-3d-viewer.tsx:94-117`). Progress is remapped through the `scrollStart`/`scrollEnd` percentages, then smoothed with a frame-rate-independent exponential lerp (`1 - Math.exp(-8 * delta)`). `useScrollProgress` returns a **ref**, deliberately, so scrolling never re-renders React.
+`scrollTarget: 'section'` resolves via `host.closest('.__section')` (`use-scroll-progress.ts`) — a Vev runtime implementation detail that silently falls back to the host element if the platform renames it.
 
-`scrollTarget: 'section'` resolves via `host.closest('.__section')` (`use-scroll-progress.ts:26`) — that class is a Vev runtime implementation detail and will silently fall back to the host element if the platform renames it.
+Camera framing uses `FRAMING_DISTANCE = 2.053` (`use-center-model.ts`). That number reproduces an old degrees/radians mix-up, so that published pages keep their framing. Do not "fix" it to the textbook formula.
 
 ## Loading
 
-Two independent progress sources — the HDRI (`RGBELoader`) and the model (`useModel`) — are combined as `Math.min(light, model)`. The loading bar appears only after an 800ms delay, so fast loads never flash it. The CSS variable is set to `min - 1` percent (`object-3d-viewer.tsx:45`), which keeps the bar from visually completing before `isLoaded` flips.
+The model and HDRI load only when the widget is within 400px of the viewport. The poster shows until both are ready, and stays if the model fails to load. The loading bar appears only after 800ms and only while loading. `useEnvironment` latches `ready` after the first HDRI, so a lighting change does not bring the poster back.
+
+`getAnimations` (editor dropdowns) reads only the glTF JSON. For `.glb` it uses two HTTP range requests, and falls back to a full fetch. Results are cached per URL.
+
+Compressed models need the Draco/Basis decoders. They are loaded from jsDelivr at the installed three revision (`util/gltf-loader.ts`), and shared by all instances.
+
+## Disposal
+
+`useSceneSetup` disposes controls and renderer and calls `forceContextLoss()` on unmount. Browsers allow only ~16 live WebGL contexts, and the editor modals create a viewer each time they open. `useSceneModel` disposes a model's geometries, materials and textures when it is replaced or unmounted.
 
 ## Known issues
 
-- **The WebGL renderer is never disposed.** The only `dispose()` calls in the package are for `scene.environment`, the HDRI texture, and the `PMREMGenerator`. `renderer.dispose()`, geometry, and material disposal are all missing, so unmounting leaks a GL context. Browsers cap live contexts (~16), so a page cycling several instances will start failing to create new ones.
-- **`is-hotspot-visible.ts` does not do what its imports suggest.** It declares a module-level `Raycaster` and `resultArr` that are never used, and takes a `scene: Group` parameter it ignores. The actual test is an angle comparison against the camera's forward vector, which dims back-facing hotspots to `opacity: 0.1` but does **not** detect occlusion by geometry.
-- Hotspot visibility is recomputed by a 100ms `setInterval` (`object-3d-viewer.tsx:75-85`), not inside the render loop.
+- three r155's `FileLoader` does not handle a stream error mid-download (`readData()` has no rejection handler). If the connection drops during a model download, `onError` never fires and the loading bar stays. A three upgrade (r158+) fixes it.
+- The default model (`defaultModel.url`) is on `devcdn.vev.design`. It is not on the production CDN.
+- Hotspot dimming is an angle test against the camera direction. It does not detect occlusion by geometry.
 
 ## Working on this
 
 ```bash
 cd object-3D
-yarn install
+npm install
 vev start
 ```
 
 Verify:
 
-1. In the editor **with the properties panel open** — otherwise the render loop is off and the canvas looks frozen.
-2. Model swap, HDRI preset swap, and resize, each of which runs a separate effect in `use-scene-setup.ts`.
-3. Hotspot placement in the editor, then hotspot clicks on a published page (different code paths: `useHotspotListener` vs `useHotspots`).
-4. Scroll animation at all three `scrollTarget` values, with non-default `scrollStart`/`scrollEnd`.
-5. The legacy widget, if you touched `config.props` — its prop mapping is positional by name and fails silently.
+1. In the editor **with the properties panel open** — otherwise the loop is off and only invalidated frames render.
+2. Model swap, HDRI preset swap, custom HDRI, exposure, background, ground shadow, and resize.
+3. Hotspot placement in the editor (`useHotspotListener`), then hotspot clicks and keyboard Enter on a published page (`useHotspots`).
+4. Scroll animation and scroll rotation at all three `scrollTarget` values, with non-default `scrollStart`/`scrollEnd`.
+5. The legacy widget, if you touched `config.props` — its prop mapping is by name and fails silently.

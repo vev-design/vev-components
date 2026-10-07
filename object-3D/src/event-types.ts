@@ -1,5 +1,7 @@
 export enum EventTypes {
   HOTSPOT_CLICKED = 'hotspot',
+  MODEL_LOADED = 'model_loaded',
+  ANIMATION_FINISHED = 'animation_finished',
 }
 
 export enum InteractionTypes {
