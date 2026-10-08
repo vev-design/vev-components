@@ -15,6 +15,7 @@ import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
+import { STANDARD_ENVIRONMENT } from './hooks/use-environment';
 import { SilkeBox } from '@vev/silke';
 import type { VevManifest } from '@vev/utils';
 
@@ -23,6 +24,7 @@ export const defaultModel = {
 };
 
 export const LIGHTING = {
+  standard: STANDARD_ENVIRONMENT,
   hdri1:
     'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/c_W6ves3U_abandoned_factory_canteen_01_1k.hdr.hdr',
   hdri2:
@@ -44,7 +46,7 @@ export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
 export const FAR = 100;
 
-type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5' | 'custom';
+type LightingOptions = 'standard' | 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5' | 'custom';
 
 function noop() {
   return;
@@ -338,6 +340,7 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: [
+              { label: 'Standard', value: 'standard' },
               { label: 'Indoor', value: 'hdri1' },
               { label: 'Studio lights', value: 'hdri2' },
               { label: 'Streetlights, dark', value: 'hdri3' },

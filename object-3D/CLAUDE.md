@@ -69,6 +69,8 @@ Camera framing uses `FRAMING_DISTANCE = 2.053` (`use-center-model.ts`). That num
 
 The model and HDRI load only when the widget is within 400px of the viewport. The poster shows until both are ready, and stays if the model fails to load. The loading bar appears only after 800ms and only while loading. `useEnvironment` latches `ready` after the first HDRI, so a lighting change does not bring the poster back.
 
+The "Standard" lighting preset (`STANDARD_ENVIRONMENT` in `use-environment.ts`) is three's `RoomEnvironment`, a neutral studio light generated in code. It downloads nothing and is ready at once.
+
 `getAnimations` (editor dropdowns) reads only the glTF JSON. For `.glb` it uses two HTTP range requests, and falls back to a full fetch. Results are cached per URL.
 
 Compressed models need the Draco/Basis decoders. They are loaded from jsDelivr at the installed three revision (`util/gltf-loader.ts`), and shared by all instances.

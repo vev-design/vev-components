@@ -8,6 +8,13 @@ import {
 } from 'three';
 // @ts-expect-error - no types
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+// @ts-expect-error - no types
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/**
+ * Pass as `url` for a neutral studio light. three.js builds it in code, so nothing is downloaded.
+ */
+export const STANDARD_ENVIRONMENT = 'standard';
 
 /**
  * Loads the HDRI that lights the model, and optionally shows it as the background.
@@ -33,6 +40,30 @@ export function useEnvironment(
     let cancelled = false;
     setProgress(0);
 
+    const apply = (environment: Texture, backgroundTexture: Texture) => {
+      // Keep the old HDRI until the new one is ready, so the model never renders unlit
+      if (current.current) {
+        current.current.environment.dispose();
+        current.current.background.dispose();
+      }
+      current.current = { environment, background: backgroundTexture };
+      scene.environment = environment;
+      setBackground(backgroundTexture);
+      setProgress(100);
+      setReady(true);
+      invalidate();
+    };
+
+    if (url === STANDARD_ENVIRONMENT) {
+      const pmremGenerator = new PMREMGenerator(renderer);
+      const room = new RoomEnvironment(renderer);
+      const environment = pmremGenerator.fromScene(room, 0.04).texture;
+      room.dispose();
+      pmremGenerator.dispose();
+      apply(environment, environment);
+      return;
+    }
+
     new RGBELoader().load(
       url,
       (texture: Texture) => {
@@ -45,18 +76,7 @@ export function useEnvironment(
         const environment = pmremGenerator.fromEquirectangular(texture).texture;
         pmremGenerator.dispose();
         texture.mapping = EquirectangularReflectionMapping;
-
-        // Keep the old HDRI until the new one is ready, so the model never renders unlit
-        if (current.current) {
-          current.current.environment.dispose();
-          current.current.background.dispose();
-        }
-        current.current = { environment, background: texture };
-        scene.environment = environment;
-        setBackground(texture);
-        setProgress(100);
-        setReady(true);
-        invalidate();
+        apply(environment, texture);
       },
       (xhr: ProgressEvent) => {
         if (!cancelled && xhr.lengthComputable) setProgress((xhr.loaded / xhr.total) * 100);
