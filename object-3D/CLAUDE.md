@@ -77,6 +77,7 @@ Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA
 - `RESET_CAMERA` returns to `home` — the saved initial camera, or the auto-framed position.
 - Auto-rotate pauses while the user drags and resumes 2 s after release. It is off under `prefers-reduced-motion`.
 - `playAnimation` (`use-scene-model.ts`) cross-fades over 0.2 s. A one-shot clip (`loop: false`) plays `repetitions` times at its real length, clamps, and fades back to the last looping clip. One `finished` listener per mixer handles this. "No animation" (or any unknown name) fades the current clip out.
+- `PLAY_ANIMATION` with "Play once, then return to original" (`returnToOriginal`) ignores Loop and Repetitions. It plays the clip once, then plays the configured `animation` setting again (or fades to the rest pose for "No animation"). A clamped clip is paused, so `isAnimating()` also counts the mixer time until `fadeEnd`; otherwise the fade-out would not render.
 - **Scroll-driven animation** replaces `mixer.update(delta)` with `mixer.setTime(...)`. The time is clamped to `duration - 0.001`: at exactly `duration`, a `LoopRepeat` action wraps back to frame 0.
 
 `scrollTarget: 'section'` resolves via `host.closest('.__section')` (`use-scroll-progress.ts`) — a Vev runtime implementation detail that silently falls back to the host element if the platform renames it.

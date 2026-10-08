@@ -40,6 +40,10 @@ export function useSceneModel(
   const currentAction = useRef<AnimationAction | null>(null);
   // The last looping clip. A one-shot clip fades back to it when it finishes.
   const loopAction = useRef<AnimationAction | null>(null);
+  // A clip played with "return to original". When it finishes, the configured animation plays again.
+  const returnAction = useRef<AnimationAction | null>(null);
+  // Mixer time when the last fade-out ends. A clamped clip is paused, so it does not count as running.
+  const fadeEnd = useRef(0);
   const clipDuration = useRef(0);
   // Set by the Pause/Resume animation interactions. Scroll-driven animation ignores it.
   const paused = useRef(false);
@@ -48,12 +52,19 @@ export function useSceneModel(
   const cancelBoundsTrees = useRef<(() => void) | null>(null);
   const hotspotsRef = useRef(hotspots);
   hotspotsRef.current = hotspots;
+  const animationRef = useRef(animation);
+  animationRef.current = animation;
 
   const onAnimationFinishedRef = useRef(onAnimationFinished);
   onAnimationFinishedRef.current = onAnimationFinished;
 
   function onFinished({ action }: { action: AnimationAction }) {
     if (onAnimationFinishedRef.current) onAnimationFinishedRef.current(action.getClip().name);
+
+    if (action === currentAction.current && action === returnAction.current) {
+      playAnimation(animationRef.current);
+      return;
+    }
 
     const back = loopAction.current;
     if (action !== currentAction.current || !back || back === action) return;
@@ -68,21 +79,35 @@ export function useSceneModel(
   onFinishedRef.current = onFinished;
   const finishedListener = useRef((event: any) => onFinishedRef.current(event)).current;
 
-  function playAnimation(name: string | undefined, loop = true, repetitions = 1) {
+  function playAnimation(
+    name: string | undefined,
+    loop = true,
+    repetitions = 1,
+    returnToOriginal = false,
+  ) {
     if (!mixer.current) return;
     paused.current = false;
+    returnAction.current = null;
 
     const clip = clips.current.find((candidate) => candidate.name === name);
     const previous = currentAction.current;
 
     // "No animation", or a name the model does not have: stop the current clip
     if (!clip) {
-      if (previous) previous.fadeOut(FADE_DURATION);
+      if (previous) {
+        previous.fadeOut(FADE_DURATION);
+        fadeEnd.current = mixer.current.time + FADE_DURATION;
+      }
       currentAction.current = null;
       loopAction.current = null;
       clipDuration.current = 0;
       invalidate();
       return;
+    }
+
+    if (returnToOriginal) {
+      loop = false;
+      repetitions = 1;
     }
 
     const action = mixer.current.clipAction(clip);
@@ -93,6 +118,7 @@ export function useSceneModel(
     if (previous && previous !== action) previous.crossFadeTo(action, FADE_DURATION, false);
 
     if (loop) loopAction.current = action;
+    if (returnToOriginal) returnAction.current = action;
     currentAction.current = action;
     actions.current.add(action);
     clipDuration.current = clip.duration;
@@ -113,6 +139,8 @@ export function useSceneModel(
     actions.current.clear();
     currentAction.current = null;
     loopAction.current = null;
+    returnAction.current = null;
+    fadeEnd.current = 0;
     clipDuration.current = 0;
 
     if (cancelBoundsTrees.current) cancelBoundsTrees.current();
@@ -161,9 +189,11 @@ export function useSceneModel(
   // Runs on every render, so the callback always sees the current state
   useEffect(() => {
     if (!eventCallbacks) return;
-    eventCallbacks.play_animation((name: string, loop: boolean, repetitions: number) => {
-      playAnimation(name, loop !== false, repetitions);
-    });
+    eventCallbacks.play_animation(
+      (name: string, loop: boolean, repetitions: number, returnToOriginal: boolean) => {
+        playAnimation(name, loop !== false, repetitions, returnToOriginal === true);
+      },
+    );
     eventCallbacks.pause_animation(() => {
       paused.current = true;
     });
@@ -183,6 +213,7 @@ export function useSceneModel(
   }, []);
 
   function isAnimating() {
+    if (mixer.current && mixer.current.time < fadeEnd.current) return true;
     for (const action of actions.current) {
       if (action.isRunning()) return true;
     }

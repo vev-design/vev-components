@@ -35,7 +35,14 @@ export interface Object3DContextProps {
     start_rotation: (cb: (speed: number) => void) => void;
     stop_rotation: (cb: () => void) => void;
     reset_camera: (cb: () => void) => void;
-    play_animation: (cb: (animation: string, loop: boolean, repetitions: number) => void) => void;
+    play_animation: (
+      cb: (
+        animation: string,
+        loop: boolean,
+        repetitions: number,
+        returnToOriginal: boolean,
+      ) => void,
+    ) => void;
     pause_animation: (cb: () => void) => void;
     resume_animation: (cb: () => void) => void;
   };

@@ -132,7 +132,12 @@ const Object3d = ({
     start_rotation: (speed: number) => void;
     stop_rotation: () => void;
     reset_camera: () => void;
-    play_animation: (animation: string, loop: boolean, repetitions: number) => void;
+    play_animation: (
+      animation: string,
+      loop: boolean,
+      repetitions: number,
+      returnToOriginal: boolean,
+    ) => void;
     pause_animation: () => void;
     resume_animation: () => void;
   }>({
@@ -190,7 +195,12 @@ const Object3d = ({
   });
 
   useVevEvent(InteractionTypes.PLAY_ANIMATION, (args: any) => {
-    eventCallbacks.current.play_animation(args.animation, args.loop, args.repetitions);
+    eventCallbacks.current.play_animation(
+      args.animation,
+      args.loop,
+      args.repetitions,
+      args.returnToOriginal,
+    );
   });
 
   useVevEvent(InteractionTypes.PAUSE_ANIMATION, () => {
@@ -667,6 +677,12 @@ export const config: VevManifest = {
           title: 'Repetitions',
           type: 'number',
           initialValue: 1,
+        },
+        {
+          name: 'returnToOriginal',
+          title: 'Play once, then return to original',
+          type: 'boolean',
+          initialValue: false,
         },
       ],
     },
