@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Label } from '../types';
-import { PlusIcon } from '../plus-icon';
 import styles from './label-overlay-editor.module.css';
 import labelStyles from '../label-overlay.module.css';
 
@@ -130,7 +129,7 @@ export function LabelOverlayEditor({
               color: 'black',
             }}
           >
-            <PlusIcon />
+            <span>{label.index + 1}</span>
             {label.caption && editIndex === label.index && (
               <div className={labelStyles.captionWrapper}>{label.caption}</div>
             )}

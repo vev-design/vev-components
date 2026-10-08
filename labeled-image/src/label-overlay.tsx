@@ -172,6 +172,7 @@ export function LabelOverlay({
                 }}
               >
                 {customHotspotElem}
+                {showLabelIndex && <span className={styles.indexBadge}>{label.index + 1}</span>}
                 {label.caption && hoverIndex === label.index && (
                   <div className={styles.captionWrapper}>{label.caption}</div>
                 )}

@@ -16,12 +16,14 @@ type Props = {
 
 const LabeledImage = ({ image, labels, customHotspot, children }: Props) => {
   const imageRef: React.RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
-  const { selected, disabled, activeContentChild } = useEditorState();
+  const { selected, disabled, schemaOpen, activeContentChild } = useEditorState();
   const interactionsOpen = useGlobalStore((state) => {
     return state.rightPanelTab === 'addons';
   }, []);
 
-  const showNumbers = selected && interactionsOpen && disabled;
+  // Number the hotspots in the editor while their settings or popups are being edited
+  const showNumbers =
+    disabled && ((selected && (interactionsOpen || schemaOpen)) || !!activeContentChild);
 
   if (!image) {
     return null;
