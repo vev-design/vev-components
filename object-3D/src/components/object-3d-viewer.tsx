@@ -94,7 +94,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
     useSceneSetup(canvas, labelElement, home, invalidate);
 
   const model = useModel(modelUrl, renderer, nearView);
-  const { currentModel, mixer, clipDuration, isAnimating } = useSceneModel(
+  const { currentModel, mixer, clipDuration, isAnimating, occluder, legacyAnchors } = useSceneModel(
     pivot,
     model.gltf,
     invalidate,
@@ -113,10 +113,18 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
   useGroundShadow(scene, currentModel, groundShadow, shadowOpacity, invalidate);
 
   // Used for adding hotspots
-  useHotspotListener(labelRenderer, camera, pivot);
+  useHotspotListener(labelRenderer, camera, pivot, currentModel);
 
   // Used for rendering hotspots
-  const hotspotsRef = useHotspots(pivot, camera, controls, tweens, invalidate);
+  const hotspotsRef = useHotspots(
+    pivot,
+    camera,
+    controls,
+    tweens,
+    currentModel,
+    legacyAnchors,
+    invalidate,
+  );
 
   const scrollEnabled = !!scrollAnimation || !!scrollRotate;
   const scrollProgress = useScrollProgress(hostRef, scrollEnabled, scrollTarget);
@@ -129,7 +137,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
   renderFrame.current = () => {
     if (!renderer || !scene || !camera || !labelRenderer) return;
     needsRender.current = false;
-    updateHotspotVisibility(hotspotsRef.current, camera);
+    updateHotspotVisibility(hotspotsRef.current, camera, occluder.current);
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
   };

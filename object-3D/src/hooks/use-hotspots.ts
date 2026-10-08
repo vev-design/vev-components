@@ -1,18 +1,22 @@
-import { useContext, useEffect, useRef } from 'react';
-import { Camera, Group, Vector3 } from 'three';
+import { MutableRefObject, useContext, useEffect, useRef } from 'react';
+import { Camera, Group, Object3D, Raycaster, Vector3 } from 'three';
 // @ts-expect-error - no types
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Group as TweenGroup } from '@tweenjs/tween.js';
 import { Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
-import { InternalHotspot } from '../types';
+import { HotspotAnchor, InternalHotspot } from '../types';
 import { animateCamera } from '../util/animate-camera';
+import { resolveNodePath } from '../util/hotspot-anchor';
+import { OCCLUSION_LAYER } from '../util/bounds-tree';
 
 export interface CanvasHotspot {
   element: HTMLButtonElement;
   sceneObject: CSS2DObject;
   hotspot: InternalHotspot;
   dimmed: boolean;
+  /** Surface normal, local to `sceneObject.parent` */
+  normal?: Vector3;
 }
 
 // With "Zoom to hotspot", the camera stops at this multiple of the hotspot's distance from the center
@@ -23,6 +27,8 @@ export function useHotspots(
   camera: Camera | undefined,
   controls: any,
   tweens: TweenGroup | undefined,
+  model: Object3D | null,
+  legacyAnchors: MutableRefObject<Map<number, HotspotAnchor>>,
   invalidate: () => void,
 ) {
   const { hotspots, editMode, hotspotClicked, eventCallbacks, hotspotZoom } =
@@ -82,16 +88,25 @@ export function useHotspots(
       outer.appendChild(button);
 
       const sceneObject = new CSS2DObject(outer);
-      sceneObject.position.copy(storageHotspot.position);
       sceneObject.layers.set(1);
-      pivot.add(sceneObject);
 
+      // Attach to the anchor node, so the hotspot follows that part's animation
+      const anchor = storageHotspot.anchor ?? legacyAnchors.current.get(storageHotspot.index);
+      const node = anchor && model ? resolveNodePath(model, anchor.path) : undefined;
       const canvasHotspot: CanvasHotspot = {
         element: button,
         sceneObject,
         hotspot: storageHotspot,
         dimmed: false,
       };
+      if (anchor && node) {
+        sceneObject.position.set(anchor.position.x, anchor.position.y, anchor.position.z);
+        canvasHotspot.normal = new Vector3(anchor.normal.x, anchor.normal.y, anchor.normal.z);
+        node.add(sceneObject);
+      } else {
+        sceneObject.position.copy(storageHotspot.position);
+        pivot.add(sceneObject);
+      }
 
       if (editMode) {
         button.tabIndex = -1;
@@ -109,27 +124,67 @@ export function useHotspots(
 
     return () => {
       // CSS2DObject removes its element from the DOM when it leaves the scene
-      created.forEach((canvasHotspot) => pivot.remove(canvasHotspot.sceneObject));
+      created.forEach((canvasHotspot) => canvasHotspot.sceneObject.removeFromParent());
       hotspotMap.current = [];
       invalidate();
     };
-  }, [hotspots, pivot, editMode]);
+  }, [hotspots, pivot, model, editMode]);
 
   return hotspotMap;
 }
 
 const forward = new Vector3();
+const cameraPosition = new Vector3();
 const position = new Vector3();
+const toCamera = new Vector3();
+const worldNormal = new Vector3();
+const raycaster = new Raycaster();
+raycaster.layers.set(OCCLUSION_LAYER);
+(raycaster as any).firstHitOnly = true;
+const hits: any[] = [];
 
 /**
- * Dims the hotspots on the far side of the model.
- * This is an angle test against the camera direction. It does not detect occlusion by geometry.
+ * Dims the hotspots the camera cannot see. Two tests, cheapest first:
+ *
+ * 1. Back-face: the hotspot's surface normal points away from the camera.
+ * 2. Occlusion: a ray from the camera hits the model before it reaches the hotspot. Uses the
+ *    model's BVH (`occluder`), so it costs microseconds. Skinned and morphing meshes are not
+ *    in the BVH, so they never occlude; test 1 still covers their hotspots.
+ *
+ * Hotspots without a normal, before the BVH is ready, fall back to the old angle test against
+ * the line from the model center.
  */
-export function updateHotspotVisibility(hotspots: CanvasHotspot[], camera: Camera) {
+export function updateHotspotVisibility(
+  hotspots: CanvasHotspot[],
+  camera: Camera,
+  occluder: Object3D | null,
+) {
+  camera.getWorldPosition(cameraPosition);
   camera.getWorldDirection(forward);
+
   hotspots.forEach((canvasHotspot) => {
-    canvasHotspot.sceneObject.getWorldPosition(position);
-    const dimmed = position.dot(forward) > 0;
+    const { sceneObject, normal } = canvasHotspot;
+    sceneObject.getWorldPosition(position);
+    toCamera.subVectors(cameraPosition, position);
+
+    let dimmed = false;
+    if (normal && sceneObject.parent) {
+      worldNormal.copy(normal).transformDirection(sceneObject.parent.matrixWorld);
+      dimmed = worldNormal.dot(toCamera) < 0;
+    } else if (!occluder) {
+      dimmed = position.dot(forward) > 0;
+    }
+
+    if (!dimmed && occluder) {
+      const distance = toCamera.length();
+      raycaster.set(cameraPosition, toCamera.negate().normalize());
+      // Stop short of the hotspot, so the surface it sits on does not count
+      raycaster.far = distance * 0.99;
+      hits.length = 0;
+      raycaster.intersectObject(occluder, true, hits);
+      dimmed = hits.length > 0;
+    }
+
     if (dimmed !== canvasHotspot.dimmed) {
       canvasHotspot.dimmed = dimmed;
       canvasHotspot.element.style.opacity = dimmed ? '0.1' : '1';

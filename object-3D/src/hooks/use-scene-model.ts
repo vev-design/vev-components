@@ -12,19 +12,25 @@ import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
 import { disposeObject } from '../util/dispose-object';
+import { buildBoundsTrees } from '../util/bounds-tree';
+import { anchorLegacyHotspots } from '../util/hotspot-anchor';
+import { HotspotAnchor } from '../types';
 
 const FADE_DURATION = 0.2;
 
 /**
  * Adds the loaded model to the scene, and plays its animations.
  * Owns the model from here on: it disposes the model when it is replaced or unmounted.
+ *
+ * Also prepares hotspot occlusion: `occluder` is set to the model once its raycast index is built,
+ * and `legacyAnchors` holds anchors for saved hotspots that have none (animated models only).
  */
 export function useSceneModel(
   pivot: Group | undefined,
   gltf: GLTF | undefined,
   invalidate: () => void,
 ) {
-  const { animation, eventCallbacks, onAnimationFinished } = useContext(Object3dContext);
+  const { animation, eventCallbacks, onAnimationFinished, hotspots } = useContext(Object3dContext);
 
   const [currentModel, setCurrentModel] = useState<Object3D | null>(null);
   const modelRoot = useRef<Object3D | null>(null);
@@ -35,6 +41,11 @@ export function useSceneModel(
   // The last looping clip. A one-shot clip fades back to it when it finishes.
   const loopAction = useRef<AnimationAction | null>(null);
   const clipDuration = useRef(0);
+  const occluder = useRef<Object3D | null>(null);
+  const legacyAnchors = useRef(new Map<number, HotspotAnchor>());
+  const cancelBoundsTrees = useRef<(() => void) | null>(null);
+  const hotspotsRef = useRef(hotspots);
+  hotspotsRef.current = hotspots;
 
   const onAnimationFinishedRef = useRef(onAnimationFinished);
   onAnimationFinishedRef.current = onAnimationFinished;
@@ -101,20 +112,37 @@ export function useSceneModel(
     loopAction.current = null;
     clipDuration.current = 0;
 
+    if (cancelBoundsTrees.current) cancelBoundsTrees.current();
+    cancelBoundsTrees.current = null;
+    occluder.current = null;
+    legacyAnchors.current = new Map();
+
     if (modelRoot.current) {
       pivot.remove(modelRoot.current);
       disposeObject(modelRoot.current);
     }
 
-    if (next) {
+    if (next && gltf) {
       // Center the model on the origin, so the camera orbits around it
       next.updateMatrixWorld();
       const center = new Box3().setFromObject(next).getCenter(new Vector3());
       next.position.sub(center);
+
+      // Before the model joins the pivot and before any animation runs: the hotspots were placed
+      // in this pose, in pivot space. Only animated models need anchors for old hotspots.
+      if (gltf.animations.length) {
+        legacyAnchors.current = anchorLegacyHotspots(next, hotspotsRef.current);
+      }
+
       pivot.add(next);
 
       mixer.current = new AnimationMixer(next);
       mixer.current.addEventListener('finished', finishedListener);
+
+      cancelBoundsTrees.current = buildBoundsTrees(next, () => {
+        occluder.current = next;
+        invalidate();
+      });
     }
 
     clips.current = gltf ? gltf.animations : [];
@@ -138,6 +166,7 @@ export function useSceneModel(
   // Dispose the model on unmount
   useEffect(() => {
     return () => {
+      if (cancelBoundsTrees.current) cancelBoundsTrees.current();
       if (mixer.current) mixer.current.stopAllAction();
       if (modelRoot.current) disposeObject(modelRoot.current);
     };
@@ -150,5 +179,5 @@ export function useSceneModel(
     return false;
   }
 
-  return { currentModel, mixer, clipDuration, isAnimating };
+  return { currentModel, mixer, clipDuration, isAnimating, occluder, legacyAnchors };
 }

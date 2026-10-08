@@ -37,7 +37,23 @@ Object3d (src/object-3d.tsx)
           └─ useAnimationFrame(cb, enabled)   the single render loop
 ```
 
-The model and the hotspots are children of `pivot`, not of the scene. Scroll rotation and pointer tilt rotate the pivot, so hotspots stay attached to the model. New hotspot positions are stored in pivot-local space (`pivot.worldToLocal`).
+The model and the hotspots are children of `pivot`, not of the scene. Scroll rotation and pointer tilt rotate the pivot, so hotspots stay attached to the model. Hotspot `position` is stored in pivot-local space (`pivot.worldToLocal`).
+
+### Hotspot anchors (follow the animation)
+
+A hotspot placed in the editor also stores an `anchor` (`types.ts`, `util/hotspot-anchor.ts`): the child-index `path` from the model root to the node it sits on, plus `position` and surface `normal` local to that node. For a skinned mesh the node is the bone with the most skin weight on the hit triangle. At runtime the hotspot's CSS2DObject is a child of that node, so it moves with the animation. If the path does not resolve (a different model file), the hotspot falls back to `pivot` + `position`.
+
+Hotspots saved before anchors existed are anchored once at load (`anchorLegacyHotspots`), only for animated models. It must run in the pose the hotspots were placed in, so it runs in `useSceneModel` before the model joins the pivot and before the first mixer update. It uses `updateMatrixWorld`, not `updateWorldMatrix`: only the former refreshes `SkinnedMesh.bindMatrixInverse`, and skinned raycasts miss without it after centering.
+
+### Hotspot visibility
+
+`updateHotspotVisibility` (`use-hotspots.ts`) runs on every rendered frame:
+
+1. Back-face test with the anchor normal.
+2. Occlusion ray from the camera to the hotspot, `firstHitOnly`, stopping at 99% of the distance. It tests only `OCCLUSION_LAYER`: meshes that have a `three-mesh-bvh` index (`util/bounds-tree.ts`, built in idle-time slices after load). A ray takes ~0.04 ms on a 142k-triangle model (brute force: ~5 ms).
+3. Without a normal and before the BVH is ready: the old angle test against the line from the model center.
+
+Skinned and morph-target meshes get no BVH (it would fit only the rest shape), so they never occlude. Their hotspots still get the back-face test. `three-mesh-bvh` is pinned to `~0.7.8`: 0.8+ needs three r159.
 
 Hotspots are **not** 3D objects. They are DOM `<button>`s positioned by three's `CSS2DRenderer`. Its element (`.labels`) is absolutely positioned on top of the canvas and is also the element `OrbitControls` binds to — not the canvas. Keep it above the canvas, or pointer input breaks. The poster and loading bar above it have `pointer-events: none`.
 
@@ -83,7 +99,7 @@ Compressed models need the Draco/Basis decoders. They are loaded from jsDelivr a
 
 - three r155's `FileLoader` does not handle a stream error mid-download (`readData()` has no rejection handler). If the connection drops during a model download, `onError` never fires and the loading bar stays. A three upgrade (r158+) fixes it.
 - The default model (`defaultModel.url`) is on `devcdn.vev.design`. It is not on the production CDN.
-- Hotspot dimming is an angle test against the camera direction. It does not detect occlusion by geometry.
+- Skinned and morph-target meshes do not occlude hotspots (see Hotspot visibility).
 
 ## Working on this
 

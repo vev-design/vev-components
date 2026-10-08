@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef } from 'react';
-import { Group, PerspectiveCamera, Raycaster, Vector2 } from 'three';
+import { Group, Object3D, PerspectiveCamera, Raycaster, Vector2 } from 'three';
 import { Object3dContext } from '../context/object-3d-context';
+import { anchorFromHit } from '../util/hotspot-anchor';
 // @ts-expect-error - no types
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
@@ -14,6 +15,7 @@ export function useHotspotListener(
   labelRenderer: CSS2DRenderer | undefined,
   camera: PerspectiveCamera | undefined,
   pivot: Group | undefined,
+  model: Object3D | null,
 ) {
   const { addHotSpot, editMode } = useContext(Object3dContext);
   const addHotSpotRef = useRef(addHotSpot);
@@ -48,7 +50,9 @@ export function useHotspotListener(
       raycaster.setFromCamera(pointer, camera);
 
       const [hit] = raycaster.intersectObject(pivot, true);
-      if (hit) addHotSpotRef.current(pivot.worldToLocal(hit.point.clone()));
+      if (!hit) return;
+      const anchor = model ? anchorFromHit(hit, model, raycaster.ray.direction) : undefined;
+      addHotSpotRef.current(pivot.worldToLocal(hit.point.clone()), anchor);
     }
 
     element.addEventListener('pointerdown', onPointerDown, true);
@@ -58,5 +62,5 @@ export function useHotspotListener(
       element.removeEventListener('pointerdown', onPointerDown, true);
       element.removeEventListener('mouseup', onMouseUp);
     };
-  }, [editMode, labelRenderer, camera, pivot]);
+  }, [editMode, labelRenderer, camera, pivot, model]);
 }

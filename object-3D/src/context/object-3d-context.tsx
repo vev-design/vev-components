@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, Vector3 } from 'three';
-import { InternalHotspot, SavedCameraPosition } from '../types';
+import { HotspotAnchor, InternalHotspot, SavedCameraPosition } from '../types';
 import { ScrollTarget } from '../hooks/use-scroll-progress';
 
 export interface Object3DContextProps {
@@ -18,7 +18,7 @@ export interface Object3DContextProps {
   animation?: string;
   zoom: boolean;
   hotspots: InternalHotspot[];
-  addHotSpot?: (spot: Vector3) => void;
+  addHotSpot?: (spot: Vector3, anchor?: HotspotAnchor) => void;
   editMode: boolean;
   disabled?: boolean;
   schemaOpen?: boolean;

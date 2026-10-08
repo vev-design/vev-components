@@ -99,8 +99,8 @@ export function HotSpotModal({
           zoom: true,
           rotationSpeed: 2,
           hotspots: hotspots || [],
-          addHotSpot: (spot) => {
-            const newHotspot = { index: hotspots.length + 1, position: spot };
+          addHotSpot: (spot, anchor) => {
+            const newHotspot = { index: hotspots.length + 1, position: spot, anchor };
             onChange([newHotspot, ...hotspots]);
             setHotspots([newHotspot, ...hotspots]);
           },

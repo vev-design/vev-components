@@ -157,6 +157,7 @@ const Object3d = ({
               storageHotspot.position.y,
               storageHotspot.position.z,
             ),
+            anchor: storageHotspot.anchor,
           };
         }),
       );
