@@ -35,6 +35,10 @@ export const LIGHTING = {
 
 export const NO_ANIMATION = 'No animation';
 
+// The editor modals render outside the widget, so they must add the CSS scope class themselves.
+// The Vev CLI scopes all CSS under `.pkg-<key>`; older CLI versions used `<key>_<Component>`.
+export const MODAL_SCOPE_CLASS = 'trQ35DZLjAWC0nWJxVvB_Object3d pkg-trQ35DZLjAWC0nWJxVvB';
+
 export const FOV = 45;
 export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
