@@ -31,13 +31,23 @@ export function LabelOverlay({
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
   const [openIndex, setOpenIndex] = useState<number>(-1);
 
-  const renderPopup = (label: Label) => {
-    if (!label.popup || !popups.includes(label.popup)) return null;
-    const isOpen = activePopup ? activePopup === label.popup : openIndex === label.index;
-    if (!isOpen) return null;
+  const openLabel = labels?.find((label) => {
+    if (!label.popup || !popups.includes(label.popup)) return false;
+    return activePopup ? activePopup === label.popup : openIndex === label.index;
+  });
+
+  // The editor measures a child frame with offsetLeft/offsetTop and expects its offset parent at
+  // the component's top-left. So the layer sits at (0, 0) and places the popup with padding, not
+  // with a transform or a positioned box.
+  const renderPopup = () => {
+    if (!openLabel || !rendered) return null;
+    const x = rendered.offsetX + openLabel.pos.x * rendered.width - labelWidth / 2;
+    const y = rendered.offsetY + openLabel.pos.y * rendered.height + labelWidth / 2;
     return (
-      <div className={styles.popup} onClick={(e) => e.stopPropagation()}>
-        <WidgetNode id={label.popup} />
+      <div className={styles.popupLayer} style={{ paddingLeft: x, paddingTop: y }}>
+        <div className={styles.popup}>
+          <WidgetNode id={openLabel.popup} />
+        </div>
       </div>
     );
   };
@@ -165,10 +175,10 @@ export function LabelOverlay({
                 {label.caption && hoverIndex === label.index && (
                   <div className={styles.captionWrapper}>{label.caption}</div>
                 )}
-                {renderPopup(label)}
               </div>
             );
           })}
+        {renderPopup()}
       </div>
     );
   }
@@ -208,10 +218,10 @@ export function LabelOverlay({
               {label.caption && hoverIndex === label.index && (
                 <div className={styles.captionWrapper}>{label.caption}</div>
               )}
-              {renderPopup(label)}
             </div>
           );
         })}
+      {renderPopup()}
     </div>
   );
 }
