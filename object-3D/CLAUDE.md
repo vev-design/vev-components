@@ -72,6 +72,8 @@ Vev interactions cannot call into the three.js scene directly, so the component 
 Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA`, `PLAY_ANIMATION`, `PAUSE_ANIMATION`, `RESUME_ANIMATION`. Pause freezes time-driven playback (the viewer skips `mixer.update`); scroll-driven animation ignores it, and `PLAY_ANIMATION` clears it. Events out: `HOTSPOT_CLICKED` (index), `MODEL_LOADED`, `ANIMATION_FINISHED` (clip name).
 
 - Camera moves go through `util/animate-camera.ts`, which orbits around `controls.target` (shortest way round) instead of moving in a straight line through the model. Each instance has its own tween group.
+- A hotspot click moves the camera by `settings.hotspotFocus`: `turn` (default; orbit to face the surface along the anchor normal, same distance), `zoom` (also move closer), or `none`. The `SELECT_HOTSPOT` interaction always at least turns. Old test builds stored a boolean `hotspotZoom`; it is still read as a fallback.
+- "Zoom" works without "Drag": OrbitControls is enabled when either is on, with rotate/pan tied to Drag. Pinch zoom on touch screens still needs Drag, because only Drag sets `touch-action: none`.
 - `RESET_CAMERA` returns to `home` — the saved initial camera, or the auto-framed position.
 - Auto-rotate pauses while the user drags and resumes 2 s after release. It is off under `prefers-reduced-motion`.
 - `playAnimation` (`use-scene-model.ts`) cross-fades over 0.2 s. A one-shot clip (`loop: false`) plays `repetitions` times at its real length, clamps, and fades back to the last looping clip. One `finished` listener per mixer handles this. "No animation" (or any unknown name) fades the current clip out.

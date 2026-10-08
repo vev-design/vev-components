@@ -19,7 +19,7 @@ export interface CanvasHotspot {
   normal?: Vector3;
 }
 
-// With "Zoom to hotspot", the camera stops at this multiple of the hotspot's distance from the center
+// With "Turn and zoom in", the camera stops at this multiple of the hotspot's distance from the center
 const HOTSPOT_ZOOM_DISTANCE = 1.6;
 
 export function useHotspots(
@@ -31,37 +31,54 @@ export function useHotspots(
   legacyAnchors: MutableRefObject<Map<number, HotspotAnchor>>,
   invalidate: () => void,
 ) {
-  const { hotspots, editMode, hotspotClicked, eventCallbacks, hotspotZoom } =
-    useContext(Object3dContext);
+  const {
+    hotspots,
+    editMode,
+    hotspotClicked,
+    eventCallbacks,
+    hotspotFocus = 'turn',
+  } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
 
   // The DOM listeners live longer than one render. They read the current values from here.
-  const latest = useRef({ camera, controls, tweens, hotspotZoom, hotspotClicked });
-  latest.current = { camera, controls, tweens, hotspotZoom, hotspotClicked };
+  const latest = useRef({ camera, controls, tweens, hotspotFocus, hotspotClicked });
+  latest.current = { camera, controls, tweens, hotspotFocus, hotspotClicked };
 
-  function focusHotspot(canvasHotspot: CanvasHotspot) {
-    const { camera, controls, tweens, hotspotZoom } = latest.current;
+  function focusHotspot(canvasHotspot: CanvasHotspot, zoom: boolean) {
+    const { camera, controls, tweens } = latest.current;
     if (!camera || !controls || !tweens) return;
 
     const target: Vector3 = controls.target.clone();
-    const direction = canvasHotspot.sceneObject.getWorldPosition(new Vector3()).sub(target);
-    const hotspotDistance = direction.length();
+    const toHotspot = canvasHotspot.sceneObject.getWorldPosition(new Vector3()).sub(target);
+    const hotspotDistance = toHotspot.length();
     if (hotspotDistance === 0) return;
 
+    // Look at the surface straight on. Without a normal, use the line from the center: on a tall
+    // model that can put the camera far above or below it.
+    const { normal, sceneObject } = canvasHotspot;
+    const direction =
+      normal && sceneObject.parent
+        ? normal.clone().transformDirection(sceneObject.parent.matrixWorld)
+        : toHotspot.normalize();
+
     const currentDistance = camera.position.distanceTo(target);
-    const distance = hotspotZoom
+    const distance = zoom
       ? Math.min(
           currentDistance,
           Math.max(hotspotDistance * HOTSPOT_ZOOM_DISTANCE, controls.minDistance),
         )
       : currentDistance;
 
-    const position = direction.normalize().multiplyScalar(distance).add(target);
+    const position = direction.multiplyScalar(distance).add(target);
     animateCamera(tweens, camera, controls, position, target);
   }
 
-  function selectHotspot(canvasHotspot: CanvasHotspot) {
-    focusHotspot(canvasHotspot);
+  /** `fromInteraction`: the Focus hotspot interaction asks for a camera move even with 'none' */
+  function selectHotspot(canvasHotspot: CanvasHotspot, fromInteraction = false) {
+    const { hotspotFocus } = latest.current;
+    if (hotspotFocus !== 'none' || fromInteraction) {
+      focusHotspot(canvasHotspot, hotspotFocus === 'zoom');
+    }
     const { hotspotClicked } = latest.current;
     if (hotspotClicked) hotspotClicked(canvasHotspot.hotspot.index);
   }
@@ -71,7 +88,7 @@ export function useHotspots(
     if (!eventCallbacks) return;
     eventCallbacks.click_hotspot((index: number) => {
       const canvasHotspot = hotspotMap.current.find((item) => item.hotspot.index === index);
-      if (canvasHotspot) selectHotspot(canvasHotspot);
+      if (canvasHotspot) selectHotspot(canvasHotspot, true);
     });
   });
 

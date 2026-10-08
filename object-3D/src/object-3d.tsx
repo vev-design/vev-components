@@ -7,7 +7,11 @@ import {
   useSize,
   useVevEvent,
 } from '@vev/react';
-import { Object3DContextProps, Object3DContextProvider } from './context/object-3d-context';
+import {
+  HotspotFocus,
+  Object3DContextProps,
+  Object3DContextProvider,
+} from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
 import { HotspotEditorForm } from './components/hotspot-editor-form';
@@ -65,6 +69,7 @@ export type Props = {
     shadowOpacity?: number;
     controls: boolean;
     zoom: boolean;
+    hotspotFocus?: HotspotFocus;
     hotspotZoom?: boolean;
   };
   poster: { url: string };
@@ -214,7 +219,8 @@ const Object3d = ({
           backgroundBlur: (settings?.backgroundBlur ?? 0) / 100,
           groundShadow: settings?.shadow || false,
           shadowOpacity: (settings?.shadowOpacity ?? 50) / 100,
-          hotspotZoom: settings?.hotspotZoom || false,
+          // `hotspotZoom` was a boolean in test builds before `hotspotFocus` replaced it
+          hotspotFocus: settings?.hotspotFocus ?? (settings?.hotspotZoom ? 'zoom' : 'turn'),
           rotate,
           rotationSpeed: actualRotationSpeed,
           zoom,
@@ -429,23 +435,30 @@ export const config: VevManifest = {
         {
           name: 'controls',
           title: 'Drag',
-          description: 'Allow user to interact with model',
+          description: 'Let users rotate and pan the model',
           type: 'boolean',
           initialValue: false,
         },
         {
           name: 'zoom',
           title: 'Zoom',
-          description: 'Allow user to zoom model',
+          description: 'Let users zoom with the mouse wheel (pinch on touch screens needs Drag)',
           type: 'boolean',
           initialValue: false,
         },
         {
-          name: 'hotspotZoom',
-          title: 'Zoom to hotspot',
-          description: 'Move the camera closer when a hotspot is focused',
-          type: 'boolean',
-          initialValue: false,
+          name: 'hotspotFocus',
+          title: 'On hotspot click',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'Turn to hotspot', value: 'turn' },
+              { label: 'Turn and zoom in', value: 'zoom' },
+              { label: 'Do not move the camera', value: 'none' },
+            ],
+            display: 'dropdown',
+          },
+          initialValue: 'turn',
         },
       ],
     },
@@ -564,18 +577,14 @@ export const config: VevManifest = {
             min: 0,
             max: 20,
           },
-          hidden: (context) =>
-            context?.value?.animationSettings?.rotate !== true ||
-            context?.value?.animationSettings?.scrollAnimation === true,
+          hidden: (context) => context?.value?.animationSettings?.rotate === false,
         },
         {
           name: 'reverseSpeed',
-          title: 'Loop alternate direction',
+          title: 'Reverse direction',
           type: 'boolean',
           initialValue: false,
-          hidden: (context) =>
-            context?.value?.animationSettings?.rotate !== true ||
-            context?.value?.animationSettings?.scrollAnimation === true,
+          hidden: (context) => context?.value?.animationSettings?.rotate === false,
         },
       ],
     },

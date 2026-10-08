@@ -139,9 +139,13 @@ export function useSceneSetup(
   useEffect(() => {
     if (!three) return;
     const { controls } = three;
-    controls.enabled = enableControls;
+    // "Zoom" works without "Drag": OrbitControls must be enabled for either one
+    controls.enabled = enableControls || enableZoom;
+    controls.enableRotate = enableControls;
+    controls.enablePan = enableControls;
     controls.enableZoom = enableZoom;
     // OrbitControls always sets touch-action: none. Without drag, let touch gestures scroll the page.
+    // Pinch zoom on touch screens therefore needs "Drag" too.
     controls.domElement.style.touchAction = enableControls ? 'none' : '';
   }, [three, enableControls, enableZoom]);
 

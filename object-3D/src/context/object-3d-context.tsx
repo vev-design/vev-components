@@ -3,6 +3,8 @@ import { Camera, Vector3 } from 'three';
 import { HotspotAnchor, InternalHotspot, SavedCameraPosition } from '../types';
 import { ScrollTarget } from '../hooks/use-scroll-progress';
 
+export type HotspotFocus = 'none' | 'turn' | 'zoom';
+
 export interface Object3DContextProps {
   modelUrl: string;
   posterUrl?: string;
@@ -50,7 +52,8 @@ export interface Object3DContextProps {
   backgroundBlur?: number;
   groundShadow?: boolean;
   shadowOpacity?: number;
-  hotspotZoom?: boolean;
+  /** What a hotspot click does to the camera. The Focus hotspot interaction always at least turns. */
+  hotspotFocus?: HotspotFocus;
   onModelLoaded?: () => void;
   onAnimationFinished?: (animation: string) => void;
   hostRef?: React.RefObject<HTMLDivElement>;
