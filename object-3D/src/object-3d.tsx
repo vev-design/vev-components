@@ -553,7 +553,6 @@ export const config: VevManifest = {
           title: 'Rotate',
           type: 'boolean',
           initialValue: true,
-          hidden: (context) => context?.value?.animationSettings?.animation !== 'No animation',
         },
         {
           name: 'rotationSpeed',
