@@ -34,6 +34,8 @@ export interface Object3DContextProps {
     stop_rotation: (cb: () => void) => void;
     reset_camera: (cb: () => void) => void;
     play_animation: (cb: (animation: string, loop: boolean, repetitions: number) => void) => void;
+    pause_animation: (cb: () => void) => void;
+    resume_animation: (cb: () => void) => void;
   };
   rotationSpeed: number;
   scrollAnimation?: boolean;

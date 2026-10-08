@@ -94,11 +94,8 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
     useSceneSetup(canvas, labelElement, home, invalidate);
 
   const model = useModel(modelUrl, renderer, nearView);
-  const { currentModel, mixer, clipDuration, isAnimating, occluder, legacyAnchors } = useSceneModel(
-    pivot,
-    model.gltf,
-    invalidate,
-  );
+  const { currentModel, mixer, clipDuration, paused, isAnimating, occluder, legacyAnchors } =
+    useSceneModel(pivot, model.gltf, invalidate);
   useCenterModel(model.gltf, camera, controls, home, invalidate);
 
   const environment = useEnvironment(
@@ -182,7 +179,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
           lastScrollTime.current = time;
           changed = true;
         }
-      } else {
+      } else if (!paused.current) {
         lastScrollTime.current = null;
         // Checked before the update, so the frame where an animation stops is also rendered
         if (isAnimating()) changed = true;

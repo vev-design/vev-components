@@ -41,6 +41,8 @@ export function useSceneModel(
   // The last looping clip. A one-shot clip fades back to it when it finishes.
   const loopAction = useRef<AnimationAction | null>(null);
   const clipDuration = useRef(0);
+  // Set by the Pause/Resume animation interactions. Scroll-driven animation ignores it.
+  const paused = useRef(false);
   const occluder = useRef<Object3D | null>(null);
   const legacyAnchors = useRef(new Map<number, HotspotAnchor>());
   const cancelBoundsTrees = useRef<(() => void) | null>(null);
@@ -68,6 +70,7 @@ export function useSceneModel(
 
   function playAnimation(name: string | undefined, loop = true, repetitions = 1) {
     if (!mixer.current) return;
+    paused.current = false;
 
     const clip = clips.current.find((candidate) => candidate.name === name);
     const previous = currentAction.current;
@@ -161,6 +164,13 @@ export function useSceneModel(
     eventCallbacks.play_animation((name: string, loop: boolean, repetitions: number) => {
       playAnimation(name, loop !== false, repetitions);
     });
+    eventCallbacks.pause_animation(() => {
+      paused.current = true;
+    });
+    eventCallbacks.resume_animation(() => {
+      paused.current = false;
+      invalidate();
+    });
   });
 
   // Dispose the model on unmount
@@ -179,5 +189,5 @@ export function useSceneModel(
     return false;
   }
 
-  return { currentModel, mixer, clipDuration, isAnimating, occluder, legacyAnchors };
+  return { currentModel, mixer, clipDuration, paused, isAnimating, occluder, legacyAnchors };
 }

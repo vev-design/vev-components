@@ -128,12 +128,16 @@ const Object3d = ({
     stop_rotation: () => void;
     reset_camera: () => void;
     play_animation: (animation: string, loop: boolean, repetitions: number) => void;
+    pause_animation: () => void;
+    resume_animation: () => void;
   }>({
     click_hotspot: noop,
     start_rotation: noop,
     stop_rotation: noop,
     reset_camera: noop,
     play_animation: noop,
+    pause_animation: noop,
+    resume_animation: noop,
   });
 
   const [initialCameraPosition, setInitialCameraPosition] =
@@ -182,6 +186,14 @@ const Object3d = ({
 
   useVevEvent(InteractionTypes.PLAY_ANIMATION, (args: any) => {
     eventCallbacks.current.play_animation(args.animation, args.loop, args.repetitions);
+  });
+
+  useVevEvent(InteractionTypes.PAUSE_ANIMATION, () => {
+    eventCallbacks.current.pause_animation();
+  });
+
+  useVevEvent(InteractionTypes.RESUME_ANIMATION, () => {
+    eventCallbacks.current.resume_animation();
   });
 
   return (
@@ -236,6 +248,12 @@ const Object3d = ({
             },
             play_animation: (cb) => {
               eventCallbacks.current.play_animation = cb;
+            },
+            pause_animation: (cb) => {
+              eventCallbacks.current.pause_animation = cb;
+            },
+            resume_animation: (cb) => {
+              eventCallbacks.current.resume_animation = cb;
             },
           },
           hotspotClicked: (index: number) => {
@@ -643,6 +661,14 @@ export const config: VevManifest = {
           initialValue: 1,
         },
       ],
+    },
+    {
+      type: InteractionTypes.PAUSE_ANIMATION,
+      description: 'Pause animation',
+    },
+    {
+      type: InteractionTypes.RESUME_ANIMATION,
+      description: 'Resume animation',
     },
   ],
   editableCSS: [

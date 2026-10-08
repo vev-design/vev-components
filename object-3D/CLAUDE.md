@@ -69,7 +69,7 @@ The loop runs only while `(!disabled || schemaOpen) && inView`. When it is off (
 
 Vev interactions cannot call into the three.js scene directly, so the component uses an imperative callback registry. `object-3d.tsx` holds a `useRef` of five no-op functions; the hooks replace them via `eventCallbacks.*(cb)` on **every render** (effects without deps), so the callbacks never see stale state.
 
-Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA`, `PLAY_ANIMATION`. Events out: `HOTSPOT_CLICKED` (index), `MODEL_LOADED`, `ANIMATION_FINISHED` (clip name).
+Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA`, `PLAY_ANIMATION`, `PAUSE_ANIMATION`, `RESUME_ANIMATION`. Pause freezes time-driven playback (the viewer skips `mixer.update`); scroll-driven animation ignores it, and `PLAY_ANIMATION` clears it. Events out: `HOTSPOT_CLICKED` (index), `MODEL_LOADED`, `ANIMATION_FINISHED` (clip name).
 
 - Camera moves go through `util/animate-camera.ts`, which orbits around `controls.target` (shortest way round) instead of moving in a straight line through the model. Each instance has its own tween group.
 - `RESET_CAMERA` returns to `home` — the saved initial camera, or the auto-framed position.
