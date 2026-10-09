@@ -12,6 +12,7 @@ export function useConvertedHotspots(storageHotspots: StorageHotspot[] = []) {
           storageHotspot.position.y,
           storageHotspot.position.z,
         ),
+        anchor: storageHotspot.anchor,
       };
     });
 

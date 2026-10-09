@@ -1,82 +1,50 @@
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Box3, MathUtils, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
-import { useContext, useEffect } from 'react';
+import { Box3, PerspectiveCamera, Vector3 } from 'three';
+import { MutableRefObject, useContext, useEffect } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
 import { setCameraPosition } from '../util/set-camera-position';
-// @ts-expect-error - no types
-import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CameraHome } from './use-scene-setup';
+
+// Earlier versions computed the distance as `size / |sin(fov / 2)|` with the fov in degrees. For the
+// fixed 45° fov, that gives this factor. Keep it, so published pages keep their framing.
+const FRAMING_DISTANCE = 2.053;
 
 /**
- * Centers the model in the scene and sets an appropriate position and distance for the camera
+ * Sets an appropriate position and distance for the camera, or the saved initial camera.
+ * Stores the result in `home`, for the "Reset camera" interaction.
+ * The model is already centered on the origin by useSceneModel.
  */
 export function useCenterModel(
-  gltf: GLTF,
+  gltf: GLTF | undefined,
   camera: PerspectiveCamera | undefined,
   controls: any,
-  scene: Scene | undefined,
-  renderer: WebGLRenderer,
-  labelRenderer: CSS2DRenderer,
+  home: MutableRefObject<CameraHome | null>,
+  invalidate: () => void,
 ) {
-  const { fov, savedCameraPosition } = useContext(Object3dContext);
+  const { savedCameraPosition } = useContext(Object3dContext);
 
   useEffect(() => {
-    if (gltf && camera) {
-      const model = gltf.scene;
-      model.updateMatrixWorld();
-      const box = new Box3().setFromObject(model);
-      const boxSize = box.getSize(new Vector3());
-      const boxCenter = box.getCenter(new Vector3());
+    if (!gltf || !camera || !controls) return;
 
-      controls.reset();
+    const boxSize = new Box3().setFromObject(gltf.scene).getSize(new Vector3());
+    const objectSize = Math.max(boxSize.x, boxSize.y);
 
-      model.position.x += model.position.x - boxCenter.x;
-      model.position.y += model.position.y - boxCenter.y;
-      model.position.z += model.position.z - boxCenter.z;
+    controls.reset();
+    controls.target.set(0, 0, 0);
+    controls.maxDistance = boxSize.length() * 5;
 
-      const halfSizeToFitOnScreen = boxSize.length() * 0.5;
-      const halfFovY = MathUtils.degToRad(fov * 0.5);
-      const distance = halfSizeToFitOnScreen / Math.tan(halfFovY);
+    // Pick some near and far values for the frustum that will contain the box.
+    camera.near = boxSize.length() / 100;
+    camera.far = boxSize.length() * 100;
+    camera.position.set(0, 0, objectSize * FRAMING_DISTANCE);
+    camera.updateProjectionMatrix();
 
-      // Compute a unit vector that points in the direction the camera is now
-      // in the xz plane from the center of the box
-      const direction = new Vector3()
-        .subVectors(camera.position, boxCenter)
-        .multiply(new Vector3(1, 0, 1))
-        .normalize();
-
-      // Move the camera to a position distance units way from the center
-      // in whatever direction the camera was from the center already
-      camera.position.copy(direction.multiplyScalar(distance).add(boxCenter));
-
-      // Pick some near and far values for the frustum that will contain the box.
-      camera.near = boxSize.length() / 100;
-      camera.far = boxSize.length() * 100;
-      camera.rotation.set(0, 0, 0);
-
-      const objectSize = Math.max(boxSize.x, boxSize.y);
-      camera.position.set(0, 0, Math.abs(objectSize / Math.sin(fov / 2)));
-
-      camera.updateProjectionMatrix();
-
-      // point the camera to look at the center of the box
-      camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
-
-      controls.maxDistance = boxSize.length() * 5;
-      controls.update();
-
-      if (savedCameraPosition && camera && controls) {
-        setCameraPosition(camera, savedCameraPosition, controls);
-      }
-
-      controls && controls.update();
-      renderer && renderer.render(scene, camera);
-      labelRenderer && labelRenderer.render(scene, camera);
-    }
-  }, [camera, controls, fov, gltf, scene]);
-
-  useEffect(() => {
-    if (savedCameraPosition && camera && controls) {
+    if (savedCameraPosition) {
       setCameraPosition(camera, savedCameraPosition, controls);
     }
-  }, [camera, controls, savedCameraPosition]);
+
+    controls.update();
+    home.current = { position: camera.position.clone(), target: controls.target.clone() };
+    invalidate();
+  }, [camera, controls, gltf, savedCameraPosition]);
 }

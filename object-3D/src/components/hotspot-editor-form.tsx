@@ -1,11 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { SilkeBox, SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
-import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
+import {
+  ASPECT,
+  defaultModel,
+  FAR,
+  FOV,
+  LIGHTING,
+  MODAL_SCOPE_CLASS,
+  NEAR,
+  NO_ANIMATION,
+} from '../object-3d';
 import { Object3dViewer } from './object-3d-viewer';
 import { HotspotList } from './hotspot-list';
 import styles from '../object-3d.module.css';
-import { sortBy } from 'lodash';
 import { StorageHotspot } from '../types';
 import { useConvertedHotspots } from '../hooks/use-converted-hotspots';
 import { ObjectField, SchemaFieldProps } from '@vev/react';
@@ -62,7 +70,7 @@ export function HotSpotModal({
   const deleteHotspot = useCallback(
     (index: number) => {
       const newHotspots = hotspots.filter((hotspot) => hotspot.index !== index);
-      const sortedHotspots = sortBy(newHotspots, 'index');
+      const sortedHotspots = [...newHotspots].sort((a, b) => a.index - b.index);
       sortedHotspots.forEach((hotspot, index) => {
         hotspot.index = index + 1;
       });
@@ -91,14 +99,14 @@ export function HotSpotModal({
           zoom: true,
           rotationSpeed: 2,
           hotspots: hotspots || [],
-          addHotSpot: (spot) => {
-            const newHotspot = { index: hotspots.length + 1, position: spot };
+          addHotSpot: (spot, anchor) => {
+            const newHotspot = { index: hotspots.length + 1, position: spot, anchor };
             onChange([newHotspot, ...hotspots]);
             setHotspots([newHotspot, ...hotspots]);
           },
         }}
       >
-        <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
+        <div className={MODAL_SCOPE_CLASS}>
           <SilkeBox gap="s" vAlign="center">
             <Object3dViewer className={styles.editorViewer} />
             <HotspotList hotspots={hotspots} deleteHotspot={deleteHotspot} />

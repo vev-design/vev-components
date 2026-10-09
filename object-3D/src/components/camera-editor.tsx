@@ -1,7 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { SilkeBox, SilkeButton, SilkeModal, SilkeModalContent } from '@vev/silke';
 import { Object3DContextProvider } from '../context/object-3d-context';
-import { ASPECT, defaultModel, FAR, FOV, LIGHTING, NEAR, NO_ANIMATION } from '../object-3d';
+import {
+  ASPECT,
+  defaultModel,
+  FAR,
+  FOV,
+  LIGHTING,
+  MODAL_SCOPE_CLASS,
+  NEAR,
+  NO_ANIMATION,
+} from '../object-3d';
 import { Camera } from 'three';
 import { Object3dViewer } from './object-3d-viewer';
 import styles from '../object-3d.module.css';
@@ -107,7 +116,7 @@ export function CameraEditModal({
           },
         }}
       >
-        <div className="trQ35DZLjAWC0nWJxVvB_Object3d">
+        <div className={MODAL_SCOPE_CLASS}>
           <SilkeBox gap="s" vAlign="center">
             <Object3dViewer className={styles.editorViewer} />
             <CameraEditorForm
