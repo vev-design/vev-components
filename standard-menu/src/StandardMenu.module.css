@@ -1,0 +1,142 @@
+.nav {
+  width: 100%;
+  height: 100%;
+}
+
+.menu {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: transparent;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.link {
+  display: inline-block;
+  max-width: 320px;
+  padding: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--vev-base-font-family);
+  font-size: var(--vev-base-font-size);
+  font-weight: var(--vev-base-font-weight);
+  line-height: var(--vev-base-line-height);
+  color: var(--vev-default-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link.active {
+  color: inherit;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle svg {
+  width: 10px;
+  height: 6px;
+  transition: transform 0.2s ease;
+}
+
+.toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 1;
+  min-width: 80px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+  background: #efefef;
+  transform: translateX(-50%);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s linear, visibility 0s linear 0.2s;
+}
+
+.dropdown[data-open] {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.2s linear, visibility 0s;
+}
+
+.nested {
+  top: 0;
+  left: 100%;
+  transform: none;
+}
+
+.dropdownItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.dropdownLink {
+  flex: 1 1 auto;
+  display: block;
+  padding: 10px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dropdownItem .toggle svg,
+.dropdownItem .toggle[aria-expanded='true'] svg {
+  transform: rotate(-90deg);
+}
+
+.link:focus-visible,
+.dropdownLink:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.empty {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  font-size: 13px;
+  text-align: center;
+  color: #666;
+  background: #f4f4f4;
+  border: 1px dashed #bbb;
+}

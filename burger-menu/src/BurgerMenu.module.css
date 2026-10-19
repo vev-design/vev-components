@@ -1,0 +1,301 @@
+.toggle {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 5px;
+  color: var(--vev-default-text, #000);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle svg,
+.icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.toggle:focus-visible,
+.close:focus-visible,
+.expand:focus-visible,
+.link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* Full-screen layer inside the portal. Holds the backdrop and the drawer. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.panel {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vev-space-m, 16px);
+  padding: var(--vev-space-m, 16px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-family: var(--vev-base-font-family, inherit);
+  color: var(--vev-default-text, #000);
+  background: var(--vev-default-frames, #fff);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Round only the corners that face the page, not the screen edge. */
+.left .panel {
+  border-radius: 0 var(--vev-default-radius-frame, 0) var(--vev-default-radius-frame, 0) 0;
+}
+
+.right .panel {
+  border-radius: var(--vev-default-radius-frame, 0) 0 0 var(--vev-default-radius-frame, 0);
+}
+
+.top .panel {
+  border-radius: 0 0 var(--vev-default-radius-frame, 0) var(--vev-default-radius-frame, 0);
+}
+
+.bottom .panel {
+  border-radius: var(--vev-default-radius-frame, 0) var(--vev-default-radius-frame, 0) 0 0;
+}
+
+.left .panel,
+.right .panel {
+  top: 0;
+  bottom: 0;
+  width: 320px;
+  max-width: 100%;
+}
+
+.left .panel {
+  left: 0;
+}
+
+.right .panel {
+  right: 0;
+}
+
+.top .panel,
+.bottom .panel {
+  left: 0;
+  right: 0;
+  max-height: 100%;
+}
+
+.top .panel {
+  top: 0;
+}
+
+.bottom .panel {
+  bottom: 0;
+}
+
+.close {
+  flex: none;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 4px;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.close svg {
+  width: 100%;
+  height: 100%;
+}
+
+.list,
+.submenu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.submenu {
+  padding-left: var(--vev-space-m, 16px);
+  background: var(--vev-default-frames-alt, transparent);
+}
+
+.item {
+  border-bottom: 1px solid var(--vev-default-border, rgba(0, 0, 0, 0.1));
+}
+
+.submenu .item:last-child {
+  border-bottom: none;
+}
+
+.submenu[hidden] {
+  display: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.link {
+  flex: 1 1 auto;
+  display: block;
+  padding: var(--vev-space-s, 8px) 0;
+  font-family: var(--vev-base-font-family, inherit);
+  font-size: var(--vev-base-font-size, inherit);
+  font-weight: var(--vev-base-font-weight, inherit);
+  color: inherit;
+  text-decoration: none;
+}
+
+.link.active {
+  font-weight: bold;
+}
+
+.expand {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.expand svg {
+  width: 12px;
+  height: 8px;
+  transition: transform 0.2s ease;
+}
+
+.expand[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.empty {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* Open and close animations */
+.open .backdrop {
+  animation: fadeIn 350ms ease both;
+}
+
+.closing .backdrop {
+  animation: fadeIn 350ms ease reverse both;
+}
+
+.left.open .panel {
+  animation: fromLeft 350ms ease both;
+}
+
+.left.closing .panel {
+  animation: fromLeft 350ms ease reverse both;
+}
+
+.right.open .panel {
+  animation: fromRight 350ms ease both;
+}
+
+.right.closing .panel {
+  animation: fromRight 350ms ease reverse both;
+}
+
+.top.open .panel {
+  animation: fromTop 350ms ease both;
+}
+
+.top.closing .panel {
+  animation: fromTop 350ms ease reverse both;
+}
+
+.bottom.open .panel {
+  animation: fromBottom 350ms ease both;
+}
+
+.bottom.closing .panel {
+  animation: fromBottom 350ms ease reverse both;
+}
+
+.closing {
+  pointer-events: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes fromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes fromTop {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes fromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer .panel,
+  .layer .backdrop {
+    animation-duration: 1ms !important;
+  }
+}
