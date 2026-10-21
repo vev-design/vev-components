@@ -21,7 +21,7 @@ export function LabelEditorForm(form: any) {
         <SilkeModal
           size="large"
           pad="xs"
-          title={<SilkeTitle kind="xs">Add labels to your image</SilkeTitle>}
+          title={<SilkeTitle kind="xs">Add hotspots to your image</SilkeTitle>}
           onClose={() => {
             setShowModal(false);
           }}
@@ -54,7 +54,7 @@ export function LabelEditorForm(form: any) {
       )}
       <SilkeButton
         size="base"
-        label="Edit labels"
+        label="Edit hotspots"
         kind="secondary"
         onClick={() => {
           setShowModal(true);
@@ -68,7 +68,7 @@ export function LabelEditorForm(form: any) {
             {
               type: 'childFrame',
               name: 'popup',
-              title: `Label ${label.index + 1} popup`,
+              title: `Hotspot ${label.index + 1} popup`,
               frameName: `Popup ${label.index + 1}`,
             },
           ]}

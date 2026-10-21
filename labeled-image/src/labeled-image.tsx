@@ -87,22 +87,22 @@ registerVevComponent(LabeledImage, {
   events: [
     {
       type: EventTypes.LABEL_CLICKED,
-      description: 'On label click',
+      description: 'On hotspot click',
       args: [
         {
           name: EventTypes.LABEL_CLICKED,
-          description: 'Label number clicked',
+          description: 'Hotspot number clicked',
           type: 'number',
         },
       ],
     },
     {
       type: EventTypes.LABEL_HOVER,
-      description: 'On label hover',
+      description: 'On hotspot hover',
       args: [
         {
           name: EventTypes.LABEL_HOVER,
-          description: 'Label number hovered',
+          description: 'Hotspot number hovered',
           type: 'number',
         },
       ],
@@ -125,7 +125,7 @@ registerVevComponent(LabeledImage, {
       properties: ['background', 'border', 'border-radius', 'box-shadow', 'color'],
     },
     {
-      title: 'Label',
+      title: 'Caption',
       selector: overlayStyles.captionWrapper,
       properties: [
         'padding',
