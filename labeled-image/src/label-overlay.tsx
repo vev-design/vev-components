@@ -40,13 +40,17 @@ export function LabelOverlay({
   // the component's top-left. So the layer sits at (0, 0) and places the popup with padding, not
   // with a transform or a positioned box.
   const renderPopup = () => {
-    if (!openLabel || !rendered) return null;
-    const x = rendered.offsetX + openLabel.pos.x * rendered.width - labelWidth / 2;
-    const y = rendered.offsetY + openLabel.pos.y * rendered.height + labelWidth / 2;
+    // A frame opened in the editor that no label links to still has to be on the canvas, or the
+    // editor has nowhere to add elements. Show it at the top-left corner.
+    const popup =
+      openLabel?.popup || (activePopup && popups.includes(activePopup) ? activePopup : undefined);
+    if (!popup || !rendered) return null;
+    const x = openLabel ? rendered.offsetX + openLabel.pos.x * rendered.width - labelWidth / 2 : 0;
+    const y = openLabel ? rendered.offsetY + openLabel.pos.y * rendered.height + labelWidth / 2 : 0;
     return (
       <div className={styles.popupLayer} style={{ paddingLeft: x, paddingTop: y }}>
         <div className={styles.popup}>
-          <WidgetNode id={openLabel.popup} />
+          <WidgetNode id={popup} />
         </div>
       </div>
     );
