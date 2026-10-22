@@ -1,18 +1,33 @@
 import React, { useEffect, useRef } from 'react';
+import cx from 'classnames';
 import { FieldProps, Event, Interaction } from '../../types';
-import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useVevEvent,
+  useEditorState,
+  WidgetNode,
+} from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Checkbox.module.css';
 
 type Props = FieldProps & {
   name: string;
   initialValue?: boolean;
+  /** Content-children keys — an optional custom checkmark designed on the canvas */
+  children?: string[];
 };
 
 function Checkbox(props: Props) {
-  const { name, value } = props;
+  const { name, value, children } = props;
   const ref = useRef<HTMLInputElement>();
   const dispatch = useDispatchVevEvent();
+  const editor = useEditorState();
+
+  const customMark = children?.[0];
+  // While the author is editing the mark child, show it regardless of checked
+  // state — otherwise an unchecked box would hide what they're designing.
+  const editingMark = !!customMark && editor?.activeContentChild === customMark;
 
   useVevEvent(Interaction.setValue, (event: { value: boolean }) => {
     if (ref.current) {
@@ -32,6 +47,7 @@ function Checkbox(props: Props) {
         ref={ref}
         name={name}
         type="checkbox"
+        className={cx({ [styles.customMark]: !!customMark })}
         onChange={(e) => {
           const { checked } = e.target;
           dispatch(Event.onChange, {
@@ -40,6 +56,11 @@ function Checkbox(props: Props) {
           });
         }}
       />
+      {customMark && (
+        <div className={cx(styles.mark, { [styles.markVisible]: editingMark })} aria-hidden>
+          <WidgetNode id={customMark} />
+        </div>
+      )}
     </div>
   );
 }
@@ -48,6 +69,11 @@ registerVevComponent(Checkbox, {
   name: 'Checkbox',
   categories: ['Form'],
   icon: formIcon,
+  children: {
+    name: 'Checkmark',
+    icon: formIcon,
+    maxChildren: 1,
+  },
   props: [
     {
       name: 'name',

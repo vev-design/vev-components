@@ -33,3 +33,21 @@
   background-color: currentColor;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
+
+/* A content-child checkmark replaces the built-in ::after mark */
+.checkbox input.customMark::after {
+  content: none;
+}
+
+.mark {
+  position: absolute;
+  inset: 0;
+  display: none;
+  /* clicks fall through to the input; canvas selection uses its own hit-testing */
+  pointer-events: none;
+}
+
+.checkbox input:checked ~ .mark,
+.mark.markVisible {
+  display: grid;
+}
