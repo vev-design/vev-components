@@ -67,16 +67,9 @@ function TextField(props: Props) {
 
   return (
     <FieldWrapper>
-      <div
-        className={className}
-        ref={(Field) => {
-          (window as any).Field = Field;
-        }}
-        style={{ height: '100%' }}
-      >
+      <div className={className} style={{ height: '100%' }}>
         {multiline ? (
           <textarea
-            id={name}
             className={styles.input}
             name={name}
             rows={5}
@@ -87,7 +80,6 @@ function TextField(props: Props) {
           />
         ) : (
           <input
-            id={name}
             className={styles.input}
             type={inputType || type || 'text'}
             placeholder={placeholder}

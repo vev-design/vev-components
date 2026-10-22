@@ -43,7 +43,9 @@ function Toggle(props: ToggleProps) {
 
   return (
     <FieldWrapper>
-      <label htmlFor={name} className={styles.container}>
+      {/* The input is nested in the label, so the click association is implicit —
+          no htmlFor/id pair, which collided across instances sharing a name. */}
+      <label className={styles.container}>
         <span
           className={cx(styles.field, {
             [styles.fieldActive]: !!value,
@@ -54,7 +56,6 @@ function Toggle(props: ToggleProps) {
             className={styles.checkbox}
             type="checkbox"
             value={value.toString() || ''}
-            id={name}
             name={name}
             required={required}
             onChange={() => handleChange(!value)}
