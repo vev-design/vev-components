@@ -12,6 +12,8 @@ type RadioButton = FieldProps & {
   initialValue: boolean;
 };
 
+const INITIAL_DISPATCH_DELAY_MS = 1000;
+
 function RadioButton(props: RadioButton) {
   const dispatch = useDispatchVevEvent();
   const ref = useRef<HTMLInputElement>();
@@ -32,10 +34,11 @@ function RadioButton(props: RadioButton) {
 
   useEffect(() => {
     if (props.initialValue) {
-      setTimeout(() => {
-        handleChange(props.value);
-      }, 1000);
       ref.current.checked = true;
+      // Delayed so interaction listeners registered after mount still receive
+      // the initial value; the input itself is checked immediately above.
+      const timer = setTimeout(() => handleChange(props.value), INITIAL_DISPATCH_DELAY_MS);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -43,7 +46,6 @@ function RadioButton(props: RadioButton) {
     <FieldWrapper>
       <input
         ref={ref}
-        id={props.value}
         type="radio"
         required={props.required}
         value={props.value}
@@ -58,7 +60,7 @@ function RadioButton(props: RadioButton) {
 }
 
 registerVevComponent(RadioButton, {
-  name: 'Radio button (native)',
+  name: 'Radio button',
   categories: ['Form'],
   icon: formIcon,
   size: {

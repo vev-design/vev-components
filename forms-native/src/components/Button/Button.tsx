@@ -8,11 +8,6 @@ type Props = {
   type: 'reset' | 'submit';
 };
 
-enum Interaction {
-  SET_LABEL = 'SET_LABEL',
-  SET_LOADING = 'SET_LOADING',
-}
-
 function Button({ ...props }: Props) {
   const { buttonText = 'Submit', type = 'submit' } = props;
 
@@ -24,7 +19,7 @@ function Button({ ...props }: Props) {
 }
 
 registerVevComponent(Button, {
-  name: 'Form button (Native)',
+  name: 'Form button',
   categories: ['Form'],
   icon: formIcon,
   editableCSS: [
@@ -87,16 +82,8 @@ registerVevComponent(Button, {
     width: 40,
     height: 100,
   },
-  interactions: [
-    {
-      type: Interaction.SET_LABEL,
-      description: 'Update button label',
-    },
-    {
-      type: Interaction.SET_LOADING,
-      description: 'Set loading state',
-    },
-  ],
+  // No interactions: SET_LABEL and SET_LOADING were declared here for years
+  // without an implementation, so authors could bind to them and get nothing.
 });
 
 export default Button;

@@ -4,11 +4,9 @@ Guidance for Claude Code when working in this component. See the repo root `CLAU
 
 ## What this package is
 
-The native-HTML counterpart to `forms/`. Six separately registered widgets, all suffixed in the editor so they sit alongside the originals:
+The native-HTML counterpart to `forms/`. Six separately registered widgets carrying the plain names (the legacy `forms` originals stay admin-gated, so there is no user-facing collision):
 
-`Form button (Native)`, `Text Field (native)`, `Dropdown (native)`, `Checkbox (native)`, `Radio button (native)`, `Toggle (native)`
-
-Note the inconsistent capitalisation — the button uses `(Native)`, the five fields use `(native)`.
+`Form button`, `Text field`, `Dropdown`, `Checkbox`, `Radio button`, `Toggle`
 
 - Vev key: `4Qqq1n9dKbvnc6cbcBFS`, with `"admin": true` and `"public": true` in `vev.json` — the only component in the repo with both flags.
 
@@ -30,11 +28,9 @@ Each field renders a real input carrying `name`, and the constraint attributes t
 
 **This package contains no `<form>` element.** Nothing here creates one. The widgets only do something useful when the surrounding page provides a `<form>` ancestor — otherwise the submit button does nothing and the native validation never fires. That dependency is implicit and unenforced; if these widgets appear inert, check for the missing `<form>` before looking anywhere else.
 
-## Known bug
+## Resolved quirks (kept for context)
 
-**`Form button (Native)` declares two interactions it does not implement.** `SET_LABEL` and `SET_LOADING` appear in the registration (`components/Button/Button.tsx:88-97`), so authors can bind to them in the editor, but the component has no `useVevEvent` call and no state — both are silently inert. The `buttonText` prop is the only way to set the label, and there is no loading state.
-
-Every field widget *does* implement its `setValue` interaction properly, so the button is the outlier.
+`Form button (Native)` used to declare `SET_LABEL`/`SET_LOADING` interactions it never implemented; they are removed from the registration. Every field widget implements its `setValue` interaction properly. Field inputs no longer set `id` from user-chosen values (`name`/`value`), which collided across instances — Toggle's label association works through nesting instead of `htmlFor`.
 
 ## Field widget pattern
 
@@ -62,4 +58,3 @@ Verify on a page that actually wraps the widgets in a `<form>`. Check:
 1. Native validation bubbles appear for `required` and `pattern` violations.
 2. Submitted field names match the `name` props.
 3. The `setValue` interaction on each field type.
-4. Do not expect `SET_LABEL` / `SET_LOADING` to work — see above.
