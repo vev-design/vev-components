@@ -31,7 +31,6 @@ function Checkbox(props: Props) {
       <input
         ref={ref}
         name={name}
-        id={name}
         type="checkbox"
         onChange={(e) => {
           const { checked } = e.target;
@@ -70,24 +69,22 @@ registerVevComponent(Checkbox, {
   ],
   editableCSS: [
     {
-      selector: styles.checkbox,
-      title: 'Background',
-      properties: ['background', 'border', 'border-radius'],
+      selector: styles.checkbox + ' input',
+      title: 'Box',
+      properties: ['background', 'border', 'border-radius', 'box-shadow'],
     },
     {
+      // `color` paints the checkmark (currentColor on the ::after)
       selector: styles.checkbox + ' input:checked',
       title: 'Checked',
-      properties: ['background'],
+      properties: ['background', 'border', 'color'],
     },
     {
-      selector: styles.checkbox + ':invalid',
+      // :invalid/:valid only match the input — the old selectors targeted the
+      // wrapper div and never applied
+      selector: styles.checkbox + ' input:invalid',
       title: 'Invalid',
-      properties: ['color', 'background', 'border'],
-    },
-    {
-      selector: styles.checkbox + ':valid',
-      title: 'Valid',
-      properties: ['color', 'background', 'border'],
+      properties: ['background', 'border'],
     },
   ],
   size: {

@@ -70,23 +70,19 @@ registerVevComponent(RadioButton, {
   editableCSS: [
     {
       selector: styles.radioButton,
-      title: 'Radio Background',
-      properties: ['background', 'border', 'border-radius'],
+      title: 'Radio',
+      properties: ['background', 'border', 'border-radius', 'box-shadow'],
     },
     {
-      selector: styles.radioButton + ':checked:before',
-      title: 'Radio',
-      properties: ['background'],
+      // `color` paints the dot (currentColor on the ::before)
+      selector: styles.radioButton + ':checked',
+      title: 'Checked',
+      properties: ['background', 'border', 'color'],
     },
     {
       selector: styles.radioButton + ':invalid',
       title: 'Invalid',
-      properties: ['color', 'background', 'border'],
-    },
-    {
-      selector: styles.radioButton + ':valid',
-      title: 'Valid',
-      properties: ['color', 'background', 'border'],
+      properties: ['background', 'border'],
     },
   ],
   events: [
