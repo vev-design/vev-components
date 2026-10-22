@@ -1,36 +1,35 @@
 .checkbox {
   width: 100%;
   height: 100%;
-  position: absolute;
-  background-color: #ccc;
-  cursor: pointer;
+  position: relative;
 }
 
 .checkbox input {
   -webkit-appearance: none;
   appearance: none;
-  /* For iOS < 15 to remove gradient background */
-  /* Not removed via appearance */
   margin: 0;
-  font: inherit;
-  color: currentColor;
+  display: block;
   width: 100%;
   height: 100%;
-  border-radius: 0.15em;
   cursor: pointer;
+  position: relative;
+  background-color: #ffffff;
+  border: 1px solid #666666;
+  border-radius: 4px;
+  /* currentColor paints the checkmark, so the Checked style group's `color`
+     property controls it */
+  color: #ffffff;
 }
 
 .checkbox input:checked {
-  cursor: pointer;
+  background-color: var(--vev-brand-primary, rgb(92, 76, 230));
+  border-color: var(--vev-brand-primary, rgb(92, 76, 230));
+}
+
+.checkbox input:checked::after {
+  content: '';
   position: absolute;
-  width: 75%;
-  height: 75%;
-  background-color: rgb(92, 76, 230);
-  top: 0;
-  left: 0;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 5px;
+  inset: 20%;
+  background-color: currentColor;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }

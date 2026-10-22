@@ -1,28 +1,24 @@
 .radioButton {
+  -webkit-appearance: none;
   appearance: none;
-  background-color: #fff;
   margin: 0;
-  font: inherit;
-  color: currentColor;
+  display: block;
   width: 100%;
   height: 100%;
-  border: 1px solid #666;
-  border-radius: 50%;
-  transform: translateY(-0.075em);
   cursor: pointer;
   position: relative;
+  background-color: #ffffff;
+  border: 1px solid #666666;
+  border-radius: 50%;
+  /* currentColor paints the dot, so the Checked style group's `color`
+     property controls it */
+  color: var(--vev-brand-primary, rgb(92, 76, 230));
 }
 
-.radioButton:checked:before {
+.radioButton:checked::before {
+  content: '';
   position: absolute;
-  width: 80%;
-  height: 80%;
-  margin-left: auto;
-  margin-right: auto;
-  content: ' ';
-  background-color: rgb(92, 76, 230);
+  inset: 20%;
   border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  background-color: currentColor;
 }
