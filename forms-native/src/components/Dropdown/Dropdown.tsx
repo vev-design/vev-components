@@ -64,7 +64,7 @@ function Dropdown(props: DropdownProps) {
 }
 
 registerVevComponent(Dropdown, {
-  name: 'Dropdown (native)',
+  name: 'Dropdown',
   categories: ['Form'],
   icon: formIcon,
   size: {

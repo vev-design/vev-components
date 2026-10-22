@@ -4,11 +4,10 @@ Guidance for Claude Code when working in this component. See the repo root `CLAU
 
 ## What this package is
 
-The native-HTML counterpart to `forms/`. Six separately registered widgets, all suffixed in the editor so they sit alongside the originals:
+The native-HTML counterpart to `forms/`. Six separately registered widgets (the legacy `forms` originals are admin-gated, so the bare names are theirs now):
 
-`Form button (Native)`, `Text Field (native)`, `Dropdown (native)`, `Checkbox (native)`, `Radio button (native)`, `Toggle (native)`
+`Form button`, `Text field`, `Dropdown`, `Checkbox`, `Radio button`, `Toggle`
 
-Note the inconsistent capitalisation — the button uses `(Native)`, the five fields use `(native)`.
 
 - Vev key: `4Qqq1n9dKbvnc6cbcBFS`, with `"admin": true` and `"public": true` in `vev.json` — the only component in the repo with both flags.
 

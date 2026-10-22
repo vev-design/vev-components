@@ -60,7 +60,7 @@ function RadioButton(props: RadioButton) {
 }
 
 registerVevComponent(RadioButton, {
-  name: 'Radio button (native)',
+  name: 'Radio button',
   categories: ['Form'],
   icon: formIcon,
   size: {

@@ -19,7 +19,7 @@ function Button({ ...props }: Props) {
 }
 
 registerVevComponent(Button, {
-  name: 'Form button (Native)',
+  name: 'Form button',
   categories: ['Form'],
   icon: formIcon,
   editableCSS: [

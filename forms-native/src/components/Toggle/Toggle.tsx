@@ -73,7 +73,7 @@ function Toggle(props: ToggleProps) {
 }
 
 registerVevComponent(Toggle, {
-  name: 'Toggle (native)',
+  name: 'Toggle',
   icon: formIcon,
   categories: ['Form'],
   editableCSS: [
