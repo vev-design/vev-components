@@ -22,3 +22,27 @@
   border-radius: 50%;
   background-color: currentColor;
 }
+
+.radio {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* A content-child dot replaces the built-in ::before dot */
+.radioButton.customDot::before {
+  content: none;
+}
+
+.mark {
+  position: absolute;
+  inset: 0;
+  display: none;
+  /* clicks fall through to the input; canvas selection uses its own hit-testing */
+  pointer-events: none;
+}
+
+.radio input:checked ~ .mark,
+.mark.markVisible {
+  display: grid;
+}
