@@ -246,7 +246,9 @@ const BurgerMenu = ({
   };
 
   const dockClass = DOCK_CLASS[docking] || styles.left;
-  const phaseClass = phase === 'closing' ? styles.closing : styles.open;
+  // Keep the closing class after the animation ends. The portal hides its content a few frames
+  // after the phase turns 'closed', and the open class would show the drawer for those frames.
+  const phaseClass = phase === 'open' ? styles.open : styles.closing;
 
   return (
     <>
