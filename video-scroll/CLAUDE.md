@@ -47,6 +47,10 @@ A `setInterval(calculateContainer, 3000)` runs as a safety net — the comment a
 
 `loopCount` with `loopAlternate` ping-pongs through the frames; without it, the progress wraps (`video-scroll.tsx:164-176`). Note the two branches compute `desiredFrame` differently — the alternate path multiplies the frame index, the plain path multiplies the progress — so they do not degrade to the same thing at `loopCount = 1`.
 
+## Keep `"jsx": "react"` in tsconfig
+
+The editor renders `VideoScrollForm` by evaluating `stdin.js` with an **empty** `ReactJSXRuntime: {}` stub (`packages/editor/src/inspectors/widget-form/widget-form.tsx` in the main Vev repo). With `"jsx": "react-jsx"` the form compiles to `jsx(...)` calls against that stub and crashes with `(0 , import_jsx_runtime2.jsx) is not a function`. Classic `React.createElement` uses the real `React` the editor passes in.
+
 ## Known bugs
 
 1. **Zoom is applied twice.** `scrollTop` is already multiplied by `zoom` at `video-scroll.tsx:109`, then `scaledScrollTop = zoom * scrollTop` at `:114` squares it. That value is compared against `pinStartPos`/`pinEndPos`, which were computed with a single `zoom` factor (`:73-76`). Pinning is therefore wrong whenever `useZoom()` returns anything other than 1.

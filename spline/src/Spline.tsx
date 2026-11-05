@@ -1,7 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { Suspense, lazy } from 'react';
 import styles from './Spline.module.css';
 import { registerVevComponent } from '@vev/react';
-import SplineViewer from '@splinetool/react-spline';
+
+// Lazy so @splinetool/runtime's module-level code (which creates an `Image`) only runs when a
+// .splinecode scene renders — not when the Vev CLI evaluates the bundle in Node during build.
+const SplineViewer = lazy(() => import('@splinetool/react-spline'));
 
 type Props = {
   sceneUrl: string;
@@ -29,7 +32,9 @@ const Spline = ({
 
   return (
     <div className={styles.wrapper}>
-      <SplineViewer scene={sceneUrl} />
+      <Suspense fallback={null}>
+        <SplineViewer scene={sceneUrl} />
+      </Suspense>
     </div>
   );
 };
