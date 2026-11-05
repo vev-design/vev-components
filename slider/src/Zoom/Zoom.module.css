@@ -8,6 +8,8 @@
   grid-template-columns: 100%;
   grid-template-rows: 100%;
   grid-area: 1/1;
+  /* Keep slide z-indexes inside the slider so they never drop behind the host background */
+  isolation: isolate;
 }
 
 .wrapper > vev {

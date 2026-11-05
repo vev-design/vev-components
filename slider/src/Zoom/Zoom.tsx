@@ -101,6 +101,10 @@ export const Zoom = ({
     >
       {currentSlides?.map((child: string, i: number) => {
         const isActive = currentSlideIndex === i;
+        const isFade = scaleFactor === 100;
+        // Fade: keep the outgoing slide fully opaque underneath while the incoming one fades in
+        // on top, so the transition is a crossfade instead of a dip to the host background.
+        const isLeaving = isFade && isActive && move !== currentSlideIndex;
 
         // If only two slides, and index to prevent duplicate keys
         return (
@@ -111,8 +115,8 @@ export const Zoom = ({
             key={checkIfKeyIsDuplicatedInArray(currentSlides, child) ? `${child}${i}` : child}
             style={{
               transition: `opacity ${transitionSpeed}ms, transform ${transitionSpeed}ms`,
-              opacity: i === move ? 1 : 0,
-              zIndex: scaleFactor === 100 ? (i === move ? 'auto' : -1) : 'auto',
+              opacity: i === move || isLeaving ? 1 : 0,
+              zIndex: isFade ? (i === move ? 1 : 0) : 'auto',
               transform: i === move || i === move - 1 ? 'scale(1)' : `scale(${scaleFactor}%)`,
             }}
           >
