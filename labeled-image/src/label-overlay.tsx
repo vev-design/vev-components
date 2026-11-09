@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Label } from './types';
 import { PlusIcon } from './plus-icon';
 import styles from './label-overlay.module.css';
 import { useDispatchVevEvent, WidgetNode } from '@vev/react';
 import { EventTypes } from './even-types';
+import { placePopup } from './popup-placement';
 
 interface Props {
   labels: Label[];
@@ -27,43 +28,33 @@ export function LabelOverlay({
   popups,
   activePopup,
 }: Props) {
-  const labelRef = useRef<HTMLDivElement>(null);
+  const labelRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const popupRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
   const [openIndex, setOpenIndex] = useState<number>(-1);
-
-  const openLabel = labels?.find((label) => {
-    if (!label.popup || !popups.includes(label.popup)) return false;
-    return activePopup ? activePopup === label.popup : openIndex === label.index;
-  });
-
-  // The editor measures a child frame with offsetLeft/offsetTop and expects its offset parent at
-  // the component's top-left. So the layer sits at (0, 0) and places the popup with padding, not
-  // with a transform or a positioned box.
-  const renderPopup = () => {
-    // A frame opened in the editor that no label links to still has to be on the canvas, or the
-    // editor has nowhere to add elements. Show it at the top-left corner.
-    const popup =
-      openLabel?.popup || (activePopup && popups.includes(activePopup) ? activePopup : undefined);
-    if (!popup || !rendered) return null;
-    const x = openLabel ? rendered.offsetX + openLabel.pos.x * rendered.width - labelWidth / 2 : 0;
-    const y = openLabel ? rendered.offsetY + openLabel.pos.y * rendered.height + labelWidth / 2 : 0;
-    return (
-      <div className={styles.popupLayer} style={{ paddingLeft: x, paddingTop: y }}>
-        <div className={styles.popup}>
-          <WidgetNode id={popup} />
-        </div>
-      </div>
-    );
-  };
+  const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const [rendered, setRendered] = useState<{
     width: number;
     height: number;
     offsetX: number;
     offsetY: number;
   } | null>(null);
-  const [labelWidth, setLabelWidth] = useState(25);
 
   const dispatchVevEvent = useDispatchVevEvent();
+
+  const openLabel = labels?.find((label) => {
+    if (!label.popup || !popups.includes(label.popup)) return false;
+    return activePopup ? activePopup === label.popup : openIndex === label.index;
+  });
+  // A frame opened in the editor that no label links to still has to be on the canvas, or the
+  // editor has nowhere to add elements. It is shown at the top-left corner.
+  const popup =
+    openLabel?.popup || (activePopup && popups.includes(activePopup) ? activePopup : undefined);
+
+  const getAnchor = (label: Label) => ({
+    x: rendered ? rendered.offsetX + label.pos.x * rendered.width : 0,
+    y: rendered ? rendered.offsetY + label.pos.y * rendered.height : 0,
+  });
 
   useEffect(() => {
     if (!imageRef?.current) return;
@@ -71,11 +62,6 @@ export function LabelOverlay({
 
     const updateRect = () => {
       if (!imageRef?.current) return;
-
-      // Find hotspot width
-      if (labelRef.current) {
-        setLabelWidth(labelRef.current.getBoundingClientRect().width);
-      }
 
       const el = imageRef.current;
       const objectFit = getComputedStyle(el).objectFit ?? 'fill';
@@ -139,64 +125,47 @@ export function LabelOverlay({
     };
   }, [imageRef]);
 
-  if (customHotspot) {
-    let customHotspotElem = (
-      <WidgetNode id={customHotspot.mainComponent} externalVariant={customHotspot.variant} />
-    );
+  // Place the popup next to its hotspot, inside the component. It is measured after it renders,
+  // since its size comes from the style panel and its content, and it is re-placed when it resizes.
+  useLayoutEffect(() => {
+    const popupEl = popupRef.current;
+    const box = imageRef.current;
+    if (!popupEl || !box || !rendered) return;
 
-    return (
-      <div className={styles.wrapper}>
-        {rendered &&
-          labels &&
-          labels.map((label, index) => {
-            return (
-              <div
-                ref={index === 0 ? labelRef : null}
-                className={styles.mainComponentLabel}
-                onMouseEnter={() => {
-                  setHoverIndex(label.index);
-                  dispatchVevEvent(EventTypes.LABEL_HOVER, {
-                    [EventTypes.LABEL_HOVER]: label.index + 1,
-                  });
-                }}
-                onMouseLeave={() => {
-                  setHoverIndex(-1);
-                }}
-                key={label.index}
-                onClick={() => {
-                  setOpenIndex(openIndex === label.index ? -1 : label.index);
-                  dispatchVevEvent(EventTypes.LABEL_CLICKED, {
-                    [EventTypes.LABEL_CLICKED]: label.index + 1,
-                  });
-                }}
-                style={{
-                  transform: `translate(${
-                    rendered.offsetX + label.pos.x * rendered.width - labelWidth / 2
-                  }px, ${rendered.offsetY + label.pos.y * rendered.height - labelWidth / 2}px)`,
-                }}
-              >
-                {customHotspotElem}
-                {showLabelIndex && <span className={styles.indexBadge}>{label.index + 1}</span>}
-                {label.caption && hoverIndex === label.index && (
-                  <div className={styles.captionWrapper}>{label.caption}</div>
-                )}
-              </div>
-            );
-          })}
-        {renderPopup()}
-      </div>
-    );
-  }
+    const place = () => {
+      if (!openLabel) {
+        setPopupPos({ x: 0, y: 0 });
+        return;
+      }
+      const hotspotEl = labelRefs.current[openLabel.index];
+      setPopupPos(
+        placePopup({
+          anchor: getAnchor(openLabel),
+          hotspot: { width: hotspotEl?.offsetWidth || 0, height: hotspotEl?.offsetHeight || 0 },
+          popup: { width: popupEl.offsetWidth, height: popupEl.offsetHeight },
+          box: { width: box.clientWidth, height: box.clientHeight },
+        }),
+      );
+    };
+
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(popupEl);
+    return () => observer.disconnect();
+  }, [popup, openLabel, rendered, imageRef]);
 
   return (
     <div className={styles.wrapper}>
       {rendered &&
         labels &&
-        labels.map((label, index) => {
+        labels.map((label) => {
+          const anchor = getAnchor(label);
           return (
             <div
-              ref={index === 0 ? labelRef : null}
-              className={styles.label}
+              ref={(el) => {
+                labelRefs.current[label.index] = el;
+              }}
+              className={customHotspot ? styles.mainComponentLabel : styles.label}
               onMouseEnter={() => {
                 setHoverIndex(label.index);
                 dispatchVevEvent(EventTypes.LABEL_HOVER, {
@@ -214,19 +183,42 @@ export function LabelOverlay({
                 });
               }}
               style={{
-                transform: `translate(${
-                  rendered.offsetX + label.pos.x * rendered.width - labelWidth / 2
-                }px, ${rendered.offsetY + label.pos.y * rendered.height - labelWidth / 2}px)`,
+                // Centre each hotspot on its point by its own size
+                transform: `translate(${anchor.x}px, ${anchor.y}px) translate(-50%, -50%)`,
               }}
             >
-              {showLabelIndex ? <p>{label.index + 1}</p> : <PlusIcon />}
+              {customHotspot ? (
+                <>
+                  <WidgetNode
+                    id={customHotspot.mainComponent}
+                    externalVariant={customHotspot.variant}
+                  />
+                  {showLabelIndex && <span className={styles.indexBadge}>{label.index + 1}</span>}
+                </>
+              ) : showLabelIndex ? (
+                <p>{label.index + 1}</p>
+              ) : (
+                <PlusIcon />
+              )}
               {label.caption && hoverIndex === label.index && (
                 <div className={styles.captionWrapper}>{label.caption}</div>
               )}
             </div>
           );
         })}
-      {renderPopup()}
+      {popup && rendered && (
+        // The editor measures a child frame with offsetLeft/offsetTop and expects its offset parent
+        // at the component's top-left. So the layer sits at (0, 0) and places the popup with
+        // padding, not with a transform or a positioned box.
+        <div
+          className={styles.popupLayer}
+          style={{ paddingLeft: popupPos.x, paddingTop: popupPos.y }}
+        >
+          <div ref={popupRef} className={styles.popup}>
+            <WidgetNode id={popup} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
