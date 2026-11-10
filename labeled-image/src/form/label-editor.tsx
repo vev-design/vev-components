@@ -108,14 +108,14 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange, pkg }: Pro
           hAlign="center"
         >
           <SilkeBox style={{ width: '100%' }}>
-            <SilkeText weight="strong">Labels</SilkeText>
+            <SilkeText weight="strong">Hotspots</SilkeText>
           </SilkeBox>
           {!labels.length && (
             <SilkeBox pad="m" rounded="small" bg="neutral-10" style={{ width: '100%' }}>
               <SilkeBox pad="l" style={{ width: '100%', textAlign: 'center' }} column vAlign hAlign>
                 <SilkeIcon icon="hand.pointer" />
                 <SilkeText size="small" color="neutral-70">
-                  Click anywhere on the image to add labels
+                  Click anywhere on the image to add hotspots
                 </SilkeText>
               </SilkeBox>
             </SilkeBox>
@@ -123,7 +123,7 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange, pkg }: Pro
           {labels.length !== 0 && (
             <SilkeBox style={{ width: '100%' }}>
               <SilkeText size="small" color="neutral-70">
-                Click on the image to add labels
+                Click on the image to add hotspots
               </SilkeText>
             </SilkeBox>
           )}
@@ -137,7 +137,7 @@ export function LabelEditor({ url, onAdd, labels, onRemove, onChange, pkg }: Pro
                 style={{ width: '100%' }}
               >
                 <SilkeBox vPad="xs" hPad="s" vAlign="center" hAlign="spread">
-                  <SilkeText size="small">{`Label ${label.index + 1}`}</SilkeText>
+                  <SilkeText size="small">{`Hotspot ${label.index + 1}`}</SilkeText>
                   <SilkeButton
                     icon="delete"
                     size="s"

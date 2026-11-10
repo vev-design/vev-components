@@ -11,16 +11,19 @@ type Props = {
   image: { key: string; url: string };
   labels: Label[];
   customHotspot: string;
+  children?: string[];
 };
 
-const LabeledImage = ({ image, labels, customHotspot }: Props) => {
+const LabeledImage = ({ image, labels, customHotspot, children }: Props) => {
   const imageRef: React.RefObject<HTMLImageElement> = useRef<HTMLImageElement>(null);
-  const { selected, disabled } = useEditorState();
+  const { selected, disabled, schemaOpen, activeContentChild } = useEditorState();
   const interactionsOpen = useGlobalStore((state) => {
     return state.rightPanelTab === 'addons';
   }, []);
 
-  const showNumbers = selected && interactionsOpen && disabled;
+  // Number the hotspots in the editor while their settings or popups are being edited
+  const showNumbers =
+    disabled && ((selected && (interactionsOpen || schemaOpen)) || !!activeContentChild);
 
   if (!image) {
     return null;
@@ -33,6 +36,8 @@ const LabeledImage = ({ image, labels, customHotspot }: Props) => {
         labels={labels}
         imageRef={imageRef}
         showLabelIndex={showNumbers}
+        popups={children || []}
+        activePopup={disabled ? activeContentChild : undefined}
       />
       <img ref={imageRef} src={image.url} className={styles.image} />
     </div>
@@ -41,6 +46,9 @@ const LabeledImage = ({ image, labels, customHotspot }: Props) => {
 
 registerVevComponent(LabeledImage, {
   name: 'LabeledImage',
+  children: {
+    name: 'Popup',
+  },
   emptyState: {
     action: 'OPEN_PROPERTIES',
     linkText: 'Select',
@@ -79,22 +87,22 @@ registerVevComponent(LabeledImage, {
   events: [
     {
       type: EventTypes.LABEL_CLICKED,
-      description: 'On label click',
+      description: 'On hotspot click',
       args: [
         {
           name: EventTypes.LABEL_CLICKED,
-          description: 'Label number clicked',
+          description: 'Hotspot number clicked',
           type: 'number',
         },
       ],
     },
     {
       type: EventTypes.LABEL_HOVER,
-      description: 'On label hover',
+      description: 'On hotspot hover',
       args: [
         {
           name: EventTypes.LABEL_HOVER,
-          description: 'Label number hovered',
+          description: 'Hotspot number hovered',
           type: 'number',
         },
       ],
@@ -107,12 +115,17 @@ registerVevComponent(LabeledImage, {
       properties: ['object-fit'],
     },
     {
+      title: 'Popup',
+      selector: overlayStyles.popup,
+      properties: ['width', 'height', 'background', 'border', 'border-radius', 'box-shadow'],
+    },
+    {
       title: 'Hotspot',
       selector: overlayStyles.label,
       properties: ['background', 'border', 'border-radius', 'box-shadow', 'color'],
     },
     {
-      title: 'Label',
+      title: 'Caption',
       selector: overlayStyles.captionWrapper,
       properties: [
         'padding',

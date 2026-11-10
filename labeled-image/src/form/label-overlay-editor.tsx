@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Label } from '../types';
-import { PlusIcon } from '../plus-icon';
 import styles from './label-overlay-editor.module.css';
 import labelStyles from '../label-overlay.module.css';
 
@@ -21,14 +20,12 @@ export function LabelOverlayEditor({
   hoverIndex,
   editIndex,
 }: Props) {
-  const labelRef = useRef<HTMLDivElement>(null);
   const [rendered, setRendered] = useState<{
     width: number;
     height: number;
     offsetX: number;
     offsetY: number;
   } | null>(null);
-  const [labelWidth, setLabelWidth] = useState(25);
 
   useEffect(() => {
     if (!imageRef?.current) return;
@@ -36,12 +33,6 @@ export function LabelOverlayEditor({
 
     const updateRect = () => {
       if (!imageRef?.current) return;
-
-
-      // Find hotspot width
-      if(labelRef.current) {
-        setLabelWidth(labelRef.current.getBoundingClientRect().width);
-      }
 
       const el = imageRef.current;
       const objectFit = getComputedStyle(el).objectFit ?? 'fill';
@@ -110,9 +101,8 @@ export function LabelOverlayEditor({
     <div style={{ position: 'absolute', top: 0, left: 0 }}>
       {rendered &&
         labels &&
-        labels.map((label, index) => (
+        labels.map((label) => (
           <div
-            ref={index === 0 ? labelRef : null}
             onMouseUp={() => {
               onClick(label.index);
             }}
@@ -124,13 +114,14 @@ export function LabelOverlayEditor({
             }
             key={label.index}
             style={{
-              transform: `translate(${rendered.offsetX + label.pos.x * rendered.width - (labelWidth/2)}px, ${
-                rendered.offsetY + label.pos.y * rendered.height - (labelWidth/2)
-              }px)`,
+              // Centre each hotspot on its point by its own size
+              transform: `translate(${rendered.offsetX + label.pos.x * rendered.width}px, ${
+                rendered.offsetY + label.pos.y * rendered.height
+              }px) translate(-50%, -50%)`,
               color: 'black',
             }}
           >
-            <PlusIcon />
+            <span>{label.index + 1}</span>
             {label.caption && editIndex === label.index && (
               <div className={labelStyles.captionWrapper}>{label.caption}</div>
             )}
