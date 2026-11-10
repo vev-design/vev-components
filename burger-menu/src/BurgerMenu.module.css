@@ -171,6 +171,11 @@
   font-weight: bold;
 }
 
+.toggleTitle {
+  cursor: pointer;
+  user-select: none;
+}
+
 .expand {
   flex: none;
   display: flex;

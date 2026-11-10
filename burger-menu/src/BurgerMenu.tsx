@@ -100,7 +100,14 @@ function Item({ item, pageKey, forceOpen, onNavigate }: ItemProps) {
             {item.title}
           </VevLink>
         ) : (
-          <span className={linkCl}>{item.title}</span>
+          // A title without a link toggles its submenu, like the arrow. The arrow stays the
+          // keyboard control, so the title is not a second tab stop.
+          <span
+            className={linkCl + (hasChildren ? ' ' + styles.toggleTitle : '')}
+            onClick={hasChildren ? () => setExpanded(!expanded) : undefined}
+          >
+            {item.title}
+          </span>
         )}
         {hasChildren && (
           <button
