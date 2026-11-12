@@ -6,6 +6,9 @@ import { ScrollTarget } from '../hooks/use-scroll-progress';
 export type HotspotFocus = 'none' | 'turn' | 'zoom';
 
 /** A Vev main component, from a `mainComponent` prop */
+/** Numbered circles, one main component for all hotspots, or one per hotspot */
+export type HotspotStyle = 'default' | 'one' | 'each';
+
 /** Where a custom hotspot shows its number */
 export type HotspotNumberPosition = 'none' | 'center' | 'corner';
 
@@ -30,9 +33,11 @@ export interface Object3DContextProps {
   zoom: boolean;
   /** Drag turns the camera only around the vertical axis. The vertical angle stays at the home angle. */
   horizontalOnly?: boolean;
-  /** Rendered at each hotspot instead of the numbered button. Not used in the editor modals. */
+  /** With 'one': rendered at each hotspot instead of the numbered button. Not used in the editor modals. */
   customHotspot?: CustomHotspot;
   customHotspotNumber?: HotspotNumberPosition;
+  /** With 'each', a hotspot shows its own `component`, else the numbered button */
+  hotspotStyle?: HotspotStyle;
   hotspots: InternalHotspot[];
   addHotSpot?: (spot: Vector3, anchor?: HotspotAnchor) => void;
   editMode: boolean;

@@ -3,7 +3,7 @@ import { Camera, Group, Object3D, Raycaster, Vector3 } from 'three';
 // @ts-expect-error - no types
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Group as TweenGroup } from '@tweenjs/tween.js';
-import { Object3dContext } from '../context/object-3d-context';
+import { CustomHotspot, Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
 import { HotspotAnchor, InternalHotspot } from '../types';
 import { animateCamera } from '../util/animate-camera';
@@ -17,6 +17,12 @@ export interface CanvasHotspot {
   dimmed: boolean;
   /** Surface normal, local to `sceneObject.parent` */
   normal?: Vector3;
+}
+
+/** A hotspot element and the main component the viewer renders into it */
+export interface HotspotPortal {
+  element: HTMLElement;
+  component: CustomHotspot;
 }
 
 // With "Turn and zoom in", the camera stops at this multiple of the hotspot's distance from the center
@@ -39,12 +45,22 @@ export function useHotspots(
     hotspotFocus = 'turn',
     customHotspot,
     customHotspotNumber = 'none',
+    hotspotStyle = 'default',
   } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
   // The viewer renders the custom hotspot main component into these elements with portals
-  const [portalTargets, setPortalTargets] = useState<HTMLElement[]>([]);
-  // The editor modals render outside the page, where main components cannot render
-  const custom = !!customHotspot && !editMode;
+  const [portalTargets, setPortalTargets] = useState<HotspotPortal[]>([]);
+  // The main component of each hotspot, or undefined for the numbered button. The editor modals
+  // render outside the page, where main components cannot render.
+  const components = hotspots.map((hotspot): CustomHotspot | undefined => {
+    if (editMode) return undefined;
+    if (hotspotStyle !== 'each') return customHotspot;
+    return hotspot.component?.mainComponent ? hotspot.component : undefined;
+  });
+  // The objects change identity on each render. Recreate the hotspots only when a value changes.
+  const componentsKey = components
+    .map((component) => (component ? `${component.mainComponent}/${component.variant ?? ''}` : ''))
+    .join('|');
 
   // The DOM listeners live longer than one render. They read the current values from here.
   const latest = useRef({ camera, controls, tweens, hotspotFocus, hotspotClicked });
@@ -101,7 +117,8 @@ export function useHotspots(
   useEffect(() => {
     if (!pivot) return;
 
-    const created = hotspots.map((storageHotspot) => {
+    const created = hotspots.map((storageHotspot, index) => {
+      const custom = !!components[index];
       const outer = document.createElement('div');
       // A main component can contain links and buttons, which must not be inside a <button>
       const button = document.createElement(custom ? 'div' : 'button');
@@ -167,7 +184,12 @@ export function useHotspots(
     });
 
     hotspotMap.current = created;
-    setPortalTargets(custom ? created.map((canvasHotspot) => canvasHotspot.element) : []);
+    setPortalTargets(
+      created.flatMap((canvasHotspot, index) => {
+        const component = components[index];
+        return component ? [{ element: canvasHotspot.element, component }] : [];
+      }),
+    );
     invalidate();
 
     return () => {
@@ -177,7 +199,7 @@ export function useHotspots(
       setPortalTargets([]);
       invalidate();
     };
-  }, [hotspots, pivot, model, editMode, custom, customHotspotNumber]);
+  }, [hotspots, pivot, model, editMode, componentsKey, customHotspotNumber]);
 
   return { hotspotMap, portalTargets };
 }
