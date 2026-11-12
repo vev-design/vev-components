@@ -10,6 +10,7 @@ import {
 import {
   CustomHotspot,
   HotspotFocus,
+  HotspotNumberPosition,
   Object3DContextProps,
   Object3DContextProvider,
 } from './context/object-3d-context';
@@ -76,6 +77,7 @@ export type Props = {
   };
   poster: { url: string };
   customHotspot?: CustomHotspot;
+  customHotspotNumber?: HotspotNumberPosition;
   hotspots_camera?: {
     hotspots: StorageHotspot[];
     initialCamera?: SavedCameraPosition;
@@ -103,6 +105,7 @@ const Object3d = ({
   animationSettings,
   hotspots_camera,
   customHotspot,
+  customHotspotNumber,
 }: Props) => {
   const { width, height } = useSize(hostRef);
 
@@ -241,6 +244,7 @@ const Object3d = ({
           controls,
           horizontalOnly: settings?.dragDirection === 'horizontal',
           customHotspot: customHotspot?.mainComponent ? customHotspot : undefined,
+          customHotspotNumber: customHotspotNumber ?? 'none',
           animation,
           scrollAnimation,
           scrollTarget,
@@ -375,6 +379,23 @@ export const config: VevManifest = {
       description: 'Main component to show at each hotspot, instead of the numbered circle',
       // Missing from the installed @vev/utils types. LabeledImage and Slider indicators use it.
       type: 'mainComponent' as any,
+    },
+    {
+      name: 'customHotspotNumber',
+      title: 'Hotspot number',
+      description:
+        'Show the hotspot number on top of the custom hotspot. Style it under "Hotspot number".',
+      type: 'select',
+      options: {
+        items: [
+          { label: 'None', value: 'none' },
+          { label: 'Center', value: 'center' },
+          { label: 'Corner badge', value: 'corner' },
+        ],
+        display: 'dropdown',
+      },
+      initialValue: 'none',
+      hidden: (context) => !context?.value?.customHotspot?.mainComponent,
     },
     {
       name: 'settings',
@@ -727,6 +748,20 @@ export const config: VevManifest = {
       selector: styles.hotspot,
       properties: ['background', 'color', 'font', 'font-family', 'font-size'],
       title: 'Hotspot',
+    },
+    {
+      selector: styles.hotspotNumber,
+      properties: [
+        'background',
+        'color',
+        'font-family',
+        'font-size',
+        'font-weight',
+        'border',
+        'border-radius',
+        'padding',
+      ],
+      title: 'Hotspot number',
     },
   ],
   type: 'both',

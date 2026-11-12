@@ -6,6 +6,9 @@ import { ScrollTarget } from '../hooks/use-scroll-progress';
 export type HotspotFocus = 'none' | 'turn' | 'zoom';
 
 /** A Vev main component, from a `mainComponent` prop */
+/** Where a custom hotspot shows its number */
+export type HotspotNumberPosition = 'none' | 'center' | 'corner';
+
 export interface CustomHotspot {
   mainComponent: string;
   variant?: string;
@@ -29,6 +32,7 @@ export interface Object3DContextProps {
   horizontalOnly?: boolean;
   /** Rendered at each hotspot instead of the numbered button. Not used in the editor modals. */
   customHotspot?: CustomHotspot;
+  customHotspotNumber?: HotspotNumberPosition;
   hotspots: InternalHotspot[];
   addHotSpot?: (spot: Vector3, anchor?: HotspotAnchor) => void;
   editMode: boolean;

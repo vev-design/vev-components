@@ -38,6 +38,7 @@ export function useHotspots(
     eventCallbacks,
     hotspotFocus = 'turn',
     customHotspot,
+    customHotspotNumber = 'none',
   } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
   // The viewer renders the custom hotspot main component into these elements with portals
@@ -107,6 +108,16 @@ export function useHotspots(
       if (custom) {
         button.setAttribute('role', 'button');
         button.className = `${styles.customHotspot} vev-object-3d-hotspot`;
+        if (customHotspotNumber !== 'none') {
+          // The portal adds the main component after this element. React leaves it alone.
+          const number = document.createElement('span');
+          number.textContent = `${storageHotspot.index}`;
+          number.setAttribute('aria-hidden', 'true');
+          const position =
+            customHotspotNumber === 'corner' ? styles.numberCorner : styles.numberCenter;
+          number.className = `${styles.hotspotNumber} ${position}`;
+          button.appendChild(number);
+        }
       } else {
         (button as HTMLButtonElement).type = 'button';
         button.textContent = `${storageHotspot.index}`;
@@ -166,7 +177,7 @@ export function useHotspots(
       setPortalTargets([]);
       invalidate();
     };
-  }, [hotspots, pivot, model, editMode, custom]);
+  }, [hotspots, pivot, model, editMode, custom, customHotspotNumber]);
 
   return { hotspotMap, portalTargets };
 }
