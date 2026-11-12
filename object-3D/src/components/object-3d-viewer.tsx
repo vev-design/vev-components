@@ -1,5 +1,7 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MathUtils } from 'three';
+import { WidgetNode } from '@vev/react';
 import { useModel } from '../hooks/use-model';
 import { CameraHome, useSceneSetup } from '../hooks/use-scene-setup';
 import { useSceneModel } from '../hooks/use-scene-model';
@@ -15,6 +17,12 @@ import { useScrollProgress } from '../hooks/use-scroll-progress';
 import { useInView } from '../hooks/use-in-view';
 import { useReducedMotion } from '../hooks/use-reduced-motion';
 import { usePointerTilt } from '../hooks/use-pointer-tilt';
+
+// The installed @vev/react types predate `externalVariant`. The runtime supports it.
+const MainComponentNode = WidgetNode as unknown as React.ComponentType<{
+  id: string;
+  externalVariant?: string;
+}>;
 
 // Fast loads never show the loading bar
 const LOADING_BAR_DELAY = 800;
@@ -48,6 +56,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
     shadowOpacity = 0.5,
     hostRef,
     onModelLoaded,
+    customHotspot,
   } = useContext(Object3dContext);
 
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
@@ -113,7 +122,7 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
   useHotspotListener(labelRenderer, camera, pivot, currentModel);
 
   // Used for rendering hotspots
-  const hotspotsRef = useHotspots(
+  const { hotspotMap: hotspotsRef, portalTargets } = useHotspots(
     pivot,
     camera,
     controls,
@@ -222,6 +231,17 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
     <div ref={setRoot} className={`${className || ''} ${styles.viewer}`}>
       <canvas ref={setCanvas} className={styles.canvas} />
       <div ref={setLabelElement} className={styles.labels} />
+      {customHotspot &&
+        portalTargets.map((target, index) =>
+          createPortal(
+            <MainComponentNode
+              id={customHotspot.mainComponent}
+              externalVariant={customHotspot.variant}
+            />,
+            target,
+            index,
+          ),
+        )}
       {posterUrl && (
         <img
           src={posterUrl}

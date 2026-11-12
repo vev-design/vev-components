@@ -16,6 +16,7 @@ import { Group as TweenGroup } from '@tweenjs/tween.js';
 import { MutableRefObject, useContext, useEffect, useRef, useState } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
 import { animateCamera } from '../util/animate-camera';
+import { lockPolarAngle } from '../util/polar-lock';
 
 // Above 2, extra pixels cost a lot of GPU time and are hard to see
 const MAX_PIXEL_RATIO = 2;
@@ -55,6 +56,7 @@ export function useSceneSetup(
     height,
     width,
     zoom: enableZoom,
+    horizontalOnly = false,
     fov,
     aspect,
     near,
@@ -142,12 +144,20 @@ export function useSceneSetup(
     // "Zoom" works without "Drag": OrbitControls must be enabled for either one
     controls.enabled = enableControls || enableZoom;
     controls.enableRotate = enableControls;
-    controls.enablePan = enableControls;
+    controls.enablePan = enableControls && !horizontalOnly;
     controls.enableZoom = enableZoom;
+    // Before the model loads, `home` is empty. useCenterModel applies the lock when it sets `home`.
+    lockPolarAngle(controls, home.current, horizontalOnly);
     // OrbitControls always sets touch-action: none. Without drag, let touch gestures scroll the page.
-    // Pinch zoom on touch screens therefore needs "Drag" too.
-    controls.domElement.style.touchAction = enableControls ? 'none' : '';
-  }, [three, enableControls, enableZoom]);
+    // Pinch zoom on touch screens therefore needs "Drag" too. With "Horizontal only", vertical
+    // swipes scroll the page.
+    controls.domElement.style.touchAction = enableControls
+      ? horizontalOnly
+        ? 'pan-y'
+        : 'none'
+      : '';
+    invalidate();
+  }, [three, enableControls, enableZoom, horizontalOnly]);
 
   useEffect(() => {
     autoRotate.current = rotate;

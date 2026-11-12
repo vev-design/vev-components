@@ -8,6 +8,7 @@ import {
   useVevEvent,
 } from '@vev/react';
 import {
+  CustomHotspot,
   HotspotFocus,
   Object3DContextProps,
   Object3DContextProvider,
@@ -68,11 +69,13 @@ export type Props = {
     shadow?: boolean;
     shadowOpacity?: number;
     controls: boolean;
+    dragDirection?: 'free' | 'horizontal';
     zoom: boolean;
     hotspotFocus?: HotspotFocus;
     hotspotZoom?: boolean;
   };
   poster: { url: string };
+  customHotspot?: CustomHotspot;
   hotspots_camera?: {
     hotspots: StorageHotspot[];
     initialCamera?: SavedCameraPosition;
@@ -99,6 +102,7 @@ const Object3d = ({
   settings,
   animationSettings,
   hotspots_camera,
+  customHotspot,
 }: Props) => {
   const { width, height } = useSize(hostRef);
 
@@ -235,6 +239,8 @@ const Object3d = ({
           rotationSpeed: actualRotationSpeed,
           zoom,
           controls,
+          horizontalOnly: settings?.dragDirection === 'horizontal',
+          customHotspot: customHotspot?.mainComponent ? customHotspot : undefined,
           animation,
           scrollAnimation,
           scrollTarget,
@@ -364,6 +370,13 @@ export const config: VevManifest = {
       component: HotspotComponent,
     },
     {
+      name: 'customHotspot',
+      title: 'Custom hotspot',
+      description: 'Main component to show at each hotspot, instead of the numbered circle',
+      // Missing from the installed @vev/utils types. LabeledImage and Slider indicators use it.
+      type: 'mainComponent' as any,
+    },
+    {
       name: 'settings',
       title: 'Settings',
       type: 'object',
@@ -448,6 +461,20 @@ export const config: VevManifest = {
           description: 'Let users rotate and pan the model',
           type: 'boolean',
           initialValue: false,
+        },
+        {
+          name: 'dragDirection',
+          title: 'Drag direction',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'All directions', value: 'free' },
+              { label: 'Horizontal only', value: 'horizontal' },
+            ],
+            display: 'dropdown',
+          },
+          initialValue: 'free',
+          hidden: (context) => context?.value?.settings?.controls !== true,
         },
         {
           name: 'zoom',

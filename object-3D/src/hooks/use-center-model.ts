@@ -4,6 +4,7 @@ import { MutableRefObject, useContext, useEffect } from 'react';
 import { Object3dContext } from '../context/object-3d-context';
 import { setCameraPosition } from '../util/set-camera-position';
 import { CameraHome } from './use-scene-setup';
+import { lockPolarAngle, unlockPolarAngle } from '../util/polar-lock';
 
 // Earlier versions computed the distance as `size / |sin(fov / 2)|` with the fov in degrees. For the
 // fixed 45° fov, that gives this factor. Keep it, so published pages keep their framing.
@@ -21,7 +22,7 @@ export function useCenterModel(
   home: MutableRefObject<CameraHome | null>,
   invalidate: () => void,
 ) {
-  const { savedCameraPosition } = useContext(Object3dContext);
+  const { savedCameraPosition, horizontalOnly = false } = useContext(Object3dContext);
 
   useEffect(() => {
     if (!gltf || !camera || !controls) return;
@@ -43,8 +44,11 @@ export function useCenterModel(
       setCameraPosition(camera, savedCameraPosition, controls);
     }
 
+    // An old lock would clamp the new camera position
+    unlockPolarAngle(controls);
     controls.update();
     home.current = { position: camera.position.clone(), target: controls.target.clone() };
+    lockPolarAngle(controls, home.current, horizontalOnly);
     invalidate();
   }, [camera, controls, gltf, savedCameraPosition]);
 }

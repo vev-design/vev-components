@@ -55,6 +55,10 @@ Hotspots saved before anchors existed are anchored once at load (`anchorLegacyHo
 
 Skinned and morph-target meshes get no BVH (it would fit only the rest shape), so they never occlude. Their hotspots still get the back-face test. `three-mesh-bvh` is pinned to `~0.7.8`: 0.8+ needs three r159.
 
+### Custom hotspots
+
+`customHotspot` (`type: 'mainComponent'`) replaces the numbered button with a Vev main component. `useHotspots` then creates a `div role="button"` (a main component can contain links or buttons, which must not sit inside a `<button>`) with Enter/Space handling, and returns the elements as `portalTargets`. The viewer renders `<WidgetNode id externalVariant>` into each one with `createPortal`, so the main component keeps the Vev React context. The editor modals (`editMode`) always show numbered buttons: they render outside the page, where main components cannot render. The installed `@vev/react` (0.0.4) and `@vev/utils` types predate `externalVariant` and `'mainComponent'`, hence the casts. Bumping `@vev/react` to 0.3.x breaks the `ObjectField`/`SchemaFieldProps` imports in the editor forms.
+
 Hotspots are **not** 3D objects. They are DOM `<button>`s positioned by three's `CSS2DRenderer`. Its element (`.labels`) is absolutely positioned on top of the canvas and is also the element `OrbitControls` binds to — not the canvas. Keep it above the canvas, or pointer input breaks. The poster and loading bar above it have `pointer-events: none`.
 
 ## The render loop
@@ -73,6 +77,7 @@ Interactions: `SELECT_HOTSPOT`, `START_ROTATION`, `STOP_ROTATION`, `RESET_CAMERA
 
 - Camera moves go through `util/animate-camera.ts`, which orbits around `controls.target` (shortest way round) instead of moving in a straight line through the model. Each instance has its own tween group.
 - A hotspot click moves the camera by `settings.hotspotFocus`: `turn` (default; orbit to face the surface along the anchor normal, same distance), `zoom` (also move closer), or `none`. The `SELECT_HOTSPOT` interaction always at least turns. Old test builds stored a boolean `hotspotZoom`; it is still read as a fallback.
+- "Drag direction: Horizontal only" (`horizontalOnly`, `util/polar-lock.ts`) sets `minPolarAngle = maxPolarAngle` = the home camera's polar angle, turns off pan, and sets `touch-action: pan-y` so vertical swipes scroll the page. `useCenterModel` unlocks before it positions the camera and locks again after it sets `home`. `animateCamera` clamps the target polar angle to the controls' range, so a hotspot focus only turns around the vertical axis (without the clamp, `controls.update()` fights the tween).
 - "Zoom" works without "Drag": OrbitControls is enabled when either is on, with rotate/pan tied to Drag. Pinch zoom on touch screens still needs Drag, because only Drag sets `touch-action: none`.
 - `RESET_CAMERA` returns to `home` — the saved initial camera, or the auto-framed position.
 - Auto-rotate pauses while the user drags and resumes 2 s after release. It is off under `prefers-reduced-motion`.
