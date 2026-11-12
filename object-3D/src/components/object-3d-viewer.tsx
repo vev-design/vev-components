@@ -56,7 +56,6 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
     shadowOpacity = 0.5,
     hostRef,
     onModelLoaded,
-    customHotspot,
   } = useContext(Object3dContext);
 
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
@@ -231,17 +230,13 @@ export const Object3dViewer = ({ className }: { className?: string }) => {
     <div ref={setRoot} className={`${className || ''} ${styles.viewer}`}>
       <canvas ref={setCanvas} className={styles.canvas} />
       <div ref={setLabelElement} className={styles.labels} />
-      {customHotspot &&
-        portalTargets.map((target, index) =>
-          createPortal(
-            <MainComponentNode
-              id={customHotspot.mainComponent}
-              externalVariant={customHotspot.variant}
-            />,
-            target,
-            index,
-          ),
-        )}
+      {portalTargets.map(({ element, component }, index) =>
+        createPortal(
+          <MainComponentNode id={component.mainComponent} externalVariant={component.variant} />,
+          element,
+          index,
+        ),
+      )}
       {posterUrl && (
         <img
           src={posterUrl}
