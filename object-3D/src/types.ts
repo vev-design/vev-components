@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import type { CustomHotspot } from './context/object-3d-context';
 
 export interface Position {
   x: number;
@@ -21,12 +22,15 @@ export interface StorageHotspot {
   position: Position;
   index: number;
   anchor?: HotspotAnchor;
+  /** Shown at this hotspot when "Hotspot style" is "One component per hotspot" */
+  component?: CustomHotspot;
 }
 
 export interface InternalHotspot {
   position: Vector3;
   index: number;
   anchor?: HotspotAnchor;
+  component?: CustomHotspot;
 }
 
 export interface SavedCameraPosition {

@@ -8,13 +8,17 @@ import {
   useVevEvent,
 } from '@vev/react';
 import {
+  CustomHotspot,
   HotspotFocus,
+  HotspotNumberPosition,
+  HotspotStyle,
   Object3DContextProps,
   Object3DContextProvider,
 } from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
 import { HotspotEditorForm } from './components/hotspot-editor-form';
+import { HotspotComponentList } from './components/hotspot-component-list';
 import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
@@ -68,14 +72,24 @@ export type Props = {
     shadow?: boolean;
     shadowOpacity?: number;
     controls: boolean;
+    dragDirection?: 'free' | 'horizontal';
     zoom: boolean;
     hotspotFocus?: HotspotFocus;
     hotspotZoom?: boolean;
   };
   poster: { url: string };
+  /**
+   * The saved camera. Older elements store it in `hotspots_camera.initialCamera`. An empty object
+   * means "reset": it hides the older value.
+   */
+  initialCamera?: SavedCameraPosition | Record<string, never>;
+  /** The "Hotspots" group. The name is kept from when it held only the hotspots and the camera. */
   hotspots_camera?: {
     hotspots: StorageHotspot[];
     initialCamera?: SavedCameraPosition;
+    hotspotStyle?: HotspotStyle;
+    customHotspot?: CustomHotspot;
+    customHotspotNumber?: HotspotNumberPosition;
   };
   animationSettings: {
     animation?: string;
@@ -98,12 +112,15 @@ const Object3d = ({
   poster,
   settings,
   animationSettings,
+  initialCamera: savedCamera,
   hotspots_camera,
 }: Props) => {
   const { width, height } = useSize(hostRef);
 
   // Initial values
-  const initialCamera = hotspots_camera?.initialCamera;
+  const initialCamera = resolveInitialCamera(savedCamera, hotspots_camera?.initialCamera);
+  const hotspotStyle = hotspots_camera?.hotspotStyle ?? 'default';
+  const customHotspot = hotspots_camera?.customHotspot;
   const lighting = settings?.lighting || 'hdri1';
   const hdri =
     lighting === 'custom'
@@ -172,6 +189,7 @@ const Object3d = ({
               storageHotspot.position.z,
             ),
             anchor: storageHotspot.anchor,
+            component: storageHotspot.component,
           };
         }),
       );
@@ -235,6 +253,11 @@ const Object3d = ({
           rotationSpeed: actualRotationSpeed,
           zoom,
           controls,
+          horizontalOnly: settings?.dragDirection === 'horizontal',
+          hotspotStyle,
+          customHotspot:
+            hotspotStyle === 'one' && customHotspot?.mainComponent ? customHotspot : undefined,
+          customHotspotNumber: hotspots_camera?.customHotspotNumber ?? 'none',
           animation,
           scrollAnimation,
           scrollTarget,
@@ -293,6 +316,47 @@ const Object3d = ({
   );
 };
 
+/** The camera from the `initialCamera` prop, else from older elements' `hotspots_camera` */
+function resolveInitialCamera(
+  saved: Props['initialCamera'],
+  legacy: SavedCameraPosition | undefined,
+): SavedCameraPosition | undefined {
+  if (saved === undefined || saved === null) return legacy;
+  return 'position' in saved ? (saved as SavedCameraPosition) : undefined;
+}
+
+/** "Edit initial camera". Writes the `initialCamera` prop. */
+const InitialCameraField = (field) => {
+  const group = field.context?.value?.hotspots_camera;
+  return (
+    <SilkeBox flex style={{ padding: '18px 0 10px' }}>
+      <CameraEditor
+        context={{ ...field, value: { hotspots: group?.hotspots } }}
+        onChange={(camera) => field.onChange(camera ?? {})}
+      />
+    </SilkeBox>
+  );
+};
+
+/** "Edit hotspots", in the Hotspots group. Its value is the hotspot list. */
+const EditHotspotsField = (field) => (
+  <SilkeBox flex>
+    <HotspotEditorForm
+      context={{ ...field, value: { hotspots: field.value || [] } }}
+      onChange={(hotspots) => field.onChange(hotspots)}
+    />
+  </SilkeBox>
+);
+
+/** One component picker per hotspot. Also writes the hotspot list. */
+const HotspotComponentsField = (field) => (
+  <HotspotComponentList
+    hotspots={field.value || []}
+    onChange={(hotspots) => field.onChange(hotspots)}
+  />
+);
+
+/** The legacy widget's combined hotspot and camera field. It has no "Hotspots" group. */
 export const HotspotComponent = (context) => {
   const initialCamera = context.value?.initialCamera;
   const hotspots = context.value?.hotspots || [];
@@ -349,19 +413,82 @@ export const config: VevManifest = {
       accept: 'image/*',
     },
     {
-      name: 'hotspots_camera',
+      name: 'initialCamera',
       type: 'object',
+      fields: [],
+      component: InitialCameraField,
+    },
+    {
+      name: 'hotspots_camera',
+      title: 'Hotspots',
+      type: 'object',
+      // The `hidden` functions below get the whole form value. Without hotspots, only the
+      // "Edit hotspots" button shows.
       fields: [
         {
           name: 'hotspots',
           type: 'string',
+          component: EditHotspotsField,
         },
         {
-          name: 'initialCamera',
+          name: 'hotspotStyle',
+          title: 'Hotspot style',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'Numbered circles', value: 'default' },
+              { label: 'One component for all', value: 'one' },
+              { label: 'One component per hotspot', value: 'each' },
+            ],
+            display: 'dropdown',
+            // Elements placed before this option existed have no value. They show numbered circles.
+            // The installed @vev/utils types lack `placeholder`.
+            placeholder: 'Numbered circles',
+          } as any,
+          initialValue: 'default',
+          hidden: (context) => !context?.value?.hotspots_camera?.hotspots?.length,
+        },
+        {
+          name: 'customHotspot',
+          title: 'Hotspot component',
+          description: 'Main component to show at every hotspot',
+          // Missing from the installed @vev/utils types. LabeledImage and Slider indicators use it.
+          type: 'mainComponent' as any,
+          hidden: (context) =>
+            !context?.value?.hotspots_camera?.hotspots?.length ||
+            context.value.hotspots_camera.hotspotStyle !== 'one',
+        },
+        {
+          // A second field on the hotspot list: the pickers must come after "Hotspot style"
+          name: 'hotspots',
           type: 'string',
+          component: HotspotComponentsField,
+          hidden: (context) =>
+            !context?.value?.hotspots_camera?.hotspots?.length ||
+            context.value.hotspots_camera.hotspotStyle !== 'each',
+        },
+        {
+          name: 'customHotspotNumber',
+          title: 'Hotspot number',
+          description:
+            'Show the hotspot number on top of the hotspot component. Style it under "Hotspot number".',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'None', value: 'none' },
+              { label: 'Center', value: 'center' },
+              { label: 'Corner badge', value: 'corner' },
+            ],
+            display: 'dropdown',
+            // Elements placed before this option existed have no value. They show no number.
+            placeholder: 'None',
+          } as any,
+          initialValue: 'none',
+          hidden: (context) =>
+            !context?.value?.hotspots_camera?.hotspots?.length ||
+            (context.value.hotspots_camera.hotspotStyle ?? 'default') === 'default',
         },
       ],
-      component: HotspotComponent,
     },
     {
       name: 'settings',
@@ -450,6 +577,20 @@ export const config: VevManifest = {
           initialValue: false,
         },
         {
+          name: 'dragDirection',
+          title: 'Drag direction',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'All directions', value: 'free' },
+              { label: 'Horizontal only', value: 'horizontal' },
+            ],
+            display: 'dropdown',
+          },
+          initialValue: 'free',
+          hidden: (context) => context?.value?.settings?.controls !== true,
+        },
+        {
           name: 'zoom',
           title: 'Zoom',
           description: 'Let users zoom with the mouse wheel (pinch on touch screens needs Drag)',
@@ -469,6 +610,7 @@ export const config: VevManifest = {
             display: 'dropdown',
           },
           initialValue: 'turn',
+          hidden: (context) => !context?.value?.hotspots_camera?.hotspots?.length,
         },
       ],
     },
@@ -700,6 +842,20 @@ export const config: VevManifest = {
       selector: styles.hotspot,
       properties: ['background', 'color', 'font', 'font-family', 'font-size'],
       title: 'Hotspot',
+    },
+    {
+      selector: styles.hotspotNumber,
+      properties: [
+        'background',
+        'color',
+        'font-family',
+        'font-size',
+        'font-weight',
+        'border',
+        'border-radius',
+        'padding',
+      ],
+      title: 'Hotspot number',
     },
   ],
   type: 'both',
