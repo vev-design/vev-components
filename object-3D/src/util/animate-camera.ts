@@ -19,6 +19,8 @@ export function animateCamera(
   const fromTarget = controls.target.clone();
   const from = new Spherical().setFromVector3(camera.position.clone().sub(fromTarget));
   const to = new Spherical().setFromVector3(toPosition.clone().sub(toTarget));
+  // Stay in the controls' vertical range ("Horizontal only" drag), or controls.update() fights the tween
+  to.phi = MathUtils.clamp(to.phi, controls.minPolarAngle, controls.maxPolarAngle);
 
   // Take the short way around
   let thetaDelta = to.theta - from.theta;

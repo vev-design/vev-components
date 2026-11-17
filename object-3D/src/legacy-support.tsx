@@ -60,40 +60,43 @@ const LegacySupportObject3 = (props: OldProps) => {
 };
 
 const convertToLegacySchema = (props: VevManifest['props']): VevProps[] => {
-  return props.map((prop) => {
-    if (prop.name === 'modelUrl') {
-      return {
-        ...prop,
-        name: 'modelURL',
-      };
-    }
+  // The legacy hotspot field below has its own camera button, and stores the camera itself
+  return props
+    .filter((prop) => prop.name !== 'initialCamera')
+    .map((prop) => {
+      if (prop.name === 'modelUrl') {
+        return {
+          ...prop,
+          name: 'modelURL',
+        };
+      }
 
-    if (prop.name === 'poster') {
-      return {
-        ...prop,
-        name: 'posterURL',
-      };
-    }
+      if (prop.name === 'poster') {
+        return {
+          ...prop,
+          name: 'posterURL',
+        };
+      }
 
-    if (prop.name === 'hotspots_camera') {
-      return {
-        ...prop,
-        name: 'hotspots',
-        component: ({ context, value, ...rest }) => {
-          const props = {
-            ...rest,
-            value: mapHotspots(value),
-            context: {
-              ...context,
-              value: mapOldProps(context.value),
-            },
-          };
-          return <HotspotComponent {...props} />;
-        },
-      };
-    }
-    return prop;
-  });
+      if (prop.name === 'hotspots_camera') {
+        return {
+          ...prop,
+          name: 'hotspots',
+          component: ({ context, value, ...rest }) => {
+            const props = {
+              ...rest,
+              value: mapHotspots(value),
+              context: {
+                ...context,
+                value: mapOldProps(context.value),
+              },
+            };
+            return <HotspotComponent {...props} />;
+          },
+        };
+      }
+      return prop;
+    });
 };
 
 registerVevComponent(LegacySupportObject3, {

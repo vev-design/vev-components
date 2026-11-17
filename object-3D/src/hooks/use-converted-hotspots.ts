@@ -13,6 +13,8 @@ export function useConvertedHotspots(storageHotspots: StorageHotspot[] = []) {
           storageHotspot.position.z,
         ),
         anchor: storageHotspot.anchor,
+        // The modal saves these hotspots back. Without this, an edit would drop the components.
+        component: storageHotspot.component,
       };
     });
 

@@ -1,9 +1,9 @@
-import { MutableRefObject, useContext, useEffect, useRef } from 'react';
+import { MutableRefObject, useContext, useEffect, useRef, useState } from 'react';
 import { Camera, Group, Object3D, Raycaster, Vector3 } from 'three';
 // @ts-expect-error - no types
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { Group as TweenGroup } from '@tweenjs/tween.js';
-import { Object3dContext } from '../context/object-3d-context';
+import { CustomHotspot, Object3dContext } from '../context/object-3d-context';
 import styles from '../object-3d.module.css';
 import { HotspotAnchor, InternalHotspot } from '../types';
 import { animateCamera } from '../util/animate-camera';
@@ -11,12 +11,18 @@ import { resolveNodePath } from '../util/hotspot-anchor';
 import { OCCLUSION_LAYER } from '../util/bounds-tree';
 
 export interface CanvasHotspot {
-  element: HTMLButtonElement;
+  element: HTMLElement;
   sceneObject: CSS2DObject;
   hotspot: InternalHotspot;
   dimmed: boolean;
   /** Surface normal, local to `sceneObject.parent` */
   normal?: Vector3;
+}
+
+/** A hotspot element and the main component the viewer renders into it */
+export interface HotspotPortal {
+  element: HTMLElement;
+  component: CustomHotspot;
 }
 
 // With "Turn and zoom in", the camera stops at this multiple of the hotspot's distance from the center
@@ -37,8 +43,24 @@ export function useHotspots(
     hotspotClicked,
     eventCallbacks,
     hotspotFocus = 'turn',
+    customHotspot,
+    customHotspotNumber = 'none',
+    hotspotStyle = 'default',
   } = useContext(Object3dContext);
   const hotspotMap = useRef<CanvasHotspot[]>([]);
+  // The viewer renders the custom hotspot main component into these elements with portals
+  const [portalTargets, setPortalTargets] = useState<HotspotPortal[]>([]);
+  // The main component of each hotspot, or undefined for the numbered button. The editor modals
+  // render outside the page, where main components cannot render.
+  const components = hotspots.map((hotspot): CustomHotspot | undefined => {
+    if (editMode) return undefined;
+    if (hotspotStyle !== 'each') return customHotspot;
+    return hotspot.component?.mainComponent ? hotspot.component : undefined;
+  });
+  // The objects change identity on each render. Recreate the hotspots only when a value changes.
+  const componentsKey = components
+    .map((component) => (component ? `${component.mainComponent}/${component.variant ?? ''}` : ''))
+    .join('|');
 
   // The DOM listeners live longer than one render. They read the current values from here.
   const latest = useRef({ camera, controls, tweens, hotspotFocus, hotspotClicked });
@@ -95,12 +117,29 @@ export function useHotspots(
   useEffect(() => {
     if (!pivot) return;
 
-    const created = hotspots.map((storageHotspot) => {
+    const created = hotspots.map((storageHotspot, index) => {
+      const custom = !!components[index];
       const outer = document.createElement('div');
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = `${storageHotspot.index}`;
-      button.className = `${styles.hotspot} vev-object-3d-hotspot`;
+      // A main component can contain links and buttons, which must not be inside a <button>
+      const button = document.createElement(custom ? 'div' : 'button');
+      if (custom) {
+        button.setAttribute('role', 'button');
+        button.className = `${styles.customHotspot} vev-object-3d-hotspot`;
+        if (customHotspotNumber !== 'none') {
+          // The portal adds the main component after this element. React leaves it alone.
+          const number = document.createElement('span');
+          number.textContent = `${storageHotspot.index}`;
+          number.setAttribute('aria-hidden', 'true');
+          const position =
+            customHotspotNumber === 'corner' ? styles.numberCorner : styles.numberCenter;
+          number.className = `${styles.hotspotNumber} ${position}`;
+          button.appendChild(number);
+        }
+      } else {
+        (button as HTMLButtonElement).type = 'button';
+        button.textContent = `${storageHotspot.index}`;
+        button.className = `${styles.hotspot} vev-object-3d-hotspot`;
+      }
       button.setAttribute('aria-label', `Hotspot ${storageHotspot.index}`);
       outer.appendChild(button);
 
@@ -131,23 +170,38 @@ export function useHotspots(
         // Keep OrbitControls from capturing the pointer, which would move the click off the button
         button.addEventListener('pointerdown', (event) => event.stopPropagation());
         button.addEventListener('click', () => selectHotspot(canvasHotspot));
+        if (custom) {
+          button.tabIndex = 0;
+          button.addEventListener('keydown', (event: KeyboardEvent) => {
+            if (event.target !== button || (event.key !== 'Enter' && event.key !== ' ')) return;
+            event.preventDefault();
+            selectHotspot(canvasHotspot);
+          });
+        }
       }
 
       return canvasHotspot;
     });
 
     hotspotMap.current = created;
+    setPortalTargets(
+      created.flatMap((canvasHotspot, index) => {
+        const component = components[index];
+        return component ? [{ element: canvasHotspot.element, component }] : [];
+      }),
+    );
     invalidate();
 
     return () => {
       // CSS2DObject removes its element from the DOM when it leaves the scene
       created.forEach((canvasHotspot) => canvasHotspot.sceneObject.removeFromParent());
       hotspotMap.current = [];
+      setPortalTargets([]);
       invalidate();
     };
-  }, [hotspots, pivot, model, editMode]);
+  }, [hotspots, pivot, model, editMode, componentsKey, customHotspotNumber]);
 
-  return hotspotMap;
+  return { hotspotMap, portalTargets };
 }
 
 const forward = new Vector3();
