@@ -19,7 +19,7 @@ Labels are stored as **normalised coordinates in image space** — `{ pos: { x, 
 - `cover` — cropped, so the rendered box is *larger* than the container and offsets go negative.
 - everything else (`fill`, `none`, `scale-down`) is treated as fill.
 
-Final position is `offset + normalised * renderedSize - labelWidth / 2`. **If you touch this math, test all three `object-fit` values against both a portrait and a landscape image** — the `imageAspect > containerAspect` branches invert between `contain` and `cover`.
+Final position is `offset + normalised * renderedSize - labelSize / 2`, with the box width on x and its height on y (a custom hotspot need not be square). **If you touch this math, test all three `object-fit` values against both a portrait and a landscape image** — the `imageAspect > containerAspect` branches invert between `contain` and `cover`.
 
 ## Two render branches
 
@@ -27,7 +27,7 @@ Final position is `offset + normalised * renderedSize - labelWidth / 2`. **If yo
 
 ## Gotchas
 
-- **Hotspot width is measured from the first label only.** `ref={index === 0 ? labelRef : null}` — that single measurement becomes `labelWidth` and is used to centre *every* hotspot. With a fixed-size `PlusIcon` this is fine; with a `customHotspot` whose size varies per instance, all but the first are mis-centred.
+- **Hotspot size is measured from the first label only.** `ref={index === 0 ? setLabelEl : null}` — a `ResizeObserver` on that box gives `labelSize`, which is used to centre *every* hotspot. With a fixed-size `PlusIcon` this is fine; with a `customHotspot` whose size varies per instance, all but the first are mis-centred.
 - **Event payloads are 1-based, storage is 0-based.** Both `LABEL_CLICKED` and `LABEL_HOVER` dispatch `label.index + 1`.
 - **`clearProps: ['labels']` on the image prop** (`labeled-image.tsx:54`) — replacing the image deliberately wipes all labels, because the coordinates would no longer mean anything. Do not remove this thinking it is a bug.
 - **Label numbers only appear under three simultaneous conditions**: `selected && interactionsOpen && disabled` (`labeled-image.tsx:23`). `interactionsOpen` is read from `useGlobalStore(state => state.rightPanelTab === 'addons')` — an editor internal that will break silently if the platform renames the tab.
