@@ -14,12 +14,12 @@
     "@types/react": "18.2.64",
     "jsdom": "^26.1.0",
     "typescript-plugin-css-modules": "^3.4.0",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.0"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "@vev/react": "^0.3.5",
-    "@vev/silke": "^1.1.10"
+    "@vev/silke": "^1.1.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
