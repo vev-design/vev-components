@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Label } from './types';
 import { PlusIcon } from './plus-icon';
 import styles from './label-overlay.module.css';
@@ -16,7 +16,8 @@ interface Props {
 }
 
 export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }: Props) {
-  const labelRef = useRef<HTMLDivElement>(null);
+  // The first hotspot box: every hotspot is centred on its label point with its size
+  const [labelEl, setLabelEl] = useState<HTMLDivElement | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number>(-1);
   const [rendered, setRendered] = useState<{
     width: number;
@@ -24,7 +25,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
     offsetX: number;
     offsetY: number;
   } | null>(null);
-  const [labelWidth, setLabelWidth] = useState(25);
+  const [labelSize, setLabelSize] = useState({ width: 25, height: 25 });
 
   const dispatchVevEvent = useDispatchVevEvent();
 
@@ -34,11 +35,6 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
 
     const updateRect = () => {
       if (!imageRef?.current) return;
-
-      // Find hotspot width
-      if (labelRef.current) {
-        setLabelWidth(labelRef.current.getBoundingClientRect().width);
-      }
 
       const el = imageRef.current;
       const objectFit = getComputedStyle(el).objectFit ?? 'fill';
@@ -102,6 +98,20 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
     };
   }, [imageRef]);
 
+  // A custom hotspot need not be square, and its size changes when its component renders or is
+  // swapped, so measure the box itself rather than once with the image
+  useEffect(() => {
+    if (!labelEl) return;
+
+    const observer = new ResizeObserver(() => {
+      const { width, height } = labelEl.getBoundingClientRect();
+      setLabelSize({ width, height });
+    });
+    observer.observe(labelEl);
+
+    return () => observer.disconnect();
+  }, [labelEl]);
+
   if (customHotspot) {
     let customHotspotElem = (
       <WidgetNode id={customHotspot.mainComponent} externalVariant={customHotspot.variant} />
@@ -114,7 +124,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
           labels.map((label, index) => {
             return (
               <div
-                ref={index === 0 ? labelRef : null}
+                ref={index === 0 ? setLabelEl : null}
                 className={styles.mainComponentLabel}
                 onMouseEnter={() => {
                   setHoverIndex(label.index);
@@ -133,8 +143,8 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
                 }}
                 style={{
                   transform: `translate(${
-                    rendered.offsetX + label.pos.x * rendered.width - labelWidth / 2
-                  }px, ${rendered.offsetY + label.pos.y * rendered.height - labelWidth / 2}px)`,
+                    rendered.offsetX + label.pos.x * rendered.width - labelSize.width / 2
+                  }px, ${rendered.offsetY + label.pos.y * rendered.height - labelSize.height / 2}px)`,
                 }}
               >
                 {customHotspotElem}
@@ -155,7 +165,7 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
         labels.map((label, index) => {
           return (
             <div
-              ref={index === 0 ? labelRef : null}
+              ref={index === 0 ? setLabelEl : null}
               className={styles.label}
               onMouseEnter={() => {
                 setHoverIndex(label.index);
@@ -174,8 +184,8 @@ export function LabelOverlay({ labels, imageRef, showLabelIndex, customHotspot }
               }}
               style={{
                 transform: `translate(${
-                  rendered.offsetX + label.pos.x * rendered.width - labelWidth / 2
-                }px, ${rendered.offsetY + label.pos.y * rendered.height - labelWidth / 2}px)`,
+                  rendered.offsetX + label.pos.x * rendered.width - labelSize.width / 2
+                }px, ${rendered.offsetY + label.pos.y * rendered.height - labelSize.height / 2}px)`,
               }}
             >
               {showLabelIndex ? <p>{label.index + 1}</p> : <PlusIcon />}
