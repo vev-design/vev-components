@@ -4,6 +4,7 @@
   "files": ["./.vev/secret-declarations.d.ts"],
   "compilerOptions": {
     "target": "es2020",
+    "module": "es2020",
     "lib": ["dom", "es2020"],
     "jsx": "react",
     "esModuleInterop": true,
