@@ -60,10 +60,13 @@ const containsCurrentPage = (item: MenuItem, pageKey?: string): boolean =>
 // array; given the whole object it falls through to an image branch and crashes.
 const iconSource = (value: any) => (value && Array.isArray(value.path) ? value.path : value);
 
+// Three elements, not an SVG, so the style panel can set the color, size and spacing of the lines.
 const BurgerIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
+  <span className={styles.burger} aria-hidden="true">
+    <span className={styles.line} />
+    <span className={styles.line} />
+    <span className={styles.line} />
+  </span>
 );
 
 const CloseIcon = () => (
@@ -381,6 +384,16 @@ registerVevComponent(BurgerMenu, {
       title: 'Menu button',
       selector: styles.toggle,
       properties: ['color', 'background', 'padding', 'border', 'border-radius'],
+    },
+    {
+      title: 'Burger icon',
+      selector: styles.burger,
+      properties: ['width', 'gap'],
+    },
+    {
+      title: 'Burger lines',
+      selector: styles.line,
+      properties: ['background', 'height', 'border-radius'],
     },
     {
       title: 'Drawer',
