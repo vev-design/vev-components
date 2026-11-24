@@ -16,6 +16,7 @@ import Carousel from './Carousel3d';
 import None from './None';
 
 import { useTouch } from './use-touch';
+import { useEagerImages } from './use-eager-images';
 
 import styles from './Slider.module.css';
 
@@ -60,6 +61,9 @@ export const Slideshow = (props: Props) => {
   const [slides, setSlides] = useState(children || []);
   const prevIndex = useRef(state?.index || 0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEagerImages(wrapperRef, !editor.disabled && !!children?.length);
 
   /**
    * transitionInProgress
@@ -180,7 +184,12 @@ export const Slideshow = (props: Props) => {
   const Comp = render[animation] || Slide;
 
   return (
-    <div className={styles.wrapper} data-slider-model={hostRef?.current?.id || 'no-model'} data-slider-repeat={props?.children?.[0]}>
+    <div
+      ref={wrapperRef}
+      className={styles.wrapper}
+      data-slider-model={hostRef?.current?.id || 'no-model'}
+      data-slider-repeat={props?.children?.[0]}
+    >
       {(slides[state?.index] || slides[0]) && (
         <Comp
           {...props}
