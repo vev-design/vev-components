@@ -21,8 +21,12 @@ jobs:
           folders_line=$(echo "$folders" | tr '\n' ' ')
           echo "changed_folders=$folders_line" >> $GITHUB_OUTPUT
 
+      # Pin the CLI: an unpinned `npm i -g @vev/cli` picked up 2.1.0+ on 2026-09-17,
+      # and every subsequent main deploy that reached `vev deploy` crashed in
+      # cleanVevDir (`ENOENT: scandir './.vev'`). mkdir below covers that bug;
+      # the pin stops the next untested CLI major from landing unreviewed.
       - name: Install CLI
-        run: npm i -g @vev/cli
+        run: npm i -g @vev/cli@2.2.1
 
       - name: Deploy widgets
         env:
@@ -32,7 +36,10 @@ jobs:
             echo "Checking $folder"
             if [ -f "$folder/vev.json" ]; then
               echo "Deploying $folder"
-              (cd "$folder" && npm install --omit=dev && vev deploy --token "$VEV_TOKEN" -m "${{ github.sha }}")
+              # @vev/cli deploy calls cleanVevDir() which readdir('./.vev') without
+              # creating the dir. .vev is gitignored, so a fresh CI checkout crashes
+              # unless we create it first (CLI 2.0.4–2.2.1 all have this bug).
+              (cd "$folder" && npm install --omit=dev && mkdir -p .vev && vev deploy --token "$VEV_TOKEN" -m "${{ github.sha }}")
             else
               echo "Skipping $folder (no vev.json)"
             fi
