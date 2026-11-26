@@ -53,6 +53,12 @@ Two details that look like bugs but are not:
 - `random` shuffling is skipped in the editor (`:103-110`), so the author sees a stable order.
 - The active slide follows `editor.activeContentChild` (`:80-93`), which syncs canvas selection to the visible slide.
 
+## Images load eagerly
+
+Vev image widgets render `<img loading="lazy">`. In the `slide` renderer the off-screen window slides sit outside the viewport, so the browser deferred their download until they moved into view mid-transition, and the incoming slide showed blank for ~0.7 s.
+
+`use-eager-images.ts` fixes this: when the slider is within one viewport of the screen, it flips every `img[loading="lazy"]` inside it to `eager`, and a MutationObserver repeats this for slides mounted later. It is skipped in the editor. If slides start loading late again, check that the hook still runs before you look at image size.
+
 ## Known gaps
 
 - **Swipe is horizontal-only.** `use-touch.ts` reads only `e.touches[0].clientX` and compares against a 50px threshold. The `VERTICAL` and `VERTICAL_REVERSE` directions exist but have no touch support.
