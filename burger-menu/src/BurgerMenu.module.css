@@ -21,6 +21,21 @@
   fill: currentColor;
 }
 
+/* Default menu icon. Used when no menu icon is selected. */
+.burger {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 75%;
+}
+
+.line {
+  display: block;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
 .toggle:focus-visible,
 .close:focus-visible,
 .expand:focus-visible,
