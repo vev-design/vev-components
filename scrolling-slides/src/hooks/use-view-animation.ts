@@ -101,6 +101,9 @@ export function useViewAnimation(
     // Calculate percentages
     const percentStart = offsetStart * 100;
     const percentEnd = offsetEnd * 100;
+    // Use CSS range strings rather than CSS.percent(): Firefox 159+ ships native
+    // scroll timelines (so the polyfill and its Typed OM shim no longer load) but
+    // still keeps CSS Typed OM behind a flag, so CSS.percent is not a function there.
     // Type assertion needed because rangeStart/rangeEnd are not yet in KeyframeAnimationOptions types
     const animationOptions = {
       fill: 'both' as const,
@@ -108,14 +111,8 @@ export function useViewAnimation(
       easing: 'linear',
       ...options,
       duration: 'auto' as const,
-      rangeStart: {
-        rangeName,
-        offset: CSS.percent(percentStart),
-      },
-      rangeEnd: {
-        rangeName,
-        offset: CSS.percent(percentEnd),
-      },
+      rangeStart: `${rangeName} ${percentStart}%`,
+      rangeEnd: `${rangeName} ${percentEnd}%`,
     } as any;
 
     try {

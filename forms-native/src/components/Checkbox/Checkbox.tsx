@@ -1,18 +1,33 @@
 import React, { useEffect, useRef } from 'react';
+import cx from 'classnames';
 import { FieldProps, Event, Interaction } from '../../types';
-import { registerVevComponent, useDispatchVevEvent, useVevEvent } from '@vev/react';
+import {
+  registerVevComponent,
+  useDispatchVevEvent,
+  useVevEvent,
+  useEditorState,
+  WidgetNode,
+} from '@vev/react';
 import formIcon from '../../assets/form-icon.svg';
 import styles from './Checkbox.module.css';
 
 type Props = FieldProps & {
   name: string;
   initialValue?: boolean;
+  /** Content-children keys — an optional custom checkmark designed on the canvas */
+  children?: string[];
 };
 
 function Checkbox(props: Props) {
-  const { name, value } = props;
+  const { name, value, children } = props;
   const ref = useRef<HTMLInputElement>();
   const dispatch = useDispatchVevEvent();
+  const editor = useEditorState();
+
+  const customMark = children?.[0];
+  // While the author is editing the mark child, show it regardless of checked
+  // state — otherwise an unchecked box would hide what they're designing.
+  const editingMark = !!customMark && editor?.activeContentChild === customMark;
 
   useVevEvent(Interaction.setValue, (event: { value: boolean }) => {
     if (ref.current) {
@@ -31,8 +46,8 @@ function Checkbox(props: Props) {
       <input
         ref={ref}
         name={name}
-        id={name}
         type="checkbox"
+        className={cx({ [styles.customMark]: !!customMark })}
         onChange={(e) => {
           const { checked } = e.target;
           dispatch(Event.onChange, {
@@ -41,14 +56,24 @@ function Checkbox(props: Props) {
           });
         }}
       />
+      {customMark && (
+        <div className={cx(styles.mark, { [styles.markVisible]: editingMark })} aria-hidden>
+          <WidgetNode id={customMark} />
+        </div>
+      )}
     </div>
   );
 }
 
 registerVevComponent(Checkbox, {
-  name: 'Checkbox (native)',
+  name: 'Checkbox',
   categories: ['Form'],
   icon: formIcon,
+  children: {
+    name: 'Checkmark',
+    icon: formIcon,
+    maxChildren: 1,
+  },
   props: [
     {
       name: 'name',
@@ -70,24 +95,22 @@ registerVevComponent(Checkbox, {
   ],
   editableCSS: [
     {
-      selector: styles.checkbox,
-      title: 'Background',
-      properties: ['background', 'border', 'border-radius'],
+      selector: styles.checkbox + ' input',
+      title: 'Box',
+      properties: ['background', 'border', 'border-radius', 'box-shadow'],
     },
     {
+      // `color` paints the checkmark (currentColor on the ::after)
       selector: styles.checkbox + ' input:checked',
       title: 'Checked',
-      properties: ['background'],
+      properties: ['background', 'border', 'color'],
     },
     {
-      selector: styles.checkbox + ':invalid',
+      // :invalid/:valid only match the input — the old selectors targeted the
+      // wrapper div and never applied
+      selector: styles.checkbox + ' input:invalid',
       title: 'Invalid',
-      properties: ['color', 'background', 'border'],
-    },
-    {
-      selector: styles.checkbox + ':valid',
-      title: 'Valid',
-      properties: ['color', 'background', 'border'],
+      properties: ['background', 'border'],
     },
   ],
   size: {

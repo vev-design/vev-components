@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { sortBy } from 'lodash';
 import { SilkeButton, SilkeText, SilkeBox } from '@vev/silke';
 import styles from '../object-3d.module.css';
 import { InternalHotspot } from '../types';
@@ -13,7 +12,7 @@ export function HotspotList({ hotspots, deleteHotspot }: Props) {
   const [sortedHotspots, setSortedHotspots] = useState(hotspots);
 
   useEffect(() => {
-    setSortedHotspots(sortBy(hotspots, 'index'));
+    setSortedHotspots([...hotspots].sort((a, b) => a.index - b.index));
   }, [hotspots]);
 
   return (

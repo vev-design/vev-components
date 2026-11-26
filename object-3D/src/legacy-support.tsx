@@ -1,7 +1,7 @@
 import React from 'react';
 import { registerVevComponent } from '@vev/react';
 import Object3D, { Props, config, HotspotComponent } from './object-3d';
-import { VevManifest, VevProps } from '@vev/utils';
+import type { VevManifest, VevProps } from '@vev/utils';
 
 type OldProps = {
   hostRef: React.RefObject<HTMLDivElement>;
@@ -60,40 +60,43 @@ const LegacySupportObject3 = (props: OldProps) => {
 };
 
 const convertToLegacySchema = (props: VevManifest['props']): VevProps[] => {
-  return props.map((prop) => {
-    if (prop.name === 'modelUrl') {
-      return {
-        ...prop,
-        name: 'modelURL',
-      };
-    }
+  // The legacy hotspot field below has its own camera button, and stores the camera itself
+  return props
+    .filter((prop) => prop.name !== 'initialCamera')
+    .map((prop) => {
+      if (prop.name === 'modelUrl') {
+        return {
+          ...prop,
+          name: 'modelURL',
+        };
+      }
 
-    if (prop.name === 'posterUrl') {
-      return {
-        ...prop,
-        name: 'posterURL',
-      };
-    }
+      if (prop.name === 'poster') {
+        return {
+          ...prop,
+          name: 'posterURL',
+        };
+      }
 
-    if (prop.name === 'hotspots_camera') {
-      return {
-        ...prop,
-        name: 'hotspots',
-        component: ({ context, value, ...rest }) => {
-          const props = {
-            ...rest,
-            value: mapHotspots(value),
-            context: {
-              ...context,
-              value: mapOldProps(context.value),
-            },
-          };
-          return <HotspotComponent {...props} />;
-        },
-      };
-    }
-    return prop;
-  });
+      if (prop.name === 'hotspots_camera') {
+        return {
+          ...prop,
+          name: 'hotspots',
+          component: ({ context, value, ...rest }) => {
+            const props = {
+              ...rest,
+              value: mapHotspots(value),
+              context: {
+                ...context,
+                value: mapOldProps(context.value),
+              },
+            };
+            return <HotspotComponent {...props} />;
+          },
+        };
+      }
+      return prop;
+    });
 };
 
 registerVevComponent(LegacySupportObject3, {

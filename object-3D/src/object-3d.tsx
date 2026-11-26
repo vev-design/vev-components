@@ -7,22 +7,32 @@ import {
   useSize,
   useVevEvent,
 } from '@vev/react';
-import { Object3DContextProps, Object3DContextProvider } from './context/object-3d-context';
+import {
+  CustomHotspot,
+  HotspotFocus,
+  HotspotNumberPosition,
+  HotspotStyle,
+  Object3DContextProps,
+  Object3DContextProvider,
+} from './context/object-3d-context';
 import { Object3dViewer } from './components/object-3d-viewer';
 import { getAnimations } from './util/get-animations';
 import { HotspotEditorForm } from './components/hotspot-editor-form';
+import { HotspotComponentList } from './components/hotspot-component-list';
 import { Vector3 } from 'three';
 import { CameraEditor } from './components/camera-editor';
 import { InternalHotspot, SavedCameraPosition, StorageHotspot } from './types';
 import { EventTypes, InteractionTypes } from './event-types';
+import { STANDARD_ENVIRONMENT } from './hooks/use-environment';
 import { SilkeBox } from '@vev/silke';
-import { VevManifest } from '@vev/utils';
+import type { VevManifest } from '@vev/utils';
 
 export const defaultModel = {
   url: 'https://devcdn.vev.design/private/IZ8anjrpLbNsil9YD4NOn6pLTsc2/ZtaWckY6KR_Astronaut.glb.glb',
 };
 
 export const LIGHTING = {
+  standard: STANDARD_ENVIRONMENT,
   hdri1:
     'https://cdn.vev.design/private/Tr1z5E7fRfebmaI3Le2T8vQsHud2/c_W6ves3U_abandoned_factory_canteen_01_1k.hdr.hdr',
   hdri2:
@@ -35,12 +45,16 @@ export const LIGHTING = {
 
 export const NO_ANIMATION = 'No animation';
 
+// The editor modals render outside the widget, so they must add the CSS scope class themselves.
+// The Vev CLI scopes all CSS under `.pkg-<key>`; older CLI versions used `<key>_<Component>`.
+export const MODAL_SCOPE_CLASS = 'trQ35DZLjAWC0nWJxVvB_Object3d pkg-trQ35DZLjAWC0nWJxVvB';
+
 export const FOV = 45;
 export const ASPECT = 2; // the canvas default
 export const NEAR = 0.1;
 export const FAR = 100;
 
-type LightingOptions = 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5';
+type LightingOptions = 'standard' | 'hdri1' | 'hdri2' | 'hdri3' | 'hdri4' | 'hdri5' | 'custom';
 
 function noop() {
   return;
@@ -49,11 +63,33 @@ function noop() {
 export type Props = {
   hostRef: React.RefObject<HTMLDivElement>;
   modelUrl: { url: string };
-  settings: { lighting: LightingOptions; controls: boolean; zoom: boolean };
+  settings: {
+    lighting: LightingOptions;
+    customHdri?: { url: string };
+    exposure?: number;
+    background?: boolean;
+    backgroundBlur?: number;
+    shadow?: boolean;
+    shadowOpacity?: number;
+    controls: boolean;
+    dragDirection?: 'free' | 'horizontal';
+    zoom: boolean;
+    hotspotFocus?: HotspotFocus;
+    hotspotZoom?: boolean;
+  };
   poster: { url: string };
+  /**
+   * The saved camera. Older elements store it in `hotspots_camera.initialCamera`. An empty object
+   * means "reset": it hides the older value.
+   */
+  initialCamera?: SavedCameraPosition | Record<string, never>;
+  /** The "Hotspots" group. The name is kept from when it held only the hotspots and the camera. */
   hotspots_camera?: {
     hotspots: StorageHotspot[];
     initialCamera?: SavedCameraPosition;
+    hotspotStyle?: HotspotStyle;
+    customHotspot?: CustomHotspot;
+    customHotspotNumber?: HotspotNumberPosition;
   };
   animationSettings: {
     animation?: string;
@@ -64,6 +100,9 @@ export type Props = {
     scrollTarget?: 'page' | 'section' | 'element';
     scrollStart?: number;
     scrollEnd?: number;
+    scrollRotate?: boolean;
+    scrollRotateAmount?: number;
+    tilt?: boolean;
   };
 };
 
@@ -73,13 +112,20 @@ const Object3d = ({
   poster,
   settings,
   animationSettings,
+  initialCamera: savedCamera,
   hotspots_camera,
 }: Props) => {
   const { width, height } = useSize(hostRef);
 
   // Initial values
-  const initialCamera = hotspots_camera?.initialCamera;
+  const initialCamera = resolveInitialCamera(savedCamera, hotspots_camera?.initialCamera);
+  const hotspotStyle = hotspots_camera?.hotspotStyle ?? 'default';
+  const customHotspot = hotspots_camera?.customHotspot;
   const lighting = settings?.lighting || 'hdri1';
+  const hdri =
+    lighting === 'custom'
+      ? settings?.customHdri?.url || LIGHTING.hdri1
+      : LIGHTING[lighting] || LIGHTING.hdri1;
   const controls = settings?.controls || false;
   const zoom = settings?.zoom || false;
   const hotspots = hotspots_camera?.hotspots;
@@ -90,6 +136,9 @@ const Object3d = ({
   const scrollTarget = animationSettings?.scrollTarget || 'element';
   const scrollStart = animationSettings?.scrollStart ?? 0;
   const scrollEnd = animationSettings?.scrollEnd ?? 100;
+  const scrollRotate = animationSettings?.scrollRotate || false;
+  const scrollRotateAmount = animationSettings?.scrollRotateAmount ?? 360;
+  const tilt = animationSettings?.tilt || false;
   const rotationSpeed =
     animationSettings?.rotationSpeed !== undefined ? animationSettings?.rotationSpeed : 2;
   const actualRotationSpeed = reverseSpeed ? rotationSpeed * -1 : rotationSpeed;
@@ -100,13 +149,22 @@ const Object3d = ({
     start_rotation: (speed: number) => void;
     stop_rotation: () => void;
     reset_camera: () => void;
-    play_animation: (animation: string, loop: boolean, repetitions: number) => void;
+    play_animation: (
+      animation: string,
+      loop: boolean,
+      repetitions: number,
+      returnToOriginal: boolean,
+    ) => void;
+    pause_animation: () => void;
+    resume_animation: () => void;
   }>({
     click_hotspot: noop,
     start_rotation: noop,
     stop_rotation: noop,
     reset_camera: noop,
     play_animation: noop,
+    pause_animation: noop,
+    resume_animation: noop,
   });
 
   const [initialCameraPosition, setInitialCameraPosition] =
@@ -130,6 +188,8 @@ const Object3d = ({
               storageHotspot.position.y,
               storageHotspot.position.z,
             ),
+            anchor: storageHotspot.anchor,
+            component: storageHotspot.component,
           };
         }),
       );
@@ -153,11 +213,24 @@ const Object3d = ({
   });
 
   useVevEvent(InteractionTypes.PLAY_ANIMATION, (args: any) => {
-    eventCallbacks.current.play_animation(args.animation, args.loop, args.repetitions);
+    eventCallbacks.current.play_animation(
+      args.animation,
+      args.loop,
+      args.repetitions,
+      args.returnToOriginal,
+    );
+  });
+
+  useVevEvent(InteractionTypes.PAUSE_ANIMATION, () => {
+    eventCallbacks.current.pause_animation();
+  });
+
+  useVevEvent(InteractionTypes.RESUME_ANIMATION, () => {
+    eventCallbacks.current.resume_animation();
   });
 
   return (
-    <div className={styles.wrapper}>
+    <div>
       <Object3DContextProvider
         values={{
           editMode: false,
@@ -168,16 +241,31 @@ const Object3d = ({
           fov: FOV,
           aspect: ASPECT,
           near: NEAR,
-          hdri: LIGHTING[lighting],
+          hdri,
+          exposure: (settings?.exposure ?? 100) / 100,
+          showBackground: settings?.background || false,
+          backgroundBlur: (settings?.backgroundBlur ?? 0) / 100,
+          groundShadow: settings?.shadow || false,
+          shadowOpacity: (settings?.shadowOpacity ?? 50) / 100,
+          // `hotspotZoom` was a boolean in test builds before `hotspotFocus` replaced it
+          hotspotFocus: settings?.hotspotFocus ?? (settings?.hotspotZoom ? 'zoom' : 'turn'),
           rotate,
           rotationSpeed: actualRotationSpeed,
           zoom,
           controls,
+          horizontalOnly: settings?.dragDirection === 'horizontal',
+          hotspotStyle,
+          customHotspot:
+            hotspotStyle === 'one' && customHotspot?.mainComponent ? customHotspot : undefined,
+          customHotspotNumber: hotspots_camera?.customHotspotNumber ?? 'none',
           animation,
           scrollAnimation,
           scrollTarget,
           scrollStart,
           scrollEnd,
+          scrollRotate,
+          scrollRotateAmount,
+          tilt,
           hostRef,
           hotspots: internalHotspots,
           disabled,
@@ -200,10 +288,24 @@ const Object3d = ({
             play_animation: (cb) => {
               eventCallbacks.current.play_animation = cb;
             },
+            pause_animation: (cb) => {
+              eventCallbacks.current.pause_animation = cb;
+            },
+            resume_animation: (cb) => {
+              eventCallbacks.current.resume_animation = cb;
+            },
           },
           hotspotClicked: (index: number) => {
             dispatchVevEvent(EventTypes.HOTSPOT_CLICKED, {
               [EventTypes.HOTSPOT_CLICKED]: index,
+            });
+          },
+          onModelLoaded: () => {
+            dispatchVevEvent(EventTypes.MODEL_LOADED);
+          },
+          onAnimationFinished: (name: string) => {
+            dispatchVevEvent(EventTypes.ANIMATION_FINISHED, {
+              [EventTypes.ANIMATION_FINISHED]: name,
             });
           },
         }}
@@ -214,6 +316,47 @@ const Object3d = ({
   );
 };
 
+/** The camera from the `initialCamera` prop, else from older elements' `hotspots_camera` */
+function resolveInitialCamera(
+  saved: Props['initialCamera'],
+  legacy: SavedCameraPosition | undefined,
+): SavedCameraPosition | undefined {
+  if (saved === undefined || saved === null) return legacy;
+  return 'position' in saved ? (saved as SavedCameraPosition) : undefined;
+}
+
+/** "Edit initial camera". Writes the `initialCamera` prop. */
+const InitialCameraField = (field) => {
+  const group = field.context?.value?.hotspots_camera;
+  return (
+    <SilkeBox flex style={{ padding: '18px 0 10px' }}>
+      <CameraEditor
+        context={{ ...field, value: { hotspots: group?.hotspots } }}
+        onChange={(camera) => field.onChange(camera ?? {})}
+      />
+    </SilkeBox>
+  );
+};
+
+/** "Edit hotspots", in the Hotspots group. Its value is the hotspot list. */
+const EditHotspotsField = (field) => (
+  <SilkeBox flex>
+    <HotspotEditorForm
+      context={{ ...field, value: { hotspots: field.value || [] } }}
+      onChange={(hotspots) => field.onChange(hotspots)}
+    />
+  </SilkeBox>
+);
+
+/** One component picker per hotspot. Also writes the hotspot list. */
+const HotspotComponentsField = (field) => (
+  <HotspotComponentList
+    hotspots={field.value || []}
+    onChange={(hotspots) => field.onChange(hotspots)}
+  />
+);
+
+/** The legacy widget's combined hotspot and camera field. It has no "Hotspots" group. */
 export const HotspotComponent = (context) => {
   const initialCamera = context.value?.initialCamera;
   const hotspots = context.value?.hotspots || [];
@@ -244,6 +387,14 @@ export const HotspotComponent = (context) => {
   );
 };
 
+const hasAnimation = (context) =>
+  !!context?.value?.animationSettings?.animation &&
+  context.value.animationSettings.animation !== NO_ANIMATION;
+
+const usesScroll = (context) =>
+  (context?.value?.animationSettings?.scrollAnimation === true && hasAnimation(context)) ||
+  context?.value?.animationSettings?.scrollRotate === true;
+
 export const config: VevManifest = {
   name: 'Object3D',
   props: [
@@ -262,19 +413,82 @@ export const config: VevManifest = {
       accept: 'image/*',
     },
     {
-      name: 'hotspots_camera',
+      name: 'initialCamera',
       type: 'object',
+      fields: [],
+      component: InitialCameraField,
+    },
+    {
+      name: 'hotspots_camera',
+      title: 'Hotspots',
+      type: 'object',
+      // The `hidden` functions below get the whole form value. Without hotspots, only the
+      // "Edit hotspots" button shows.
       fields: [
         {
           name: 'hotspots',
           type: 'string',
+          component: EditHotspotsField,
         },
         {
-          name: 'initialCamera',
+          name: 'hotspotStyle',
+          title: 'Hotspot style',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'Numbered circles', value: 'default' },
+              { label: 'One component for all', value: 'one' },
+              { label: 'One component per hotspot', value: 'each' },
+            ],
+            display: 'dropdown',
+            // Elements placed before this option existed have no value. They show numbered circles.
+            // The installed @vev/utils types lack `placeholder`.
+            placeholder: 'Numbered circles',
+          } as any,
+          initialValue: 'default',
+          hidden: (context) => !context?.value?.hotspots_camera?.hotspots?.length,
+        },
+        {
+          name: 'customHotspot',
+          title: 'Hotspot component',
+          description: 'Main component to show at every hotspot',
+          // Missing from the installed @vev/utils types. LabeledImage and Slider indicators use it.
+          type: 'mainComponent' as any,
+          hidden: (context) =>
+            !context?.value?.hotspots_camera?.hotspots?.length ||
+            context.value.hotspots_camera.hotspotStyle !== 'one',
+        },
+        {
+          // A second field on the hotspot list: the pickers must come after "Hotspot style"
+          name: 'hotspots',
           type: 'string',
+          component: HotspotComponentsField,
+          hidden: (context) =>
+            !context?.value?.hotspots_camera?.hotspots?.length ||
+            context.value.hotspots_camera.hotspotStyle !== 'each',
+        },
+        {
+          name: 'customHotspotNumber',
+          title: 'Hotspot number',
+          description:
+            'Show the hotspot number on top of the hotspot component. Style it under "Hotspot number".',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'None', value: 'none' },
+              { label: 'Center', value: 'center' },
+              { label: 'Corner badge', value: 'corner' },
+            ],
+            display: 'dropdown',
+            // Elements placed before this option existed have no value. They show no number.
+            placeholder: 'None',
+          } as any,
+          initialValue: 'none',
+          hidden: (context) =>
+            !context?.value?.hotspots_camera?.hotspots?.length ||
+            (context.value.hotspots_camera.hotspotStyle ?? 'default') === 'default',
         },
       ],
-      component: HotspotComponent,
     },
     {
       name: 'settings',
@@ -288,29 +502,115 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: [
+              { label: 'Standard', value: 'standard' },
               { label: 'Indoor', value: 'hdri1' },
               { label: 'Studio lights', value: 'hdri2' },
               { label: 'Streetlights, dark', value: 'hdri3' },
               { label: 'Natural lights', value: 'hdri4' },
               { label: 'Dim', value: 'hdri5' },
+              { label: 'Custom (upload .hdr)', value: 'custom' },
             ],
             display: 'dropdown',
           },
           initialValue: 'hdri1',
         },
         {
-          name: 'controls',
-          title: 'Drag',
-          description: 'Allow user to interact with model',
+          name: 'customHdri',
+          title: 'HDR file',
+          description: 'Equirectangular .hdr image',
+          type: 'upload',
+          accept: '.hdr',
+          hidden: (context) => context?.value?.settings?.lighting !== 'custom',
+        },
+        {
+          name: 'exposure',
+          title: 'Exposure (%)',
+          type: 'number',
+          initialValue: 100,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 300,
+          },
+        },
+        {
+          name: 'background',
+          title: 'Show lighting as background',
           type: 'boolean',
           initialValue: false,
         },
         {
-          name: 'zoom',
-          title: 'Zoom',
-          description: 'Allow user to zoom model',
+          name: 'backgroundBlur',
+          title: 'Background blur (%)',
+          type: 'number',
+          initialValue: 0,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 100,
+          },
+          hidden: (context) => context?.value?.settings?.background !== true,
+        },
+        {
+          name: 'shadow',
+          title: 'Ground shadow',
           type: 'boolean',
           initialValue: false,
+        },
+        {
+          name: 'shadowOpacity',
+          title: 'Shadow opacity (%)',
+          type: 'number',
+          initialValue: 50,
+          options: {
+            display: 'slider',
+            min: 0,
+            max: 100,
+          },
+          hidden: (context) => context?.value?.settings?.shadow !== true,
+        },
+        {
+          name: 'controls',
+          title: 'Drag',
+          description: 'Let users rotate and pan the model',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'dragDirection',
+          title: 'Drag direction',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'All directions', value: 'free' },
+              { label: 'Horizontal only', value: 'horizontal' },
+            ],
+            display: 'dropdown',
+          },
+          initialValue: 'free',
+          hidden: (context) => context?.value?.settings?.controls !== true,
+        },
+        {
+          name: 'zoom',
+          title: 'Zoom',
+          description: 'Let users zoom with the mouse wheel (pinch on touch screens needs Drag)',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'hotspotFocus',
+          title: 'On hotspot click',
+          type: 'select',
+          options: {
+            items: [
+              { label: 'Turn to hotspot', value: 'turn' },
+              { label: 'Turn and zoom in', value: 'zoom' },
+              { label: 'Do not move the camera', value: 'none' },
+            ],
+            display: 'dropdown',
+          },
+          initialValue: 'turn',
+          hidden: (context) => !context?.value?.hotspots_camera?.hotspots?.length,
         },
       ],
     },
@@ -325,7 +625,10 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(context.value?.modelUrl?.url);
+              // The legacy widget stores the model as `modelURL`
+              const animations = await getAnimations(
+                context.value?.modelUrl?.url ?? context.value?.modelURL?.url,
+              );
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });
@@ -340,9 +643,7 @@ export const config: VevManifest = {
           description: 'Drive animation progress by scroll position',
           type: 'boolean',
           initialValue: false,
-          hidden: (context) =>
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !hasAnimation(context),
         },
         {
           name: 'scrollTarget',
@@ -357,10 +658,7 @@ export const config: VevManifest = {
             display: 'dropdown',
           },
           initialValue: 'element',
-          hidden: (context) =>
-            !context?.value?.animationSettings?.scrollAnimation ||
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !usesScroll(context),
         },
         {
           name: 'scrollStart',
@@ -373,10 +671,7 @@ export const config: VevManifest = {
             min: 0,
             max: 100,
           },
-          hidden: (context) =>
-            !context?.value?.animationSettings?.scrollAnimation ||
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !usesScroll(context),
         },
         {
           name: 'scrollEnd',
@@ -389,18 +684,40 @@ export const config: VevManifest = {
             min: 0,
             max: 100,
           },
-          hidden: (context) =>
-            !context?.value?.animationSettings?.scrollAnimation ||
-            !context?.value?.animationSettings?.animation ||
-            context?.value?.animationSettings?.animation === 'No animation',
+          hidden: (context) => !usesScroll(context),
+        },
+        {
+          name: 'scrollRotate',
+          title: 'Rotate on scroll',
+          description: 'Turn the model as the page scrolls',
+          type: 'boolean',
+          initialValue: false,
+        },
+        {
+          name: 'scrollRotateAmount',
+          title: 'Scroll rotation',
+          type: 'number',
+          initialValue: 360,
+          options: {
+            display: 'slider',
+            min: -720,
+            max: 720,
+            format: 'deg',
+          },
+          hidden: (context) => context?.value?.animationSettings?.scrollRotate !== true,
+        },
+        {
+          name: 'tilt',
+          title: 'Follow pointer',
+          description: 'Tilt the model toward the mouse pointer',
+          type: 'boolean',
+          initialValue: false,
         },
         {
           name: 'rotate',
           title: 'Rotate',
           type: 'boolean',
           initialValue: true,
-          hidden: (context) =>
-            context?.value?.animationSettings?.animation !== 'No animation',
         },
         {
           name: 'rotationSpeed',
@@ -412,18 +729,14 @@ export const config: VevManifest = {
             min: 0,
             max: 20,
           },
-          hidden: (context) =>
-            context?.value?.animationSettings?.rotate !== true ||
-            context?.value?.animationSettings?.scrollAnimation === true,
+          hidden: (context) => context?.value?.animationSettings?.rotate === false,
         },
         {
           name: 'reverseSpeed',
-          title: 'Loop alternate direction',
+          title: 'Reverse direction',
           type: 'boolean',
           initialValue: false,
-          hidden: (context) =>
-            context?.value?.animationSettings?.rotate !== true ||
-            context?.value?.animationSettings?.scrollAnimation === true,
+          hidden: (context) => context?.value?.animationSettings?.rotate === false,
         },
       ],
     },
@@ -437,6 +750,21 @@ export const config: VevManifest = {
           name: EventTypes.HOTSPOT_CLICKED,
           description: 'Hotspot number clicked',
           type: 'number',
+        },
+      ],
+    },
+    {
+      type: EventTypes.MODEL_LOADED,
+      description: 'On model loaded',
+    },
+    {
+      type: EventTypes.ANIMATION_FINISHED,
+      description: 'On animation finished',
+      args: [
+        {
+          name: EventTypes.ANIMATION_FINISHED,
+          description: 'Name of the animation that finished',
+          type: 'string',
         },
       ],
     },
@@ -470,7 +798,8 @@ export const config: VevManifest = {
           type: 'select',
           options: {
             items: async (context) => {
-              const animations = await getAnimations(context.value?.widgetForm?.modelUrl?.url);
+              const form = context.value?.widgetForm;
+              const animations = await getAnimations(form?.modelUrl?.url ?? form?.modelURL?.url);
               return [NO_ANIMATION, ...animations].map((animation) => {
                 return { label: animation, value: animation };
               });
@@ -491,7 +820,21 @@ export const config: VevManifest = {
           type: 'number',
           initialValue: 1,
         },
+        {
+          name: 'returnToOriginal',
+          title: 'Play once, then return to original',
+          type: 'boolean',
+          initialValue: false,
+        },
       ],
+    },
+    {
+      type: InteractionTypes.PAUSE_ANIMATION,
+      description: 'Pause animation',
+    },
+    {
+      type: InteractionTypes.RESUME_ANIMATION,
+      description: 'Resume animation',
     },
   ],
   editableCSS: [
@@ -499,6 +842,20 @@ export const config: VevManifest = {
       selector: styles.hotspot,
       properties: ['background', 'color', 'font', 'font-family', 'font-size'],
       title: 'Hotspot',
+    },
+    {
+      selector: styles.hotspotNumber,
+      properties: [
+        'background',
+        'color',
+        'font-family',
+        'font-size',
+        'font-weight',
+        'border',
+        'border-radius',
+        'padding',
+      ],
+      title: 'Hotspot number',
     },
   ],
   type: 'both',

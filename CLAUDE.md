@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A monorepo of React components ("widgets") for the Vev design platform. Each component is an independent package with its own `package.json`, `vev.json`, and `src/`. There is no root `package.json`, no workspace tool, and no shared build — components never import from each other.
 
-**53 components in two tiers:**
+**56 components in two tiers:**
 
-- **37 top-level directories** — `video`, `forms`, `slider`, `lottie`, `embed-anything`, … Each has a `vev.json`.
+- **40 top-level directories** — `video`, `forms`, `slider`, `lottie`, `embed-anything`, … Each has a `vev.json`.
 - **16 under `backgrounds/`** — the WebGL background family. See `backgrounds/CLAUDE.md`; their deploy path differs (below).
 
 `backgrounds/` itself is a grouping folder, not a component — it has no `vev.json`. `backgrounds/MENU_IMAGES/` holds editor thumbnails, not code.
@@ -28,7 +28,7 @@ vev deploy --token "$VEV_DEPLOY_TOKEN"
 
 **There is no root lint command.** The root has no `package.json`, and no component defines a `lint` script. ESLint and Prettier configs live at the root (`.eslintrc.json`, `.prettierrc`) and are applied by editors and by `npx eslint` run manually. Any instruction to run `yarn run lint` from the root is stale — it will fail.
 
-**Lockfiles are gitignored** (`**/yarn.lock`, `**/package-lock.json` in `.gitignore`), and 34 of 53 components pin `@vev/react` as `"latest"`. Installs are therefore not reproducible across time. If a component suddenly breaks without a source change, suspect a transitive `@vev/react` bump before anything else.
+**Lockfiles are gitignored** (`**/yarn.lock`, `**/package-lock.json` in `.gitignore`), and 34 of 56 components pin `@vev/react` as `"latest"`. Installs are therefore not reproducible across time. If a component suddenly breaks without a source change, suspect a transitive `@vev/react` bump before anything else.
 
 ## Deploy / CI
 
@@ -62,7 +62,7 @@ Note also that CI uses `npm install --omit=dev` while local development uses `ya
 
 `vev.json` is usually just `key`. A few carry extra flags: `public`, `admin`, `shareWithAccount`, `devKey`.
 
-**Dependencies actually in use:** `@vev/react` (all 53), `@vev/silke` (26 — editor-side UI for custom prop controls), `@vev/utils` (3 — `forms`, `forms-native`, `video-scroll`), `three` (3), `ogl` (2).
+**Dependencies actually in use:** `@vev/react` (all 56), `@vev/silke` (26 — editor-side UI for custom prop controls), `@vev/utils` (3 — `forms`, `forms-native`, `video-scroll`), `three` (3), `ogl` (2).
 
 ## Vev component pattern
 

@@ -1,0 +1,50 @@
+/* Design tokens come from the project's design system. The fallbacks apply when a project has none. */
+.button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vev-space-s, 8px);
+  width: 100%;
+  height: 100%;
+  padding: var(--vev-space-s, 8px) var(--vev-space-m, 16px);
+  text-align: center;
+  text-decoration: none;
+  font-family: var(--vev-base-font-family, inherit);
+  font-size: var(--vev-base-font-size, inherit);
+  font-weight: var(--vev-base-font-weight, inherit);
+  line-height: var(--vev-base-line-height, normal);
+  color: var(--vev-brand-primary-50, #fff);
+  background: var(--vev-brand-primary, #111);
+  border: none;
+  border-radius: var(--vev-radius-m, 8px);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button:hover {
+  background: var(--vev-brand-primary-600, #333);
+}
+
+.button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.button[aria-disabled='true'] {
+  cursor: default;
+}
+
+/* Text link style */
+.button.link {
+  padding: 0;
+  color: var(--vev-link-color, inherit);
+  background: none;
+  border-radius: 0;
+  text-decoration: var(--vev-link-text-decoration, underline);
+}
+
+.button.link:hover {
+  color: var(--vev-link-color-hover, var(--vev-link-color, inherit));
+  background: none;
+}
