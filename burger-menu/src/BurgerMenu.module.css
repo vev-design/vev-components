@@ -21,19 +21,32 @@
   fill: currentColor;
 }
 
-/* Default menu icon. Used when no menu icon is selected. */
+/* Default menu icon. Used when no menu icon is selected. .burger is a square box, like the old
+   24x24 SVG, and a size container. The lines use cqmin units of that box, so they scale with the
+   element. Sizes in units of the old SVG: lines 20 long (18 + round caps), 2 thick, 4 apart. */
 .burger {
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1;
+}
+
+.lines {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 75%;
+  gap: calc(100cqmin * 4 / 24);
+  width: calc(100cqmin * 20 / 24);
 }
 
 .line {
+  flex: none;
   display: block;
-  height: 2px;
+  height: calc(100cqmin * 2 / 24);
   background: currentColor;
-  border-radius: 1px;
+  border-radius: calc(100cqmin * 1 / 24);
 }
 
 .toggle:focus-visible,

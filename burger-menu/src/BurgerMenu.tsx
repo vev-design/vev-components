@@ -63,9 +63,11 @@ const iconSource = (value: any) => (value && Array.isArray(value.path) ? value.p
 // Three elements, not an SVG, so the style panel can set the color, size and spacing of the lines.
 const BurgerIcon = () => (
   <span className={styles.burger} aria-hidden="true">
-    <span className={styles.line} />
-    <span className={styles.line} />
-    <span className={styles.line} />
+    <span className={styles.lines}>
+      <span className={styles.line} />
+      <span className={styles.line} />
+      <span className={styles.line} />
+    </span>
   </span>
 );
 
@@ -387,7 +389,7 @@ registerVevComponent(BurgerMenu, {
     },
     {
       title: 'Burger icon',
-      selector: styles.burger,
+      selector: styles.lines,
       properties: ['width', 'gap'],
     },
     {
